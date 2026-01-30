@@ -6,6 +6,9 @@ import {
   HelpCircle,
   Info,
   ExternalLink,
+  BookOpen,
+  Lightbulb,
+  Bug,
   Github,
 } from "lucide-react";
 import "../../styles/Modal.css";
@@ -37,7 +40,8 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 const GITHUB_REPO = "https://github.com/HoneyBearFolio/HoneyBear-Folio";
 const WEBSITE_URL = "https://honeybearfolio.github.io";
-const LICENSE_URL = `${GITHUB_REPO}/blob/main/LICENSE`;
+const DOCS_URL = `${WEBSITE_URL}/docs`;
+const LICENSE_URL = `${GITHUB_REPO}/blob/main/LICENSE`; 
 
 export default function SettingsModal({ onClose }) {
   const {
@@ -723,15 +727,37 @@ export default function SettingsModal({ onClose }) {
                       {t("about.github")}
                     </a>
                     <a
-                      href={`${GITHUB_REPO}/issues`}
+                      href={`${GITHUB_REPO}/issues/new?template=feature_request.md`}
                       className="about-link"
                       onClick={(e) => {
                         e.preventDefault();
-                        openExternal(`${GITHUB_REPO}/issues`);
+                        openExternal(`${GITHUB_REPO}/issues/new?template=feature_request.md`);
                       }}
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <Lightbulb className="w-3.5 h-3.5" />
+                      {t("about.features")}
+                    </a>
+                    <a
+                      href={`${GITHUB_REPO}/issues/new?template=bug_report.md`}
+                      className="about-link"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openExternal(`${GITHUB_REPO}/issues/new?template=bug_report.md`);
+                      }}
+                    >
+                      <Bug className="w-3.5 h-3.5" />
                       {t("about.issues")}
+                    </a>
+                    <a
+                      href={`${DOCS_URL}`}
+                      className="about-link"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openExternal(`${DOCS_URL}`);
+                      }}
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      {t("about.docs")}
                     </a>
                   </div>
                 </div>
