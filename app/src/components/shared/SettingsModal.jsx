@@ -41,7 +41,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 const GITHUB_REPO = "https://github.com/HoneyBearFolio/HoneyBear-Folio";
 const WEBSITE_URL = "https://honeybearfolio.github.io";
 const DOCS_URL = `${WEBSITE_URL}/docs`;
-const LICENSE_URL = `${GITHUB_REPO}/blob/main/LICENSE`; 
+const LICENSE_URL = `${GITHUB_REPO}/blob/main/LICENSE`;
 
 export default function SettingsModal({ onClose }) {
   const {
@@ -731,7 +731,9 @@ export default function SettingsModal({ onClose }) {
                       className="about-link"
                       onClick={(e) => {
                         e.preventDefault();
-                        openExternal(`${GITHUB_REPO}/issues/new?template=feature_request.md`);
+                        openExternal(
+                          `${GITHUB_REPO}/issues/new?template=feature_request.md`,
+                        );
                       }}
                     >
                       <Lightbulb className="w-3.5 h-3.5" />
@@ -742,7 +744,9 @@ export default function SettingsModal({ onClose }) {
                       className="about-link"
                       onClick={(e) => {
                         e.preventDefault();
-                        openExternal(`${GITHUB_REPO}/issues/new?template=bug_report.md`);
+                        openExternal(
+                          `${GITHUB_REPO}/issues/new?template=bug_report.md`,
+                        );
                       }}
                     >
                       <Bug className="w-3.5 h-3.5" />
