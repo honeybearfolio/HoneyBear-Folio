@@ -83,7 +83,7 @@ export default function InvestmentDashboard() {
             if (v < 0) return "transparent";
             return colors[i % colors.length];
           }),
-          borderColor: isDark ? "rgb(30, 41, 59)" : "#ffffff",
+          borderColor: isDark ? "#474240" : "#ffffff",
           borderWidth: 4,
           borderDash: (ctx) => {
             const val = rawData[ctx.dataIndex];
