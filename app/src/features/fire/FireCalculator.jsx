@@ -22,6 +22,7 @@ import {
   calculateDeterministicProjection,
 } from "../../utils/fire";
 import useIsDark from "../../hooks/useIsDark";
+import useChartColors from "../../hooks/useChartColors";
 import { t } from "../../i18n/i18n";
 import {
   buildHoldingsFromTransactions,
@@ -102,6 +103,7 @@ export default function FireCalculator() {
 
   const [loading, setLoading] = useState(!savedState);
   const isDark = useIsDark();
+  const chartColors = useChartColors();
 
   // Track which fields the user has manually edited during the session so
   // computed backend updates don't overwrite them while the app is open. We
@@ -424,8 +426,8 @@ export default function FireCalculator() {
       datasets.push({
         label: "90th Percentile",
         data: percentiles.p90,
-        borderColor: "rgba(34, 197, 94, 0.3)",
-        backgroundColor: "rgba(34, 197, 94, 0.1)",
+        borderColor: chartColors.success + "4D",
+        backgroundColor: chartColors.success + "1A",
         fill: "+1",
         tension: 0.4,
         pointRadius: 0,
@@ -435,7 +437,7 @@ export default function FireCalculator() {
       datasets.push({
         label: "10th Percentile",
         data: percentiles.p10,
-        borderColor: "rgba(34, 197, 94, 0.3)",
+        borderColor: chartColors.success + "4D",
         backgroundColor: "transparent",
         fill: false,
         tension: 0.4,
@@ -447,8 +449,8 @@ export default function FireCalculator() {
       datasets.push({
         label: "75th Percentile",
         data: percentiles.p75,
-        borderColor: "rgba(34, 197, 94, 0.5)",
-        backgroundColor: "rgba(34, 197, 94, 0.15)",
+        borderColor: chartColors.success + "80",
+        backgroundColor: chartColors.success + "26",
         fill: "+1",
         tension: 0.4,
         pointRadius: 0,
@@ -458,7 +460,7 @@ export default function FireCalculator() {
       datasets.push({
         label: "25th Percentile",
         data: percentiles.p25,
-        borderColor: "rgba(34, 197, 94, 0.5)",
+        borderColor: chartColors.success + "80",
         backgroundColor: "transparent",
         fill: false,
         tension: 0.4,
@@ -470,7 +472,7 @@ export default function FireCalculator() {
       datasets.push({
         label: "Median Outcome",
         data: percentiles.p50,
-        borderColor: "rgb(34, 197, 94)",
+        borderColor: chartColors.success,
         backgroundColor: "transparent",
         fill: false,
         tension: 0.4,
@@ -483,8 +485,8 @@ export default function FireCalculator() {
     datasets.push({
       label: "Deterministic Projection",
       data: projectionData.slice(0, totalYears + 1),
-      borderColor: "rgb(59, 130, 246)",
-      backgroundColor: "rgba(59, 130, 246, 0.1)",
+      borderColor: chartColors.primary,
+      backgroundColor: chartColors.primary + "1A",
       fill: !monteCarloResult, // Only fill if no Monte Carlo data
       tension: 0.4,
       pointRadius: 0,
@@ -495,7 +497,7 @@ export default function FireCalculator() {
     datasets.push({
       label: "FIRE Target",
       data: Array(labels.length).fill(fireNumber),
-      borderColor: "rgb(239, 68, 68)",
+      borderColor: chartColors.loss,
       borderDash: [5, 5],
       pointRadius: 0,
       fill: false,
@@ -517,6 +519,7 @@ export default function FireCalculator() {
     currentAge,
     retirementAge,
     retirementDuration,
+    chartColors,
   ]);
 
   // Calculate retirement age when FIRE is reached
@@ -535,7 +538,7 @@ export default function FireCalculator() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Inputs */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 space-y-6 h-fit hover:shadow-lg transition-shadow duration-300">
           <div className="flex items-center justify-between mb-4">
@@ -856,15 +859,15 @@ export default function FireCalculator() {
         </div>
 
         {/* Results & Chart */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-brand-50 dark:from-blue-900/20 dark:to-brand-900/20 p-5 rounded-2xl shadow-md border-2 border-blue-200 dark:border-blue-800 flex items-center justify-between transition-all duration-300">
+            <div className="bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/20 dark:to-brand-900/10 p-5 rounded-2xl shadow-md border-2 border-brand-200 dark:border-brand-800 flex items-center justify-between transition-all duration-300">
               <div>
-                <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">
+                <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider mb-1">
                   {t("fire.fire_number")}
                 </p>
-                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                <p className="text-2xl font-bold text-brand-900 dark:text-brand-100">
                   <MaskedNumber
                     value={fireNumber}
                     options={{
@@ -875,81 +878,57 @@ export default function FireCalculator() {
                   />
                 </p>
               </div>
-              <div className="bg-blue-500 dark:bg-blue-600 p-3 rounded-xl shadow-lg">
+              <div className="bg-brand-500 dark:bg-brand-600 p-3 rounded-xl shadow-lg">
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 p-5 rounded-2xl shadow-md border-2 border-emerald-200 dark:border-emerald-800 flex items-center justify-between transition-all duration-300">
+            <div className="bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/20 dark:to-brand-900/10 p-5 rounded-2xl shadow-md border-2 border-brand-200 dark:border-brand-800 flex items-center justify-between transition-all duration-300">
               <div>
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-1">
+                <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider mb-1">
                   {t("fire.time_to_fire")}
                 </p>
                 {neverReached ? (
-                  <p className="text-lg font-medium text-emerald-900 dark:text-emerald-100">
+                  <p className="text-lg font-medium text-brand-900 dark:text-brand-100">
                     {t("fire.never_retire")}
                   </p>
                 ) : (
-                  <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                  <p className="text-2xl font-bold text-brand-900 dark:text-brand-100">
                     {yearsToFire} {t("fire.years")}
                   </p>
                 )}
               </div>
-              <div className="bg-emerald-500 dark:bg-emerald-600 p-3 rounded-xl shadow-lg">
+              <div className="bg-brand-500 dark:bg-brand-600 p-3 rounded-xl shadow-lg">
                 <Calendar className="w-6 h-6 text-white" />
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 p-5 rounded-2xl shadow-md border-2 border-purple-200 dark:border-purple-800 flex items-center justify-between transition-all duration-300">
+            <div className="bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/20 dark:to-brand-900/10 p-5 rounded-2xl shadow-md border-2 border-brand-200 dark:border-brand-800 flex items-center justify-between transition-all duration-300">
               <div>
-                <p className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">
+                <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider mb-1">
                   {t("fire.retirement_age")}
                 </p>
                 {neverReached || !fireAge ? (
-                  <p className="text-lg font-medium text-purple-900 dark:text-purple-100">
+                  <p className="text-lg font-medium text-brand-900 dark:text-brand-100">
                     —
                   </p>
                 ) : (
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  <p className="text-2xl font-bold text-brand-900 dark:text-brand-100">
                     {t("fire.age_value", { age: fireAge })}
                   </p>
                 )}
               </div>
-              <div className="bg-purple-500 dark:bg-purple-600 p-3 rounded-xl shadow-lg">
+              <div className="bg-brand-500 dark:bg-brand-600 p-3 rounded-xl shadow-lg">
                 <User className="w-6 h-6 text-white" />
               </div>
             </div>
 
-            <div
-              className={`bg-gradient-to-br p-5 rounded-2xl shadow-md border-2 flex items-center justify-between transition-all duration-300 ${
-                monteCarloResult && monteCarloResult.successRate >= 80
-                  ? "from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800"
-                  : monteCarloResult && monteCarloResult.successRate >= 50
-                    ? "from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-amber-200 dark:border-amber-800"
-                    : "from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-red-200 dark:border-red-800"
-              }`}
-            >
+            <div className="bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/20 dark:to-brand-900/10 p-5 rounded-2xl shadow-md border-2 border-brand-200 dark:border-brand-800 flex items-center justify-between transition-all duration-300">
               <div>
-                <p
-                  className={`text-xs font-bold uppercase tracking-wider mb-1 ${
-                    monteCarloResult && monteCarloResult.successRate >= 80
-                      ? "text-green-700 dark:text-green-300"
-                      : monteCarloResult && monteCarloResult.successRate >= 50
-                        ? "text-amber-700 dark:text-amber-300"
-                        : "text-red-700 dark:text-red-300"
-                  }`}
-                >
+                <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider mb-1">
                   {t("fire.success_rate")}
                 </p>
-                <p
-                  className={`text-2xl font-bold ${
-                    monteCarloResult && monteCarloResult.successRate >= 80
-                      ? "text-green-900 dark:text-green-100"
-                      : monteCarloResult && monteCarloResult.successRate >= 50
-                        ? "text-amber-900 dark:text-amber-100"
-                        : "text-red-900 dark:text-red-100"
-                  }`}
-                >
+                <p className="text-2xl font-bold text-brand-900 dark:text-brand-100">
                   {monteCarloResult
                     ? `${monteCarloResult.successRate.toFixed(1)}%`
                     : "—"}
@@ -958,15 +937,7 @@ export default function FireCalculator() {
                   {t("fire.monte_carlo")}
                 </p>
               </div>
-              <div
-                className={`p-3 rounded-xl shadow-lg ${
-                  monteCarloResult && monteCarloResult.successRate >= 80
-                    ? "bg-green-500 dark:bg-green-600"
-                    : monteCarloResult && monteCarloResult.successRate >= 50
-                      ? "bg-amber-500 dark:bg-amber-600"
-                      : "bg-red-500 dark:bg-red-600"
-                }`}
-              >
+              <div className="bg-brand-500 dark:bg-brand-600 p-3 rounded-xl shadow-lg">
                 <Activity className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -1007,7 +978,7 @@ export default function FireCalculator() {
                     legend: {
                       position: "top",
                       labels: {
-                        color: isDark ? "#cbd5e1" : "#475569",
+                        color: chartColors.text,
                         filter: (item) => {
                           // Hide some labels to reduce clutter
                           return ![
@@ -1019,7 +990,33 @@ export default function FireCalculator() {
                       },
                     },
                     tooltip: {
+                      backgroundColor: isDark
+                        ? "rgba(15, 23, 42, 0.9)"
+                        : "rgba(255, 255, 255, 0.9)",
+                      titleColor: isDark
+                        ? "rgb(255, 255, 255)"
+                        : "rgb(15, 23, 42)",
+                      bodyColor: isDark
+                        ? "rgb(255, 255, 255)"
+                        : "rgb(15, 23, 42)",
+                      padding: 12,
+                      cornerRadius: 8,
                       callbacks: {
+                        labelColor: function (context) {
+                          const dataset = context.dataset;
+                          const tooltipBg = isDark
+                            ? "rgba(15, 23, 42, 0.9)"
+                            : "rgba(255, 255, 255, 0.9)";
+
+                          // Always use the tooltip background as the fill color for the label box
+                          // This ensures a "hollow" look matching the line style, avoiding issues
+                          // with semi-transparent fills (0.1 opacity) looking washed out or "white".
+                          return {
+                            borderColor: dataset.borderColor,
+                            backgroundColor: tooltipBg,
+                            borderWidth: 2,
+                          };
+                        },
                         label: function (context) {
                           let label = context.dataset.label || "";
                           if (label) {
@@ -1056,10 +1053,10 @@ export default function FireCalculator() {
                     y: {
                       beginAtZero: true,
                       grid: {
-                        color: isDark ? "#334155" : "#e2e8f0",
+                        color: chartColors.grid,
                       },
                       ticks: {
-                        color: isDark ? "#94a3b8" : "#64748b",
+                        color: chartColors.text,
                         callback: function (value) {
                           const num = Number(value);
                           if (Number.isNaN(num)) return value;
@@ -1071,10 +1068,10 @@ export default function FireCalculator() {
                     },
                     x: {
                       grid: {
-                        color: isDark ? "#334155" : "#e2e8f0",
+                        color: chartColors.grid,
                       },
                       ticks: {
-                        color: isDark ? "#94a3b8" : "#64748b",
+                        color: chartColors.text,
                         maxTicksLimit: 10,
                       },
                     },

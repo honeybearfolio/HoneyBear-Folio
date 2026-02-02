@@ -33,7 +33,7 @@ export function ToastProvider({ children }) {
         return <AlertCircle size={18} className="text-red-500" />;
       case "info":
       default:
-        return <Info size={18} className="text-blue-500" />;
+        return <Info size={18} className="text-brand-500" />;
     }
   };
 

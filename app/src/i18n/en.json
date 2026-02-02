@@ -102,7 +102,7 @@
   "fire.projection": "Projection",
   "fire.projection_subtitle": "Path to financial independence with Monte Carlo simulation",
   "fire.simulations_run": "{count} simulations",
-  "fire.chart_legend_explanation": "Blue line shows deterministic projection. Green bands show Monte Carlo probability ranges (10th-90th percentile). Red dashed line is your FIRE target.",
+  "fire.chart_legend_explanation": "Orange line shows deterministic projection. Green bands show Monte Carlo probability ranges (10th-90th percentile). Red dashed line is your FIRE target.",
   "nav.all_transactions": "All Transactions",
   "accounts.accounts": "Accounts",
   "account.new_account": "New Account",
@@ -283,5 +283,6 @@
   "rules.update": "Update",
   "rules.empty": "No rules defined yet. Use the form above to create one.",
   "rules.all_conditions": "all conditions match",
-  "rules.any_condition": "any condition matches"
+  "rules.any_condition": "any condition matches",
+  "general.uncategorized": "Uncategorized"
 }

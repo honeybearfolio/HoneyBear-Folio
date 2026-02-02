@@ -365,7 +365,7 @@ export default function SettingsModal({ onClose }) {
                     step={0.05}
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="w-full"
+                    className="w-full accent-brand-500"
                     aria-label={t("settings.font_size")}
                   />
                 </div>

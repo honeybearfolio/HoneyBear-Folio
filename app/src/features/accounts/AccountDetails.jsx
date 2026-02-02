@@ -1049,7 +1049,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       name="txType"
                       checked={isBuy}
                       onChange={() => setIsBuy(true)}
-                      className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       Buy
@@ -1061,7 +1061,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       name="txType"
                       checked={!isBuy}
                       onChange={() => setIsBuy(false)}
-                      className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       Sell
@@ -1086,7 +1086,7 @@ export default function AccountDetails({ account, onUpdate }) {
                     shouldCloseOnSelect={false}
                     required
                     portalId="datepicker-portal"
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1099,7 +1099,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   type="text"
                   required
                   placeholder="AAPL"
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all uppercase"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all uppercase"
                   value={ticker}
                   onChange={(e) => {
                     const val = e.target.value.toUpperCase();
@@ -1162,7 +1162,7 @@ export default function AccountDetails({ account, onUpdate }) {
                 <NumberInput
                   value={shares}
                   onChange={(num) => handleSharesChange(num)}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                   placeholder={formatNumber(0, {
                     maximumFractionDigits: 6,
                     minimumFractionDigits: 0,
@@ -1181,7 +1181,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   <NumberInput
                     value={pricePerShare}
                     onChange={(num) => handlePricePerShareChange(num)}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                     placeholder={formatNumber(0, {
                       maximumFractionDigits: 2,
                       minimumFractionDigits: 2,
@@ -1206,7 +1206,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       maximumFractionDigits: 2,
                       minimumFractionDigits: 2,
                     })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                     value={fee}
                     onChange={(e) => setFee(e.target.value)}
                   />
@@ -1580,7 +1580,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                     onChange={() =>
                                       setEditForm({ ...editForm, payee: "Buy" })
                                     }
-                                    className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                                    className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                                   />
                                   <span className="text-sm text-slate-700 dark:text-slate-300">
                                     Buy
@@ -1601,7 +1601,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                         payee: "Sell",
                                       })
                                     }
-                                    className="w-4 h-4 text-blue-600 dark:text-blue-400"
+                                    className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                                   />
                                   <span className="text-sm text-slate-700 dark:text-slate-300">
                                     Sell
@@ -2185,7 +2185,7 @@ function AutocompleteInput({
           {filtered.map((s, i) => (
             <li
               key={i}
-              className="px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center text-sm text-slate-700 dark:text-slate-200"
+              className="px-3 py-2 hover:bg-brand-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center text-sm text-slate-700 dark:text-slate-200"
               onMouseDown={(e) => {
                 e.preventDefault();
                 onChange(s.value);

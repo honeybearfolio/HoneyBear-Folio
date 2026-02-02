@@ -734,23 +734,23 @@ export default function ImportModal({ onClose, onImportComplete }) {
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-xl p-12 flex flex-col items-center justify-center cursor-pointer transition-all group ${
               isDragging
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                : "border-slate-300 dark:border-slate-700 hover:border-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
+                : "border-slate-300 dark:border-slate-700 hover:border-brand-500 hover:bg-slate-100 dark:hover:bg-slate-800/50"
             }`}
           >
             {isDragging ? (
               <>
-                <Upload className="w-12 h-12 text-blue-500 mb-4 animate-pulse" />
-                <p className="text-blue-600 dark:text-blue-400 font-medium">
+                <Upload className="w-12 h-12 text-brand-500 mb-4 animate-pulse" />
+                <p className="text-brand-600 dark:text-brand-400 font-medium">
                   {t("import.drop_file_here") || "Drop file here"}
                 </p>
               </>
             ) : (
               <>
                 {file && file.name && file.name.endsWith(".json") ? (
-                  <FileJson className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-blue-500 mb-4 transition-colors" />
+                  <FileJson className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
                 ) : (
-                  <FileSpreadsheet className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-blue-500 mb-4 transition-colors" />
+                  <FileSpreadsheet className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
                 )}
                 <p className="text-slate-600 dark:text-slate-300 font-medium">
                   {t("import.drag_or_click") || t("import.click_to_upload")}

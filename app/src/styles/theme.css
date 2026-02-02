@@ -1,17 +1,53 @@
 @import "./components.css";
 
 @theme {
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
-  --color-brand-950: #172554;
+  --color-brand-50: #fff9eb;
+  --color-brand-100: #ffefc6;
+  --color-brand-200: #ffdc88;
+  --color-brand-300: #ffc44a;
+  --color-brand-400: #ffab20;
+  --color-brand-500: #f98c07;
+  --color-brand-600: #dd6602;
+  --color-brand-700: #b74506;
+  --color-brand-800: #94350c;
+  --color-brand-900: #7a2c0d;
+  --color-brand-950: #461502;
+
+  --color-slate-50: #f6f5f5;
+  --color-slate-100: #e7e6e5;
+  --color-slate-200: #d2cfce;
+  --color-slate-300: #b3aeac;
+  --color-slate-400: #8c8582;
+  --color-slate-500: #716a67;
+  --color-slate-600: #615a57;
+  --color-slate-700: #514b49;
+  --color-slate-800: #474240;
+  --color-slate-900: #3e3a38;
+  --color-slate-950: #211f1e;
+
+  --color-honey-50: #fff9eb;
+  --color-honey-100: #ffefc6;
+  --color-honey-200: #ffdc88;
+  --color-honey-300: #ffc44a;
+  --color-honey-400: #ffab20;
+  --color-honey-500: #f98c07;
+  --color-honey-600: #dd6602;
+  --color-honey-700: #b74506;
+  --color-honey-800: #94350c;
+  --color-honey-900: #7a2c0d;
+  --color-honey-950: #461502;
+
+  --color-bear-50: #f6f5f5;
+  --color-bear-100: #e7e6e5;
+  --color-bear-200: #d2cfce;
+  --color-bear-300: #b3aeac;
+  --color-bear-400: #8c8582;
+  --color-bear-500: #716a67;
+  --color-bear-600: #615a57;
+  --color-bear-700: #514b49;
+  --color-bear-800: #474240;
+  --color-bear-900: #3e3a38;
+  --color-bear-950: #211f1e;
 
   --font-sans: Inter, system-ui, sans-serif;
 }
