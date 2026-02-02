@@ -16,12 +16,14 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 // useIsDark moved to a shared hook at src/hooks/useIsDark.js
 import useIsDark from "../../hooks/useIsDark";
+import useChartColors from "../../hooks/useChartColors";
 
 export default function InvestmentDashboard() {
   const [holdings, setHoldings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isDark = useIsDark();
+  const chartColors = useChartColors();
 
   const formatNumber = useFormatNumber();
 
@@ -62,16 +64,7 @@ export default function InvestmentDashboard() {
     const rawData = holdings.map((h) => h.currentValue);
     const data = rawData.map((v) => Math.abs(v));
 
-    const colors = [
-      "rgb(59, 130, 246)", // blue-500
-      "rgb(16, 185, 129)", // emerald-500
-      "rgb(245, 158, 11)", // amber-500
-      "rgb(244, 63, 94)", // rose-500
-      "rgb(139, 92, 246)", // violet-500
-      "rgb(6, 182, 212)", // cyan-500
-      "rgb(99, 102, 241)", // indigo-500
-      "rgb(249, 115, 22)", // orange-500
-    ];
+    const colors = chartColors.palette;
 
     return {
       labels: holdings.map((h) => h.ticker),
@@ -93,7 +86,7 @@ export default function InvestmentDashboard() {
         },
       ],
     };
-  }, [holdings, isDark]);
+  }, [holdings, isDark, chartColors]);
 
   const chartOptions = useMemo(
     () => ({
@@ -108,7 +101,7 @@ export default function InvestmentDashboard() {
             usePointStyle: true,
             boxWidth: 8,
             padding: 20,
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
+            color: chartColors.text,
             font: {
               family: "Inter",
               size: 12,
@@ -173,7 +166,7 @@ export default function InvestmentDashboard() {
         },
       },
     }),
-    [isDark, formatNumber],
+    [isDark, formatNumber, chartColors],
   );
 
   return (

@@ -1049,7 +1049,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       name="txType"
                       checked={isBuy}
                       onChange={() => setIsBuy(true)}
-                      className="w-4 h-4 text-brand-600 dark:text-brand-400 accent-brand-600 dark:accent-brand-400"
+                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       Buy
@@ -1061,7 +1061,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       name="txType"
                       checked={!isBuy}
                       onChange={() => setIsBuy(false)}
-                      className="w-4 h-4 text-brand-600 dark:text-brand-400 accent-brand-600 dark:accent-brand-400"
+                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       Sell
@@ -1580,7 +1580,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                     onChange={() =>
                                       setEditForm({ ...editForm, payee: "Buy" })
                                     }
-                                    className="w-4 h-4 text-brand-600 dark:text-brand-400 accent-brand-600 dark:accent-brand-400"
+                                    className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                                   />
                                   <span className="text-sm text-slate-700 dark:text-slate-300">
                                     Buy
@@ -1601,7 +1601,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                         payee: "Sell",
                                       })
                                     }
-                                    className="w-4 h-4 text-brand-600 dark:text-brand-400 accent-brand-600 dark:accent-brand-400"
+                                    className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                                   />
                                   <span className="text-sm text-slate-700 dark:text-slate-300">
                                     Sell

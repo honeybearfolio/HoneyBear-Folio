@@ -12,6 +12,7 @@ import PropTypes from "prop-types";
 import { useFormatNumber } from "../../utils/format";
 import { t } from "../../i18n/i18n";
 import useIsDark from "../../hooks/useIsDark";
+import useChartColors from "../../hooks/useChartColors";
 
 // Register the controller and elements
 ChartJS.register(SankeyController, Flow, Tooltip, Legend, Title, LinearScale);
@@ -26,6 +27,7 @@ export default function SankeyDiagram({
   appCurrency,
 }) {
   const isDark = useIsDark();
+  const chartColors = useChartColors();
   const formatNumber = useFormatNumber();
 
   const data = useMemo(() => {
@@ -223,25 +225,23 @@ export default function SankeyDiagram({
 
     // Node colors
     const getColor = (key) => {
-      if (key === ID_BUDGET) return isDark ? "#475569" : "#94a3b8";
-      if (key === ID_INVESTMENTS_GROUP) return isDark ? "#10b981" : "#10b981";
-      if (key === ID_EXPENSES_GROUP) return isDark ? "#ef4444" : "#ef4444";
-      if (key === ID_DEFICIT) return isDark ? "#ef4444" : "#ef4444";
-      if (key === ID_SURPLUS) return isDark ? "#10b981" : "#34d399";
+      if (key === ID_BUDGET) return chartColors.secondary;
+      if (key === ID_INVESTMENTS_GROUP) return chartColors.success;
+      if (key === ID_EXPENSES_GROUP) return chartColors.loss;
+      if (key === ID_DEFICIT) return chartColors.loss;
+      if (key === ID_SURPLUS) return chartColors.success;
 
       if (key.startsWith("inc:")) {
-        // We can check the original cat name if needed, but for now uniform color
-        // const cat = key.substring(4);
-        return isDark ? "#059669" : "#34d399";
+        return chartColors.success;
       }
       if (key.startsWith("inv:")) {
-        return isDark ? "#10b981" : "#34d399";
+        return chartColors.success;
       }
       if (key.startsWith("exp:")) {
-        return isDark ? "#e11d48" : "#fb7185";
+        return chartColors.loss;
       }
 
-      return isDark ? "#475569" : "#94a3b8";
+      return chartColors.secondary;
     };
 
     return {
@@ -258,7 +258,7 @@ export default function SankeyDiagram({
           // Styling
           size: "max",
           borderWidth: 0,
-          color: isDark ? "#e2e8f0" : "#1e293b", // Text color: slate-200 : slate-800
+          color: isDark ? "#ffffff" : chartColors.text,
           font: {
             family: "Inter",
             size: 12,
@@ -275,7 +275,8 @@ export default function SankeyDiagram({
     accountMap,
     getPrice,
     appCurrency,
-    isDark, // Added isDark dependency
+    isDark,
+    chartColors,
     // NOTE: `t` (i18n) is intentionally excluded from deps because it's an external stable function
   ]);
 

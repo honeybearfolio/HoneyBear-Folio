@@ -46,6 +46,7 @@ ChartJS.register(
 
 // useIsDark moved to a shared hook at src/hooks/useIsDark.js
 import useIsDark from "../../hooks/useIsDark";
+import useChartColors from "../../hooks/useChartColors";
 import SankeyDiagram from "./SankeyDiagram";
 
 export default function Dashboard({
@@ -63,6 +64,7 @@ export default function Dashboard({
   const [customEndDate, setCustomEndDate] = useState(new Date());
 
   const isDark = useIsDark();
+  const chartColors = useChartColors();
 
   const formatNumber = useFormatNumber();
   const formatDate = useFormatDate();
@@ -293,15 +295,15 @@ export default function Dashboard({
     const datasets = [];
 
     // Helper to get color
-    const colors = [
-      "rgb(59, 130, 246)", // blue
-      "rgb(16, 185, 129)", // green
-      "rgb(245, 158, 11)", // amber
-      "rgb(239, 68, 68)", // red
-      "rgb(139, 92, 246)", // violet
-      "rgb(236, 72, 153)", // pink
-      "rgb(14, 165, 233)", // sky
-      "rgb(249, 115, 22)", // orange
+    const colors = chartColors.palette.length > 0 ? chartColors.palette : [
+      "rgb(59, 130, 246)", 
+      "rgb(16, 185, 129)", 
+      "rgb(245, 158, 11)", 
+      "rgb(239, 68, 68)", 
+      "rgb(139, 92, 246)", 
+      "rgb(236, 72, 153)", 
+      "rgb(14, 165, 233)", 
+      "rgb(249, 115, 22)", 
     ];
 
     // Total Net Worth Dataset
@@ -355,12 +357,12 @@ export default function Dashboard({
     datasets.push({
       label: "Total Net Worth",
       data: totalData,
-      borderColor: "rgb(37, 99, 235)", // brand-600
+      borderColor: chartColors.line,
       backgroundColor: (context) => {
         const ctx = context.chart.ctx;
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, "rgba(37, 99, 235, 0.2)");
-        gradient.addColorStop(1, "rgba(37, 99, 235, 0)");
+        gradient.addColorStop(0, chartColors.line + "33"); // 20% opacity
+        gradient.addColorStop(1, chartColors.line + "00"); // 0% opacity
         return gradient;
       },
       borderWidth: 3,
@@ -368,7 +370,7 @@ export default function Dashboard({
       fill: true,
       pointRadius: 0,
       pointHoverRadius: 6,
-      pointHoverBackgroundColor: "rgb(37, 99, 235)",
+      pointHoverBackgroundColor: chartColors.line,
       pointHoverBorderColor: "#fff",
       pointHoverBorderWidth: 2,
     });
@@ -456,6 +458,7 @@ export default function Dashboard({
     formatDate,
     appCurrency,
     getPrice,
+    chartColors,
   ]);
 
   // Track user toggles for account visibility; derive the actual visibility from accounts + toggles
@@ -588,15 +591,15 @@ export default function Dashboard({
     const rawData = Object.values(assetTypes);
     const data = rawData.map((v) => Math.abs(v));
 
-    const colors = [
-      "rgb(59, 130, 246)", // blue-500
-      "rgb(16, 185, 129)", // emerald-500
-      "rgb(245, 158, 11)", // amber-500
-      "rgb(244, 63, 94)", // rose-500
-      "rgb(139, 92, 246)", // violet-500
-      "rgb(6, 182, 212)", // cyan-500
-      "rgb(99, 102, 241)", // indigo-500
-      "rgb(249, 115, 22)", // orange-500
+    const colors = chartColors.palette.length > 0 ? chartColors.palette : [
+      "rgb(59, 130, 246)", 
+      "rgb(16, 185, 129)", 
+      "rgb(245, 158, 11)", 
+      "rgb(244, 63, 94)", 
+      "rgb(139, 92, 246)", 
+      "rgb(6, 182, 212)", 
+      "rgb(99, 102, 241)", 
+      "rgb(249, 115, 22)", 
     ];
 
     return {
@@ -619,7 +622,7 @@ export default function Dashboard({
         },
       ],
     };
-  }, [accounts, transactions, quotes, dailyPrices, isDark]);
+  }, [accounts, transactions, quotes, dailyPrices, isDark, chartColors]);
 
   const expensesByCategoryData = useMemo(() => {
     if (transactions.length === 0) return null;
@@ -684,15 +687,15 @@ export default function Dashboard({
       ([, a], [, b]) => b - a,
     );
 
-    const colors = [
-      "rgb(244, 63, 94)", // rose-500
-      "rgb(249, 115, 22)", // orange-500
-      "rgb(245, 158, 11)", // amber-500
-      "rgb(16, 185, 129)", // emerald-500
-      "rgb(6, 182, 212)", // cyan-500
-      "rgb(59, 130, 246)", // blue-500
-      "rgb(139, 92, 246)", // violet-500
-      "rgb(236, 72, 153)", // pink-500
+    const colors = chartColors.palette.length > 0 ? chartColors.palette : [
+      "rgb(244, 63, 94)", 
+      "rgb(249, 115, 22)", 
+      "rgb(245, 158, 11)", 
+      "rgb(16, 185, 129)", 
+      "rgb(6, 182, 212)", 
+      "rgb(59, 130, 246)", 
+      "rgb(139, 92, 246)", 
+      "rgb(236, 72, 153)", 
     ];
 
     return {
@@ -703,7 +706,7 @@ export default function Dashboard({
           backgroundColor: sortedCategories.map(
             (_, i) => colors[i % colors.length],
           ),
-          borderColor: isDark ? "rgb(30, 41, 59)" : "#ffffff",
+          borderColor: isDark ? "#474240" : "#ffffff",
           borderWidth: 4,
           hoverOffset: 4,
         },
@@ -718,6 +721,7 @@ export default function Dashboard({
     accountMap,
     getPrice,
     appCurrency,
+    chartColors,
   ]);
 
   const incomeVsExpensesData = useMemo(() => {
@@ -813,7 +817,7 @@ export default function Dashboard({
         {
           label: "Income",
           data: incomeData,
-          backgroundColor: "rgb(16, 185, 129)", // emerald-500
+          backgroundColor: chartColors.profit,
           borderRadius: 6,
           barPercentage: 0.6,
           categoryPercentage: 0.8,
@@ -821,7 +825,7 @@ export default function Dashboard({
         {
           label: "Expenses",
           data: expenseData,
-          backgroundColor: "rgb(244, 63, 94)", // rose-500
+          backgroundColor: chartColors.loss,
           borderRadius: 6,
           barPercentage: 0.6,
           categoryPercentage: 0.8,
@@ -837,6 +841,7 @@ export default function Dashboard({
     accountMap,
     getPrice,
     appCurrency,
+    chartColors,
   ]);
 
   const doughnutOptions = useMemo(
@@ -923,7 +928,7 @@ export default function Dashboard({
         },
       },
     }),
-    [isDark, formatNumber],
+    [isDark, formatNumber, chartColors],
   );
 
   const expensesOptions = useMemo(
@@ -1000,7 +1005,7 @@ export default function Dashboard({
         },
       },
     }),
-    [isDark, formatNumber],
+    [isDark, formatNumber, chartColors],
   );
 
   const barOptions = useMemo(() => {
@@ -1014,7 +1019,7 @@ export default function Dashboard({
           labels: {
             usePointStyle: true,
             boxWidth: 8,
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
+            color: chartColors.text,
             font: {
               family: "Inter",
               size: 12,
@@ -1064,9 +1069,7 @@ export default function Dashboard({
             display: false,
           },
           grid: {
-            color: isDark
-              ? "rgba(51, 65, 85, 0.6)"
-              : "rgba(226, 232, 240, 0.6)",
+            color: chartColors.grid,
             borderDash: [4, 4],
             drawBorder: false,
           },
@@ -1075,7 +1078,7 @@ export default function Dashboard({
               family: "Inter",
               size: 11,
             },
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
+            color: chartColors.text,
             padding: 10,
             callback: function (value) {
               const num = Number(value);
@@ -1096,12 +1099,12 @@ export default function Dashboard({
               family: "Inter",
               size: 11,
             },
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
+            color: chartColors.text,
           },
         },
       },
     };
-  }, [formatNumber, isDark]);
+  }, [formatNumber, isDark, chartColors]);
 
   const options = useMemo(
     () => ({
@@ -1177,9 +1180,7 @@ export default function Dashboard({
             display: false,
           },
           grid: {
-            color: isDark
-              ? "rgba(51, 65, 85, 0.6)"
-              : "rgba(226, 232, 240, 0.6)",
+            color: chartColors.grid,
             borderDash: [4, 4],
             drawBorder: false,
           },
@@ -1188,7 +1189,7 @@ export default function Dashboard({
               family: "Inter",
               size: 11,
             },
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
+            color: chartColors.text,
             padding: 10,
             callback: function (value) {
               const num = Number(value);
@@ -1209,7 +1210,7 @@ export default function Dashboard({
               family: "Inter",
               size: 11,
             },
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
+            color: chartColors.text,
             maxRotation: 0,
             autoSkip: true,
             maxTicksLimit: 8,
@@ -1217,7 +1218,7 @@ export default function Dashboard({
         },
       },
     }),
-    [formatNumber, isDark],
+    [formatNumber, isDark, chartColors],
   );
 
   return (
