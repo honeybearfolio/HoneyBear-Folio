@@ -153,7 +153,9 @@ export default function Sidebar({
               className="w-10 h-10 object-contain"
             />
             <div>
-              <span className="text-xl font-bold text-bear-900 dark:text-bear-100">HoneyBear <span className="text-honey-500">Folio</span></span>
+              <span className="text-xl font-bold text-bear-900 dark:text-bear-100">
+                HoneyBear <span className="text-honey-500">Folio</span>
+              </span>
               <p className="sidebar-subtitle">{t("sidebar.subtitle")}</p>
             </div>
           </div>

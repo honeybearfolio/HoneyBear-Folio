@@ -295,16 +295,19 @@ export default function Dashboard({
     const datasets = [];
 
     // Helper to get color
-    const colors = chartColors.palette.length > 0 ? chartColors.palette : [
-      "rgb(59, 130, 246)", 
-      "rgb(16, 185, 129)", 
-      "rgb(245, 158, 11)", 
-      "rgb(239, 68, 68)", 
-      "rgb(139, 92, 246)", 
-      "rgb(236, 72, 153)", 
-      "rgb(14, 165, 233)", 
-      "rgb(249, 115, 22)", 
-    ];
+    const colors =
+      chartColors.palette.length > 0
+        ? chartColors.palette
+        : [
+            "rgb(59, 130, 246)",
+            "rgb(16, 185, 129)",
+            "rgb(245, 158, 11)",
+            "rgb(239, 68, 68)",
+            "rgb(139, 92, 246)",
+            "rgb(236, 72, 153)",
+            "rgb(14, 165, 233)",
+            "rgb(249, 115, 22)",
+          ];
 
     // Total Net Worth Dataset
     const totalData = sortedDates.map((date) => {
@@ -591,16 +594,19 @@ export default function Dashboard({
     const rawData = Object.values(assetTypes);
     const data = rawData.map((v) => Math.abs(v));
 
-    const colors = chartColors.palette.length > 0 ? chartColors.palette : [
-      "rgb(59, 130, 246)", 
-      "rgb(16, 185, 129)", 
-      "rgb(245, 158, 11)", 
-      "rgb(244, 63, 94)", 
-      "rgb(139, 92, 246)", 
-      "rgb(6, 182, 212)", 
-      "rgb(99, 102, 241)", 
-      "rgb(249, 115, 22)", 
-    ];
+    const colors =
+      chartColors.palette.length > 0
+        ? chartColors.palette
+        : [
+            "rgb(59, 130, 246)",
+            "rgb(16, 185, 129)",
+            "rgb(245, 158, 11)",
+            "rgb(244, 63, 94)",
+            "rgb(139, 92, 246)",
+            "rgb(6, 182, 212)",
+            "rgb(99, 102, 241)",
+            "rgb(249, 115, 22)",
+          ];
 
     return {
       labels: labels,
@@ -687,16 +693,19 @@ export default function Dashboard({
       ([, a], [, b]) => b - a,
     );
 
-    const colors = chartColors.palette.length > 0 ? chartColors.palette : [
-      "rgb(244, 63, 94)", 
-      "rgb(249, 115, 22)", 
-      "rgb(245, 158, 11)", 
-      "rgb(16, 185, 129)", 
-      "rgb(6, 182, 212)", 
-      "rgb(59, 130, 246)", 
-      "rgb(139, 92, 246)", 
-      "rgb(236, 72, 153)", 
-    ];
+    const colors =
+      chartColors.palette.length > 0
+        ? chartColors.palette
+        : [
+            "rgb(244, 63, 94)",
+            "rgb(249, 115, 22)",
+            "rgb(245, 158, 11)",
+            "rgb(16, 185, 129)",
+            "rgb(6, 182, 212)",
+            "rgb(59, 130, 246)",
+            "rgb(139, 92, 246)",
+            "rgb(236, 72, 153)",
+          ];
 
     return {
       labels: sortedCategories.map(([cat]) => cat),
@@ -928,7 +937,7 @@ export default function Dashboard({
         },
       },
     }),
-    [isDark, formatNumber, chartColors],
+    [isDark, formatNumber],
   );
 
   const expensesOptions = useMemo(
@@ -1005,7 +1014,7 @@ export default function Dashboard({
         },
       },
     }),
-    [isDark, formatNumber, chartColors],
+    [isDark, formatNumber],
   );
 
   const barOptions = useMemo(() => {
