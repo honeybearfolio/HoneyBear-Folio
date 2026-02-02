@@ -1019,7 +1019,31 @@ export default function FireCalculator() {
                       },
                     },
                     tooltip: {
+                      backgroundColor: isDark
+                        ? "rgba(15, 23, 42, 0.9)"
+                        : "rgba(255, 255, 255, 0.9)",
+                      titleColor: isDark
+                        ? "rgb(255, 255, 255)"
+                        : "rgb(15, 23, 42)",
+                      bodyColor: isDark ? "rgb(255, 255, 255)" : "rgb(15, 23, 42)",
+                      padding: 12,
+                      cornerRadius: 8,
                       callbacks: {
+                        labelColor: function (context) {
+                          const dataset = context.dataset;
+                          const tooltipBg = isDark
+                            ? "rgba(15, 23, 42, 0.9)"
+                            : "rgba(255, 255, 255, 0.9)";
+                          
+                          // Always use the tooltip background as the fill color for the label box
+                          // This ensures a "hollow" look matching the line style, avoiding issues
+                          // with semi-transparent fills (0.1 opacity) looking washed out or "white".
+                          return {
+                            borderColor: dataset.borderColor,
+                            backgroundColor: tooltipBg,
+                            borderWidth: 2,
+                          };
+                        },
                         label: function (context) {
                           let label = context.dataset.label || "";
                           if (label) {
