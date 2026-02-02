@@ -60,7 +60,7 @@ export function ModalHeader({ children, onClose, title, icon: Icon }) {
   return (
     <div className="modal-header">
       <h2 className="modal-title">
-        {Icon && <Icon className="w-5 h-5 text-blue-500" />}
+        {Icon && <Icon className="w-5 h-5 text-brand-500" />}
         {title || children}
       </h2>
       {onClose && (

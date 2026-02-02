@@ -139,7 +139,7 @@ export default function UpdateNotification() {
             <div className="mb-2">
               <button
                 onClick={() => setShowNotes(!showNotes)}
-                className={`flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium ${
+                className={`flex items-center gap-1 text-sm text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium ${
                   showNotes ? "mb-2" : ""
                 }`}
               >
@@ -165,7 +165,7 @@ export default function UpdateNotification() {
                       ),
                       a: ({ node: _node, ...props }) => (
                         <a
-                          className="text-blue-500 hover:underline"
+                          className="text-brand-500 hover:underline"
                           target="_blank"
                           rel="noopener noreferrer"
                           {...props}
@@ -215,7 +215,7 @@ export default function UpdateNotification() {
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
                 <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  className="bg-brand-600 h-2.5 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>

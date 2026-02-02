@@ -136,7 +136,7 @@ export default function AccountList({
               <div
                 className={`flex flex-col items-end shrink-0 ml-2 ${
                   selectedId === account.id
-                    ? "text-blue-100"
+                    ? "text-brand-100"
                     : "text-slate-500 group-hover:text-slate-300"
                 }`}
               >

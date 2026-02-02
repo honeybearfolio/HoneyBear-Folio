@@ -2185,7 +2185,7 @@ function AutocompleteInput({
           {filtered.map((s, i) => (
             <li
               key={i}
-              className="px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center text-sm text-slate-700 dark:text-slate-200"
+              className="px-3 py-2 hover:bg-brand-50 dark:hover:bg-slate-700 cursor-pointer flex justify-between items-center text-sm text-slate-700 dark:text-slate-200"
               onMouseDown={(e) => {
                 e.preventDefault();
                 onChange(s.value);
