@@ -20,7 +20,7 @@
   }
 
   .time-range-selector {
-    @apply bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex;
+    @apply bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-wrap;
   }
 
   .time-range-button {
