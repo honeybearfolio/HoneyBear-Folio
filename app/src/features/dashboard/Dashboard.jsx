@@ -1240,13 +1240,13 @@ export default function Dashboard({
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="time-range-selector">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 min-w-0 flex-shrink">
+          <div className="time-range-selector min-w-0">
             {["1M", "3M", "6M", "1Y", "YTD", "ALL", "CUSTOM"].map((range) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`time-range-button ${
+                className={`time-range-button whitespace-nowrap ${
                   timeRange === range
                     ? "time-range-button-active"
                     : "time-range-button-inactive"
