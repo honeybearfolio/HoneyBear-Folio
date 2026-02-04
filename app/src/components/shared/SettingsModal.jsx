@@ -24,7 +24,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
-import { t } from "../../i18n/i18n";
+import { t, AVAILABLE_LANGUAGES } from "../../i18n/i18n";
 import { formatDateForUI } from "../../utils/format";
 import {
   getDisplayVersion,
@@ -53,6 +53,8 @@ export default function SettingsModal({ onClose }) {
     setDateFormat,
     firstDayOfWeek,
     setFirstDayOfWeek,
+    uiLanguage,
+    setUiLanguage,
   } = useNumberFormat();
   const { theme, setTheme } = useTheme();
   const [dbPath, setDbPath] = useState("");
@@ -287,6 +289,37 @@ export default function SettingsModal({ onClose }) {
                   />
                 </div>
 
+                {/* Language selector: controls UI language only (does NOT change number/date formats) */}
+                <div className="flex items-center justify-between mt-4">
+                  <div className="label-with-help">
+                    <span
+                      className="help-wrapper"
+                      data-tooltip={t("settings.tooltip.language")}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t("settings.tooltip.language")}
+                      onMouseEnter={showTooltip}
+                      onFocus={showTooltip}
+                      onMouseLeave={hideTooltip}
+                      onBlur={hideTooltip}
+                    >
+                      <HelpCircle
+                        className="w-4 h-4 text-slate-400 help-icon"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <label className="modal-label">{t("settings.language")}</label>
+                  </div>
+                </div>
+                <div className="relative settings-select">
+                  <CustomSelect
+                    value={uiLanguage}
+                    onChange={(v) => setUiLanguage(v)}
+                    options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({ value: code, label }))}
+                    placeholder={t("settings.select_language_placeholder")}
+                    fullWidth={false}
+                  />
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="label-with-help">
                     <span
@@ -488,6 +521,7 @@ export default function SettingsModal({ onClose }) {
                     fullWidth={false}
                   />
                 </div>
+
 
                 <div className="flex items-center justify-between mt-4">
                   <div className="label-with-help">

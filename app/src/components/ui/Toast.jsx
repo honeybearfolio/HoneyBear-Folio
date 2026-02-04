@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { Info, CheckCircle, AlertCircle, X } from "lucide-react";
 import "../../styles/Toast.css";
 import { ToastContext } from "../../contexts/toast";
+import { t } from "../../i18n/i18n";
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -47,7 +48,7 @@ export function ToastProvider({ children }) {
               <span className="toast-icon">{getIcon(t.type)}</span>
               <span className="toast-message">{t.message}</span>
               <button
-                aria-label="Dismiss"
+                aria-label={t("toast.dismiss")}
                 className="toast-close"
                 onClick={() => removeToast(t.id)}
               >

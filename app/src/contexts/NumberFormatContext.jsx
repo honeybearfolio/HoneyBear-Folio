@@ -68,6 +68,37 @@ export function NumberFormatProvider({ children }) {
     }
   }, [firstDayOfWeek]);
 
+  // UI language (controls the translations used by the app). Default is English.
+  const [uiLanguage, setUiLanguage] = useState(() => {
+    try {
+      return localStorage.getItem("hb_ui_language") || "en";
+    } catch {
+      return "en";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("hb_ui_language", uiLanguage);
+    } catch {
+      // ignore
+    }
+    // apply the UI language to the i18n runtime (lazy-loads when needed)
+    // imported dynamically here to avoid circular import in some test setups
+    (async () => {
+      try {
+        const i18n = await import("../i18n/i18n");
+        if (i18n && typeof i18n.setLanguage === "function") {
+          await i18n.setLanguage(uiLanguage);
+        }
+      } catch (e) {
+        // don't block UI on language load failures
+        // eslint-disable-next-line no-console
+        console.error("Failed to apply UI language:", e);
+      }
+    })();
+  }, [uiLanguage]);
+
   return (
     <NumberFormatContext.Provider
       value={{
@@ -79,6 +110,8 @@ export function NumberFormatProvider({ children }) {
         setDateFormat,
         firstDayOfWeek,
         setFirstDayOfWeek,
+        uiLanguage,
+        setUiLanguage,
       }}
     >
       {children}
