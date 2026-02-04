@@ -12,6 +12,16 @@ vi.mock("../../../i18n/i18n", () => ({
       "settings.language": "Language",
       "settings.select_language_placeholder": "Select language",
       "settings.language_help": "Select the language used by the UI (affects menus, labels and tooltips).",
+
+      "settings.tooltip.theme": "Choose light/dark or follow system preference.",
+      "settings.tooltip.database_file": "Path to your local SQLite database file.",
+      "settings.tooltip.font_size": "Adjust font size to control UI scale (smaller = more content fits, larger = easier to read).",
+      "settings.tooltip.currency": "Default currency used by the app when formatting amounts.",
+      "settings.tooltip.number_format": "Choose how numbers are grouped and which decimal separator to use.",
+      "settings.tooltip.date_format": "Choose how dates are shown in the app (UI only; does not change import/export formats).",
+      "settings.tooltip.first_day_of_week": "Choose the first day of the week for calendars.",
+
+      "settings.select_theme_placeholder": "Select theme",
     };
     return map[key] || key;
   },

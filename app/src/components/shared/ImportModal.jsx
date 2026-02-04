@@ -651,7 +651,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
               date,
               payee,
               notes: row[mapping.notes] || "",
-              category: row[mapping.category] || "Uncategorized",
+              category: row[mapping.category] || t("general.uncategorized"),
               amount,
               ticker,
               shares,

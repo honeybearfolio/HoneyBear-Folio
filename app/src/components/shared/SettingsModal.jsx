@@ -290,10 +290,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose light/dark or follow system preference."
+                      data-tooltip={t("settings.tooltip.theme")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose light/dark or follow system preference"
+                      aria-label={t("settings.tooltip.theme")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -324,10 +324,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Path to your local SQLite database file."
+                      data-tooltip={t("settings.tooltip.database_file")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Path to your local SQLite database file"
+                      aria-label={t("settings.tooltip.database_file")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -367,11 +367,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Adjust font size to control UI scale
-                      (smaller = more content fits, larger = easier to read)."
+                      data-tooltip={t("settings.tooltip.font_size")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Adjusts font size of the entire application UI"
+                      aria-label={t("settings.tooltip.font_size")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -411,10 +410,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Default currency used by the app when formatting amounts."
+                      data-tooltip={t("settings.tooltip.currency")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Default currency used by the app when formatting amounts"
+                      aria-label={t("settings.tooltip.currency")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -450,10 +449,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose how numbers are grouped and decimal separators are shown."
+                      data-tooltip={t("settings.tooltip.number_format")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose how numbers are grouped and decimal separators are shown"
+                      aria-label={t("settings.tooltip.number_format")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -493,10 +492,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose how dates are shown in the app. This affects only UI display and will NOT change import/export formats."
+                      data-tooltip={t("settings.tooltip.date_format")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose how dates are shown in the app"
+                      aria-label={t("settings.tooltip.date_format")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -527,10 +526,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose the first day of the week for calendars."
+                      data-tooltip={t("settings.tooltip.first_day_of_week")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose the first day of the week for calendars"
+                      aria-label={t("settings.tooltip.first_day_of_week")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -809,10 +808,10 @@ export default function SettingsModal({ onClose }) {
             type="button"
             onClick={handleResetDefaults}
             className="reset-button"
-            data-tooltip="Reset to defaults"
-            aria-label="Reset to defaults"
+            data-tooltip={t("settings.reset_to_defaults")}
+            aria-label={t("settings.reset_to_defaults")}
           >
-            Reset to defaults
+            {t("settings.reset_to_defaults")}
           </button>
         </ModalFooter>
       </ErrorBoundary>

@@ -162,7 +162,7 @@ export default function Sidebar({
           <button
             onClick={onClose}
             className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer"
-            title="Hide Sidebar"
+            title={t("app.hide_sidebar")}
           >
             <PanelLeftClose className="w-5 h-5" />
           </button>

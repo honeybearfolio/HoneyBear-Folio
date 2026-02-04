@@ -173,13 +173,13 @@ export default function InvestmentDashboard() {
     <div className="page-container investment-dashboard-container">
       <div className="hb-header-container">
         <div>
-          <h2 className="hb-header-title">Investment Dashboard</h2>
-          <p className="hb-header-subtitle">Track your portfolio performance</p>
+          <h2 className="hb-header-title">{t("investment.title")}</h2>
+          <p className="hb-header-subtitle">{t("investment.subtitle")}</p>
         </div>
         <button
           onClick={fetchData}
           className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-xl transition-all duration-200 shadow-sm border border-transparent hover:border-brand-100 dark:hover:border-brand-800"
-          title="Refresh Data"
+          title={t("investment.refresh_data")}
         >
           <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
         </button>
@@ -190,10 +190,10 @@ export default function InvestmentDashboard() {
           <div className="flex flex-col items-center gap-4">
             <div className="w-16 h-16 border-4 border-brand-200 dark:border-brand-800 border-t-brand-600 dark:border-t-brand-400 rounded-full animate-spin"></div>
             <span className="text-slate-600 dark:text-slate-300 font-medium text-lg">
-              Loading investment data...
+              {t("investment.loading_investments")}
             </span>
             <span className="text-slate-400 dark:text-slate-500 text-sm">
-              Fetching latest market prices
+              {t("investment.fetching_prices")}
             </span>
           </div>
         </div>
@@ -241,10 +241,10 @@ export default function InvestmentDashboard() {
             </svg>
           </div>
           <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
-            No investments found
+            {t("investment.no_investments_title")}
           </p>
           <p className="text-sm text-slate-400 dark:text-slate-500">
-            Start adding stock transactions to track your portfolio
+            {t("investment.no_investments_body")}
           </p>
         </div>
       ) : (
@@ -253,7 +253,7 @@ export default function InvestmentDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800/50 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex flex-col justify-center transition-all duration-300">
               <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                Total Portfolio Value
+                {t("investment.summary.total_portfolio_value")}
               </h3>
               <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 <MaskedNumber
@@ -264,7 +264,7 @@ export default function InvestmentDashboard() {
             </div>
             <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800/50 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex flex-col justify-center transition-all duration-300">
               <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                Top Performer
+                {t("investment.summary.top_performer")}
               </h3>
               <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate tracking-tight">
                 {
@@ -291,7 +291,7 @@ export default function InvestmentDashboard() {
             </div>
             <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-800/50 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex flex-col justify-center transition-all duration-300">
               <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                Total Holdings
+                {t("investment.summary.total_holdings")}
               </h3>
               <p className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 {holdings.length}
@@ -306,7 +306,7 @@ export default function InvestmentDashboard() {
                 <h3 className="chart-title">
                   {t("investment.portfolio_allocation")}
                 </h3>
-                <p className="chart-subtitle">Allocation by ticker</p>
+                <p className="chart-subtitle">{t("investment.allocation_by_ticker")}</p>
               </div>
               <div className="chart-body">
                 {allocationData ? (
@@ -316,7 +316,7 @@ export default function InvestmentDashboard() {
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-12 h-12 border-4 border-brand-200 dark:border-brand-800 border-t-brand-600 dark:border-t-brand-400 rounded-full animate-spin"></div>
                       <span className="text-slate-400 dark:text-slate-500 font-medium">
-                        Loading data...
+                        {t("loading.loading_data")}
                       </span>
                     </div>
                   </div>
@@ -327,10 +327,10 @@ export default function InvestmentDashboard() {
             {/* TreeMap */}
             <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex flex-col h-[400px] hover:shadow-lg transition-shadow duration-300">
               <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">
-                Portfolio Heatmap
+                {t("investment.heatmap.title")}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                Visual representation of holdings by size and performance
+                {t("investment.heatmap.description")}
               </p>
               <div className="flex-1 min-h-0 border-2 border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden relative shadow-inner">
                 <TreeMap
@@ -346,10 +346,10 @@ export default function InvestmentDashboard() {
           <div className="bg-white dark:bg-slate-800 p-0 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden h-full max-h-[600px] hover:shadow-lg transition-shadow duration-300">
             <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                Holdings
+                {t("investment.holdings.title")}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Detailed breakdown of your positions
+                {t("investment.holdings.description")}
               </p>
             </div>
             <div className="overflow-auto flex-1">
@@ -357,13 +357,13 @@ export default function InvestmentDashboard() {
                 <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10 border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-4 font-bold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">
-                      Ticker
+                      {t("investment.table.ticker")}
                     </th>
                     <th className="p-4 font-bold text-slate-600 dark:text-slate-400 text-right text-xs uppercase tracking-wider">
-                      Value
+                      {t("investment.table.value")}
                     </th>
                     <th className="p-4 font-bold text-slate-600 dark:text-slate-400 text-right text-xs uppercase tracking-wider">
-                      ROI
+                      {t("investment.table.roi")}
                     </th>
                   </tr>
                 </thead>
@@ -385,7 +385,7 @@ export default function InvestmentDashboard() {
                               maximumFractionDigits: 2,
                             }}
                           />{" "}
-                          shares @{" "}
+                          {t("investment.table.shares_at")}{" "}
                           <MaskedNumber
                             value={h.price}
                             options={{
@@ -407,7 +407,7 @@ export default function InvestmentDashboard() {
                           />
                         </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
-                          Cost:{" "}
+                          {t("investment.table.cost")}{" "}
                           <MaskedNumber
                             value={h.costBasis}
                             options={{

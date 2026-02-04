@@ -245,7 +245,7 @@ function App() {
   } else if (selectedAccountId === "investment-dashboard") {
     selectedAccount = { id: "investment-dashboard", name: "Investments" };
   } else if (selectedAccountId === "fire-calculator") {
-    selectedAccount = { id: "fire-calculator", name: "FIRE Calculator" };
+    selectedAccount = { id: "fire-calculator", name: t("app.fire_calculator_name") };
   } else if (selectedAccountId === "all") {
     selectedAccount = {
       id: "all",

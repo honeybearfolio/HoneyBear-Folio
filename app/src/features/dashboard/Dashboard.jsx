@@ -72,6 +72,7 @@ export default function Dashboard({
     dateFormat,
     firstDayOfWeek,
     currency: appCurrency,
+    locale,
   } = useNumberFormat();
 
   const accountMap = useMemo(() => {
@@ -358,7 +359,7 @@ export default function Dashboard({
     }
 
     datasets.push({
-      label: "Total Net Worth",
+      label: t("dashboard.datasets.total_net_worth"),
       data: totalData,
       borderColor: chartColors.line,
       backgroundColor: (context) => {
@@ -507,17 +508,17 @@ export default function Dashboard({
       const q = quotes.find(
         (q) => q.symbol.toLowerCase() === ticker.toLowerCase(),
       );
-      if (!q || !q.quoteType) return "Stock";
+      if (!q || !q.quoteType) return t("dashboard.assets.stock");
 
       const type = q.quoteType.toUpperCase();
-      if (type === "EQUITY") return "Stock";
-      if (type === "ETF") return "ETF";
-      if (type === "CRYPTOCURRENCY") return "Crypto";
-      if (type === "MUTUALFUND") return "Mutual Fund";
-      if (type === "FUTURE") return "Future";
-      if (type === "INDEX") return "Index";
-      if (type === "COMMODITY") return "Commodities";
-      return "Stock";
+      if (type === "EQUITY") return t("dashboard.assets.stock");
+      if (type === "ETF") return t("dashboard.assets.etf");
+      if (type === "CRYPTOCURRENCY") return t("dashboard.assets.crypto");
+      if (type === "MUTUALFUND") return t("dashboard.assets.mutual_fund");
+      if (type === "FUTURE") return t("dashboard.assets.future");
+      if (type === "INDEX") return t("dashboard.assets.index");
+      if (type === "COMMODITY") return t("dashboard.assets.commodities");
+      return t("dashboard.assets.stock");
     };
 
     accounts.forEach((acc) => {
@@ -572,10 +573,11 @@ export default function Dashboard({
         ) {
           // Case: Account marked as brokerage manually but no holdings transactions entered.
           // Treat all balance as "Stock" because presumably the user is tracking total value manually in the balance field.
-          assetTypes["Stock"] =
-            (assetTypes["Stock"] || 0) + cashBalanceConverted;
+          const translatedStock = t("dashboard.assets.stock");
+          assetTypes[translatedStock] =
+            (assetTypes[translatedStock] || 0) + cashBalanceConverted;
         } else if (Math.abs(cashValue) > 1.0) {
-          assetTypes["Cash"] = (assetTypes["Cash"] || 0) + cashValue;
+          assetTypes[t("dashboard.assets.cash")] = (assetTypes[t("dashboard.assets.cash")] || 0) + cashValue;
         }
       } else {
         // Non-Brokerage (e.g. Cash, Savings)
@@ -583,7 +585,7 @@ export default function Dashboard({
         // Then the value is just the balance.
         const value = (acc.balance || 0) * exchangeRate;
 
-        if (accKindLower === "cash") kind = "Cash";
+        if (accKindLower === "cash") kind = t("dashboard.assets.cash");
         else kind = kind.charAt(0).toUpperCase() + kind.slice(1);
 
         assetTypes[kind] = (assetTypes[kind] || 0) + value;
@@ -677,15 +679,15 @@ export default function Dashboard({
 
     const categoryTotals = {};
 
-    expenses.forEach((t) => {
-      const cat = t.category || "Uncategorized";
-      const acc = accountMap[t.account_id];
+    expenses.forEach((f) => {
+      const cat = f.category || t("general.uncategorized");
+      const acc = accountMap[f.account_id];
       const accCurrency = acc?.currency || appCurrency;
       const rateToApp =
         accCurrency === appCurrency
           ? 1.0
-          : getPrice(`${accCurrency}${appCurrency}=X`, t.date) || 1.0;
-      const convertedAmount = Math.abs(t.amount) * rateToApp;
+          : getPrice(`${accCurrency}${appCurrency}=X`, f.date) || 1.0;
+      const convertedAmount = Math.abs(f.amount) * rateToApp;
       categoryTotals[cat] = (categoryTotals[cat] || 0) + convertedAmount;
     });
 
@@ -794,7 +796,8 @@ export default function Dashboard({
           (end.getFullYear() - start.getFullYear()) * 12 +
           (end.getMonth() - start.getMonth());
         if (monthsDiff >= 12) opts.year = "numeric";
-        labels.push(d.toLocaleDateString(undefined, opts));
+        // Use the current locale from NumberFormatContext for the month display
+        labels.push(d.toLocaleDateString(locale, opts));
         d.setMonth(d.getMonth() + 1);
       }
     }
@@ -824,7 +827,7 @@ export default function Dashboard({
       labels,
       datasets: [
         {
-          label: "Income",
+          label: t("dashboard.income"),
           data: incomeData,
           backgroundColor: chartColors.profit,
           borderRadius: 6,
@@ -832,7 +835,7 @@ export default function Dashboard({
           categoryPercentage: 0.8,
         },
         {
-          label: "Expenses",
+          label: t("dashboard.expenses"),
           data: expenseData,
           backgroundColor: chartColors.loss,
           borderRadius: 6,
@@ -1236,7 +1239,7 @@ export default function Dashboard({
         <div>
           <h2 className="hb-header-title">{t("dashboard.title")}</h2>
           <p className="hb-header-subtitle">
-            Overview of your financial performance
+            {t("dashboard.subtitle.overview")}
           </p>
         </div>
 
@@ -1336,7 +1339,7 @@ export default function Dashboard({
           <div className="chart-header">
             <h3 className="chart-title">{t("dashboard.networth_evolution")}</h3>
             <p className="chart-subtitle">
-              Track your financial growth over time
+              {t("dashboard.subtitle.networth_growth")}
             </p>
 
             <div className="account-visibility mt-4">
@@ -1345,13 +1348,13 @@ export default function Dashboard({
                   className="toggle-all text-sm"
                   onClick={() => setAllAccountsVisibility(true)}
                 >
-                  Show all
+                  {t("dashboard.show_all")}
                 </button>
                 <button
                   className="toggle-all text-sm"
                   onClick={() => setAllAccountsVisibility(false)}
                 >
-                  Hide all
+                  {t("dashboard.hide_all")}
                 </button>
               </div>
               <div className="account-list flex flex-wrap gap-3">
@@ -1449,7 +1452,7 @@ export default function Dashboard({
                 <h3 className="chart-title">
                   {t("dashboard.income_vs_expenses")}
                 </h3>
-                <p className="chart-subtitle">Monthly income vs expenses</p>
+                <p className="chart-subtitle">{t("dashboard.subtitle.monthly_income_vs_expenses")}</p>
               </div>
               <div className="chart-body">
                 {incomeVsExpensesData ? (
@@ -1474,7 +1477,7 @@ export default function Dashboard({
             >
               <div className="chart-header">
                 <h3 className="chart-title">{t("dashboard.cash_flow")}</h3>
-                <p className="chart-subtitle">Income and expense flow</p>
+                <p className="chart-subtitle">{t("dashboard.subtitle.income_and_expense_flow")}</p>
               </div>
               <div className="chart-body">
                 <SankeyDiagram
@@ -1495,7 +1498,7 @@ export default function Dashboard({
                 <h3 className="chart-title">
                   {t("dashboard.asset_allocation")}
                 </h3>
-                <p className="chart-subtitle">Distribution of your assets</p>
+                <p className="chart-subtitle">{t("dashboard.subtitle.distribution_of_assets")}</p>
               </div>
               <div className="chart-body">
                 {doughnutData ? (
@@ -1504,7 +1507,7 @@ export default function Dashboard({
                   <div className="loading-container">
                     <div className="loading-content">
                       <div className="loading-spinner"></div>
-                      <span className="loading-text">Loading data...</span>
+                      <span className="loading-text">{t("loading.loading_data")}</span>
                     </div>
                   </div>
                 )}
@@ -1517,7 +1520,7 @@ export default function Dashboard({
                 <h3 className="chart-title">
                   {t("dashboard.expenses_by_category")}
                 </h3>
-                <p className="chart-subtitle">Where your money goes</p>
+                <p className="chart-subtitle">{t("dashboard.subtitle.where_your_money_goes")}</p>
               </div>
               <div className="chart-body">
                 {expensesByCategoryData === null ? (
