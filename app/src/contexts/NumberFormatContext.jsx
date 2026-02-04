@@ -77,6 +77,11 @@ export function NumberFormatProvider({ children }) {
     }
   });
 
+  // small counter used only to force a provider re-render after async
+  // language resources finish loading so components that call `t()`
+  // during render pick up the new locale object.
+  const [, setTranslationVersion] = useState(0);
+
   useEffect(() => {
     try {
       localStorage.setItem("hb_ui_language", uiLanguage);
@@ -95,6 +100,10 @@ export function NumberFormatProvider({ children }) {
         // don't block UI on language load failures
         // eslint-disable-next-line no-console
         console.error("Failed to apply UI language:", e);
+      } finally {
+        // Ensure the provider (and therefore the app subtree) re-renders
+        // after the async language load completes (success or fallback).
+        setTranslationVersion((v) => v + 1);
       }
     })();
   }, [uiLanguage]);

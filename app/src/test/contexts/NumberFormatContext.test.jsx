@@ -56,6 +56,43 @@ describe("NumberFormatProvider", () => {
     spy.mockRestore();
   });
 
+  it("updates rendered UI translations after async language resource loads", async () => {
+    const i18n = await import("../../i18n/i18n");
+    const esJson = (await import("../../i18n/es.json")).default;
+
+    // Mock setLanguage so it also applies the locale object (simulates loader)
+    const setLangMock = vi.spyOn(i18n, "setLanguage").mockImplementation(async (lang) => {
+      if (lang === "es") {
+        i18n.setLocale(esJson);
+      }
+      return Promise.resolve();
+    });
+
+    function Translated() {
+      return <div data-testid="translated">{i18n.t("settings.language")}</div>;
+    }
+
+    render(
+      <NumberFormatProvider>
+        <Translated />
+        <TestComponent />
+      </NumberFormatProvider>,
+    );
+
+    // initial render should be English
+    expect(screen.getByTestId("translated")).toHaveTextContent("Language");
+
+    // change UI language in the provider
+    fireEvent.click(screen.getByText("Set UI Language ES"));
+
+    // after the mocked async loader finishes, the provider forces a re-render
+    await waitFor(() => {
+      expect(screen.getByTestId("translated")).toHaveTextContent("Idioma");
+    });
+
+    setLangMock.mockRestore();
+  });
+
   it("loads values from localStorage", () => {
     localStorage.setItem("hb_number_format", "fr-FR");
     localStorage.setItem("hb_currency", "GBP");
