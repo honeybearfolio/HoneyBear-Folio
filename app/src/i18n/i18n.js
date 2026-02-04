@@ -23,9 +23,22 @@ export async function setLanguage(langCode) {
     return;
   }
 
+  // Use Vite's import.meta.glob so the bundler can analyze available locale files
+  // and avoid the `vite:dynamic-import-vars` warning. This is tree-shakeable
+  // and only includes files present in this directory (./*.json).
+  const loaders = import.meta.glob("./*.json");
+  const loader = loaders[`./${langCode}.json`];
+
+  if (!loader) {
+    // eslint-disable-next-line no-console
+    console.warn(`Locale "${langCode}" not found — falling back to English`);
+    current = en;
+    currentLang = "en";
+    return;
+  }
+
   try {
-    // lazy-load language file to keep initial bundle small
-    const mod = await import(`./${langCode}.json`);
+    const mod = await loader();
     const localeObj = mod && mod.default ? mod.default : mod;
     setLocale(localeObj);
     currentLang = langCode;
