@@ -16,10 +16,16 @@ vi.mock("../../../i18n/i18n", () => ({
       "settings.theme.system": "System",
       "settings.select_theme_placeholder": "Select theme",
       "settings.select_currency_placeholder": "Select currency",
+      "settings.language": "Language",
+      "settings.select_language_placeholder": "Select language",
       "Get Started": "Get Started",
     };
     return translations[key] || key;
   },
+  AVAILABLE_LANGUAGES: [
+    { code: "en", label: "English" },
+    { code: "es", label: "Español" },
+  ],
 }));
 
 // Mock theme context
@@ -33,6 +39,7 @@ const mockSetLocale = vi.fn();
 const mockSetCurrency = vi.fn();
 const mockSetDateFormat = vi.fn();
 const mockSetFirstDayOfWeek = vi.fn();
+const mockSetUiLanguage = vi.fn();
 vi.mock("../../../contexts/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
@@ -43,6 +50,8 @@ vi.mock("../../../contexts/number-format", () => ({
     setDateFormat: mockSetDateFormat,
     firstDayOfWeek: 0,
     setFirstDayOfWeek: mockSetFirstDayOfWeek,
+    uiLanguage: "en",
+    setUiLanguage: mockSetUiLanguage,
   }),
 }));
 
@@ -58,6 +67,24 @@ vi.mock("../../../utils/currencies", () => ({
 // Mock format utility
 vi.mock("../../../utils/format", () => ({
   formatDateForUI: (date, format) => format,
+}));
+
+// Mock CustomSelect to expose options/change easily (matches other tests)
+vi.mock("../../../components/ui/CustomSelect", () => ({
+  default: ({ value, onChange, options, placeholder }) => (
+    <select
+      data-testid="language-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  ),
 }));
 
 // Mock dev settings
@@ -111,6 +138,20 @@ describe("WelcomeWindow", () => {
     render(<WelcomeWindow />);
 
     expect(screen.getByText("Currency")).toBeInTheDocument();
+  });
+
+  it("shows language selector and calls setter on change", () => {
+    render(<WelcomeWindow />);
+
+    expect(screen.getByText("Language")).toBeInTheDocument();
+    const sel = screen.getByTestId("language-select");
+
+    // options rendered by the mocked CustomSelect
+    expect(screen.getByText("English")).toBeInTheDocument();
+    expect(screen.getByText("Español")).toBeInTheDocument();
+
+    fireEvent.change(sel, { target: { value: "es" } });
+    expect(mockSetUiLanguage).toHaveBeenCalledWith("es");
   });
 
   it("closes and sets localStorage when Get Started is clicked", () => {

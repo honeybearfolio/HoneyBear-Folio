@@ -3,7 +3,7 @@ import { useTheme } from "../../contexts/theme-core";
 import { useNumberFormat } from "../../contexts/number-format";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../ui/CustomSelect";
-import { t } from "../../i18n/i18n";
+import { t, AVAILABLE_LANGUAGES } from "../../i18n/i18n";
 import { formatDateForUI } from "../../utils/format";
 import { Check } from "lucide-react";
 import "../../styles/Modal.css";
@@ -32,6 +32,8 @@ export default function WelcomeWindow() {
     setDateFormat,
     firstDayOfWeek,
     setFirstDayOfWeek,
+    uiLanguage,
+    setUiLanguage,
   } = useNumberFormat();
 
   const _today = new Date();
@@ -65,6 +67,17 @@ export default function WelcomeWindow() {
         <p className="mb-6 text-slate-600 dark:text-slate-400">
           {t("Let's set up your preferences to get started.")}
         </p>
+
+        {/* Language selection — controls UI language only (does NOT change number/date formats) */}
+        <div className="mb-6">
+          <label className="modal-label">{t("settings.language")}</label>
+          <CustomSelect
+            value={uiLanguage}
+            onChange={setUiLanguage}
+            options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({ value: code, label }))}
+            placeholder={t("settings.select_language_placeholder")}
+          />
+        </div>
 
         {/* Theme Selection */}
         <div className="mb-6">
