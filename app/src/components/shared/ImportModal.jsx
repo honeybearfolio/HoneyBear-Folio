@@ -347,11 +347,9 @@ export default function ImportModal({ onClose, onImportComplete }) {
   };
 
   const handleImport = async () => {
-    // Require that an account column is indicated (CSV/XLSX) or JSON includes account fields
-    if (
-      !mapping.account &&
-      !(file && file.name && file.name.endsWith(".json"))
-    ) {
+    // Require that an account column is indicated (CSV/XLSX) or JSON includes account fields.
+    // Use optional chaining so the check is safe when `file` is null and avoids patterns that trigger CodeQL.
+    if (!mapping.account && !file?.name?.endsWith(".json")) {
       alert(t("error.no_account_mapping"));
       return;
     }
@@ -706,6 +704,11 @@ export default function ImportModal({ onClose, onImportComplete }) {
     }
   };
 
+  // derived helper used by the Start Import button (keeps conditional concise & clear)
+  const canStartImport = Boolean(
+    file && (mapping.account || file?.name?.endsWith(".json")) && !importing,
+  );
+
   // If SSR or tests, avoid touching document
   if (typeof document === "undefined") return null;
 
@@ -747,7 +750,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
               </>
             ) : (
               <>
-                {file && file.name && file.name.endsWith(".json") ? (
+                {file?.name?.endsWith(".json") ? (
                   <FileJson className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
                 ) : (
                   <FileSpreadsheet className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
@@ -992,12 +995,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
 
               <button
                 onClick={handleImport}
-                disabled={
-                  !file ||
-                  (!mapping.account &&
-                    !(file && file.name && file.name.endsWith(".json"))) ||
-                  importing
-                }
+                disabled={!canStartImport}
                 className="btn-primary"
               >
                 <span className="text-white">

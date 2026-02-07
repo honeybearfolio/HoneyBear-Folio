@@ -125,6 +125,9 @@ export default function AccountDetails({ account, onUpdate }) {
     fee,
   });
 
+  // Ref for the account rename input (avoid string-based querySelector + escaping)
+  const renameInputRef = useRef(null);
+
   useEffect(() => {
     if (!rules.length) return;
 
@@ -771,6 +774,7 @@ export default function AccountDetails({ account, onUpdate }) {
               <input
                 type="text"
                 value={renameValue}
+                ref={renameInputRef}
                 onChange={(e) => setRenameValue(e.target.value)}
                 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight bg-transparent border-b-2 border-brand-500 focus:outline-none min-w-[200px]"
                 autoFocus
@@ -956,17 +960,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       setIsRenamingAccount(true);
                       setAccountMenuOpen(false);
                       // Slight timeout to ensure input renders before focus
-                      setTimeout(() => {
-                        const escapedName =
-                          typeof CSS !== "undefined" &&
-                          typeof CSS.escape === "function"
-                            ? CSS.escape(account.name)
-                            : account.name.replace(/"/g, '\\"');
-                        const input = document.querySelector(
-                          'input[value="' + escapedName + '"]',
-                        );
-                        if (input) input.focus();
-                      }, 50);
+                      setTimeout(() => renameInputRef.current?.focus(), 50);
                     }}
                     className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
                   >

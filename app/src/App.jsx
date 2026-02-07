@@ -393,8 +393,7 @@ function App() {
                     <pre className="text-sm max-h-60 overflow-auto whitespace-pre-wrap">
                       {typeof globalError === "string"
                         ? globalError
-                        : (globalError && globalError.stack) ||
-                          String(globalError)}
+                        : globalError.stack || String(globalError)}
                     </pre>
                     <div className="mt-3 flex gap-2">
                       <button
