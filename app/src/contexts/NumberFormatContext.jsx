@@ -98,7 +98,7 @@ export function NumberFormatProvider({ children }) {
         }
       } catch (e) {
         // don't block UI on language load failures
-        // eslint-disable-next-line no-console
+
         console.error("Failed to apply UI language:", e);
       } finally {
         // Ensure the provider (and therefore the app subtree) re-renders

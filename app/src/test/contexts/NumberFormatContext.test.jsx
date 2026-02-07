@@ -1,11 +1,18 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NumberFormatProvider } from "../../contexts/NumberFormatContext";
 import { useNumberFormat } from "../../contexts/number-format";
 
 // Test component to consume context
 function TestComponent() {
-  const { locale, setLocale, currency, setCurrency, uiLanguage, setUiLanguage } = useNumberFormat();
+  const {
+    locale,
+    setLocale,
+    currency,
+    setCurrency,
+    uiLanguage,
+    setUiLanguage,
+  } = useNumberFormat();
   return (
     <div>
       <div data-testid="locale">{locale}</div>
@@ -61,12 +68,14 @@ describe("NumberFormatProvider", () => {
     const esJson = (await import("../../i18n/es.json")).default;
 
     // Mock setLanguage so it also applies the locale object (simulates loader)
-    const setLangMock = vi.spyOn(i18n, "setLanguage").mockImplementation(async (lang) => {
-      if (lang === "es") {
-        i18n.setLocale(esJson);
-      }
-      return Promise.resolve();
-    });
+    const setLangMock = vi
+      .spyOn(i18n, "setLanguage")
+      .mockImplementation(async (lang) => {
+        if (lang === "es") {
+          i18n.setLocale(esJson);
+        }
+        return Promise.resolve();
+      });
 
     function Translated() {
       useNumberFormat();

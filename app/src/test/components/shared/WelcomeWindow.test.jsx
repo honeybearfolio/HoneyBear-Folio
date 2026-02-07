@@ -18,7 +18,7 @@ vi.mock("../../../i18n/i18n", () => ({
       "settings.language": "Language",
       "settings.select_language_placeholder": "Select language",
       "welcome.get_started": "Get Started",
-      "number_format": "Number Format",
+      number_format: "Number Format",
       "settings.date_format": "Date format",
       "settings.first_day_of_week": "First Day of Week",
     };
@@ -78,12 +78,12 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     const testId = p.includes("language")
       ? "language-select"
       : p.includes("theme")
-      ? "theme-select"
-      : p.includes("currency")
-      ? "currency-select"
-      : p.includes("format")
-      ? "format-select"
-      : `custom-select-${p.replace(/\s+/g, "-")}`;
+        ? "theme-select"
+        : p.includes("currency")
+          ? "currency-select"
+          : p.includes("format")
+            ? "format-select"
+            : `custom-select-${p.replace(/\s+/g, "-")}`;
 
     return (
       <select

@@ -1000,7 +1000,7 @@ export default function AccountDetails({ account, onUpdate }) {
               {t("account.new_transaction")}
               {account.id === "all" && effectiveAddTarget && (
                 <span className="ml-3 text-sm text-slate-500 dark:text-slate-400">
-                  {t("account.for")} {" "}
+                  {t("account.for")}{" "}
                   <span className="font-medium text-slate-700 dark:text-slate-300">
                     {effectiveAddTarget.name}
                   </span>
@@ -1472,7 +1472,8 @@ export default function AccountDetails({ account, onUpdate }) {
                       className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center justify-end gap-1">
-                        {t("import.field.price")} {getSortIcon("price_per_share")}
+                        {t("import.field.price")}{" "}
+                        {getSortIcon("price_per_share")}
                       </div>
                     </th>
                     <th

@@ -533,9 +533,7 @@ export default function FireCalculator() {
       <header className="hb-header-container">
         <div>
           <h1 className="hb-header-title">{t("fire.title")}</h1>
-          <p className="hb-header-subtitle">
-            {t("fire.subtitle")}
-          </p>
+          <p className="hb-header-subtitle">{t("fire.subtitle")}</p>
         </div>
       </header>
 

@@ -43,7 +43,11 @@ export function ToastProvider({ children }) {
       {children}
       <div className="toast-container" aria-live="polite" aria-atomic="true">
         {toasts.map((toast) => (
-          <div key={toast.id} className={`toast toast-${toast.type}`} role="status">
+          <div
+            key={toast.id}
+            className={`toast toast-${toast.type}`}
+            role="status"
+          >
             <div className="toast-content">
               <span className="toast-icon">{getIcon(toast.type)}</span>
               <span className="toast-message">{toast.message}</span>

@@ -74,7 +74,10 @@ export default function WelcomeWindow() {
           <CustomSelect
             value={uiLanguage}
             onChange={setUiLanguage}
-            options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({ value: code, label }))}
+            options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({
+              value: code,
+              label,
+            }))}
             placeholder={t("settings.select_language_placeholder")}
             data-testid="language-select"
           />
@@ -141,7 +144,9 @@ export default function WelcomeWindow() {
         </div>
         {/* First Day of Week Selection */}
         <div className="mb-6">
-          <label className="modal-label">{t("settings.first_day_of_week")}</label>
+          <label className="modal-label">
+            {t("settings.first_day_of_week")}
+          </label>
           <CustomSelect
             value={firstDayOfWeek}
             onChange={(v) => setFirstDayOfWeek(Number(v))}

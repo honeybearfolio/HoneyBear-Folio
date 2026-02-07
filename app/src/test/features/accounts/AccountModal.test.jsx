@@ -49,8 +49,6 @@ vi.mock("../../../components/ui/Modal", () => {
   return { Modal, ModalHeader, ModalBody, ModalFooter };
 });
 
-
-
 // Mock CustomSelect
 vi.mock("../../../components/ui/CustomSelect", () => {
   const CustomSelect = ({ value, onChange, options, placeholder }) => (
@@ -90,9 +88,7 @@ describe("AccountModal", () => {
     expect(
       screen.getByPlaceholderText("account.placeholder.name"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText("0.00"),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("0.00")).toBeInTheDocument();
   });
 
   it("renders correctly in edit mode with account data", () => {
@@ -142,10 +138,9 @@ describe("AccountModal", () => {
     fireEvent.change(screen.getByPlaceholderText("account.placeholder.name"), {
       target: { value: "New Bank" },
     });
-    fireEvent.change(
-      screen.getByPlaceholderText("0.00"),
-      { target: { value: "1000" } },
-    );
+    fireEvent.change(screen.getByPlaceholderText("0.00"), {
+      target: { value: "1000" },
+    });
     fireEvent.change(screen.getByTestId("currency-select"), {
       target: { value: "EUR" },
     });

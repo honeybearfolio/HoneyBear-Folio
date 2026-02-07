@@ -254,7 +254,6 @@ export default function SettingsModal({ onClose }) {
             </div>
             {activeTab === "general" && (
               <>
-
                 {/* Language selector: controls UI language only (does NOT change number/date formats) */}
                 <div className="flex items-center justify-between mt-4">
                   <div className="label-with-help">
@@ -274,20 +273,25 @@ export default function SettingsModal({ onClose }) {
                         aria-hidden="true"
                       />
                     </span>
-                    <label className="modal-label">{t("settings.language")}</label>
+                    <label className="modal-label">
+                      {t("settings.language")}
+                    </label>
                   </div>
                 </div>
                 <div className="relative settings-select">
                   <CustomSelect
                     value={uiLanguage}
                     onChange={(v) => setUiLanguage(v)}
-                    options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({ value: code, label }))}
+                    options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({
+                      value: code,
+                      label,
+                    }))}
                     placeholder={t("settings.select_language_placeholder")}
                     fullWidth={false}
                     data-testid="language-select"
                   />
                 </div>
-                                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
@@ -521,7 +525,6 @@ export default function SettingsModal({ onClose }) {
                     fullWidth={false}
                   />
                 </div>
-
 
                 <div className="flex items-center justify-between mt-4">
                   <div className="label-with-help">

@@ -306,7 +306,9 @@ export default function InvestmentDashboard() {
                 <h3 className="chart-title">
                   {t("investment.portfolio_allocation")}
                 </h3>
-                <p className="chart-subtitle">{t("investment.allocation_by_ticker")}</p>
+                <p className="chart-subtitle">
+                  {t("investment.allocation_by_ticker")}
+                </p>
               </div>
               <div className="chart-body">
                 {allocationData ? (

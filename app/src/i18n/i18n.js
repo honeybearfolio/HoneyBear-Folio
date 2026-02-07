@@ -30,7 +30,6 @@ export async function setLanguage(langCode) {
   const loader = loaders[`./${langCode}.json`];
 
   if (!loader) {
-    // eslint-disable-next-line no-console
     console.warn(`Locale "${langCode}" not found — falling back to English`);
     current = en;
     currentLang = "en";
@@ -45,7 +44,7 @@ export async function setLanguage(langCode) {
   } catch (err) {
     // If loading fails, fall back to English and surface error in console
     // (don't throw so consumers remain resilient)
-    // eslint-disable-next-line no-console
+
     console.error(`Failed to load locale ${langCode}:`, err);
     current = en;
     currentLang = "en";
@@ -68,4 +67,11 @@ export function useTranslation() {
   return { t };
 }
 
-export default { t, setLocale, useTranslation, setLanguage, getCurrentLanguage, AVAILABLE_LANGUAGES };
+export default {
+  t,
+  setLocale,
+  useTranslation,
+  setLanguage,
+  getCurrentLanguage,
+  AVAILABLE_LANGUAGES,
+};

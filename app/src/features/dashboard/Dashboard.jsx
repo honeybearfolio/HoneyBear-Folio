@@ -577,7 +577,8 @@ export default function Dashboard({
           assetTypes[translatedStock] =
             (assetTypes[translatedStock] || 0) + cashBalanceConverted;
         } else if (Math.abs(cashValue) > 1.0) {
-          assetTypes[t("dashboard.assets.cash")] = (assetTypes[t("dashboard.assets.cash")] || 0) + cashValue;
+          assetTypes[t("dashboard.assets.cash")] =
+            (assetTypes[t("dashboard.assets.cash")] || 0) + cashValue;
         }
       } else {
         // Non-Brokerage (e.g. Cash, Savings)
@@ -850,6 +851,7 @@ export default function Dashboard({
     customStartDate,
     customEndDate,
     formatDate,
+    locale,
     accountMap,
     getPrice,
     appCurrency,
@@ -1452,7 +1454,9 @@ export default function Dashboard({
                 <h3 className="chart-title">
                   {t("dashboard.income_vs_expenses")}
                 </h3>
-                <p className="chart-subtitle">{t("dashboard.subtitle.monthly_income_vs_expenses")}</p>
+                <p className="chart-subtitle">
+                  {t("dashboard.subtitle.monthly_income_vs_expenses")}
+                </p>
               </div>
               <div className="chart-body">
                 {incomeVsExpensesData ? (
@@ -1477,7 +1481,9 @@ export default function Dashboard({
             >
               <div className="chart-header">
                 <h3 className="chart-title">{t("dashboard.cash_flow")}</h3>
-                <p className="chart-subtitle">{t("dashboard.subtitle.income_and_expense_flow")}</p>
+                <p className="chart-subtitle">
+                  {t("dashboard.subtitle.income_and_expense_flow")}
+                </p>
               </div>
               <div className="chart-body">
                 <SankeyDiagram
@@ -1498,7 +1504,9 @@ export default function Dashboard({
                 <h3 className="chart-title">
                   {t("dashboard.asset_allocation")}
                 </h3>
-                <p className="chart-subtitle">{t("dashboard.subtitle.distribution_of_assets")}</p>
+                <p className="chart-subtitle">
+                  {t("dashboard.subtitle.distribution_of_assets")}
+                </p>
               </div>
               <div className="chart-body">
                 {doughnutData ? (
@@ -1507,7 +1515,9 @@ export default function Dashboard({
                   <div className="loading-container">
                     <div className="loading-content">
                       <div className="loading-spinner"></div>
-                      <span className="loading-text">{t("loading.loading_data")}</span>
+                      <span className="loading-text">
+                        {t("loading.loading_data")}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -1520,7 +1530,9 @@ export default function Dashboard({
                 <h3 className="chart-title">
                   {t("dashboard.expenses_by_category")}
                 </h3>
-                <p className="chart-subtitle">{t("dashboard.subtitle.where_your_money_goes")}</p>
+                <p className="chart-subtitle">
+                  {t("dashboard.subtitle.where_your_money_goes")}
+                </p>
               </div>
               <div className="chart-body">
                 {expensesByCategoryData === null ? (
