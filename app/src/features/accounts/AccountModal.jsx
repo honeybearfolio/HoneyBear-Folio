@@ -155,6 +155,7 @@ export default function AccountModal({
                   if (val) await checkAndPrompt(val);
                 }}
                 icon={Globe}
+                data-testid="currency-select"
               />
             </div>
           </div>

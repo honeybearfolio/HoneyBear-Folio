@@ -76,6 +76,7 @@ export default function WelcomeWindow() {
             onChange={setUiLanguage}
             options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({ value: code, label }))}
             placeholder={t("settings.select_language_placeholder")}
+            data-testid="language-select"
           />
         </div>
 
@@ -91,6 +92,7 @@ export default function WelcomeWindow() {
               { value: "system", label: t("settings.theme.system") },
             ]}
             placeholder={t("settings.select_theme_placeholder")}
+            data-testid="theme-select"
           />
         </div>
 
@@ -105,6 +107,7 @@ export default function WelcomeWindow() {
               label: `${c.code} - ${c.name} (${c.symbol})`,
             }))}
             placeholder={t("account.placeholder.select_currency")}
+            data-testid="currency-select"
           />
         </div>
 
@@ -122,6 +125,7 @@ export default function WelcomeWindow() {
               { value: "en-IN", label: "1,23,456.78" },
             ]}
             placeholder={t("settings.select_format_placeholder")}
+            data-testid="format-select"
           />
         </div>
         {/* Date Format Selection */}
@@ -132,6 +136,7 @@ export default function WelcomeWindow() {
             onChange={setDateFormat}
             options={dateFormatOptions}
             placeholder={t("settings.select_date_format_placeholder")}
+            data-testid="date-format-select"
           />
         </div>
         {/* First Day of Week Selection */}
@@ -150,6 +155,7 @@ export default function WelcomeWindow() {
               { value: 0, label: t("weekday.sunday") },
             ]}
             placeholder={t("settings.select_first_day_placeholder")}
+            data-testid="first-day-select"
           />
         </div>
       </ModalBody>

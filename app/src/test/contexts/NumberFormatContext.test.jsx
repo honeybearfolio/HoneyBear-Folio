@@ -69,6 +69,7 @@ describe("NumberFormatProvider", () => {
     });
 
     function Translated() {
+      useNumberFormat();
       return <div data-testid="translated">{i18n.t("settings.language")}</div>;
     }
 

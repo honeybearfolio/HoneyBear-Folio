@@ -284,6 +284,7 @@ export default function SettingsModal({ onClose }) {
                     options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({ value: code, label }))}
                     placeholder={t("settings.select_language_placeholder")}
                     fullWidth={false}
+                    data-testid="language-select"
                   />
                 </div>
                                 <div className="flex items-center justify-between">

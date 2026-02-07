@@ -51,22 +51,35 @@ vi.mock("../../../contexts/number-format", () => ({
   }),
 }));
 
-// Mock CustomSelect to expose options easily
+// Mock CustomSelect to expose options easily and provide sensible test ids based on placeholder
 vi.mock("../../../components/ui/CustomSelect", () => ({
-  default: ({ value, onChange, options, placeholder }) => (
-    <select
-      data-testid="language-select"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-  ),
+  default: ({ value, onChange, options, placeholder }) => {
+    const p = String(placeholder || "").toLowerCase();
+    const testId = p.includes("language")
+      ? "language-select"
+      : p.includes("theme")
+      ? "theme-select"
+      : p.includes("currency")
+      ? "currency-select"
+      : p.includes("format")
+      ? "format-select"
+      : `custom-select-${p.replace(/\s+/g, "-")}`;
+
+    return (
+      <select
+        data-testid={testId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    );
+  },
 }));
 
 describe("SettingsModal (language placement)", () => {
