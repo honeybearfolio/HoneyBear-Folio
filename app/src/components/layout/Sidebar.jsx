@@ -162,7 +162,7 @@ export default function Sidebar({
           <button
             onClick={onClose}
             className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer"
-            title="Hide Sidebar"
+            title={t("app.hide_sidebar")}
           >
             <PanelLeftClose className="w-5 h-5" />
           </button>
@@ -289,7 +289,7 @@ export default function Sidebar({
         <div>
           <div className="sidebar-section-header">
             <h2 className="sidebar-section-title-inline">
-              {t("accounts.accounts")}
+              {t("dashboard.accounts_breakdown")}
             </h2>
             <div className="flex items-center gap-1">
               <div className="relative" ref={sortMenuRef}>

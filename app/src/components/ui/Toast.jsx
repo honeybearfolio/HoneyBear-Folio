@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { Info, CheckCircle, AlertCircle, X } from "lucide-react";
 import "../../styles/Toast.css";
 import { ToastContext } from "../../contexts/toast";
+import { t } from "../../i18n/i18n";
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -41,15 +42,19 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div className="toast-container" aria-live="polite" aria-atomic="true">
-        {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type}`} role="status">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`toast toast-${toast.type}`}
+            role="status"
+          >
             <div className="toast-content">
-              <span className="toast-icon">{getIcon(t.type)}</span>
-              <span className="toast-message">{t.message}</span>
+              <span className="toast-icon">{getIcon(toast.type)}</span>
+              <span className="toast-message">{toast.message}</span>
               <button
-                aria-label="Dismiss"
+                aria-label={t("toast.dismiss")}
                 className="toast-close"
-                onClick={() => removeToast(t.id)}
+                onClick={() => removeToast(toast.id)}
               >
                 <X size={16} />
               </button>

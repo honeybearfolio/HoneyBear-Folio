@@ -128,11 +128,11 @@ export default function SankeyDiagram({
     const ID_DEFICIT = "sys:deficit";
 
     // Initialize labels for system nodes
-    labels[ID_BUDGET] = "Budget";
-    labels[ID_EXPENSES_GROUP] = "Expenses";
-    labels[ID_INVESTMENTS_GROUP] = "Investments & Savings";
-    labels[ID_SURPLUS] = "Savings";
-    labels[ID_DEFICIT] = "Deficit";
+    labels[ID_BUDGET] = t("dashboard.sankey.budget");
+    labels[ID_EXPENSES_GROUP] = t("dashboard.expenses");
+    labels[ID_INVESTMENTS_GROUP] = t("dashboard.sankey.investments_savings");
+    labels[ID_SURPLUS] = t("dashboard.sankey.savings");
+    labels[ID_DEFICIT] = t("dashboard.sankey.deficit");
 
     // Set priorities for system nodes to enforce vertical order
     priorityMap[ID_INVESTMENTS_GROUP] = 1000; // Top
@@ -247,7 +247,7 @@ export default function SankeyDiagram({
     return {
       datasets: [
         {
-          label: "Cash Flow",
+          label: t("dashboard.cash_flow"),
           data: flows,
           colorFrom: (c) => getColor(c.dataset.data[c.dataIndex].from),
           colorTo: (c) => getColor(c.dataset.data[c.dataIndex].to),

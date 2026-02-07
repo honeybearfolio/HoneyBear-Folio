@@ -19,6 +19,7 @@ import ChartNumberFormatSync from "./components/shared/ChartNumberFormatSync";
 import UpdateNotification from "./components/shared/UpdateNotification";
 import WelcomeWindow from "./components/shared/WelcomeWindow";
 import DevTools from "./components/shared/DevTools";
+import { t } from "./i18n/i18n";
 
 const MIN_SIDEBAR_WIDTH = 240;
 const MAX_SIDEBAR_WIDTH = 600;
@@ -240,15 +241,18 @@ function App() {
   // Derive selectedAccount
   let selectedAccount = null;
   if (selectedAccountId === "dashboard") {
-    selectedAccount = { id: "dashboard", name: "Dashboard" };
+    selectedAccount = { id: "dashboard", name: t("nav.dashboard") };
   } else if (selectedAccountId === "investment-dashboard") {
-    selectedAccount = { id: "investment-dashboard", name: "Investments" };
+    selectedAccount = {
+      id: "investment-dashboard",
+      name: t("nav.investments"),
+    };
   } else if (selectedAccountId === "fire-calculator") {
-    selectedAccount = { id: "fire-calculator", name: "FIRE Calculator" };
+    selectedAccount = { id: "fire-calculator", name: t("nav.fire_calculator") };
   } else if (selectedAccountId === "all") {
     selectedAccount = {
       id: "all",
-      name: "All Transactions",
+      name: t("nav.all_transactions"),
       balance: totalCashBalance,
       totalValue: totalBalance,
     };
@@ -340,8 +344,8 @@ function App() {
                       <button
                         onClick={() => setIsSidebarOpen(true)}
                         className="p-2 bg-white dark:bg-slate-800 text-slate-500 hover:text-brand-600 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                        title="Show Sidebar"
-                        aria-label="Show Sidebar"
+                        title={t("app.show_sidebar")}
+                        aria-label={t("app.show_sidebar")}
                       >
                         <PanelLeftOpen size={20} />
                       </button>
@@ -370,11 +374,10 @@ function App() {
                             <Wallet className="w-16 h-16 text-brand-500" />
                           </div>
                           <h2 className="text-3xl font-bold mb-3 text-slate-800 dark:text-slate-100 tracking-tight">
-                            Welcome to HoneyBear Folio
+                            {t("welcome.title")}
                           </h2>
                           <p className="text-lg text-slate-500 dark:text-slate-400 max-w-md text-center leading-relaxed">
-                            Select an account from the sidebar to view details,
-                            or create a new one to get started.
+                            {t("welcome.select_account")}
                           </p>
                         </div>
                       )}

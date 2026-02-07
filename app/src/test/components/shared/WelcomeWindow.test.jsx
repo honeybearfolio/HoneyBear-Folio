@@ -6,20 +6,28 @@ import WelcomeWindow from "../../../components/shared/WelcomeWindow";
 vi.mock("../../../i18n/i18n", () => ({
   t: (key) => {
     const translations = {
-      "Welcome to HoneyBear Folio": "Welcome to HoneyBear Folio",
-      "Let's set up your preferences to get started.":
-        "Let's set up your preferences to get started.",
-      Theme: "Theme",
-      Currency: "Currency",
+      "welcome.title": "Welcome to HoneyBear Folio",
+      "welcome.subtitle": "Let's set up your preferences to get started.",
+      "settings.theme": "Theme",
+      "import.field.currency": "Currency",
       "settings.theme.light": "Light",
       "settings.theme.dark": "Dark",
       "settings.theme.system": "System",
       "settings.select_theme_placeholder": "Select theme",
-      "settings.select_currency_placeholder": "Select currency",
-      "Get Started": "Get Started",
+      "account.placeholder.select_currency": "Select currency",
+      "settings.language": "Language",
+      "settings.select_language_placeholder": "Select language",
+      "welcome.get_started": "Get Started",
+      number_format: "Number Format",
+      "settings.date_format": "Date format",
+      "settings.first_day_of_week": "First Day of Week",
     };
     return translations[key] || key;
   },
+  AVAILABLE_LANGUAGES: [
+    { code: "en", label: "English" },
+    { code: "es", label: "Español" },
+  ],
 }));
 
 // Mock theme context
@@ -33,6 +41,7 @@ const mockSetLocale = vi.fn();
 const mockSetCurrency = vi.fn();
 const mockSetDateFormat = vi.fn();
 const mockSetFirstDayOfWeek = vi.fn();
+const mockSetUiLanguage = vi.fn();
 vi.mock("../../../contexts/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
@@ -43,6 +52,8 @@ vi.mock("../../../contexts/number-format", () => ({
     setDateFormat: mockSetDateFormat,
     firstDayOfWeek: 0,
     setFirstDayOfWeek: mockSetFirstDayOfWeek,
+    uiLanguage: "en",
+    setUiLanguage: mockSetUiLanguage,
   }),
 }));
 
@@ -58,6 +69,37 @@ vi.mock("../../../utils/currencies", () => ({
 // Mock format utility
 vi.mock("../../../utils/format", () => ({
   formatDateForUI: (date, format) => format,
+}));
+
+// Mock CustomSelect to expose options/change easily and return distinct testids per control
+vi.mock("../../../components/ui/CustomSelect", () => ({
+  default: ({ value, onChange, options, placeholder }) => {
+    const p = String(placeholder || "").toLowerCase();
+    const testId = p.includes("language")
+      ? "language-select"
+      : p.includes("theme")
+        ? "theme-select"
+        : p.includes("currency")
+          ? "currency-select"
+          : p.includes("format")
+            ? "format-select"
+            : `custom-select-${p.replace(/\s+/g, "-")}`;
+
+    return (
+      <select
+        data-testid={testId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    );
+  },
 }));
 
 // Mock dev settings
@@ -111,6 +153,20 @@ describe("WelcomeWindow", () => {
     render(<WelcomeWindow />);
 
     expect(screen.getByText("Currency")).toBeInTheDocument();
+  });
+
+  it("shows language selector and calls setter on change", () => {
+    render(<WelcomeWindow />);
+
+    expect(screen.getByText("Language")).toBeInTheDocument();
+    const sel = screen.getByTestId("language-select");
+
+    // options rendered by the mocked CustomSelect
+    expect(screen.getByText("English")).toBeInTheDocument();
+    expect(screen.getByText("Español")).toBeInTheDocument();
+
+    fireEvent.change(sel, { target: { value: "es" } });
+    expect(mockSetUiLanguage).toHaveBeenCalledWith("es");
   });
 
   it("closes and sets localStorage when Get Started is clicked", () => {

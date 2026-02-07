@@ -60,13 +60,13 @@ export default class ErrorBoundary extends React.Component {
                   }
                 }}
               >
-                Copy
+                {t("error.copy")}
               </button>
               <button
                 className="inline-flex items-center gap-2 px-3 py-1 rounded bg-rose-600 text-white text-sm"
                 onClick={() => window.location.reload()}
               >
-                Reload
+                {t("error.reload")}
               </button>
             </div>
           </details>

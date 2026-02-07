@@ -24,7 +24,7 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
-import { t } from "../../i18n/i18n";
+import { t, AVAILABLE_LANGUAGES } from "../../i18n/i18n";
 import { formatDateForUI } from "../../utils/format";
 import {
   getDisplayVersion,
@@ -53,6 +53,8 @@ export default function SettingsModal({ onClose }) {
     setDateFormat,
     firstDayOfWeek,
     setFirstDayOfWeek,
+    uiLanguage,
+    setUiLanguage,
   } = useNumberFormat();
   const { theme, setTheme } = useTheme();
   const [dbPath, setDbPath] = useState("");
@@ -252,14 +254,51 @@ export default function SettingsModal({ onClose }) {
             </div>
             {activeTab === "general" && (
               <>
+                {/* Language selector: controls UI language only (does NOT change number/date formats) */}
+                <div className="flex items-center justify-between mt-4">
+                  <div className="label-with-help">
+                    <span
+                      className="help-wrapper"
+                      data-tooltip={t("settings.tooltip.language")}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t("settings.tooltip.language")}
+                      onMouseEnter={showTooltip}
+                      onFocus={showTooltip}
+                      onMouseLeave={hideTooltip}
+                      onBlur={hideTooltip}
+                    >
+                      <HelpCircle
+                        className="w-4 h-4 text-slate-400 help-icon"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <label className="modal-label">
+                      {t("settings.language")}
+                    </label>
+                  </div>
+                </div>
+                <div className="relative settings-select">
+                  <CustomSelect
+                    value={uiLanguage}
+                    onChange={(v) => setUiLanguage(v)}
+                    options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({
+                      value: code,
+                      label,
+                    }))}
+                    placeholder={t("settings.select_language_placeholder")}
+                    fullWidth={false}
+                    data-testid="language-select"
+                  />
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose light/dark or follow system preference."
+                      data-tooltip={t("settings.tooltip.theme")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose light/dark or follow system preference"
+                      aria-label={t("settings.tooltip.theme")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -286,15 +325,14 @@ export default function SettingsModal({ onClose }) {
                     fullWidth={false}
                   />
                 </div>
-
                 <div className="flex items-center justify-between">
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Path to your local SQLite database file."
+                      data-tooltip={t("settings.tooltip.database_file")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Path to your local SQLite database file"
+                      aria-label={t("settings.tooltip.database_file")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -334,11 +372,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Adjust font size to control UI scale
-                      (smaller = more content fits, larger = easier to read)."
+                      data-tooltip={t("settings.tooltip.font_size")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Adjusts font size of the entire application UI"
+                      aria-label={t("settings.tooltip.font_size")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -378,10 +415,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Default currency used by the app when formatting amounts."
+                      data-tooltip={t("settings.tooltip.currency")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Default currency used by the app when formatting amounts"
+                      aria-label={t("settings.tooltip.currency")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -408,7 +445,7 @@ export default function SettingsModal({ onClose }) {
                       value: c.code,
                       label: `${c.code} - ${c.name} (${c.symbol})`,
                     }))}
-                    placeholder={t("settings.select_currency_placeholder")}
+                    placeholder={t("account.placeholder.select_currency")}
                     fullWidth={false}
                   />
                 </div>
@@ -417,10 +454,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose how numbers are grouped and decimal separators are shown."
+                      data-tooltip={t("settings.tooltip.number_format")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose how numbers are grouped and decimal separators are shown"
+                      aria-label={t("settings.tooltip.number_format")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -460,10 +497,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose how dates are shown in the app. This affects only UI display and will NOT change import/export formats."
+                      data-tooltip={t("settings.tooltip.date_format")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose how dates are shown in the app"
+                      aria-label={t("settings.tooltip.date_format")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -493,10 +530,10 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip="Choose the first day of the week for calendars."
+                      data-tooltip={t("settings.tooltip.first_day_of_week")}
                       role="button"
                       tabIndex={0}
-                      aria-label="Choose the first day of the week for calendars"
+                      aria-label={t("settings.tooltip.first_day_of_week")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -517,13 +554,13 @@ export default function SettingsModal({ onClose }) {
                     value={firstDayOfWeek}
                     onChange={(v) => setFirstDayOfWeek(Number(v))}
                     options={[
-                      { value: 1, label: t("Monday") },
-                      { value: 2, label: t("Tuesday") },
-                      { value: 3, label: t("Wednesday") },
-                      { value: 4, label: t("Thursday") },
-                      { value: 5, label: t("Friday") },
-                      { value: 6, label: t("Saturday") },
-                      { value: 0, label: t("Sunday") },
+                      { value: 1, label: t("weekday.monday") },
+                      { value: 2, label: t("weekday.tuesday") },
+                      { value: 3, label: t("weekday.wednesday") },
+                      { value: 4, label: t("weekday.thursday") },
+                      { value: 5, label: t("weekday.friday") },
+                      { value: 6, label: t("weekday.saturday") },
+                      { value: 0, label: t("weekday.sunday") },
                     ]}
                     placeholder={t("settings.select_first_day_placeholder")}
                     fullWidth={false}
@@ -775,10 +812,10 @@ export default function SettingsModal({ onClose }) {
             type="button"
             onClick={handleResetDefaults}
             className="reset-button"
-            data-tooltip="Reset to defaults"
-            aria-label="Reset to defaults"
+            data-tooltip={t("settings.reset_to_defaults")}
+            aria-label={t("settings.reset_to_defaults")}
           >
-            Reset to defaults
+            {t("settings.reset_to_defaults")}
           </button>
         </ModalFooter>
       </ErrorBoundary>

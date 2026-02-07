@@ -411,9 +411,10 @@ export default function FireCalculator() {
     const yearsToRetirement = Math.max(0, retirementAge - currentAge);
     const totalYears = yearsToRetirement + retirementDuration;
     const labels = Array.from({ length: totalYears + 1 }, (_, i) => {
-      if (i === 0) return `Age ${currentAge}`;
-      if (i === yearsToRetirement) return `Age ${retirementAge} (Retire)`;
-      return `Age ${currentAge + i}`;
+      if (i === 0) return t("fire.age_value", { age: currentAge });
+      if (i === yearsToRetirement)
+        return t("fire.retire_age_label", { age: retirementAge });
+      return t("fire.age_value", { age: currentAge + i });
     });
 
     const datasets = [];
@@ -424,7 +425,7 @@ export default function FireCalculator() {
 
       // 10th-90th percentile band (outer)
       datasets.push({
-        label: "90th Percentile",
+        label: t("fire.percentile_90"),
         data: percentiles.p90,
         borderColor: chartColors.success + "4D",
         backgroundColor: chartColors.success + "1A",
@@ -435,7 +436,7 @@ export default function FireCalculator() {
       });
 
       datasets.push({
-        label: "10th Percentile",
+        label: t("fire.percentile_10"),
         data: percentiles.p10,
         borderColor: chartColors.success + "4D",
         backgroundColor: "transparent",
@@ -447,7 +448,7 @@ export default function FireCalculator() {
 
       // 25th-75th percentile band (inner)
       datasets.push({
-        label: "75th Percentile",
+        label: t("fire.percentile_75"),
         data: percentiles.p75,
         borderColor: chartColors.success + "80",
         backgroundColor: chartColors.success + "26",
@@ -458,7 +459,7 @@ export default function FireCalculator() {
       });
 
       datasets.push({
-        label: "25th Percentile",
+        label: t("fire.percentile_25"),
         data: percentiles.p25,
         borderColor: chartColors.success + "80",
         backgroundColor: "transparent",
@@ -470,7 +471,7 @@ export default function FireCalculator() {
 
       // Median (50th percentile)
       datasets.push({
-        label: "Median Outcome",
+        label: t("fire.median_outcome"),
         data: percentiles.p50,
         borderColor: chartColors.success,
         backgroundColor: "transparent",
@@ -483,7 +484,7 @@ export default function FireCalculator() {
 
     // Deterministic projection line
     datasets.push({
-      label: "Deterministic Projection",
+      label: t("fire.deterministic_projection"),
       data: projectionData.slice(0, totalYears + 1),
       borderColor: chartColors.primary,
       backgroundColor: chartColors.primary + "1A",
@@ -495,7 +496,7 @@ export default function FireCalculator() {
 
     // FIRE target line
     datasets.push({
-      label: "FIRE Target",
+      label: t("fire.target"),
       data: Array(labels.length).fill(fireNumber),
       borderColor: chartColors.loss,
       borderDash: [5, 5],
@@ -531,10 +532,8 @@ export default function FireCalculator() {
     <div className="page-container fire-calculator-container">
       <header className="hb-header-container">
         <div>
-          <h1 className="hb-header-title">FIRE Calculator</h1>
-          <p className="hb-header-subtitle">
-            Financial Independence, Retire Early
-          </p>
+          <h1 className="hb-header-title">{t("fire.title")}</h1>
+          <p className="hb-header-subtitle">{t("fire.subtitle")}</p>
         </div>
       </header>
 
@@ -561,7 +560,7 @@ export default function FireCalculator() {
             <div>
               <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                 <Banknote className="w-4 h-4 text-brand-500 dark:text-brand-400" />
-                {t("fire.current_net_worth")}
+                {t("dashboard.current_net_worth")}
               </label>
               <div className="relative">
                 <NumberInput
@@ -981,11 +980,12 @@ export default function FireCalculator() {
                         color: chartColors.text,
                         filter: (item) => {
                           // Hide some labels to reduce clutter
-                          return ![
-                            "10th Percentile",
-                            "25th Percentile",
-                            "75th Percentile",
-                          ].includes(item.text);
+                          const hiddenLabels = [
+                            t("fire.percentile_10"),
+                            t("fire.percentile_25"),
+                            t("fire.percentile_75"),
+                          ];
+                          return !hiddenLabels.includes(item.text);
                         },
                       },
                     },

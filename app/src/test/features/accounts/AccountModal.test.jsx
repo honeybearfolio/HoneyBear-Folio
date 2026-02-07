@@ -50,24 +50,6 @@ vi.mock("../../../components/ui/Modal", () => {
 });
 
 // Mock CustomSelect
-vi.mock("../../../components/ui/CustomSelect", () => ({
-  default: ({ value, onChange, options, placeholder }) => (
-    <select
-      data-testid="currency-select"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-  ),
-}));
-
-// Mock CustomSelect
 vi.mock("../../../components/ui/CustomSelect", () => {
   const CustomSelect = ({ value, onChange, options, placeholder }) => (
     <select
@@ -106,9 +88,7 @@ describe("AccountModal", () => {
     expect(
       screen.getByPlaceholderText("account.placeholder.name"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText("account.placeholder.balance"),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("0.00")).toBeInTheDocument();
   });
 
   it("renders correctly in edit mode with account data", () => {
@@ -158,10 +138,9 @@ describe("AccountModal", () => {
     fireEvent.change(screen.getByPlaceholderText("account.placeholder.name"), {
       target: { value: "New Bank" },
     });
-    fireEvent.change(
-      screen.getByPlaceholderText("account.placeholder.balance"),
-      { target: { value: "1000" } },
-    );
+    fireEvent.change(screen.getByPlaceholderText("0.00"), {
+      target: { value: "1000" },
+    });
     fireEvent.change(screen.getByTestId("currency-select"), {
       target: { value: "EUR" },
     });

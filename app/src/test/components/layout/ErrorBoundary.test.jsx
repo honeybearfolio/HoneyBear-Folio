@@ -9,6 +9,8 @@ vi.mock("../../../i18n/i18n", () => ({
       "error.something_went_wrong": "Something went wrong",
       "error.check_console": "Check the console for details",
       "error.show_details": "Show details",
+      "error.copy": "Copy",
+      "error.reload": "Reload",
     };
     return translations[key] || key;
   },

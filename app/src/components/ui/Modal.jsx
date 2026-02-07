@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import PropTypes from "prop-types";
 import "../../styles/Modal.css";
+import { t } from "../../i18n/i18n";
 
 export function Modal({ children, onClose, size = "md", className = "" }) {
   useEffect(() => {
@@ -67,7 +68,7 @@ export function ModalHeader({ children, onClose, title, icon: Icon }) {
         <button
           onClick={onClose}
           className="modal-close-button"
-          aria-label="Close"
+          aria-label={t("modal.close")}
         >
           <X className="w-5 h-5" />
         </button>

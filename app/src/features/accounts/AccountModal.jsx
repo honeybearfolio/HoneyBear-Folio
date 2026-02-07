@@ -126,7 +126,7 @@ export default function AccountModal({
                     inputMode="decimal"
                     value={balanceStr}
                     onChange={(e) => setBalanceStr(e.target.value)}
-                    placeholder={t("account.placeholder.balance")}
+                    placeholder={"0.00"}
                     className="form-input"
                   />
                 </div>
@@ -136,7 +136,7 @@ export default function AccountModal({
             {/* Currency Selection */}
             <div>
               <label className="modal-label flex items-center justify-between">
-                <span>{t("account.field.currency")}</span>
+                <span>{t("import.field.currency")}</span>
                 <span className="text-xs font-normal text-slate-500 italic uppercase">
                   {t("account.field.currency_optional")}
                 </span>
@@ -155,6 +155,7 @@ export default function AccountModal({
                   if (val) await checkAndPrompt(val);
                 }}
                 icon={Globe}
+                data-testid="currency-select"
               />
             </div>
           </div>

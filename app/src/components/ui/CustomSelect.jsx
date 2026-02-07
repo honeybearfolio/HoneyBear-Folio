@@ -11,6 +11,8 @@ export default function CustomSelect({
   placeholder,
   fullWidth = true,
   className = "",
+  // allow tests/parents to set a custom test id which will be forwarded to the trigger
+  "data-testid": dataTestId,
 }) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
@@ -192,6 +194,7 @@ export default function CustomSelect({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
+        data-testid={dataTestId}
         className={`px-3 py-2 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 ${fullWidth ? "w-full" : ""} text-left flex items-center justify-between custom-select-trigger`}
         onClick={toggle}
         onKeyDown={handleKeyDown}
@@ -285,6 +288,7 @@ CustomSelect.propTypes = {
   placeholder: PropTypes.node,
   fullWidth: PropTypes.bool,
   className: PropTypes.string,
+  "data-testid": PropTypes.string,
 };
 
 CustomSelect.defaultProps = {
@@ -292,4 +296,5 @@ CustomSelect.defaultProps = {
   placeholder: "",
   fullWidth: true,
   className: "",
+  "data-testid": undefined,
 };

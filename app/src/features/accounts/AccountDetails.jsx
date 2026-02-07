@@ -309,12 +309,12 @@ export default function AccountDetails({ account, onUpdate }) {
 
       const accountOptions = otherAccounts.map((acc) => ({
         value: acc.name,
-        label: "Account",
+        label: t("import.field.account"),
         type: "account",
       }));
       const payeeOptions = payees.map((name) => ({
         value: name,
-        label: "Payee",
+        label: t("import.field.payee"),
         type: "payee",
       }));
 
@@ -338,7 +338,7 @@ export default function AccountDetails({ account, onUpdate }) {
       setCategorySuggestions(
         categories.map((c) => ({
           value: c,
-          label: "Category",
+          label: t("import.field.category"),
           type: "category",
         })),
       );
@@ -478,7 +478,7 @@ export default function AccountDetails({ account, onUpdate }) {
         title: t("confirm.delete_title"),
         kind: "warning",
         okLabel: t("confirm.delete"),
-        cancelLabel: t("confirm.cancel"),
+        cancelLabel: t("account.cancel"),
       },
     );
 
@@ -587,7 +587,7 @@ export default function AccountDetails({ account, onUpdate }) {
             title: t("confirm.edit_automated_notes_title"),
             kind: "warning",
             okLabel: t("confirm.ok"),
-            cancelLabel: t("confirm.cancel"),
+            cancelLabel: t("account.cancel"),
           });
 
           if (!confirmed) return;
@@ -635,7 +635,7 @@ export default function AccountDetails({ account, onUpdate }) {
       title: t("confirm.transaction_title"),
       kind: "warning",
       okLabel: t("confirm.delete"),
-      cancelLabel: t("confirm.cancel"),
+      cancelLabel: t("account.cancel"),
     });
     if (!confirmed) return;
     try {
@@ -785,7 +785,7 @@ export default function AccountDetails({ account, onUpdate }) {
                 <button
                   type="submit"
                   className="p-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
-                  title="Save Name"
+                  title={t("account.save_name")}
                 >
                   <Check className="w-5 h-5" />
                 </button>
@@ -796,7 +796,7 @@ export default function AccountDetails({ account, onUpdate }) {
                     setRenameValue(account.name);
                   }}
                   className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-rose-500 transition-colors"
-                  title="Cancel"
+                  title={t("account.cancel")}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -812,7 +812,7 @@ export default function AccountDetails({ account, onUpdate }) {
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Total Value:
+                    {t("account.total_value_label")}
                   </span>
                   <span
                     className={`text-3xl font-bold tracking-tight ${
@@ -832,7 +832,7 @@ export default function AccountDetails({ account, onUpdate }) {
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    Cash Balance:
+                    {t("account.cash_balance")}
                   </span>
                   <span
                     className={`text-lg font-medium tracking-tight ${
@@ -854,7 +854,7 @@ export default function AccountDetails({ account, onUpdate }) {
             ) : (
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Balance:
+                  {t("account.balance")}
                 </span>
                 <span
                   className={`text-3xl font-bold tracking-tight ${
@@ -903,7 +903,7 @@ export default function AccountDetails({ account, onUpdate }) {
                     value: a.id,
                     label: a.name,
                   }))}
-                  placeholder="Select Account"
+                  placeholder={t("account.placeholder.select_account")}
                 />
               </div>
             )}
@@ -971,7 +971,7 @@ export default function AccountDetails({ account, onUpdate }) {
                     className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
                   >
                     <Edit className="w-4 h-4 text-slate-400" />
-                    Rename Account
+                    {t("account.action.rename")}
                   </button>
 
                   <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />
@@ -980,7 +980,7 @@ export default function AccountDetails({ account, onUpdate }) {
                     className="w-full text-left px-4 py-2.5 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete Account
+                    {t("account.action.delete")}
                   </button>
                 </div>
               )}
@@ -997,10 +997,10 @@ export default function AccountDetails({ account, onUpdate }) {
               <div className="bg-brand-100 dark:bg-brand-900/30 p-2.5 rounded-xl">
                 <Plus className="w-5 h-5 text-brand-600 dark:text-brand-400" />
               </div>
-              New Transaction
+              {t("account.new_transaction")}
               {account.id === "all" && effectiveAddTarget && (
                 <span className="ml-3 text-sm text-slate-500 dark:text-slate-400">
-                  for{" "}
+                  {t("account.for")}{" "}
                   <span className="font-medium text-slate-700 dark:text-slate-300">
                     {effectiveAddTarget.name}
                   </span>
@@ -1019,7 +1019,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   }`}
                 >
-                  Cash
+                  {t("dashboard.assets.cash")}
                 </button>
                 <button
                   type="button"
@@ -1030,7 +1030,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   }`}
                 >
-                  Investment
+                  {t("transaction.type.investment")}
                 </button>
               </div>
             </div>
@@ -1052,7 +1052,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Buy
+                      {t("transaction.type.buy")}
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -1064,7 +1064,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Sell
+                      {t("transaction.type.sell")}
                     </span>
                   </label>
                 </div>
@@ -1072,7 +1072,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Date
+                  {t("account.field.date")}
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
@@ -1093,12 +1093,12 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-2 relative">
                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Ticker
+                  {t("import.field.ticker")}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="AAPL"
+                  placeholder={"AAPL"}
                   className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all uppercase"
                   value={ticker}
                   onChange={(e) => {
@@ -1157,7 +1157,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Shares
+                  {t("import.field.shares")}
                 </label>
                 <NumberInput
                   value={shares}
@@ -1175,7 +1175,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Price / Share
+                  {t("account.field.price_per_share")}
                 </label>
                 <div className="relative">
                   <NumberInput
@@ -1195,7 +1195,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  Fee
+                  {t("import.field.fee")}
                 </label>
                 <div className="relative">
                   <input
@@ -1250,7 +1250,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5"
                 >
                   <Check className="w-4 h-4" />
-                  Save Investment
+                  {t("account.save_transaction")}
                 </button>
               </div>
             </form>
@@ -1261,7 +1261,7 @@ export default function AccountDetails({ account, onUpdate }) {
             >
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  Date
+                  {t("account.field.date")}
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
@@ -1282,13 +1282,13 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-3">
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  Payee
+                  {t("import.field.payee")}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
                   <AutocompleteInput
                     suggestions={payeeSuggestions}
-                    placeholder="Who got paid?"
+                    placeholder={t("account.placeholder.payee")}
                     className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all hover:border-slate-300 dark:hover:border-slate-600"
                     value={payee}
                     onChange={setPayee}
@@ -1298,13 +1298,13 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  Category
+                  {t("import.field.category")}
                 </label>
                 <div className="relative">
                   <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
                   <AutocompleteInput
                     suggestions={categorySuggestions}
-                    placeholder="Category"
+                    placeholder={t("import.field.category")}
                     className={`w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all hover:border-slate-300 dark:hover:border-slate-600 ${
                       availableAccounts?.some((a) => a.name === payee)
                         ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
@@ -1319,7 +1319,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-3">
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {t("account.notes")}
+                  {t("import.field.notes")}
                 </label>
                 <div className="relative">
                   <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -1335,7 +1335,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  Amount
+                  {t("import.field.amount")}
                 </label>
                 <div className="relative">
                   <input
@@ -1412,7 +1412,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-32 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
-                    Date {getSortIcon("date")}
+                    {t("import.field.date")} {getSortIcon("date")}
                   </div>
                 </th>
                 {account.id === "all" && (
@@ -1421,7 +1421,7 @@ export default function AccountDetails({ account, onUpdate }) {
                     className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[10rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                   >
                     <div className="flex items-center gap-1">
-                      Account {getSortIcon("account_name")}
+                      {t("import.field.account")} {getSortIcon("account_name")}
                     </div>
                   </th>
                 )}
@@ -1430,7 +1430,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
-                    Payee {getSortIcon("payee")}
+                    {t("import.field.payee")} {getSortIcon("payee")}
                   </div>
                 </th>
                 <th
@@ -1438,7 +1438,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[10rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
-                    Category {getSortIcon("category")}
+                    {t("import.field.category")} {getSortIcon("category")}
                   </div>
                 </th>
                 <th
@@ -1446,7 +1446,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
-                    {t("account.notes")} {getSortIcon("notes")}
+                    {t("import.field.notes")} {getSortIcon("notes")}
                   </div>
                 </th>
                 {hasInvestment && (
@@ -1456,7 +1456,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[5rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center gap-1">
-                        Ticker {getSortIcon("ticker")}
+                        {t("import.field.ticker")} {getSortIcon("ticker")}
                       </div>
                     </th>
                     <th
@@ -1464,7 +1464,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Shares {getSortIcon("shares")}
+                        {t("import.field.shares")} {getSortIcon("shares")}
                       </div>
                     </th>
                     <th
@@ -1472,7 +1472,8 @@ export default function AccountDetails({ account, onUpdate }) {
                       className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Price {getSortIcon("price_per_share")}
+                        {t("import.field.price")}{" "}
+                        {getSortIcon("price_per_share")}
                       </div>
                     </th>
                     <th
@@ -1480,7 +1481,7 @@ export default function AccountDetails({ account, onUpdate }) {
                       className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-28 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Fee {getSortIcon("fee")}
+                        {t("import.field.fee")} {getSortIcon("fee")}
                       </div>
                     </th>
                   </>
@@ -1490,7 +1491,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center justify-end gap-1">
-                    Amount {getSortIcon("amount")}
+                    {t("import.field.amount")} {getSortIcon("amount")}
                   </div>
                 </th>
                 <th className="w-16"></th>
@@ -1583,7 +1584,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                     className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                                   />
                                   <span className="text-sm text-slate-700 dark:text-slate-300">
-                                    Buy
+                                    {t("transaction.type.buy")}
                                   </span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
@@ -1604,7 +1605,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                     className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                                   />
                                   <span className="text-sm text-slate-700 dark:text-slate-300">
-                                    Sell
+                                    {t("transaction.type.sell")}
                                   </span>
                                 </label>
                               </div>
@@ -2113,7 +2114,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                   className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
                                 >
                                   <Copy className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                                  Duplicate
+                                  {t("account.action.duplicate")}
                                 </button>
                                 <button
                                   onClick={() => {
@@ -2124,7 +2125,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                   className="w-full text-left px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center gap-3 font-medium transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
-                                  Delete
+                                  {t("account.action.delete")}
                                 </button>
                               </div>,
                               document.body,
@@ -2196,7 +2197,7 @@ function AutocompleteInput({
               {s.type === "account" && (
                 <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800 flex items-center gap-1">
                   <ArrowRightLeft className="w-3 h-3" />
-                  Transfer
+                  {t("account.tag.transfer")}
                 </span>
               )}
             </li>

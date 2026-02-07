@@ -53,17 +53,17 @@ export default function ExportModal({ onClose }) {
       } else if (format === "csv") {
         // Flatten transactions for CSV — ensure numeric fields use dot decimal separator
         const headers = [
-          "Date",
-          "Account",
-          "Payee",
-          "Category",
-          "Amount",
-          "Notes",
-          "Ticker",
-          "Shares",
-          "Price",
-          "Fee",
-          "Currency",
+          t("import.field.date"),
+          t("import.field.account"),
+          t("import.field.payee"),
+          t("import.field.category"),
+          t("import.field.amount"),
+          t("import.field.notes"),
+          t("import.field.ticker"),
+          t("import.field.shares"),
+          t("import.field.price"),
+          t("import.field.fee"),
+          t("import.field.currency"),
         ];
         const rows = transactions.map((t) => {
           const acc = accounts.find((a) => a.id === t.account_id);
@@ -90,7 +90,7 @@ export default function ExportModal({ onClose }) {
         });
         content = [headers.join(","), ...rows].join("\n");
         defaultPath += ".csv";
-        filters = [{ name: "CSV", extensions: ["csv"] }];
+        filters = [{ name: t("export.format.csv"), extensions: ["csv"] }];
       } else if (format === "xlsx") {
         // Use XLSX to generate buffer
         const wb = XLSX.utils.book_new();
@@ -108,17 +108,17 @@ export default function ExportModal({ onClose }) {
         const txData = transactions.map((t) => {
           const acc = accounts.find((a) => a.id === t.account_id);
           return {
-            Date: t.date,
-            Account: acc ? acc.name : t.account_id,
-            Payee: t.payee,
-            Category: t.category,
-            Amount: coerceNumber(t.amount),
-            Notes: t.notes,
-            Ticker: t.ticker,
-            Shares: coerceNumber(t.shares),
-            Price: coerceNumber(t.price_per_share),
-            Fee: coerceNumber(t.fee),
-            Currency: t.currency || "",
+            [t("import.field.date")]: t.date,
+            [t("import.field.account")]: acc ? acc.name : t.account_id,
+            [t("import.field.payee")]: t.payee,
+            [t("import.field.category")]: t.category,
+            [t("import.field.amount")]: coerceNumber(t.amount),
+            [t("import.field.notes")]: t.notes,
+            [t("import.field.ticker")]: t.ticker,
+            [t("import.field.shares")]: coerceNumber(t.shares),
+            [t("import.field.price")]: coerceNumber(t.price_per_share),
+            [t("import.field.fee")]: coerceNumber(t.fee),
+            [t("import.field.currency")]: t.currency || "",
           };
         });
         const wsTx = XLSX.utils.json_to_sheet(txData);
@@ -132,7 +132,7 @@ export default function ExportModal({ onClose }) {
         const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
         content = new Uint8Array(wbout);
         defaultPath += ".xlsx";
-        filters = [{ name: "Excel", extensions: ["xlsx"] }];
+        filters = [{ name: t("export.format.xlsx"), extensions: ["xlsx"] }];
       }
 
       // 3. Open Save Dialog
@@ -253,7 +253,7 @@ export default function ExportModal({ onClose }) {
           className="btn-secondary"
           disabled={exporting}
         >
-          {t("export.cancel")}
+          {t("account.cancel")}
         </button>
         <button
           onClick={handleExport}

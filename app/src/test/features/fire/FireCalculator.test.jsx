@@ -34,7 +34,7 @@ vi.mock("../../../hooks/useIsDark", () => ({
 vi.mock("../../../i18n/i18n", () => ({
   t: (key, params) => {
     const map = {
-      "fire.current_net_worth": "Current Net Worth",
+      "dashboard.current_net_worth": "Current Net Worth",
       "fire.annual_expenses": "Annual Expenses",
       "fire.expected_return": "Expected Annual Return",
       "fire.withdrawal_rate": "Safe Withdrawal Rate",
