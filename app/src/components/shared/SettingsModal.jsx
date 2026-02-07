@@ -440,7 +440,7 @@ export default function SettingsModal({ onClose }) {
                       value: c.code,
                       label: `${c.code} - ${c.name} (${c.symbol})`,
                     }))}
-                    placeholder={t("settings.select_currency_placeholder")}
+                    placeholder={t("account.placeholder.select_currency")}
                     fullWidth={false}
                   />
                 </div>
@@ -550,13 +550,13 @@ export default function SettingsModal({ onClose }) {
                     value={firstDayOfWeek}
                     onChange={(v) => setFirstDayOfWeek(Number(v))}
                     options={[
-                      { value: 1, label: t("Monday") },
-                      { value: 2, label: t("Tuesday") },
-                      { value: 3, label: t("Wednesday") },
-                      { value: 4, label: t("Thursday") },
-                      { value: 5, label: t("Friday") },
-                      { value: 6, label: t("Saturday") },
-                      { value: 0, label: t("Sunday") },
+                      { value: 1, label: t("weekday.monday") },
+                      { value: 2, label: t("weekday.tuesday") },
+                      { value: 3, label: t("weekday.wednesday") },
+                      { value: 4, label: t("weekday.thursday") },
+                      { value: 5, label: t("weekday.friday") },
+                      { value: 6, label: t("weekday.saturday") },
+                      { value: 0, label: t("weekday.sunday") },
                     ]}
                     placeholder={t("settings.select_first_day_placeholder")}
                     fullWidth={false}

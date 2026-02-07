@@ -357,7 +357,7 @@ export default function InvestmentDashboard() {
                 <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10 border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-4 font-bold text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider">
-                      {t("investment.table.ticker")}
+                      {t("import.field.ticker")}
                     </th>
                     <th className="p-4 font-bold text-slate-600 dark:text-slate-400 text-right text-xs uppercase tracking-wider">
                       {t("investment.table.value")}

@@ -107,7 +107,7 @@ describe("AccountModal", () => {
       screen.getByPlaceholderText("account.placeholder.name"),
     ).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText("account.placeholder.balance"),
+      screen.getByPlaceholderText(0.00),
     ).toBeInTheDocument();
   });
 
@@ -159,7 +159,7 @@ describe("AccountModal", () => {
       target: { value: "New Bank" },
     });
     fireEvent.change(
-      screen.getByPlaceholderText("account.placeholder.balance"),
+      screen.getByPlaceholderText(0.00),
       { target: { value: "1000" } },
     );
     fireEvent.change(screen.getByTestId("currency-select"), {

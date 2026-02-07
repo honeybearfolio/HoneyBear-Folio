@@ -129,7 +129,7 @@ export default function SankeyDiagram({
 
     // Initialize labels for system nodes
     labels[ID_BUDGET] = t("dashboard.sankey.budget");
-    labels[ID_EXPENSES_GROUP] = t("dashboard.sankey.expenses");
+    labels[ID_EXPENSES_GROUP] = t("dashboard.expenses");
     labels[ID_INVESTMENTS_GROUP] = t("dashboard.sankey.investments_savings");
     labels[ID_SURPLUS] = t("dashboard.sankey.savings");
     labels[ID_DEFICIT] = t("dashboard.sankey.deficit");
@@ -247,7 +247,7 @@ export default function SankeyDiagram({
     return {
       datasets: [
         {
-          label: t("dashboard.sankey.cash_flow"),
+          label: t("dashboard.cash_flow"),
           data: flows,
           colorFrom: (c) => getColor(c.dataset.data[c.dataIndex].from),
           colorTo: (c) => getColor(c.dataset.data[c.dataIndex].to),

@@ -411,10 +411,10 @@ export default function FireCalculator() {
     const yearsToRetirement = Math.max(0, retirementAge - currentAge);
     const totalYears = yearsToRetirement + retirementDuration;
     const labels = Array.from({ length: totalYears + 1 }, (_, i) => {
-      if (i === 0) return t("fire.age_label", { age: currentAge });
+      if (i === 0) return t("fire.age_value", { age: currentAge });
       if (i === yearsToRetirement)
         return t("fire.retire_age_label", { age: retirementAge });
-      return t("fire.age_label", { age: currentAge + i });
+      return t("fire.age_value", { age: currentAge + i });
     });
 
     const datasets = [];
@@ -562,7 +562,7 @@ export default function FireCalculator() {
             <div>
               <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                 <Banknote className="w-4 h-4 text-brand-500 dark:text-brand-400" />
-                {t("fire.current_net_worth")}
+                {t("dashboard.current_net_worth")}
               </label>
               <div className="relative">
                 <NumberInput

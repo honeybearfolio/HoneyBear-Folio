@@ -61,11 +61,11 @@ export default function WelcomeWindow() {
       onClose={() => {}} // No-op closing, must complete setup
       className="!max-w-[500px] w-[90%]"
     >
-      <ModalHeader title={t("Welcome to HoneyBear Folio")} />
+      <ModalHeader title={t("welcome.title")} />
 
       <ModalBody>
         <p className="mb-6 text-slate-600 dark:text-slate-400">
-          {t("Let's set up your preferences to get started.")}
+          {t("welcome.subtitle")}
         </p>
 
         {/* Language selection — controls UI language only (does NOT change number/date formats) */}
@@ -81,7 +81,7 @@ export default function WelcomeWindow() {
 
         {/* Theme Selection */}
         <div className="mb-6">
-          <label className="modal-label">{t("Theme")}</label>
+          <label className="modal-label">{t("settings.theme")}</label>
           <CustomSelect
             value={theme}
             onChange={setTheme}
@@ -96,7 +96,7 @@ export default function WelcomeWindow() {
 
         {/* Currency Selection */}
         <div className="mb-6">
-          <label className="modal-label">{t("Currency")}</label>
+          <label className="modal-label">{t("import.field.currency")}</label>
           <CustomSelect
             value={currency}
             onChange={setCurrency}
@@ -104,13 +104,13 @@ export default function WelcomeWindow() {
               value: c.code,
               label: `${c.code} - ${c.name} (${c.symbol})`,
             }))}
-            placeholder={t("settings.select_currency_placeholder")}
+            placeholder={t("account.placeholder.select_currency")}
           />
         </div>
 
         {/* Locale Selection */}
         <div className="mb-6">
-          <label className="modal-label">{t("Number Format")}</label>
+          <label className="modal-label">{t("number_format")}</label>
           <CustomSelect
             value={locale}
             onChange={setLocale}
@@ -126,7 +126,7 @@ export default function WelcomeWindow() {
         </div>
         {/* Date Format Selection */}
         <div className="mb-6">
-          <label className="modal-label">{t("Date Format")}</label>
+          <label className="modal-label">{t("settings.date_format")}</label>
           <CustomSelect
             value={dateFormat}
             onChange={setDateFormat}
@@ -136,18 +136,18 @@ export default function WelcomeWindow() {
         </div>
         {/* First Day of Week Selection */}
         <div className="mb-6">
-          <label className="modal-label">{t("First Day of Week")}</label>
+          <label className="modal-label">{t("settings.first_day_of_week")}</label>
           <CustomSelect
             value={firstDayOfWeek}
             onChange={(v) => setFirstDayOfWeek(Number(v))}
             options={[
-              { value: 1, label: t("Monday") },
-              { value: 2, label: t("Tuesday") },
-              { value: 3, label: t("Wednesday") },
-              { value: 4, label: t("Thursday") },
-              { value: 5, label: t("Friday") },
-              { value: 6, label: t("Saturday") },
-              { value: 0, label: t("Sunday") },
+              { value: 1, label: t("weekday.monday") },
+              { value: 2, label: t("weekday.tuesday") },
+              { value: 3, label: t("weekday.wednesday") },
+              { value: 4, label: t("weekday.thursday") },
+              { value: 5, label: t("weekday.friday") },
+              { value: 6, label: t("weekday.saturday") },
+              { value: 0, label: t("weekday.sunday") },
             ]}
             placeholder={t("settings.select_first_day_placeholder")}
           />
@@ -156,7 +156,7 @@ export default function WelcomeWindow() {
       <ModalFooter>
         <button onClick={handleComplete} className="btn-primary">
           <Check size={18} />
-          {t("Get Started")}
+          {t("welcome.get_started")}
         </button>
       </ModalFooter>
     </Modal>

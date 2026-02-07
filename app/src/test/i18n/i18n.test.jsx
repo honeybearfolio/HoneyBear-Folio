@@ -15,6 +15,6 @@ describe("i18n: dynamic locale loading", () => {
   it("loads Spanish locale with setLanguage('es') and translates a known key", async () => {
     await setLanguage("es");
     expect(getCurrentLanguage()).toBe("es");
-    expect(t("Welcome to HoneyBear Folio")).toBe("Bienvenido a HoneyBear Folio");
+    expect(t("welcome.title")).toBe("Bienvenido a HoneyBear Folio");
   });
 });

@@ -11,7 +11,7 @@ export function ConfirmDialogProvider({ children }) {
     message: "",
     title: t("confirm.title"),
     okLabel: t("confirm.ok"),
-    cancelLabel: t("confirm.cancel"),
+    cancelLabel: t("account.cancel"),
     kind: "info", // info, warning, error
   });
   const resolveRef = useRef(null);
@@ -22,7 +22,7 @@ export function ConfirmDialogProvider({ children }) {
         message,
         title: opts.title || t("confirm.title"),
         okLabel: opts.okLabel || t("confirm.ok"),
-        cancelLabel: opts.cancelLabel || t("confirm.cancel"),
+        cancelLabel: opts.cancelLabel || t("account.cancel"),
         kind: opts.kind || "info",
         showCancel: opts.showCancel !== undefined ? opts.showCancel : true,
       });

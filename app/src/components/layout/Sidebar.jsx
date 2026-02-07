@@ -289,7 +289,7 @@ export default function Sidebar({
         <div>
           <div className="sidebar-section-header">
             <h2 className="sidebar-section-title-inline">
-              {t("accounts.accounts")}
+              {t("dashboard.accounts_breakdown")}
             </h2>
             <div className="flex items-center gap-1">
               <div className="relative" ref={sortMenuRef}>

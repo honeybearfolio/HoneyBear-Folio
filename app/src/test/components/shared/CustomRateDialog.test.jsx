@@ -8,7 +8,7 @@ vi.mock("../../../i18n/i18n", () => ({
     const translations = {
       "custom_rate.title": "Set Exchange Rate",
       "custom_rate.message": `Enter exchange rate for ${params?.currency || "currency"}`,
-      "confirm.cancel": "Cancel",
+      "account.cancel": "Cancel",
       "confirm.save": "Save",
     };
     return translations[key] || key;

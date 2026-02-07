@@ -241,15 +241,15 @@ function App() {
   // Derive selectedAccount
   let selectedAccount = null;
   if (selectedAccountId === "dashboard") {
-    selectedAccount = { id: "dashboard", name: "Dashboard" };
+    selectedAccount = { id: "dashboard", name: t("nav.dashboard") };
   } else if (selectedAccountId === "investment-dashboard") {
-    selectedAccount = { id: "investment-dashboard", name: "Investments" };
+    selectedAccount = { id: "investment-dashboard", name: t("nav.investments") };
   } else if (selectedAccountId === "fire-calculator") {
-    selectedAccount = { id: "fire-calculator", name: t("app.fire_calculator_name") };
+    selectedAccount = { id: "fire-calculator", name: t("nav.fire_calculator") };
   } else if (selectedAccountId === "all") {
     selectedAccount = {
       id: "all",
-      name: "All Transactions",
+      name: t("nav.all_transactions"),
       balance: totalCashBalance,
       totalValue: totalBalance,
     };
@@ -371,7 +371,7 @@ function App() {
                             <Wallet className="w-16 h-16 text-brand-500" />
                           </div>
                           <h2 className="text-3xl font-bold mb-3 text-slate-800 dark:text-slate-100 tracking-tight">
-{t("Welcome to HoneyBear Folio")}
+{t("welcome.title")}
                         </h2>
                           <p className="text-lg text-slate-500 dark:text-slate-400 max-w-md text-center leading-relaxed">
                             {t("welcome.select_account")}

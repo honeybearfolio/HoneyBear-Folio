@@ -6,19 +6,21 @@ import WelcomeWindow from "../../../components/shared/WelcomeWindow";
 vi.mock("../../../i18n/i18n", () => ({
   t: (key) => {
     const translations = {
-      "Welcome to HoneyBear Folio": "Welcome to HoneyBear Folio",
-      "Let's set up your preferences to get started.":
-        "Let's set up your preferences to get started.",
-      Theme: "Theme",
-      Currency: "Currency",
+      "welcome.title": "Welcome to HoneyBear Folio",
+      "welcome.subtitle": "Let's set up your preferences to get started.",
+      "settings.theme": "Theme",
+      "import.field.currency": "Currency",
       "settings.theme.light": "Light",
       "settings.theme.dark": "Dark",
       "settings.theme.system": "System",
       "settings.select_theme_placeholder": "Select theme",
-      "settings.select_currency_placeholder": "Select currency",
+      "account.placeholder.select_currency": "Select currency",
       "settings.language": "Language",
       "settings.select_language_placeholder": "Select language",
-      "Get Started": "Get Started",
+      "welcome.get_started": "Get Started",
+      "number_format": "Number Format",
+      "settings.date_format": "Date format",
+      "settings.first_day_of_week": "First Day of Week",
     };
     return translations[key] || key;
   },

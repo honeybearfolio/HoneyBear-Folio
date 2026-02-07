@@ -969,7 +969,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
             className="btn-secondary"
             disabled={importing}
           >
-            {t("export.cancel")}
+            {t("account.cancel")}
           </button>
 
           {step === 0 ? (

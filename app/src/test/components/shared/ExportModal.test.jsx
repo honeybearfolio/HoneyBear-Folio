@@ -13,7 +13,7 @@ vi.mock("../../../i18n/i18n", () => ({
       "export.format.xlsx": "Excel",
       "export.select_location_export": "Export",
       "export.exporting": "Exporting...",
-      "export.cancel": "Cancel",
+      "account.cancel": "Cancel",
       "export.success_saved": "Export successful",
       "export.failed": "Export failed",
     };

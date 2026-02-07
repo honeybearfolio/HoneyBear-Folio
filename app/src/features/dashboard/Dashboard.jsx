@@ -1237,7 +1237,7 @@ export default function Dashboard({
     <div className="page-container dashboard-container">
       <div className="hb-header-container">
         <div>
-          <h2 className="hb-header-title">{t("dashboard.title")}</h2>
+          <h2 className="hb-header-title">{t("nav.dashboard")}</h2>
           <p className="hb-header-subtitle">
             {t("dashboard.subtitle.overview")}
           </p>
@@ -1438,7 +1438,7 @@ export default function Dashboard({
               </svg>
             </div>
             <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
-              {t("dashboard.no_transactions_title")}
+              {t("account.no_transactions_found")}
             </p>
             <p className="text-sm text-slate-400 dark:text-slate-500">
               {t("dashboard.no_transactions_body")}
