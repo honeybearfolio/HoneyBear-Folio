@@ -113,14 +113,10 @@ export default function SettingsModal({ onClose }) {
     const el = e.currentTarget;
     try {
       const rect = el.getBoundingClientRect();
-      // place tooltip to the right of the control, slightly higher than center
-      el.style.setProperty(
-        "--tooltip-top",
-        `${rect.top + rect.height / 2 - 15}px`,
-      );
-      el.style.setProperty("--tooltip-left", `${rect.right - 15}px`);
+      // place tooltip above the center of the element
+      el.style.setProperty("--tooltip-top", `${rect.top - 8}px`);
+      el.style.setProperty("--tooltip-left", `${rect.left + rect.width / 2}px`);
       el.setAttribute("data-tooltip-visible", "true");
-      el.setAttribute("data-tooltip-side", "right");
     } catch {
       // ignore measurement errors
     }
@@ -129,7 +125,6 @@ export default function SettingsModal({ onClose }) {
   function hideTooltip(e) {
     const el = e.currentTarget;
     el.removeAttribute("data-tooltip-visible");
-    el.removeAttribute("data-tooltip-side");
   }
 
   async function openExternal(url) {
