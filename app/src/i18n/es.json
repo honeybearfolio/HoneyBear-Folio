@@ -17,7 +17,6 @@
   "about.view_license": "Ver la licencia completa",
   "about.version": "Versión",
   "about.website": "Página oficial",
-
   "account.action.delete": "Eliminar cuenta",
   "account.action.duplicate": "Duplicar",
   "account.action.rename": "Renombrar cuenta",
@@ -57,10 +56,8 @@
   "account.tag.transfer": "Transferencia",
   "account.total_value_label": "Valor total:",
   "account.updated": "Cuenta actualizada",
-
   "app.hide_sidebar": "Ocultar barra lateral",
   "app.show_sidebar": "Mostrar barra lateral",
-
   "confirm.delete": "Eliminar",
   "confirm.delete_account": "¿Seguro que quieres eliminar \"{name}\" y TODAS sus transacciones? Esta acción no se puede deshacer.",
   "confirm.delete_title": "Confirmar eliminación",
@@ -74,13 +71,10 @@
   "confirm.select_account": "Selecciona una cuenta para añadir la transacción.",
   "confirm.title": "Confirmar",
   "confirm.transaction_title": "Transacción",
-
   "custom_rate.message": "Yahoo Finance no admite {currency}. Por favor ingresa la tasa de cambio en USD (Precio de 1 {currency} en USD).",
   "custom_rate.title": "Tasa de cambio personalizada",
-
   "customselect.no_results": "Sin resultados",
   "customselect.search_placeholder": "Buscar...",
-
   "dashboard.accounts_breakdown": "Cuentas",
   "dashboard.asset_allocation": "Asignación de activos",
   "dashboard.assets.cash": "Efectivo",
@@ -119,7 +113,6 @@
   "dashboard.subtitle.where_your_money_goes": "A dónde va tu dinero",
   "dashboard.total_accounts": "Total de cuentas",
   "dashboard.total_transactions": "Total de transacciones",
-
   "error.account_exists": "Ya existe una cuenta llamada \"{name}\".",
   "error.check_console": "Revisa la consola del desarrollador para más detalles.",
   "error.copy": "Copiar",
@@ -127,7 +120,6 @@
   "error.reload": "Recargar",
   "error.show_details": "Mostrar detalles",
   "error.something_went_wrong": "Algo salió mal al renderizar esta vista.",
-
   "export.exporting": "Exportando...",
   "export.failed": "Exportación fallida: {error}",
   "export.format.csv": "CSV",
@@ -137,7 +129,6 @@
   "export.select_location_export": "Seleccionar ubicación y exportar",
   "export.success_saved": "Exportación exitosa — guardado en {path}",
   "export.title": "Exportar datos",
-
   "fire.advanced_description": "Parámetros de la simulación Monte Carlo para proyecciones probabilísticas.",
   "fire.age_timeline": "Edad y cronograma",
   "fire.age_value": "Edad {age}",
@@ -179,14 +170,11 @@
   "fire.volatility_hint": "Desviación estándar de los retornos (ej., 0.10 = 10%)",
   "fire.withdrawal_rate": "Tasa de retiro segura",
   "fire.years": "años",
-
   "footer.export": "Exportar",
   "footer.import": "Importar",
   "footer.settings": "Ajustes",
   "footer.version_suffix": "HoneyBear Folio",
-
   "general.uncategorized": "Sin categorizar",
-
   "import.back": "Atrás",
   "import.be_sure_map_account": "Asegúrate de mapear la columna de cuenta para que el importador pueda asignar cada fila a la cuenta correcta.",
   "import.change_file": "Cambiar archivo",
@@ -226,7 +214,6 @@
   "import.success": "Éxito",
   "import.title": "Importar transacciones",
   "import.unknown_payee": "Beneficiario desconocido",
-
   "investment.allocation_by_ticker": "Asignación por ticker",
   "investment.error_loading": "Error cargando datos",
   "investment.fetching_prices": "Obteniendo precios de mercado más recientes",
@@ -248,20 +235,15 @@
   "investment.table.shares_at": "acciones @",
   "investment.table.value": "Valor",
   "investment.title": "Panel de inversiones",
-
   "loading.loading_data": "Cargando datos...",
-
   "modal.close": "Cerrar",
-
   "nav.all_transactions": "Todas las transacciones",
   "nav.dashboard": "Panel",
   "nav.fire_calculator": "Calculadora FIRE",
   "nav.investments": "Inversiones",
   "nav.overview": "Resumen",
   "nav.rules": "Reglas",
-
   "number_format": "Formato de número",
-
   "rules.actions": "Acciones",
   "rules.add": "Agregar",
   "rules.add_action": "Agregar acción",
@@ -303,7 +285,6 @@
   "rules.title": "Reglas",
   "rules.to": "a",
   "rules.update": "Actualizar",
-
   "settings.about": "Acerca de",
   "settings.currency": "Moneda",
   "settings.date_format": "Formato de fecha",
@@ -337,12 +318,18 @@
   "settings.tooltip.language": "Selecciona el idioma usado por la interfaz",
   "settings.tooltip.number_format": "Elige cómo se agrupan los números y qué separador decimal usar.",
   "settings.tooltip.theme": "Elige claro/oscuro o seguir la preferencia del sistema.",
-
+  "settings.exchange_rates": "Tasas de cambio",
+  "settings.exchange_rates_empty": "No hay tasas de cambio personalizadas. Las tasas personalizadas aparecerán aquí cuando uses monedas no soportadas por Yahoo Finance.",
+  "settings.exchange_rates_auto": "Auto",
+  "settings.exchange_rates_custom": "Personalizada",
+  "settings.tooltip.exchange_rates": "Administra las tasas de cambio. Las tasas personalizadas se configuran para monedas no soportadas por Yahoo Finance.",
+  "settings.exchange_rate_edit": "Editar tasa",
+  "settings.exchange_rate_delete": "Eliminar tasa personalizada",
+  "settings.exchange_rate_delete_confirm": "¿Eliminar la tasa personalizada para {currency}? La app intentará usar Yahoo Finance para esta moneda.",
   "sidebar.hide_values": "Ocultar valores",
   "sidebar.net_worth": "Patrimonio neto",
   "sidebar.show_values": "Mostrar valores",
   "sidebar.subtitle": "Cuentas y portafolios",
-
   "sort.balance_asc": "Saldo (Menor a Mayor)",
   "sort.balance_desc": "Saldo (Mayor a Menor)",
   "sort.manual": "Manual",
@@ -351,7 +338,6 @@
   "sort.sort_by": "Ordenar por",
   "sort.value_asc": "Valor (Menor a Mayor)",
   "sort.value_desc": "Valor (Mayor a Menor)",
-
   "transaction.buy": "Compra",
   "transaction.category.income": "Ingresos",
   "transaction.category.investment": "Inversión",
@@ -365,10 +351,8 @@
   "transaction.type.buy": "Compra",
   "transaction.type.investment": "Inversión",
   "transaction.type.sell": "Venta",
-
   "toast.dismiss": "Descartar",
   "toast.thank_you": "Gracias",
-
   "update.available_text": "Hay una nueva versión de HoneyBear Folio disponible: {version}",
   "update.downloading": "Descargando...",
   "update.failed_relaunch": "No se pudo relanzar la aplicación",
@@ -380,12 +364,10 @@
   "update.title": "Actualización disponible",
   "update.update_now": "Actualizar ahora",
   "update.updating": "Actualizando...",
-
   "welcome.get_started": "Comenzar",
   "welcome.select_account": "Selecciona una cuenta en la barra lateral para ver detalles, o crea una nueva para comenzar.",
   "welcome.subtitle": "Vamos a configurar tus preferencias para empezar.",
   "welcome.title": "Bienvenido a HoneyBear Folio",
-
   "weekday.friday": "Viernes",
   "weekday.monday": "Lunes",
   "weekday.saturday": "Sábado",

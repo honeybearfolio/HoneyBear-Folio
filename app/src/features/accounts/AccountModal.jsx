@@ -28,7 +28,7 @@ export default function AccountModal({
 
   const { showToast } = useToast();
   const parseNumber = useParseNumber();
-  const { checkAndPrompt, dialog } = useCustomRate();
+  const { checkAndPrompt, dialog, isLoading } = useCustomRate();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -157,7 +157,12 @@ export default function AccountModal({
                 ]}
                 onChange={async (val) => {
                   setCurrency(val);
-                  if (val) await checkAndPrompt(val);
+                  if (val) {
+                    const confirmed = await checkAndPrompt(val);
+                    if (!confirmed) {
+                      setCurrency("");
+                    }
+                  }
                 }}
                 icon={Globe}
                 data-testid="currency-select"
@@ -171,12 +176,19 @@ export default function AccountModal({
         <button type="button" onClick={onClose} className="btn-secondary">
           {t("account.cancel")}
         </button>
-        <button type="submit" form="account-form" className="btn-primary">
+        <button
+          type="submit"
+          form="account-form"
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isLoading}
+        >
           <Check className="w-4 h-4 text-white" />
           <span className="text-white">
-            {isEditing
-              ? t("account.save_changes")
-              : t("account.create_account")}
+            {isLoading
+              ? t("common.checking_rate") || "Checking rate..."
+              : isEditing
+                ? t("account.save_changes")
+                : t("account.create_account")}
           </span>
         </button>
       </ModalFooter>

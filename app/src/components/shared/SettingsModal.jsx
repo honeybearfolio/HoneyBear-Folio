@@ -38,6 +38,7 @@ import { useConfirm } from "../../contexts/confirm";
 import CONTRIBUTORS from "../../config/contributors";
 import THIRD_PARTY_LICENSES from "../../config/licenses";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import ExchangeRatesList from "./ExchangeRatesList";
 
 const GITHUB_REPO = "https://github.com/HoneyBearFolio/HoneyBear-Folio";
 const WEBSITE_URL = "https://honeybearfolio.github.io";
@@ -451,7 +452,12 @@ export default function SettingsModal({ onClose }) {
                     value={currency}
                     onChange={async (v) => {
                       setCurrency(v);
-                      if (v) await checkAndPrompt(v);
+                      if (v) {
+                        const confirmed = await checkAndPrompt(v);
+                        if (!confirmed) {
+                          setCurrency(currency); // Revert to previous
+                        }
+                      }
                     }}
                     options={CURRENCIES.map((c) => ({
                       value: c.code,
@@ -578,6 +584,32 @@ export default function SettingsModal({ onClose }) {
                     fullWidth={false}
                   />
                 </div>
+
+                {/* Exchange Rates Section */}
+                <div className="flex items-center justify-between mt-6">
+                  <div className="label-with-help">
+                    <span
+                      className="help-wrapper"
+                      data-tooltip={t("settings.tooltip.exchange_rates")}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t("settings.tooltip.exchange_rates")}
+                      onMouseEnter={showTooltip}
+                      onFocus={showTooltip}
+                      onMouseLeave={hideTooltip}
+                      onBlur={hideTooltip}
+                    >
+                      <HelpCircle
+                        className="w-4 h-4 text-slate-400 help-icon"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <label className="modal-label">
+                      {t("settings.exchange_rates")}
+                    </label>
+                  </div>
+                </div>
+                <ExchangeRatesList />
               </>
             )}
 
