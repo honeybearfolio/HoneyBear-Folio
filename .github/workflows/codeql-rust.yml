@@ -6,42 +6,13 @@ on:
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'app/**'
+      - 'app/src-tauri/**'
   schedule:
     - cron: '26 12 * * 2'
 
 jobs:
-  # Determine which parts of the repo changed so we only run the relevant analysis
-  paths:
-    name: Determine changed areas
-    runs-on: ubuntu-latest
-    outputs:
-      js: ${{ steps.filter.outputs.js }}
-      tauri: ${{ steps.filter.outputs.tauri }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Detect changed paths
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            js:
-              - 'app/**'
-              - '!app/src-tauri/**'
-            tauri:
-              - 'app/src-tauri/**'
-
   analyze:
     name: Analyze
-    needs: paths
-    # run only the matrix entries that match changed paths:
-    # - javascript when `js` changed
-    # - rust when `tauri` changed
-    if: |
-      (matrix.language == 'javascript' && needs.paths.outputs.js == 'true') ||
-      (matrix.language == 'rust' && needs.paths.outputs.tauri == 'true')
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -51,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'rust' ]
+        language: [ 'rust' ]
 
     steps:
     - name: Checkout repository
