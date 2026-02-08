@@ -141,8 +141,6 @@ describe("SettingsModal (language placement)", () => {
     const mockConfirmLocal = mockConfirm;
     mockConfirmLocal.mockResolvedValueOnce(true);
 
-    const { useNumberFormat } = await import("../../../contexts/number-format");
-
     render(<SettingsModal onClose={vi.fn()} />);
 
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
