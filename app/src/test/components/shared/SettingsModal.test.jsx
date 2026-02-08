@@ -30,6 +30,8 @@ vi.mock("../../../i18n/i18n", () => ({
         "Choose the first day of the week for calendars.",
 
       "settings.select_theme_placeholder": "Select theme",
+      "settings.reset_to_defaults": "Reset to defaults",
+      "settings.reset_confirm": "Reset all settings to their default values? This cannot be undone.",
     };
     return map[key] || key;
   },
@@ -58,6 +60,15 @@ vi.mock("../../../contexts/number-format", () => ({
     setUiLanguage: mockSetUiLanguage,
   }),
 }));
+
+// Mock confirm context (used by the reset flow)
+const mockConfirm = vi.fn();
+vi.mock("../../../contexts/confirm", () => ({
+  useConfirm: () => mockConfirm,
+}));
+
+// Mock Tauri invoke (reset_db_path is called during reset)
+vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue("") }));
 
 // Mock CustomSelect to expose options easily and provide sensible test ids based on placeholder
 vi.mock("../../../components/ui/CustomSelect", () => ({
@@ -118,5 +129,48 @@ describe("SettingsModal (language placement)", () => {
 
     fireEvent.change(sel, { target: { value: "es" } });
     expect(mockSetUiLanguage).toHaveBeenCalledWith("es");
+  });
+
+  it("asks for confirmation and resets when confirmed", async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const mockConfirmLocal = mockConfirm;
+    mockConfirmLocal.mockResolvedValueOnce(true);
+
+    const { useNumberFormat } = await import("../../../contexts/number-format");
+    const setters = useNumberFormat();
+
+    render(<SettingsModal onClose={vi.fn()} />);
+
+    const btn = screen.getByRole("button", { name: /Reset to defaults/i });
+    fireEvent.click(btn);
+
+    // confirm should be shown and resolved
+    await expect(mockConfirmLocal).toHaveBeenCalledWith(
+      "settings.reset_confirm",
+      expect.objectContaining({ kind: "warning" }),
+    );
+
+    // setters should be called to apply defaults
+    await expect(setters.setLocale).toHaveBeenCalledWith("en-US");
+    await expect(setters.setCurrency).toHaveBeenCalledWith("USD");
+    await expect(setters.setUiLanguage).toHaveBeenCalledWith("en");
+    expect(invoke).toHaveBeenCalledWith("reset_db_path");
+  });
+
+  it("does not reset when confirmation is cancelled", async () => {
+    const mockConfirmLocal = mockConfirm;
+    mockConfirmLocal.mockResolvedValueOnce(false);
+
+    const { useNumberFormat } = await import("../../../contexts/number-format");
+    const setters = useNumberFormat();
+
+    render(<SettingsModal onClose={vi.fn()} />);
+
+    const btn = screen.getByRole("button", { name: /Reset to defaults/i });
+    fireEvent.click(btn);
+
+    await expect(mockConfirmLocal).toHaveBeenCalled();
+    expect(setters.setLocale).not.toHaveBeenCalled();
+    expect(setters.setUiLanguage).not.toHaveBeenCalled();
   });
 });

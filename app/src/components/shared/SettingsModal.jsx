@@ -34,6 +34,7 @@ import {
 } from "../../utils/version";
 
 import { useCustomRate } from "../../hooks/useCustomRate";
+import { useConfirm } from "../../contexts/confirm";
 import CONTRIBUTORS from "../../config/contributors";
 import THIRD_PARTY_LICENSES from "../../config/licenses";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -59,6 +60,7 @@ export default function SettingsModal({ onClose }) {
   const { theme, setTheme } = useTheme();
   const [dbPath, setDbPath] = useState("");
   const { checkAndPrompt, dialog } = useCustomRate();
+  const confirm = useConfirm();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
   const [fontSize, setFontSize] = useState(() => {
     try {
@@ -154,27 +156,42 @@ export default function SettingsModal({ onClose }) {
 
   async function handleResetDefaults() {
     try {
-      localStorage.removeItem("hb_number_format");
-      localStorage.removeItem("hb_currency");
-      localStorage.removeItem("hb_theme");
-      localStorage.removeItem("hb_font_size");
-      localStorage.removeItem("hb_date_format");
-      localStorage.removeItem("hb_first_day_of_week");
-    } catch {
-      /* ignore */
-    }
-    setLocale("en-US");
-    setCurrency("USD");
-    setTheme("system");
-    setFontSize(1.0);
-    setDateFormat("YYYY-MM-DD");
-    setFirstDayOfWeek(1);
-    try {
-      await invoke("reset_db_path");
-      const p = await invoke("get_db_path_command");
-      setDbPath(p);
+      // Confirm with the user before doing an irreversible reset
+      const confirmed = await confirm(t("settings.reset_confirm"), {
+        kind: "warning",
+      });
+      if (!confirmed) return;
+
+      try {
+        localStorage.removeItem("hb_number_format");
+        localStorage.removeItem("hb_currency");
+        localStorage.removeItem("hb_theme");
+        localStorage.removeItem("hb_font_size");
+        localStorage.removeItem("hb_date_format");
+        localStorage.removeItem("hb_first_day_of_week");
+        localStorage.removeItem("hb_ui_language");
+      } catch {
+        /* ignore */
+      }
+
+      setLocale("en-US");
+      setCurrency("USD");
+      setTheme("system");
+      setFontSize(1.0);
+      setDateFormat("YYYY-MM-DD");
+      setFirstDayOfWeek(1);
+      // Restore UI language to English (provider will apply this to the i18n runtime)
+      setUiLanguage("en");
+
+      try {
+        await invoke("reset_db_path");
+        const p = await invoke("get_db_path_command");
+        setDbPath(p);
+      } catch (e) {
+        console.error("Failed to reset DB path:", e);
+      }
     } catch (e) {
-      console.error("Failed to reset DB path:", e);
+      console.error("Failed to reset defaults:", e);
     }
   }
 
