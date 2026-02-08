@@ -283,4 +283,73 @@
   .about-divider {
     @apply border-t border-slate-100 dark:border-slate-800 my-4;
   }
+
+  /* Exchange Rates List styles */
+  .exchange-rates-list {
+    @apply flex flex-col gap-2 mt-2;
+  }
+
+  .exchange-rates-loading {
+    @apply flex items-center justify-center py-4;
+  }
+
+  .exchange-rates-empty {
+    @apply text-sm text-slate-500 dark:text-slate-400 py-2;
+  }
+
+  .exchange-rate-row {
+    @apply flex items-center justify-between gap-3 py-2 px-3 rounded-lg bg-slate-50 dark:bg-slate-800/50;
+  }
+
+  .exchange-rate-info {
+    @apply flex items-center gap-2;
+  }
+
+  .exchange-rate-currency {
+    @apply font-medium text-sm text-slate-700 dark:text-slate-200;
+  }
+
+  .exchange-rate-badge {
+    @apply text-xs px-2 py-0.5 rounded-full font-medium;
+  }
+
+  .exchange-rate-badge-custom {
+    @apply bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+  }
+
+  .exchange-rate-badge-auto {
+    @apply bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400;
+  }
+
+  .exchange-rate-value-actions {
+    @apply flex items-center gap-3;
+  }
+
+  .exchange-rate-value {
+    @apply text-sm font-mono text-slate-600 dark:text-slate-300;
+  }
+
+  .exchange-rate-actions {
+    @apply flex items-center gap-1;
+  }
+
+  .exchange-rate-action-btn {
+    @apply p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+  }
+
+  .exchange-rate-action-delete {
+    @apply hover:text-red-600 dark:hover:text-red-400;
+  }
+
+  .exchange-rate-edit {
+    @apply flex items-center gap-2;
+  }
+
+  .exchange-rate-input {
+    @apply w-24 px-2 py-1 text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200;
+  }
+
+  .btn-sm {
+    @apply text-xs px-2 py-1;
+  }
 }

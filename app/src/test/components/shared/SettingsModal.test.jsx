@@ -33,6 +33,16 @@ vi.mock("../../../i18n/i18n", () => ({
       "settings.reset_to_defaults": "Reset to defaults",
       "settings.reset_confirm":
         "Reset all settings to their default values? This cannot be undone.",
+
+      // exchange rates keys (some tests render the list)
+      "settings.exchange_rates_empty": "No custom exchange rates configured.",
+      "settings.exchange_rates_custom": "custom",
+      "settings.exchange_rate_edit": "Edit rate",
+      "settings.exchange_rate_delete": "Remove custom rate",
+      "settings.exchange_rate_delete_confirm":
+        "Remove custom rate for {currency}?",
+      "confirm.save": "Save",
+      "account.cancel": "Cancel",
     };
     return map[key] || key;
   },

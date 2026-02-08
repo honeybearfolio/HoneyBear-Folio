@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import CustomRateDialog from "../components/shared/CustomRateDialog";
 
 export function useCustomRate() {
+  const [isLoading, setIsLoading] = useState(false);
   const [dialogState, setDialogState] = useState({
     isOpen: false,
     currency: "",
@@ -10,34 +11,50 @@ export function useCustomRate() {
   });
 
   const checkAndPrompt = async (currency) => {
-    if (!currency || currency === "USD") return true;
-
+    setIsLoading(true);
     try {
-      // Check availability
-      const isAvailable = await invoke("check_currency_availability", {
-        currency,
-      });
+      if (!currency || currency === "USD") return true;
 
-      // Check if we already have a custom rate
-      const existingRate = await invoke("get_custom_exchange_rate", {
-        currency,
-      });
+      let isAvailable = false;
+      let existingRate = null;
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Currency check timed out")),
+          3000, // 3 second timeout
+        ),
+      );
+
+      try {
+        // Check availability
+        isAvailable = await Promise.race([
+          invoke("check_currency_availability", { currency }),
+          timeoutPromise,
+        ]);
+
+        // Check if we already have a custom rate
+        existingRate = await invoke("get_custom_exchange_rate", {
+          currency,
+        });
+      } catch (e) {
+        console.error("Failed to check currency:", e);
+        // Fall through to prompt
+      }
 
       if (isAvailable || existingRate !== null) {
         return true;
       }
 
       // Need to prompt
-      return new Promise((resolve) => {
+      return await new Promise((resolve) => {
         setDialogState({
           isOpen: true,
           currency,
           resolve,
         });
       });
-    } catch (e) {
-      console.error("Failed to check currency:", e);
-      return true;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -67,5 +84,5 @@ export function useCustomRate() {
     />
   );
 
-  return { checkAndPrompt, dialog };
+  return { checkAndPrompt, dialog, isLoading };
 }

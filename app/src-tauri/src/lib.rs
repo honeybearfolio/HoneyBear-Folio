@@ -113,6 +113,8 @@ pub fn run() {
             utils::get_system_theme,
             utils::set_custom_exchange_rate,
             utils::get_custom_exchange_rate,
+            utils::get_all_exchange_rates,
+            utils::delete_custom_exchange_rate,
             rules::get_rules,
             rules::create_rule,
             rules::update_rule,

@@ -30,7 +30,10 @@ pub async fn search_ticker(
 ) -> Result<Vec<YahooSearchQuote>, String> {
     // 1. Get initial search results
     let mut quotes = search_ticker_with_client(
-        reqwest::Client::new(),
+        reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .map_err(|e| e.to_string())?,
         "https://query1.finance.yahoo.com".to_string(),
         query,
     )
@@ -63,6 +66,7 @@ pub async fn get_stock_quotes(
 ) -> Result<Vec<YahooQuote>, String> {
     get_stock_quotes_with_client(
         reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
             .build()
             .map_err(|e| e.to_string())?,
         "https://query1.finance.yahoo.com".to_string(),
@@ -436,7 +440,10 @@ pub async fn update_daily_stock_prices(
         .unwrap_or_else(|_| "https://query1.finance.yahoo.com".to_string());
     let db_path = crate::db_init::get_db_path(&app_handle)?;
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| e.to_string())?;
     update_daily_stock_prices_with_client_and_base(
         std::path::Path::new(&db_path),
         &client,
@@ -490,6 +497,7 @@ pub async fn check_currency_availability(
 
     let ticker = format!("{}USD=X", currency);
     let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 

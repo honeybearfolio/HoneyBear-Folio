@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 import { invoke } from "@tauri-apps/api/core";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
-import { useNumberFormat } from "../../contexts/number-format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import {
   buildHoldingsFromTransactions,
@@ -25,7 +24,6 @@ export default function InvestmentDashboard() {
   const [error, setError] = useState(null);
   const isDark = useIsDark();
   const chartColors = useChartColors();
-  const { uiLanguage, translationVersion } = useNumberFormat();
 
   const formatNumber = useFormatNumber();
 
@@ -88,7 +86,7 @@ export default function InvestmentDashboard() {
         },
       ],
     };
-  }, [holdings, isDark, chartColors, uiLanguage, translationVersion]);
+  }, [holdings, isDark, chartColors]);
 
   const chartOptions = useMemo(
     () => ({

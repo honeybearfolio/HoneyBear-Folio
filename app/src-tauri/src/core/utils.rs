@@ -293,3 +293,47 @@ pub fn get_custom_exchange_rate(
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     get_custom_exchange_rate_db(&db_path, currency)
 }
+
+/// An exchange rate entry for UI display
+#[derive(serde::Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExchangeRateEntry {
+    pub currency: String,
+    pub rate: f64,
+    pub is_custom: bool,
+}
+
+/// Get all custom exchange rates from the database
+#[tauri::command]
+pub fn get_all_exchange_rates(app_handle: AppHandle) -> Result<Vec<ExchangeRateEntry>, String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    let custom_rates = get_custom_rates_map(&db_path)?;
+
+    let entries: Vec<ExchangeRateEntry> = custom_rates
+        .into_iter()
+        .map(|(currency, rate)| ExchangeRateEntry {
+            currency,
+            rate,
+            is_custom: true,
+        })
+        .collect();
+
+    Ok(entries)
+}
+
+/// Delete a custom exchange rate from the database
+pub fn delete_custom_exchange_rate_db(db_path: &PathBuf, currency: String) -> Result<(), String> {
+    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    conn.execute(
+        "DELETE FROM custom_exchange_rates WHERE currency = ?1",
+        params![currency],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_custom_exchange_rate(app_handle: AppHandle, currency: String) -> Result<(), String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    delete_custom_exchange_rate_db(&db_path, currency)
+}
