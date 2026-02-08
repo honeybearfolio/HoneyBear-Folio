@@ -142,7 +142,6 @@ describe("SettingsModal (language placement)", () => {
     mockConfirmLocal.mockResolvedValueOnce(true);
 
     const { useNumberFormat } = await import("../../../contexts/number-format");
-    const setters = useNumberFormat();
 
     render(<SettingsModal onClose={vi.fn()} />);
 
