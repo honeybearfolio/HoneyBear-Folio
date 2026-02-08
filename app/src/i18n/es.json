@@ -355,6 +355,8 @@
   "transaction.buy": "Compra",
   "transaction.category.income": "Ingresos",
   "transaction.category.investment": "Inversión",
+  "transaction.delete": "Eliminar",
+  "transaction.duplicate": "Duplicar",
   "transaction.notes.bought_shares": "Compradas {shares} acciones de {ticker}",
   "transaction.notes.initial_balance": "Saldo inicial",
   "transaction.notes.sold_shares": "Vendidas {shares} acciones de {ticker}",

@@ -2120,7 +2120,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                   className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
                                 >
                                   <Copy className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                                  {t("account.action.duplicate")}
+                                  {t("transaction.duplicate")}
                                 </button>
                                 <button
                                   onClick={() => {
@@ -2131,7 +2131,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                   className="w-full text-left px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center gap-3 font-medium transition-colors"
                                 >
                                   <Trash2 className="w-4 h-4" />
-                                  {t("account.action.delete")}
+                                  {t("transaction.delete")}
                                 </button>
                               </div>,
                               document.body,
