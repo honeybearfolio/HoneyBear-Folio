@@ -36,7 +36,8 @@ fn test_create_account_negative_balance_creates_initial_tx() {
 #[test]
 fn test_create_account_initial_tx_details() {
     let (_dir, db_path) = setup_db();
-    let account = crate::create_account_db(&db_path, "Detail".to_string(), 200.0, None, None).unwrap();
+    let account =
+        crate::create_account_db(&db_path, "Detail".to_string(), 200.0, None, None).unwrap();
     let txs = crate::get_transactions_db(&db_path, account.id).unwrap();
     assert_eq!(txs.len(), 1);
     assert_eq!(txs[0].notes.as_deref(), Some("Initial Balance"));
@@ -102,7 +103,8 @@ fn test_create_account_with_currency_sets_account_and_tx_currency() {
 #[test]
 fn test_create_account_without_currency_transaction_currency_none() {
     let (_dir, db_path) = setup_db();
-    let acc = crate::create_account_db(&db_path, "NoCurAcct".to_string(), 50.0, None, None).unwrap();
+    let acc =
+        crate::create_account_db(&db_path, "NoCurAcct".to_string(), 50.0, None, None).unwrap();
     assert_eq!(acc.currency, None);
 
     let txs = crate::get_transactions_db(&db_path, acc.id).unwrap();

@@ -4,7 +4,8 @@ use rusqlite::{params, Connection};
 #[test]
 fn test_update_transaction() {
     let (_dir, db_path) = setup_db();
-    let account = crate::create_account_db(&db_path, "Test".to_string(), 100.0, None, None).unwrap();
+    let account =
+        crate::create_account_db(&db_path, "Test".to_string(), 100.0, None, None).unwrap();
     let tx = crate::create_transaction_db(
         &db_path,
         crate::CreateTransactionArgs {

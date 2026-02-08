@@ -273,17 +273,21 @@ pub fn create_investment_transaction_db(
         id: 0,
         account_id,
         date: date.clone(),
-        payee: payee.unwrap_or_else(|| if is_buy_local {
-            "Buy".to_string()
-        } else {
-            "Sell".to_string()
+        payee: payee.unwrap_or_else(|| {
+            if is_buy_local {
+                "Buy".to_string()
+            } else {
+                "Sell".to_string()
+            }
         }),
-        notes: notes.or_else(|| Some(format!(
-            "{} {} shares of {}",
-            if is_buy_local { "Bought" } else { "Sold" },
-            shares,
-            ticker
-        ))),
+        notes: notes.or_else(|| {
+            Some(format!(
+                "{} {} shares of {}",
+                if is_buy_local { "Bought" } else { "Sold" },
+                shares,
+                ticker
+            ))
+        }),
         category: category.or_else(|| Some("Investment".to_string())),
         amount: if is_buy_local {
             -(shares * price_per_share + fee)

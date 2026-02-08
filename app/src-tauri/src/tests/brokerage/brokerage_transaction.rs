@@ -4,8 +4,14 @@ use super::common::setup_db;
 fn test_investment_transaction_buy() {
     let (_dir, db_path) = setup_db();
     // Unified account
-    let acc =
-        crate::create_account_db(&db_path, "Investment Account".to_string(), 1000.0, None, None).unwrap();
+    let acc = crate::create_account_db(
+        &db_path,
+        "Investment Account".to_string(),
+        1000.0,
+        None,
+        None,
+    )
+    .unwrap();
 
     let args = crate::CreateInvestmentTransactionArgs {
         account_id: acc.id,
@@ -76,8 +82,8 @@ fn test_investment_transaction_with_currency_sets_transaction_currency() {
 #[test]
 fn test_investment_transaction_sell() {
     let (_dir, db_path) = setup_db();
-    let acc =
-        crate::create_account_db(&db_path, "Investment Account".to_string(), 0.0, None, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "Investment Account".to_string(), 0.0, None, None)
+        .unwrap();
 
     let args = crate::CreateInvestmentTransactionArgs {
         account_id: acc.id,
