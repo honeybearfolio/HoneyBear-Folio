@@ -124,11 +124,7 @@ pub fn write_xlsx(file_path: String, sheets: Vec<SheetData>) -> Result<(), Strin
                             }
                             Value::Array(_) | Value::Object(_) => {
                                 worksheet
-                                    .write_string(
-                                        (row_idx + 1) as u32,
-                                        col as u16,
-                                        val.to_string(),
-                                    )
+                                    .write_string((row_idx + 1) as u32, col as u16, val.to_string())
                                     .map_err(|e| e.to_string())?;
                             }
                         }
