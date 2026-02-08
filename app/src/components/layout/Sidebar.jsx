@@ -392,14 +392,14 @@ export default function Sidebar({
             onClick={() => setShowImportModal(true)}
             className="sidebar-footer-button"
           >
-            <Upload className="w-4 h-4" />
+            <Download className="w-4 h-4" />
             <span className="text-xs font-medium">{t("footer.import")}</span>
           </button>
           <button
             onClick={() => setShowExportModal(true)}
             className="sidebar-footer-button"
           >
-            <Download className="w-4 h-4" />
+            <Upload className="w-4 h-4" />
             <span className="text-xs font-medium">{t("footer.export")}</span>
           </button>
           <button
