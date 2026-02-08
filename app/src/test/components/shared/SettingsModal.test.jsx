@@ -39,7 +39,8 @@ vi.mock("../../../i18n/i18n", () => ({
       "settings.exchange_rates_custom": "custom",
       "settings.exchange_rate_edit": "Edit rate",
       "settings.exchange_rate_delete": "Remove custom rate",
-      "settings.exchange_rate_delete_confirm": "Remove custom rate for {currency}?",
+      "settings.exchange_rate_delete_confirm":
+        "Remove custom rate for {currency}?",
       "confirm.save": "Save",
       "account.cancel": "Cancel",
     };

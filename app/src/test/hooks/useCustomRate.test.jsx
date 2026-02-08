@@ -1,4 +1,10 @@
-import { renderHook, render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import {
+  renderHook,
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { invoke } from "@tauri-apps/api/core";
@@ -10,10 +16,7 @@ vi.mock("../../components/shared/CustomRateDialog", () => ({
     isOpen ? (
       <div data-testid="custom-rate-dialog">
         <div data-testid="custom-rate-currency">{currency}</div>
-        <button
-          data-testid="dialog-confirm"
-          onClick={() => onConfirm(2.5)}
-        >
+        <button data-testid="dialog-confirm" onClick={() => onConfirm(2.5)}>
           Confirm
         </button>
         <button data-testid="dialog-cancel" onClick={() => onCancel()}>

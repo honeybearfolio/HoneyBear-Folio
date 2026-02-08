@@ -63,7 +63,9 @@ describe("ExchangeRatesList", () => {
     inMemoryRates = [];
     render(<ExchangeRatesList />);
 
-    expect(await screen.findByText(/No custom exchange rates configured\./i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/No custom exchange rates configured\./i),
+    ).toBeInTheDocument();
   });
 
   it("lists custom rates (sorted) and shows badges", async () => {

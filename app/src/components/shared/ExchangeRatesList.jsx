@@ -63,7 +63,7 @@ export default function ExchangeRatesList({ onRateChange }) {
   const handleDelete = async (currency) => {
     const confirmed = await confirm(
       t("settings.exchange_rate_delete_confirm", { currency }),
-      { kind: "warning" }
+      { kind: "warning" },
     );
     if (!confirmed) return;
 
