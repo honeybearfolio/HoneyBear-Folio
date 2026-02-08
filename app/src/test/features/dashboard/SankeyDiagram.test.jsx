@@ -23,6 +23,24 @@ vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (val) => `${val}`,
 }));
 
+// Provide a light NumberFormat context mock so the component can call
+// `useNumberFormat()` without needing the provider in this unit test.
+vi.mock("../../../contexts/number-format", () => ({
+  useNumberFormat: () => ({
+    locale: "en-US",
+    setLocale: () => {},
+    currency: "USD",
+    setCurrency: () => {},
+    dateFormat: "YYYY-MM-DD",
+    setDateFormat: () => {},
+    firstDayOfWeek: 1,
+    setFirstDayOfWeek: () => {},
+    uiLanguage: "en",
+    setUiLanguage: () => {},
+    translationVersion: 0,
+  }),
+}));
+
 vi.mock("../../../i18n/i18n", () => ({
   t: (k) => k,
 }));

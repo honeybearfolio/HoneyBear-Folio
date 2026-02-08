@@ -73,6 +73,8 @@ export default function Dashboard({
     firstDayOfWeek,
     currency: appCurrency,
     locale,
+    uiLanguage,
+    translationVersion,
   } = useNumberFormat();
 
   const accountMap = useMemo(() => {
@@ -631,7 +633,16 @@ export default function Dashboard({
         },
       ],
     };
-  }, [accounts, transactions, quotes, dailyPrices, isDark, chartColors]);
+  }, [
+    accounts,
+    transactions,
+    quotes,
+    dailyPrices,
+    isDark,
+    chartColors,
+    uiLanguage,
+    translationVersion,
+  ]);
 
   const expensesByCategoryData = useMemo(() => {
     if (transactions.length === 0) return null;
@@ -734,6 +745,8 @@ export default function Dashboard({
     getPrice,
     appCurrency,
     chartColors,
+    uiLanguage,
+    translationVersion,
   ]);
 
   const incomeVsExpensesData = useMemo(() => {
@@ -856,6 +869,8 @@ export default function Dashboard({
     getPrice,
     appCurrency,
     chartColors,
+    uiLanguage,
+    translationVersion,
   ]);
 
   const doughnutOptions = useMemo(

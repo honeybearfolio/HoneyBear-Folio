@@ -12,6 +12,23 @@ vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (val) => `fmt-${val}`,
 }));
 
+// Mock number-format context used by formatting hooks/components
+vi.mock("../../../contexts/number-format", () => ({
+  useNumberFormat: () => ({
+    locale: "en-US",
+    setLocale: () => {},
+    currency: "USD",
+    setCurrency: () => {},
+    dateFormat: "YYYY-MM-DD",
+    setDateFormat: () => {},
+    firstDayOfWeek: 1,
+    setFirstDayOfWeek: () => {},
+    uiLanguage: "en",
+    setUiLanguage: () => {},
+    translationVersion: 0,
+  }),
+}));
+
 vi.mock("../../../utils/investments", () => ({
   buildHoldingsFromTransactions: (txs) => ({
     currentHoldings: txs.length > 0 ? [{ ticker: "AAPL", qty: 10 }] : [],

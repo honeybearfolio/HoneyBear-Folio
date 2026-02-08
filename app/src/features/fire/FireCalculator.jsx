@@ -16,6 +16,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
+import { useNumberFormat } from "../../contexts/number-format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import {
   runMonteCarloSimulation,
@@ -104,6 +105,7 @@ export default function FireCalculator() {
   const [loading, setLoading] = useState(!savedState);
   const isDark = useIsDark();
   const chartColors = useChartColors();
+  const { uiLanguage, translationVersion } = useNumberFormat();
 
   // Track which fields the user has manually edited during the session so
   // computed backend updates don't overwrite them while the app is open. We
@@ -521,6 +523,8 @@ export default function FireCalculator() {
     retirementAge,
     retirementDuration,
     chartColors,
+    uiLanguage,
+    translationVersion,
   ]);
 
   // Calculate retirement age when FIRE is reached
