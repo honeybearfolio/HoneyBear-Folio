@@ -322,6 +322,7 @@
   "settings.select_language_placeholder": "Select language",
   "settings.select_theme_placeholder": "Select theme",
   "settings.reset_to_defaults": "Reset to defaults",
+  "settings.reset_confirm": "Reset all settings to their default values? This cannot be undone.",
   "settings.tabs": "Settings tabs",
   "settings.theme": "Theme",
   "settings.theme.dark": "Dark",

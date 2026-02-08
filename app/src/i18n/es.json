@@ -322,6 +322,7 @@
   "settings.select_language_placeholder": "Selecciona idioma",
   "settings.select_theme_placeholder": "Selecciona tema",
   "settings.reset_to_defaults": "Restablecer por defecto",
+  "settings.reset_confirm": "¿Restablecer todos los ajustes a sus valores predeterminados? Esta acción no se puede deshacer.",
   "settings.tabs": "Pestañas de configuración",
   "settings.theme": "Tema",
   "settings.theme.dark": "Oscuro",
