@@ -24,7 +24,7 @@ fn test_update_investment_transaction_missing_id_should_error() {
 fn test_update_investment_transaction_updates_balance() {
     let (_dir, db_path) = setup_db();
     // Start with 1000
-    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None, None).unwrap();
 
     // Create initial buy: 10 * 100 + fee 2 = 1002 cost.
     // Balance: 1000 - 1002 = -2.0.
@@ -37,6 +37,9 @@ fn test_update_investment_transaction_updates_balance() {
         fee: 2.0,
         is_buy: true,
         currency: None,
+        payee: None,
+        notes: None,
+        category: None,
     };
 
     let created = crate::create_investment_transaction_db(&db_path, args).unwrap();
@@ -73,7 +76,7 @@ fn test_update_investment_transaction_updates_balance() {
 #[test]
 fn test_update_investment_transaction_custom_notes() {
     let (_dir, db_path) = setup_db();
-    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None, None).unwrap();
 
     let args = crate::CreateInvestmentTransactionArgs {
         account_id: acc.id,
@@ -84,6 +87,9 @@ fn test_update_investment_transaction_custom_notes() {
         fee: 2.0,
         is_buy: true,
         currency: None,
+        payee: None,
+        notes: None,
+        category: None,
     };
 
     let created = crate::create_investment_transaction_db(&db_path, args).unwrap();
@@ -113,7 +119,7 @@ fn test_update_investment_transaction_custom_notes() {
 #[test]
 fn test_update_investment_transaction_sell_changes_amounts() {
     let (_dir, db_path) = setup_db();
-    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None, None).unwrap();
 
     // Create initial buy: 10 * 100 + fee 2 = 1002 out.
     // Bal: -2.0.
@@ -126,6 +132,9 @@ fn test_update_investment_transaction_sell_changes_amounts() {
         fee: 2.0,
         is_buy: true,
         currency: None,
+        payee: None,
+        notes: None,
+        category: None,
     };
 
     let created = crate::create_investment_transaction_db(&db_path, args).unwrap();

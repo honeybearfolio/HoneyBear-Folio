@@ -509,16 +509,28 @@ export default function AccountDetails({ account, onUpdate }) {
       }
 
       if (transactionType === "investment") {
+        const sharesNum = parseNumber(shares);
         await invoke("create_investment_transaction", {
           args: {
             accountId: target.id,
             date,
             ticker,
-            shares: parseNumber(shares),
+            shares: sharesNum,
             pricePerShare: parseNumber(pricePerShare),
             fee: parseNumber(fee) || 0.0,
             isBuy,
             currency: useCustomCurrency ? selectedCurrency : null,
+            payee: isBuy ? t("transaction.buy") : t("transaction.sell"),
+            notes: isBuy
+              ? t("transaction.notes.bought_shares", {
+                  shares: sharesNum,
+                  ticker,
+                })
+              : t("transaction.notes.sold_shares", {
+                  shares: sharesNum,
+                  ticker,
+                }),
+            category: t("transaction.category.investment"),
           },
         });
 

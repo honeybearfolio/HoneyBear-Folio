@@ -155,6 +155,11 @@ describe("AccountModal", () => {
         name: "New Bank",
         balance: 1000,
         currency: "EUR",
+        initialTransaction: {
+          payee: "transaction.title.opening_balance",
+          notes: "transaction.notes.initial_balance",
+          category: "transaction.category.income",
+        },
       });
       expect(mockShowToast).toHaveBeenCalledWith(
         "account.created",

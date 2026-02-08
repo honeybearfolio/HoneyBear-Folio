@@ -58,6 +58,11 @@ export default function AccountModal({
           name: nameTrimmed,
           balance,
           currency: currency || null,
+          initialTransaction: {
+            payee: t("transaction.title.opening_balance"),
+            notes: t("transaction.notes.initial_balance"),
+            category: t("transaction.category.income"),
+          },
         });
         showToast(t("account.created") || "Account created", {
           type: "success",

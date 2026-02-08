@@ -3,7 +3,7 @@ use super::common::setup_db;
 #[test]
 fn test_update_account_currency() {
     let (_dir, db_path) = setup_db();
-    let acc = crate::create_account_db(&db_path, "UpdAcct".to_string(), 0.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "UpdAcct".to_string(), 0.0, None, None).unwrap();
 
     let updated = crate::update_account_db(&db_path, acc.id, "UpdAcct".to_string(), Some("EUR".to_string())).unwrap();
     assert_eq!(updated.currency.as_deref(), Some("EUR"));

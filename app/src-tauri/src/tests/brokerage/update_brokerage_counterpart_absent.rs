@@ -4,7 +4,7 @@ use super::common::setup_db;
 fn test_delete_investment_transaction_updates_balance() {
     let (_dir, db_path) = setup_db();
     let acc =
-        crate::create_account_db(&db_path, "Invest Delete".to_string(), 1000.0, None).unwrap();
+        crate::create_account_db(&db_path, "Invest Delete".to_string(), 1000.0, None, None).unwrap();
     // Create buy: cost 1005. Bal = -5.0.
     let args = crate::CreateInvestmentTransactionArgs {
         account_id: acc.id,
@@ -15,6 +15,9 @@ fn test_delete_investment_transaction_updates_balance() {
         fee: 5.0,
         is_buy: true,
         currency: None,
+        payee: None,
+        notes: None,
+        category: None,
     };
     let created = crate::create_investment_transaction_db(&db_path, args).unwrap();
 

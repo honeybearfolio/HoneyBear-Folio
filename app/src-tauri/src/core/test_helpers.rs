@@ -205,7 +205,7 @@ pub(crate) fn create_account_in_dir(
 ) -> Result<crate::Account, String> {
     let db_path = get_db_path_for_dir(dir)?;
     init_db_at_path(&db_path)?;
-    crate::create_account_db(&db_path, name, balance, None)
+    crate::create_account_db(&db_path, name, balance, None, None)
 }
 
 pub(crate) fn create_transaction_in_dir(
