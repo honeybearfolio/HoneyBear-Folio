@@ -122,8 +122,10 @@ describe("RulesList", () => {
       expect(invoke).toHaveBeenCalledWith(
         "create_rule",
         expect.objectContaining({
-          matchPattern: "Netflix",
-          actionValue: "Entertainment",
+          args: expect.objectContaining({
+            match_pattern: "Netflix",
+            action_value: "Entertainment",
+          }),
         }),
       );
     });
@@ -254,9 +256,11 @@ describe("RulesList", () => {
       expect(invoke).toHaveBeenCalledWith(
         "update_rule",
         expect.objectContaining({
-          id: 11,
-          matchPattern: "New Payee",
-          actionValue: "NewCat",
+          args: expect.objectContaining({
+            id: 11,
+            match_pattern: "New Payee",
+            action_value: "NewCat",
+          }),
         }),
       );
     });
@@ -303,12 +307,14 @@ describe("RulesList", () => {
       expect(invoke).toHaveBeenCalledWith(
         "create_rule",
         expect.objectContaining({
-          logic: "or",
-          conditions: expect.any(Array),
-          actions: expect.any(Array),
+          args: expect.objectContaining({
+            logic: "or",
+            conditions: expect.any(Array),
+            actions: expect.any(Array),
+          }),
         }),
       );
-      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1];
+      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1].args;
       expect(payload.conditions.length).toBe(2);
     });
 
@@ -361,12 +367,14 @@ describe("RulesList", () => {
       expect(invoke).toHaveBeenCalledWith(
         "create_rule",
         expect.objectContaining({
-          matchPattern: 123.45,
-          actions: expect.any(Array),
+          args: expect.objectContaining({
+            match_pattern: 123.45,
+            actions: expect.any(Array),
+          }),
         }),
       );
       // action values are stringified by the component
-      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1];
+      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1].args;
       expect(payload.actions[0].value).toBe("42");
     });
   });
@@ -393,7 +401,7 @@ describe("RulesList", () => {
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith(
         "create_rule",
-        expect.objectContaining({ matchPattern: "" }),
+        expect.objectContaining({ args: expect.objectContaining({ match_pattern: "" }) }),
       );
     });
   });
