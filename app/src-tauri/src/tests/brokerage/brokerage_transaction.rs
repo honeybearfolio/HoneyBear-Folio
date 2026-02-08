@@ -4,8 +4,14 @@ use super::common::setup_db;
 fn test_investment_transaction_buy() {
     let (_dir, db_path) = setup_db();
     // Unified account
-    let acc =
-        crate::create_account_db(&db_path, "Investment Account".to_string(), 1000.0, None).unwrap();
+    let acc = crate::create_account_db(
+        &db_path,
+        "Investment Account".to_string(),
+        1000.0,
+        None,
+        None,
+    )
+    .unwrap();
 
     let args = crate::CreateInvestmentTransactionArgs {
         account_id: acc.id,
@@ -16,6 +22,9 @@ fn test_investment_transaction_buy() {
         fee: 5.0,
         is_buy: true,
         currency: None,
+        payee: None,
+        notes: None,
+        category: None,
     };
 
     let created = crate::create_investment_transaction_db(&db_path, args).unwrap();
@@ -43,6 +52,7 @@ fn test_investment_transaction_with_currency_sets_transaction_currency() {
         "Investment Account".to_string(),
         1000.0,
         Some("USD".to_string()),
+        None,
     )
     .unwrap();
 
@@ -55,6 +65,9 @@ fn test_investment_transaction_with_currency_sets_transaction_currency() {
         fee: 2.0,
         is_buy: true,
         currency: Some("USD".to_string()),
+        payee: None,
+        notes: None,
+        category: None,
     };
 
     let created = crate::create_investment_transaction_db(&db_path, args).unwrap();
@@ -69,8 +82,8 @@ fn test_investment_transaction_with_currency_sets_transaction_currency() {
 #[test]
 fn test_investment_transaction_sell() {
     let (_dir, db_path) = setup_db();
-    let acc =
-        crate::create_account_db(&db_path, "Investment Account".to_string(), 0.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "Investment Account".to_string(), 0.0, None, None)
+        .unwrap();
 
     let args = crate::CreateInvestmentTransactionArgs {
         account_id: acc.id,
@@ -81,6 +94,9 @@ fn test_investment_transaction_sell() {
         fee: 5.0,
         is_buy: false,
         currency: None,
+        payee: None,
+        notes: None,
+        category: None,
     };
 
     let created = crate::create_investment_transaction_db(&db_path, args).unwrap();
@@ -113,6 +129,9 @@ fn test_create_investment_transaction_missing_account_should_error() {
         fee: 1.0,
         is_buy: true,
         currency: None,
+        payee: None,
+        notes: None,
+        category: None,
     };
 
     let res = crate::create_investment_transaction_db(&db_path, args);

@@ -4,11 +4,20 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use tauri::AppHandle;
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InitialTransactionDetails {
+    pub payee: String,
+    pub notes: String,
+    pub category: String,
+}
+
 pub fn create_account_db(
     db_path: &PathBuf,
     name: String,
     balance: f64,
     currency: Option<String>,
+    initial_transaction: Option<InitialTransactionDetails>,
 ) -> Result<Account, String> {
     let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
@@ -47,13 +56,23 @@ pub fn create_account_db(
 
     // Create opening transaction if balance is non-zero
     if balance.abs() > f64::EPSILON {
+        let (payee, notes, category) = if let Some(details) = initial_transaction {
+            (details.payee, details.notes, details.category)
+        } else {
+            (
+                "Opening Balance".to_string(),
+                "Initial Balance".to_string(),
+                "Income".to_string(),
+            )
+        };
+
         tx.execute(
             "INSERT INTO transactions (account_id, date, payee, notes, category, amount, currency) VALUES (?1, date('now'), ?2, ?3, ?4, ?5, ?6)",
             params![
                 id,
-                "Opening Balance",
-                "Initial Balance",
-                "Income",
+                payee,
+                notes,
+                category,
                 balance_to_set,
                 currency
             ],
@@ -259,9 +278,10 @@ pub fn create_account(
     name: String,
     balance: f64,
     currency: Option<String>,
+    initial_transaction: Option<InitialTransactionDetails>,
 ) -> Result<Account, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    create_account_db(&db_path, name, balance, currency)
+    create_account_db(&db_path, name, balance, currency, initial_transaction)
 }
 
 #[tauri::command]

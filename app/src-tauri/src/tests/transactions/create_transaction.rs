@@ -4,7 +4,7 @@ use super::common::setup_db;
 fn test_create_transaction() {
     let (_dir, db_path) = setup_db();
     let account =
-        crate::create_account_db(&db_path, "Test Account".to_string(), 100.0, None).unwrap();
+        crate::create_account_db(&db_path, "Test Account".to_string(), 100.0, None, None).unwrap();
 
     let tx = crate::create_transaction_db(
         &db_path,
@@ -38,6 +38,7 @@ fn test_create_transaction_with_currency_sets_transaction_currency() {
         "CurTxAcct".to_string(),
         100.0,
         Some("GBP".to_string()),
+        None,
     )
     .unwrap();
 
@@ -68,8 +69,8 @@ fn test_create_transaction_with_currency_sets_transaction_currency() {
 #[test]
 fn test_get_all_transactions() {
     let (_dir, db_path) = setup_db();
-    let acc1 = crate::create_account_db(&db_path, "A1".to_string(), 100.0, None).unwrap();
-    let acc2 = crate::create_account_db(&db_path, "A2".to_string(), 100.0, None).unwrap();
+    let acc1 = crate::create_account_db(&db_path, "A1".to_string(), 100.0, None, None).unwrap();
+    let acc2 = crate::create_account_db(&db_path, "A2".to_string(), 100.0, None, None).unwrap();
 
     crate::create_transaction_db(
         &db_path,
@@ -115,8 +116,8 @@ fn test_get_all_transactions() {
 #[test]
 fn test_create_transaction_transfer_details() {
     let (_dir, db_path) = setup_db();
-    let acc1 = crate::create_account_db(&db_path, "A1".to_string(), 100.0, None).unwrap();
-    let acc2 = crate::create_account_db(&db_path, "A2".to_string(), 0.0, None).unwrap();
+    let acc1 = crate::create_account_db(&db_path, "A1".to_string(), 100.0, None, None).unwrap();
+    let acc2 = crate::create_account_db(&db_path, "A2".to_string(), 0.0, None, None).unwrap();
 
     let tx = crate::create_transaction_db(
         &db_path,
@@ -147,7 +148,7 @@ fn test_create_transaction_transfer_details() {
 #[test]
 fn test_get_transactions_ordering() {
     let (_dir, db_path) = setup_db();
-    let acc = crate::create_account_db(&db_path, "Ord".to_string(), 0.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "Ord".to_string(), 0.0, None, None).unwrap();
     crate::create_transaction_db(
         &db_path,
         crate::CreateTransactionArgs {
@@ -218,7 +219,7 @@ fn test_create_transaction_with_nonexistent_account_errors_due_to_foreign_key() 
 #[test]
 fn test_create_transaction_preserves_nontransfer_category() {
     let (_dir, db_path) = setup_db();
-    let acc = crate::create_account_db(&db_path, "A".to_string(), 100.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "A".to_string(), 100.0, None, None).unwrap();
     let tx = crate::create_transaction_db(
         &db_path,
         crate::CreateTransactionArgs {
@@ -242,7 +243,7 @@ fn test_create_transaction_preserves_nontransfer_category() {
 #[test]
 fn test_create_transaction_with_ticker_shares_price_fee() {
     let (_dir, db_path) = setup_db();
-    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None).unwrap();
+    let acc = crate::create_account_db(&db_path, "Invest".to_string(), 1000.0, None, None).unwrap();
 
     let tx = crate::create_transaction_db(
         &db_path,

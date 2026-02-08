@@ -241,6 +241,9 @@ pub struct CreateInvestmentTransactionArgs {
     pub fee: f64,
     pub is_buy: bool,
     pub currency: Option<String>,
+    pub payee: Option<String>,
+    pub notes: Option<String>,
+    pub category: Option<String>,
 }
 
 pub fn create_investment_transaction_db(
@@ -256,6 +259,9 @@ pub fn create_investment_transaction_db(
         fee,
         is_buy,
         currency,
+        payee,
+        notes,
+        category,
     } = args;
 
     let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -267,18 +273,22 @@ pub fn create_investment_transaction_db(
         id: 0,
         account_id,
         date: date.clone(),
-        payee: if is_buy_local {
-            "Buy".to_string()
-        } else {
-            "Sell".to_string()
-        },
-        notes: Some(format!(
-            "{} {} shares of {}",
-            if is_buy_local { "Bought" } else { "Sold" },
-            shares,
-            ticker
-        )),
-        category: Some("Investment".to_string()),
+        payee: payee.unwrap_or_else(|| {
+            if is_buy_local {
+                "Buy".to_string()
+            } else {
+                "Sell".to_string()
+            }
+        }),
+        notes: notes.or_else(|| {
+            Some(format!(
+                "{} {} shares of {}",
+                if is_buy_local { "Bought" } else { "Sold" },
+                shares,
+                ticker
+            ))
+        }),
+        category: category.or_else(|| Some("Investment".to_string())),
         amount: if is_buy_local {
             -(shares * price_per_share + fee)
         } else {

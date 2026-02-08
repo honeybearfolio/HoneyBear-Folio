@@ -17,7 +17,7 @@ fn test_randomized_balance_invariants() {
         } else {
             rng.random_range(0..500) as f64
         };
-        let acc = crate::create_account_db(&db_path, format!("Acc{}", i), bal, None).unwrap();
+        let acc = crate::create_account_db(&db_path, format!("Acc{}", i), bal, None, None).unwrap();
         accounts.push(acc);
     }
 
@@ -89,6 +89,9 @@ fn test_randomized_balance_invariants() {
                 fee: rng.random_range(0..5) as f64,
                 is_buy: rng.random_bool(0.5),
                 currency: None,
+                payee: None,
+                notes: None,
+                category: None,
             };
             let _ = crate::create_investment_transaction_db(&db_path, args);
         } else if op < 0.9 {
