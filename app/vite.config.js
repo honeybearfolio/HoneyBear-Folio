@@ -63,7 +63,7 @@ export default defineConfig(async () => ({
           // Split Chart.js into its own chunk
           "chart-vendor": ["chart.js", "react-chartjs-2"],
           // Split file handling libraries into their own chunk
-          "file-vendor": ["xlsx", "papaparse"],
+          "file-vendor": ["papaparse"],
           // Split Tauri APIs into their own chunk
           "tauri-vendor": [
             "@tauri-apps/api",

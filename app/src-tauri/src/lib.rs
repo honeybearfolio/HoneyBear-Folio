@@ -1,5 +1,5 @@
 mod core;
-pub use crate::core::{accounts, db_init, markets, models, rules, transactions, utils};
+pub use crate::core::{accounts, db_init, io, markets, models, rules, transactions, utils};
 
 pub use crate::models::{
     Account, AppSettings, DailyPrice, Rule, Transaction, YahooChartResponse, YahooQuote,
@@ -98,6 +98,8 @@ pub fn run() {
             transactions::get_all_transactions,
             transactions::create_investment_transaction,
             transactions::update_transaction,
+            io::read_xlsx,
+            io::write_xlsx,
             transactions::update_investment_transaction,
             transactions::delete_transaction,
             transactions::get_payees,

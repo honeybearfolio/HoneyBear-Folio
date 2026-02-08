@@ -50,16 +50,6 @@ vi.mock("../../../utils/format", () => ({
   formatNumberForExport: (v) => (v != null ? String(v) : ""),
 }));
 
-// Mock XLSX
-vi.mock("xlsx", () => ({
-  utils: {
-    book_new: vi.fn(() => ({})),
-    json_to_sheet: vi.fn(() => ({})),
-    book_append_sheet: vi.fn(),
-  },
-  write: vi.fn(() => new Uint8Array([1, 2, 3])),
-}));
-
 describe("ExportModal", () => {
   const defaultProps = {
     onClose: vi.fn(),
@@ -171,5 +161,20 @@ describe("ExportModal", () => {
 
     const xlsxButton = screen.getByText("Excel").closest("button");
     expect(xlsxButton).toHaveClass("format-button-active");
+  });
+
+  it("calls write_xlsx for Excel format", async () => {
+    mockSave.mockResolvedValue("/path/to/export.xlsx");
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("Excel"));
+    fireEvent.click(screen.getByText("Export"));
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("write_xlsx", expect.objectContaining({
+          filePath: "/path/to/export.xlsx",
+          sheets: expect.any(Array)
+      }));
+    });
   });
 });
