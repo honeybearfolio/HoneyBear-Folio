@@ -333,10 +333,7 @@ pub fn delete_custom_exchange_rate_db(db_path: &PathBuf, currency: String) -> Re
 }
 
 #[tauri::command]
-pub fn delete_custom_exchange_rate(
-    app_handle: AppHandle,
-    currency: String,
-) -> Result<(), String> {
+pub fn delete_custom_exchange_rate(app_handle: AppHandle, currency: String) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     delete_custom_exchange_rate_db(&db_path, currency)
 }
