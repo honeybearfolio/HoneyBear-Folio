@@ -36,7 +36,7 @@ describe("i18n: dynamic locale loading", () => {
     await setLanguage("es");
     setLocale({});
     expect(t("confirm.delete_account", { name: "Alice" })).toBe(
-      en["confirm.delete_account"].replace("{name}", "Alice")
+      en["confirm.delete_account"].replace("{name}", "Alice"),
     );
   });
 });
