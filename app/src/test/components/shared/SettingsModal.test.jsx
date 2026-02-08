@@ -31,7 +31,8 @@ vi.mock("../../../i18n/i18n", () => ({
 
       "settings.select_theme_placeholder": "Select theme",
       "settings.reset_to_defaults": "Reset to defaults",
-      "settings.reset_confirm": "Reset all settings to their default values? This cannot be undone.",
+      "settings.reset_confirm":
+        "Reset all settings to their default values? This cannot be undone.",
     };
     return map[key] || key;
   },
@@ -68,7 +69,9 @@ vi.mock("../../../contexts/confirm", () => ({
 }));
 
 // Mock Tauri invoke (reset_db_path is called during reset)
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue("") }));
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn().mockResolvedValue(""),
+}));
 
 // Mock CustomSelect to expose options easily and provide sensible test ids based on placeholder
 vi.mock("../../../components/ui/CustomSelect", () => ({
