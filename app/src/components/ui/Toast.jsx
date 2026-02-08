@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
 import { Info, CheckCircle, AlertCircle, X } from "lucide-react";
 import "../../styles/Toast.css";
@@ -41,27 +42,30 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="toast-container" aria-live="polite" aria-atomic="true">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`toast toast-${toast.type}`}
-            role="status"
-          >
-            <div className="toast-content">
-              <span className="toast-icon">{getIcon(toast.type)}</span>
-              <span className="toast-message">{toast.message}</span>
-              <button
-                aria-label={t("toast.dismiss")}
-                className="toast-close"
-                onClick={() => removeToast(toast.id)}
-              >
-                <X size={16} />
-              </button>
+      {createPortal(
+        <div className="toast-container" aria-live="polite" aria-atomic="true">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`toast toast-${toast.type}`}
+              role="status"
+            >
+              <div className="toast-content">
+                <span className="toast-icon">{getIcon(toast.type)}</span>
+                <span className="toast-message">{toast.message}</span>
+                <button
+                  aria-label={t("toast.dismiss")}
+                  className="toast-close"
+                  onClick={() => removeToast(toast.id)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>,
+        document.body,
+      )}
     </ToastContext.Provider>
   );
 }

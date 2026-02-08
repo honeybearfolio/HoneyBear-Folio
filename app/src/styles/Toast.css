@@ -5,11 +5,12 @@
   display: flex;
   flex-direction: column-reverse;
   gap: 0.75rem;
-  z-index: 10000;
+  /* Place toasts above modals/windows but below transient popovers (datepicker uses very high z-index) */
+  z-index: 10005;
   pointer-events: none;
   /* Ensure toasts don't scale with font-size setting */
   font-size: 16px;
-}
+} 
 
 .toast {
   pointer-events: auto;

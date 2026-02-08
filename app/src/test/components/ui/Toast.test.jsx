@@ -216,5 +216,7 @@ describe("ToastProvider", () => {
     const container = document.querySelector(".toast-container");
     expect(container).toHaveAttribute("aria-live", "polite");
     expect(container).toHaveAttribute("aria-atomic", "true");
+    // ensure toasts are portalled to document.body so they can sit above other in-app windows
+    expect(container.parentElement).toBe(document.body);
   });
 });
