@@ -173,6 +173,22 @@
     color: #fff;
   }
 
+  /* Make the font-size slider explicitly show a clickable cursor */
+  .settings-slider input[type="range"] {
+    cursor: pointer;
+  }
+
+  /* Ensure the native slider thumb also shows pointer on all engines */
+  .settings-slider input[type="range"]::-webkit-slider-thumb {
+    cursor: pointer;
+  }
+  .settings-slider input[type="range"]::-moz-range-thumb {
+    cursor: pointer;
+  }
+  .settings-slider input[type="range"]::-ms-thumb {
+    cursor: pointer;
+  }
+
   .dark .label-with-help .help-wrapper[data-tooltip]::after,
   :root.dark .label-with-help .help-wrapper[data-tooltip]::after {
     background-color: rgba(15, 23, 42, 0.95);

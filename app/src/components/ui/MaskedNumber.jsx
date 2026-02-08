@@ -22,7 +22,7 @@ export default function MaskedNumber({
     });
     return (
       <span
-        className={`cursor-help ${className || ""}`}
+        className={`cursor-help cursor-pointer ${className || ""}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         {...props}

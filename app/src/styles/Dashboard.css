@@ -81,6 +81,11 @@
     height: 100%;
   }
 
+  /* Show a pointer when hovering chart areas — many charts (legends, nodes) are interactive */
+  .chart-body:hover canvas {
+    cursor: pointer;
+  }
+
   /* 
    * Removed aggressive !important overrides on canvas that were breaking resize behavior.
    * Chart.js with maintainAspectRatio: false handles sizing relative to the parent container (.chart-body).
@@ -438,6 +443,13 @@
 
   .account-visibility .account-dot {
     @apply inline-block;
+  }
+
+  /* Ensure rules page interactive controls show a pointer */
+  .rules-container button,
+  .rules-container [role="button"],
+  .rules-container .hb-clickable {
+    cursor: pointer;
   }
 
   /* Custom checkbox for account visibility */

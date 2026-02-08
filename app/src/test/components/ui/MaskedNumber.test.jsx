@@ -67,6 +67,7 @@ describe("MaskedNumber", () => {
     expect(el).toBeInTheDocument();
     expect(el).not.toHaveAttribute("title"); // Should not have tooltip
     expect(el).toHaveClass("cursor-help");
+    expect(el).toHaveClass("cursor-pointer");
 
     // Simulate hover
     fireEvent.mouseEnter(el);
@@ -112,6 +113,7 @@ describe("MaskedNumber", () => {
     const el = screen.getByTestId("masked-number");
     expect(el).toHaveClass("text-blue-500");
     expect(el).toHaveClass("cursor-help");
+    expect(el).toHaveClass("cursor-pointer");
     expect(el).toHaveTextContent("***");
 
     fireEvent.mouseEnter(el);

@@ -30,4 +30,32 @@
   .btn-warning {
     @apply flex items-center justify-center gap-2 px-6 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-500 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
+
+  /* Small utility for non-semantic clickable elements */
+  .hb-clickable {
+    @apply cursor-pointer;
+  }
+
+  /* Ensure elements using ARIA roles that behave like buttons show the correct cursor */
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  /* Force pointer cursor for native buttons and common button utilities — some UA/resets remove it */
+  button,
+  input[type="button"],
+  input[type="submit"],
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-warning {
+    cursor: pointer;
+  }
+
+  /* Icons inside interactive controls should inherit the pointer so hovering over the SVG shows the same cursor */
+  button svg,
+  .hb-clickable svg {
+    cursor: inherit;
+  }
 }
+
