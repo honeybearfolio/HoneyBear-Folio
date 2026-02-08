@@ -2,10 +2,9 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
-import { writeTextFile, writeFile } from "@tauri-apps/plugin-fs";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { Download, FileJson, FileSpreadsheet, FileText } from "lucide-react";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
-import * as XLSX from "xlsx";
 import { t } from "../../i18n/i18n";
 import "../../styles/Modal.css";
 import "../../styles/ExportModal.css";
@@ -92,45 +91,6 @@ export default function ExportModal({ onClose }) {
         defaultPath += ".csv";
         filters = [{ name: t("export.format.csv"), extensions: ["csv"] }];
       } else if (format === "xlsx") {
-        // Use XLSX to generate buffer
-        const wb = XLSX.utils.book_new();
-
-        // Helper to coerce numeric-like values into numeric cells where possible
-        const coerceNumber = (v) => {
-          if (v === null || v === undefined || v === "") return null;
-          if (typeof v === "number") return v;
-          const s = formatNumberForExport(v);
-          const n = Number(s);
-          return Number.isNaN(n) ? v : n;
-        };
-
-        // Transactions Sheet
-        const txData = transactions.map((t) => {
-          const acc = accounts.find((a) => a.id === t.account_id);
-          return {
-            [t("import.field.date")]: t.date,
-            [t("import.field.account")]: acc ? acc.name : t.account_id,
-            [t("import.field.payee")]: t.payee,
-            [t("import.field.category")]: t.category,
-            [t("import.field.amount")]: coerceNumber(t.amount),
-            [t("import.field.notes")]: t.notes,
-            [t("import.field.ticker")]: t.ticker,
-            [t("import.field.shares")]: coerceNumber(t.shares),
-            [t("import.field.price")]: coerceNumber(t.price_per_share),
-            [t("import.field.fee")]: coerceNumber(t.fee),
-            [t("import.field.currency")]: t.currency || "",
-          };
-        });
-        const wsTx = XLSX.utils.json_to_sheet(txData);
-        XLSX.utils.book_append_sheet(wb, wsTx, "Transactions");
-
-        // Accounts Sheet
-        const wsAcc = XLSX.utils.json_to_sheet(accounts);
-        XLSX.utils.book_append_sheet(wb, wsAcc, "Accounts");
-
-        // Generate binary
-        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        content = new Uint8Array(wbout);
         defaultPath += ".xlsx";
         filters = [{ name: t("export.format.xlsx"), extensions: ["xlsx"] }];
       }
@@ -148,7 +108,38 @@ export default function ExportModal({ onClose }) {
 
       // 4. Write File
       if (format === "xlsx") {
-        await writeFile(filePath, content);
+        // Prepare data structure for Rust backend
+        const coerceNumber = (v) => {
+          if (v === null || v === undefined || v === "") return null;
+          if (typeof v === "number") return v;
+          const s = formatNumberForExport(v);
+          const n = Number(s);
+          return Number.isNaN(n) ? v : n;
+        };
+
+        const txData = transactions.map((tx) => {
+          const acc = accounts.find((a) => a.id === tx.account_id);
+          return {
+            [t("import.field.date")]: tx.date,
+            [t("import.field.account")]: acc ? acc.name : tx.account_id,
+            [t("import.field.payee")]: tx.payee,
+            [t("import.field.category")]: tx.category,
+            [t("import.field.amount")]: coerceNumber(tx.amount),
+            [t("import.field.notes")]: tx.notes,
+            [t("import.field.ticker")]: tx.ticker,
+            [t("import.field.shares")]: coerceNumber(tx.shares),
+            [t("import.field.price")]: coerceNumber(tx.price_per_share),
+            [t("import.field.fee")]: coerceNumber(tx.fee),
+            [t("import.field.currency")]: tx.currency || "",
+          };
+        });
+
+        const sheets = [
+          { name: "Transactions", data: txData },
+          { name: "Accounts", data: accounts },
+        ];
+
+        await invoke("write_xlsx", { filePath, sheets });
       } else {
         await writeTextFile(filePath, content);
       }

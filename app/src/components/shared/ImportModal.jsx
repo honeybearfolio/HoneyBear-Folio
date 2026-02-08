@@ -14,7 +14,6 @@ import "../../styles/SettingsModal.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import CustomSelect from "../ui/CustomSelect";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import { parseNumberWithLocale } from "../../utils/format";
 import { t } from "../../i18n/i18n";
 import { useToast } from "../../contexts/toast";
@@ -114,7 +113,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
       setPreviewRows([]);
 
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const data = e.target.result;
 
         if (file.name.endsWith(".csv")) {
@@ -173,24 +172,31 @@ export default function ImportModal({ onClose, onImportComplete }) {
             setPreviewRows([]);
           }
         } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-          const workbook = XLSX.read(data, { type: "binary" });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          try {
+            // Send file bytes to Rust/calamine
+            const arrayBuffer = e.target.result;
+            const bytes = Array.from(new Uint8Array(arrayBuffer));
+            const result = await invoke("read_xlsx", { data: bytes });
+            const json = result.data; // Array of arrays
 
-          if (json.length > 0) {
-            const headers = json[0];
-            const rows = json.slice(1).map((row) => {
-              const obj = {};
-              headers.forEach((header, index) => {
-                obj[header] = row[index];
+            if (json.length > 0) {
+              const headers = json[0];
+              const rows = json.slice(1).map((row) => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                  obj[header] = row[index] !== undefined ? row[index] : "";
+                });
+                return obj;
               });
-              return obj;
-            });
 
-            setColumns(headers);
-            setPreviewRows(rows.slice(0, 5));
-            autoMapColumns(headers);
+              const strHeaders = headers.map(String);
+              setColumns(strHeaders);
+              setPreviewRows(rows.slice(0, 5));
+              autoMapColumns(strHeaders);
+            }
+          } catch (err) {
+            console.error("Failed to parse XLSX:", err);
+            setParseError("Failed to parse Excel file: " + err);
           }
         }
       };
@@ -198,7 +204,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
       if (file.name.endsWith(".csv") || file.name.endsWith(".json")) {
         reader.readAsText(file);
       } else {
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
       }
     },
     [autoMapColumns],
@@ -391,19 +397,27 @@ export default function ImportModal({ onClose, onImportComplete }) {
           allRows = [];
         }
         processRows(allRows);
-      } else {
-        const workbook = XLSX.read(data, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        const headers = json[0];
-        allRows = json.slice(1).map((row) => {
-          const obj = {};
-          headers.forEach((header, index) => {
-            obj[header] = row[index];
-          });
-          return obj;
-        });
+      } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+        try {
+          const arrayBuffer = e.target.result;
+          const bytes = Array.from(new Uint8Array(arrayBuffer));
+          const result = await invoke("read_xlsx", { data: bytes });
+          const json = result.data; // Array of arrays
+
+          if (json.length > 0) {
+            const headers = json[0];
+            allRows = json.slice(1).map((row) => {
+              const obj = {};
+              headers.forEach((header, index) => {
+                obj[header] = row[index] !== undefined ? row[index] : "";
+              });
+              return obj;
+            });
+          }
+        } catch (err) {
+          console.error("Failed to parse XLSX during import:", err);
+          // We'll proceed with empty rows which will finish quickly with 0/0
+        }
         processRows(allRows);
       }
     };
@@ -411,7 +425,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
     if (file.name.endsWith(".csv") || file.name.endsWith(".json")) {
       reader.readAsText(file);
     } else {
-      reader.readAsBinaryString(file);
+      reader.readAsArrayBuffer(file);
     }
   };
 

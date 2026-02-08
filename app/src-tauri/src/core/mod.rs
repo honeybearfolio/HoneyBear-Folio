@@ -1,5 +1,6 @@
 pub mod accounts;
 pub mod db_init;
+pub mod io;
 pub mod markets;
 pub mod models;
 pub mod rules;

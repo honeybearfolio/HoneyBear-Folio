@@ -58,11 +58,6 @@ const THIRD_PARTY_LICENSES = [
     url: "https://github.com/mholt/PapaParse",
   },
   {
-    name: "SheetJS (xlsx)",
-    license: "Apache-2.0",
-    url: "https://git.sheetjs.com/sheetjs/sheetjs",
-  },
-  {
     name: "prop-types",
     license: "MIT",
     url: "https://github.com/facebook/prop-types",
