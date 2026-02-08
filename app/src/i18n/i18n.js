@@ -59,7 +59,12 @@ function interpolate(str, vars) {
 }
 
 export function t(key, vars) {
-  const s = (current && current[key]) || key;
+  // If the current locale provides a non-empty, non-placeholder value, use it.
+  // Otherwise fall back to English (en.json) and finally the key as last resort.
+  const val = current && current[key];
+  const isValidTranslation = typeof val === "string" && val.length > 0 && val !== key;
+
+  const s = isValidTranslation ? val : (en && en[key]) || key;
   return interpolate(s, vars);
 }
 
