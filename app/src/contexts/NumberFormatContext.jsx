@@ -80,7 +80,7 @@ export function NumberFormatProvider({ children }) {
   // small counter used only to force a provider re-render after async
   // language resources finish loading so components that call `t()`
   // during render pick up the new locale object.
-  const [, setTranslationVersion] = useState(0);
+  const [translationVersion, setTranslationVersion] = useState(0);
 
   useEffect(() => {
     try {
@@ -121,6 +121,7 @@ export function NumberFormatProvider({ children }) {
         setFirstDayOfWeek,
         uiLanguage,
         setUiLanguage,
+        translationVersion,
       }}
     >
       {children}

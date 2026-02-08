@@ -21,6 +21,24 @@ vi.mock("../../../utils/format", () => ({
   useParseNumber: () => (s) => Number(s),
 }));
 
+// Provide a lightweight mock for the number-format context so components
+// that call `useNumberFormat()` don't need the real provider in every test.
+vi.mock("../../../contexts/number-format", () => ({
+  useNumberFormat: () => ({
+    locale: "en-US",
+    setLocale: () => {},
+    currency: "USD",
+    setCurrency: () => {},
+    dateFormat: "YYYY-MM-DD",
+    setDateFormat: () => {},
+    firstDayOfWeek: 1,
+    setFirstDayOfWeek: () => {},
+    uiLanguage: "en",
+    setUiLanguage: () => {},
+    translationVersion: 0,
+  }),
+}));
+
 // Mock confirm context
 const mockConfirm = vi.fn();
 vi.mock("../../../contexts/confirm", () => ({

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Plus, Trash2, Edit, Save, GripVertical, X } from "lucide-react";
 import { useConfirm } from "../../contexts/confirm";
 import { t } from "../../i18n/i18n";
+import { useNumberFormat } from "../../contexts/number-format";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
 import "../../styles/Dashboard.css";
@@ -26,6 +27,8 @@ export default function RulesList() {
     actions: [{ ...DEFAULT_ACTION }],
   });
   const [draggingId, setDraggingId] = useState(null);
+
+  useNumberFormat();
 
   const confirm = useConfirm();
 
