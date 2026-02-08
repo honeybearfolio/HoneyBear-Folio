@@ -1,11 +1,26 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { invoke } from "@tauri-apps/api/core";
 
-// Mock dependencies
+// Mock dependencies — dialog mock now exposes confirm/cancel so the hook's
+// promise-based flow can be tested end-to-end.
 vi.mock("../../components/shared/CustomRateDialog", () => ({
-  default: () => "Dialog",
+  default: ({ isOpen, currency, onConfirm, onCancel }) =>
+    isOpen ? (
+      <div data-testid="custom-rate-dialog">
+        <div data-testid="custom-rate-currency">{currency}</div>
+        <button
+          data-testid="dialog-confirm"
+          onClick={() => onConfirm(2.5)}
+        >
+          Confirm
+        </button>
+        <button data-testid="dialog-cancel" onClick={() => onCancel()}>
+          Cancel
+        </button>
+      </div>
+    ) : null,
 }));
 
 describe("useCustomRate", () => {
@@ -41,33 +56,50 @@ describe("useCustomRate", () => {
     });
   });
 
-  it.skip("opens dialog if rate is missing", async () => {
+  it("opens dialog if rate is missing and resolves after confirm", async () => {
     // Setup: rate MISSING on backend
     vi.mocked(invoke).mockImplementation((cmd) => {
       if (cmd === "check_currency_availability") return Promise.resolve(false);
       if (cmd === "get_custom_exchange_rate") return Promise.resolve(null);
+      if (cmd === "set_custom_exchange_rate") return Promise.resolve();
       return Promise.resolve(null);
     });
 
-    const { result } = renderHook(() => useCustomRate());
+    // Render a component that uses the hook so the dialog is mounted
+    let resolvedValue = undefined;
+    function TestComponent() {
+      const { checkAndPrompt, dialog } = useCustomRate();
+      return (
+        <div>
+          <button
+            data-testid="trigger"
+            onClick={() =>
+              checkAndPrompt("GBP").then((v) => {
+                resolvedValue = v;
+              })
+            }
+          />
+          {dialog}
+        </div>
+      );
+    }
 
-    // This returns a promise that resolves when user acts on dialog
-    result.current.checkAndPrompt("GBP");
+    render(<TestComponent />);
 
-    // We can't easily wait for a promise that's waiting for state update.
-    // But we can check side effects?
-    // The implementation sets state 'dialogState'.
-    // Testing internal state of a hook returned via renderHook usually requires checking result.current values, but `dialogState` is not returned directly, only `dialog` component probably.
+    // trigger the prompt and wait for the dialog to appear in the DOM
+    fireEvent.click(screen.getByTestId("trigger"));
 
-    // Wait, looking at implementation:
-    // const [dialogState, setDialogState] = useState({...});
-    // return { checkAndPrompt, dialog: dialogState.isOpen ? <CustomRateDialog ... /> : null };
+    const dialogEl = await screen.findByTestId("custom-rate-dialog");
+    expect(dialogEl).toBeInTheDocument();
+    expect(screen.getByTestId("custom-rate-currency")).toHaveTextContent("GBP");
 
-    // So we can check result.current.dialog
+    // confirm and assert the original promise resolved
+    fireEvent.click(screen.getByTestId("dialog-confirm"));
+    await waitFor(() => expect(resolvedValue).toBe(true));
 
-    // We need to wait for the async check to fail first.
-    // Since verify operations are awaited inside checkAndPrompt before setting state.
-
-    // Let's create a small wrapper to test this integration or inspect the `dialog` prop.
+    expect(invoke).toHaveBeenCalledWith("set_custom_exchange_rate", {
+      currency: "GBP",
+      rate: 2.5,
+    });
   });
 });
