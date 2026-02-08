@@ -114,10 +114,10 @@ export default function RulesList() {
       const firstAction = formState.actions[0] || DEFAULT_ACTION;
 
       const payload = {
-        matchField: firstCondition.field,
-        matchPattern: firstCondition.value,
-        actionField: firstAction.field,
-        actionValue: String(firstAction.value),
+        match_field: firstCondition.field,
+        match_pattern: firstCondition.value,
+        action_field: firstAction.field,
+        action_value: String(firstAction.value),
         logic: formState.logic,
         conditions: formState.conditions,
         actions: formState.actions.map((a) => ({
@@ -128,16 +128,20 @@ export default function RulesList() {
 
       if (formState.id) {
         await invoke("update_rule", {
-          ...payload,
-          id: formState.id,
-          priority: Number(formState.priority),
+          args: {
+            ...payload,
+            id: formState.id,
+            priority: Number(formState.priority),
+          },
         });
       } else {
         const maxPriority =
           rules.length > 0 ? Math.max(...rules.map((r) => r.priority)) : 0;
         await invoke("create_rule", {
-          ...payload,
-          priority: maxPriority + 1,
+          args: {
+            ...payload,
+            priority: maxPriority + 1,
+          },
         });
       }
       resetForm();
