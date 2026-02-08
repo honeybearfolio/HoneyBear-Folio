@@ -184,11 +184,11 @@ export default function ImportModal({ onClose, onImportComplete }) {
               const rows = json.slice(1).map((row) => {
                 const obj = {};
                 headers.forEach((header, index) => {
-                   obj[header] = row[index] !== undefined ? row[index] : "";
+                  obj[header] = row[index] !== undefined ? row[index] : "";
                 });
                 return obj;
               });
-              
+
               const strHeaders = headers.map(String);
               setColumns(strHeaders);
               setPreviewRows(rows.slice(0, 5));
@@ -398,27 +398,27 @@ export default function ImportModal({ onClose, onImportComplete }) {
         }
         processRows(allRows);
       } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-          try {
-            const arrayBuffer = e.target.result;
-            const bytes = Array.from(new Uint8Array(arrayBuffer));
-            const result = await invoke("read_xlsx", { data: bytes });
-            const json = result.data; // Array of arrays
+        try {
+          const arrayBuffer = e.target.result;
+          const bytes = Array.from(new Uint8Array(arrayBuffer));
+          const result = await invoke("read_xlsx", { data: bytes });
+          const json = result.data; // Array of arrays
 
-            if (json.length > 0) {
-              const headers = json[0];
-              allRows = json.slice(1).map((row) => {
-                const obj = {};
-                headers.forEach((header, index) => {
-                   obj[header] = row[index] !== undefined ? row[index] : "";
-                });
-                return obj;
+          if (json.length > 0) {
+            const headers = json[0];
+            allRows = json.slice(1).map((row) => {
+              const obj = {};
+              headers.forEach((header, index) => {
+                obj[header] = row[index] !== undefined ? row[index] : "";
               });
-            }
-          } catch (err) {
-            console.error("Failed to parse XLSX during import:", err);
-            // We'll proceed with empty rows which will finish quickly with 0/0
+              return obj;
+            });
           }
-          processRows(allRows);
+        } catch (err) {
+          console.error("Failed to parse XLSX during import:", err);
+          // We'll proceed with empty rows which will finish quickly with 0/0
+        }
+        processRows(allRows);
       }
     };
 

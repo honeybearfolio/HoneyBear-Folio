@@ -135,8 +135,8 @@ export default function ExportModal({ onClose }) {
         });
 
         const sheets = [
-            { name: "Transactions", data: txData },
-            { name: "Accounts", data: accounts }
+          { name: "Transactions", data: txData },
+          { name: "Accounts", data: accounts },
         ];
 
         await invoke("write_xlsx", { filePath, sheets });

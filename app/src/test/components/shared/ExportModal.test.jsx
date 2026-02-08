@@ -171,10 +171,13 @@ describe("ExportModal", () => {
     fireEvent.click(screen.getByText("Export"));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("write_xlsx", expect.objectContaining({
+      expect(mockInvoke).toHaveBeenCalledWith(
+        "write_xlsx",
+        expect.objectContaining({
           filePath: "/path/to/export.xlsx",
-          sheets: expect.any(Array)
-      }));
+          sheets: expect.any(Array),
+        }),
+      );
     });
   });
 });
