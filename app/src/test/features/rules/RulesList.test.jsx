@@ -314,7 +314,8 @@ describe("RulesList", () => {
           }),
         }),
       );
-      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1].args;
+      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1]
+        .args;
       expect(payload.conditions.length).toBe(2);
     });
 
@@ -374,7 +375,8 @@ describe("RulesList", () => {
         }),
       );
       // action values are stringified by the component
-      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1].args;
+      const payload = invoke.mock.calls.find((c) => c[0] === "create_rule")[1]
+        .args;
       expect(payload.actions[0].value).toBe("42");
     });
   });
@@ -401,7 +403,9 @@ describe("RulesList", () => {
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith(
         "create_rule",
-        expect.objectContaining({ args: expect.objectContaining({ match_pattern: "" }) }),
+        expect.objectContaining({
+          args: expect.objectContaining({ match_pattern: "" }),
+        }),
       );
     });
   });
