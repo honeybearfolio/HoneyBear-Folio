@@ -127,7 +127,7 @@ pub fn write_xlsx(file_path: String, sheets: Vec<SheetData>) -> Result<(), Strin
                                     .write_string(
                                         (row_idx + 1) as u32,
                                         col as u16,
-                                        &val.to_string(),
+                                        val.to_string(),
                                     )
                                     .map_err(|e| e.to_string())?;
                             }
