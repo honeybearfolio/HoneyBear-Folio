@@ -100,6 +100,7 @@
   "dashboard.hide_all": "Hide all",
   "dashboard.income": "Income",
   "dashboard.income_vs_expenses": "Income vs Expenses",
+  "dashboard.networth_evolution": "Net Worth Evolution",
   "dashboard.no_data_body": "No data available for this range",
   "dashboard.no_data_title": "No data",
   "dashboard.no_expenses_body": "There are no expenses to show. Add expense transactions to populate this chart.",

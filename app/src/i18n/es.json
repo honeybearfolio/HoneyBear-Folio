@@ -100,6 +100,7 @@
   "dashboard.hide_all": "Ocultar todo",
   "dashboard.income": "Ingresos",
   "dashboard.income_vs_expenses": "Ingresos vs Gastos",
+  "dashboard.networth_evolution": "Evolución del patrimonio",
   "dashboard.no_data_body": "No hay datos disponibles para este rango",
   "dashboard.no_data_title": "Sin datos",
   "dashboard.no_expenses_body": "No hay gastos para mostrar. Agrega transacciones de gasto para llenar este gráfico.",
