@@ -10,7 +10,7 @@
   pointer-events: none;
   /* Ensure toasts don't scale with font-size setting */
   font-size: 16px;
-} 
+}
 
 .toast {
   pointer-events: auto;
