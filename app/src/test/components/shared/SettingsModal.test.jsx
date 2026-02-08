@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import SettingsModal from "../../../components/shared/SettingsModal";
 
@@ -43,6 +43,8 @@ vi.mock("../../../i18n/i18n", () => ({
 }));
 
 const mockSetUiLanguage = vi.fn();
+const mockSetLocale = vi.fn();
+const mockSetCurrency = vi.fn();
 // Mock theme + number-format contexts
 vi.mock("../../../contexts/theme-core", () => ({
   useTheme: () => ({ theme: "system", setTheme: vi.fn() }),
@@ -50,9 +52,9 @@ vi.mock("../../../contexts/theme-core", () => ({
 vi.mock("../../../contexts/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
-    setLocale: vi.fn(),
+    setLocale: mockSetLocale,
     currency: "USD",
-    setCurrency: vi.fn(),
+    setCurrency: mockSetCurrency,
     dateFormat: "YYYY-MM-DD",
     setDateFormat: vi.fn(),
     firstDayOfWeek: 1,
@@ -147,17 +149,22 @@ describe("SettingsModal (language placement)", () => {
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
     fireEvent.click(btn);
 
-    // confirm should be shown and resolved
+    // confirm should be shown and resolved (use the mocked translator so the
+    // assertion doesn't depend on the literal string)
+    const { t } = await import("../../../i18n/i18n");
     await expect(mockConfirmLocal).toHaveBeenCalledWith(
-      "settings.reset_confirm",
+      t("settings.reset_confirm"),
       expect.objectContaining({ kind: "warning" }),
     );
 
-    // setters should be called to apply defaults
-    await expect(setters.setLocale).toHaveBeenCalledWith("en-US");
-    await expect(setters.setCurrency).toHaveBeenCalledWith("USD");
-    await expect(setters.setUiLanguage).toHaveBeenCalledWith("en");
-    expect(invoke).toHaveBeenCalledWith("reset_db_path");
+    // setters should be called to apply defaults (async effects may run
+    // after the click — waitFor ensures we observe the final state)
+    await waitFor(() => {
+      expect(mockSetLocale).toHaveBeenCalledWith("en-US");
+      expect(mockSetCurrency).toHaveBeenCalledWith("USD");
+      expect(mockSetUiLanguage).toHaveBeenCalledWith("en");
+      expect(invoke).toHaveBeenCalledWith("reset_db_path");
+    });
   });
 
   it("does not reset when confirmation is cancelled", async () => {
@@ -173,7 +180,8 @@ describe("SettingsModal (language placement)", () => {
     fireEvent.click(btn);
 
     await expect(mockConfirmLocal).toHaveBeenCalled();
-    expect(setters.setLocale).not.toHaveBeenCalled();
+    expect(mockSetLocale).not.toHaveBeenCalled();
+    expect(mockSetUiLanguage).not.toHaveBeenCalled();
     expect(setters.setUiLanguage).not.toHaveBeenCalled();
   });
 });
