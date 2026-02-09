@@ -1,7 +1,7 @@
 use super::common::setup_db;
 use proptest::prelude::*;
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::{RngExt, SeedableRng};
 use rusqlite::OptionalExtension;
 
 proptest! {
