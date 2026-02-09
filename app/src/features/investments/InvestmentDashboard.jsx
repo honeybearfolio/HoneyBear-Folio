@@ -562,7 +562,6 @@ function TreeMapNode({ items, x, y, w, h, totalValue, isDark }) {
       const diffWithout = Math.abs(currentSum - halfValue);
       if (diffWith < diffWithout) {
         splitIndex = i + 1;
-        currentSum += items[i].currentValue;
       } else {
         splitIndex = i;
       }
