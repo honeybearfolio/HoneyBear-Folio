@@ -1,6 +1,6 @@
 use super::common::setup_db;
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::{RngExt, SeedableRng};
 use rusqlite::Connection;
 
 #[test]
