@@ -22,19 +22,6 @@ fn to_chrono_weekday(d: u32) -> Option<Weekday> {
     }
 }
 
-/// Convert chrono::Weekday to our 0=Sun..6=Sat integer
-fn from_chrono_weekday(w: Weekday) -> u32 {
-    match w {
-        Weekday::Sun => 0,
-        Weekday::Mon => 1,
-        Weekday::Tue => 2,
-        Weekday::Wed => 3,
-        Weekday::Thu => 4,
-        Weekday::Fri => 5,
-        Weekday::Sat => 6,
-    }
-}
-
 /// Find the Nth occurrence (1-based) of a given weekday in a month.
 /// ordinal == -1 means "last occurrence".
 fn nth_weekday_of_month(year: i32, month: u32, weekday: Weekday, ordinal: i32) -> Option<NaiveDate> {
