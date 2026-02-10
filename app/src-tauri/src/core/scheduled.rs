@@ -33,14 +33,14 @@ fn nth_weekday_of_month(year: i32, month: u32, weekday: Weekday, ordinal: i32) -
             d = d.pred_opt()?;
         }
         Some(d)
-    } else if ordinal >= 1 && ordinal <= 5 {
+    } else if (1..=5).contains(&ordinal) {
         // Find first occurrence of `weekday` in the month, then add (ordinal-1) weeks
         let first = NaiveDate::from_ymd_opt(year, month, 1)?;
         let mut d = first;
         while d.weekday() != weekday {
             d = d.succ_opt()?;
         }
-        d = d + Duration::weeks((ordinal - 1) as i64);
+        d += Duration::weeks((ordinal - 1) as i64);
         // Verify still in the same month
         if d.month() == month {
             Some(d)
@@ -226,11 +226,7 @@ fn compute_ordinal_weekday(
     let mut month = start.month();
     let mut occ_count = 0;
 
-    loop {
-        let first_of_month = match NaiveDate::from_ymd_opt(year, month, 1) {
-            Some(d) => d,
-            None => break,
-        };
+    while let Some(first_of_month) = NaiveDate::from_ymd_opt(year, month, 1) {
         if first_of_month > to {
             break;
         }
@@ -331,7 +327,7 @@ pub fn get_scheduled_transactions_db(
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
     let iter = stmt
-        .query_map([], |row| row_to_scheduled(row))
+        .query_map([], row_to_scheduled)
         .map_err(|e| e.to_string())?;
 
     let mut results = Vec::new();
@@ -580,7 +576,7 @@ pub fn apply_scheduled_occurrence_db(
         SELECT_COLUMNS
     );
     let sched: ScheduledTransaction = conn
-        .query_row(&sql, params![scheduled_tx_id], |row| row_to_scheduled(row))
+        .query_row(&sql, params![scheduled_tx_id], row_to_scheduled)
         .map_err(|e| e.to_string())?;
 
     // Create the real transaction using the same logic as create_transaction_db

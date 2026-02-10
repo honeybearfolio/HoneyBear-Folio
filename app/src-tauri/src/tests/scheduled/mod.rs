@@ -123,8 +123,8 @@ fn test_max_occurrences_limit() {
     // Suppose 1 already happened
     schedule.occurrences_count = 1;
 
-    let from = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-    let to = NaiveDate::from_ymd_opt(2023, 6, 1).unwrap();
+    let _from = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
+    let _to = NaiveDate::from_ymd_opt(2023, 6, 1).unwrap();
 
     // Occurrences logic handles `occurrences_count`. 
     // It should skip the ones already counted? 
