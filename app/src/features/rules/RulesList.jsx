@@ -97,7 +97,11 @@ export default function RulesList() {
       actions,
     });
     setShowForm(true);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    setTimeout(
+      () =>
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
     setIsEditing(true);
   }
 
@@ -371,7 +375,10 @@ export default function RulesList() {
 
       {/* Form Card */}
       {showForm && (
-        <div ref={formRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <div
+          ref={formRef}
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6"
+        >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               {isEditing ? (
@@ -545,7 +552,9 @@ export default function RulesList() {
                       {fieldType === "number" ? (
                         <NumberInput
                           value={action.value}
-                          onChange={(val) => updateAction(index, { value: val })}
+                          onChange={(val) =>
+                            updateAction(index, { value: val })
+                          }
                           className="form-input w-40"
                           placeholder="0.00"
                         />
@@ -589,7 +598,11 @@ export default function RulesList() {
             {/* Submit Button */}
             <div className="flex justify-end pt-4 gap-2">
               {isEditing && (
-                <button type="button" onClick={resetForm} className="btn-secondary">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="btn-secondary"
+                >
                   {t("rules.cancel_edit")}
                 </button>
               )}
@@ -666,7 +679,10 @@ export default function RulesList() {
                   <td className="px-4 py-2.5 text-slate-800 dark:text-slate-200">
                     <div className="flex flex-wrap gap-1">
                       {conditions.map((cond, i) => (
-                        <span key={i} className="inline-flex items-center gap-1">
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1"
+                        >
                           <span className="px-2 py-0.5 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 rounded text-xs">
                             {formatCondition(cond)}
                           </span>

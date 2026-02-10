@@ -355,29 +355,39 @@ describe("RulesList", () => {
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtnAgain) fireEvent.click(headerAddBtnAgain);
 
-    await waitFor(() => expect(screen.getAllByText("rules.if").length).toBeGreaterThan(0));
+    await waitFor(() =>
+      expect(screen.getAllByText("rules.if").length).toBeGreaterThan(0),
+    );
 
     // Add then remove a condition and assert UI updates
-    const addCond2 = screen.getByRole("button", { name: /rules.add_condition/ });
+    const addCond2 = screen.getByRole("button", {
+      name: /rules.add_condition/,
+    });
     fireEvent.click(addCond2);
     await waitFor(() => expect(screen.getAllByText("rules.if").length).toBe(2));
 
     const condsAfter = screen.getAllByText("rules.if");
     const secondCondAfter = condsAfter[1].closest("div");
-    const removeBtns2 = within(secondCondAfter).getByTitle("rules.remove_condition");
+    const removeBtns2 = within(secondCondAfter).getByTitle(
+      "rules.remove_condition",
+    );
     fireEvent.click(removeBtns2);
     await waitFor(() => expect(screen.getAllByText("rules.if").length).toBe(1));
 
     // Add & remove action (UI) and assert updates
     const addAction = screen.getByRole("button", { name: /rules.add_action/ });
     fireEvent.click(addAction);
-    await waitFor(() => expect(screen.getAllByText("rules.then_set").length).toBe(2));
+    await waitFor(() =>
+      expect(screen.getAllByText("rules.then_set").length).toBe(2),
+    );
 
     const removeActionBtn = within(
       screen.getAllByText("rules.then_set")[1].closest("div"),
     ).getByTitle("rules.remove_action");
     fireEvent.click(removeActionBtn);
-    await waitFor(() => expect(screen.getAllByText("rules.then_set").length).toBe(1));
+    await waitFor(() =>
+      expect(screen.getAllByText("rules.then_set").length).toBe(1),
+    );
   });
 
   it("supports numeric fields for condition and action (NumberInput) and stringifies action values", async () => {

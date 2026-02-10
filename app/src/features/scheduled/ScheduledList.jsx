@@ -19,7 +19,6 @@ import { t } from "../../i18n/i18n";
 import { useNumberFormat } from "../../contexts/number-format";
 import {
   useFormatNumber,
-  useFormatDate,
   getDatePickerFormat,
 } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
@@ -75,7 +74,6 @@ export default function ScheduledList() {
   const confirm = useConfirm();
   const { showToast } = useToast();
   const formatNumber = useFormatNumber();
-  const formatDate = useFormatDate();
   const { dateFormat, firstDayOfWeek } = useNumberFormat();
   const formRef = useRef(null);
 
@@ -137,7 +135,11 @@ export default function ScheduledList() {
     });
     setIsEditing(true);
     setShowForm(true);
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    setTimeout(
+      () =>
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
   }
 
   async function handleDelete(id) {
@@ -195,7 +197,10 @@ export default function ScheduledList() {
       showToast(t("scheduled.validation.payee_required"), "error");
       return;
     }
-    if (formState.recurrenceType === "day_of_week" && formState.daysOfWeek.length === 0) {
+    if (
+      formState.recurrenceType === "day_of_week" &&
+      formState.daysOfWeek.length === 0
+    ) {
       showToast(t("scheduled.validation.days_required"), "error");
       return;
     }
@@ -335,7 +340,11 @@ export default function ScheduledList() {
         </div>
         {!showForm && (
           <button
-            onClick={() => { setShowForm(true); setIsEditing(false); setFormState({ ...DEFAULT_FORM }); }}
+            onClick={() => {
+              setShowForm(true);
+              setIsEditing(false);
+              setFormState({ ...DEFAULT_FORM });
+            }}
             className="btn-primary"
           >
             <Plus size={16} />
@@ -346,7 +355,10 @@ export default function ScheduledList() {
 
       {/* Form Card */}
       {showForm && (
-        <div ref={formRef} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6">
+        <div
+          ref={formRef}
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6"
+        >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               {isEditing ? (
@@ -572,7 +584,10 @@ export default function ScheduledList() {
                     setFormState((prev) => {
                       if (!date) return { ...prev, startDate: prev.startDate };
                       const year = date.getFullYear();
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const day = String(date.getDate()).padStart(2, "0");
                       return { ...prev, startDate: `${year}-${month}-${day}` };
                     })
@@ -597,7 +612,10 @@ export default function ScheduledList() {
                     setFormState((prev) => {
                       if (!date) return { ...prev, endDate: "" };
                       const year = date.getFullYear();
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const day = String(date.getDate()).padStart(2, "0");
                       return { ...prev, endDate: `${year}-${month}-${day}` };
                     })
@@ -629,7 +647,11 @@ export default function ScheduledList() {
               </div>
               <div className="flex-1" />
               {isEditing && (
-                <button type="button" onClick={resetForm} className="btn-secondary">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="btn-secondary"
+                >
                   {t("scheduled.cancel")}
                 </button>
               )}
@@ -729,15 +751,9 @@ export default function ScheduledList() {
                         }
                       >
                         {sched.enabled ? (
-                          <ToggleRight
-                            size={18}
-                            className="text-brand-500"
-                          />
+                          <ToggleRight size={18} className="text-brand-500" />
                         ) : (
-                          <ToggleLeft
-                            size={18}
-                            className="text-slate-400"
-                          />
+                          <ToggleLeft size={18} className="text-slate-400" />
                         )}
                       </button>
                       <button
