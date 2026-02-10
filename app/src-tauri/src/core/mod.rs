@@ -4,6 +4,7 @@ pub mod io;
 pub mod markets;
 pub mod models;
 pub mod rules;
+pub mod scheduled;
 pub mod transactions;
 pub mod utils;
 

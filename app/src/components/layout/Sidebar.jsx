@@ -21,6 +21,7 @@ import {
   PanelLeftClose,
   ArrowUpDown,
   BookOpenCheck,
+  CalendarClock,
 } from "lucide-react";
 import { computeNetWorth } from "../../utils/networth";
 import { t } from "../../i18n/i18n";
@@ -267,6 +268,20 @@ export default function Sidebar({
                 className={`sidebar-nav-icon ${selectedId === "rules" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
               />
               <span className="font-medium">{t("nav.rules")}</span>
+            </button>
+
+            <button
+              onClick={() => handleSelect("scheduled")}
+              className={`sidebar-nav-item group ${
+                selectedId === "scheduled"
+                  ? "sidebar-nav-item-active"
+                  : "sidebar-nav-item-inactive"
+              }`}
+            >
+              <CalendarClock
+                className={`sidebar-nav-icon ${selectedId === "scheduled" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+              />
+              <span className="font-medium">{t("nav.scheduled")}</span>
             </button>
 
             <button

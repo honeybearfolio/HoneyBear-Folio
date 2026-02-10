@@ -1,9 +1,9 @@
 mod core;
-pub use crate::core::{accounts, db_init, io, markets, models, rules, transactions, utils};
+pub use crate::core::{accounts, db_init, io, markets, models, rules, scheduled, transactions, utils};
 
 pub use crate::models::{
-    Account, AppSettings, DailyPrice, Rule, Transaction, YahooChartResponse, YahooQuote,
-    YahooSearchQuote, YahooSearchResponse,
+    Account, AppSettings, DailyPrice, Rule, ScheduledOccurrence, ScheduledTransaction, Transaction,
+    YahooChartResponse, YahooQuote, YahooSearchQuote, YahooSearchResponse,
 };
 
 // Re-export utility helpers used by tests
@@ -39,6 +39,14 @@ pub use crate::accounts::{
 // Re-export rules helpers used by tests
 pub use crate::rules::{
     create_rule_db, delete_rule_db, get_rules_db, update_rule_db, update_rules_order_db,
+};
+
+// Re-export scheduled helpers used by tests
+pub use crate::scheduled::{
+    apply_scheduled_occurrence_db, compute_occurrences, create_scheduled_transaction_db,
+    delete_scheduled_transaction_db, get_pending_occurrences_db, get_scheduled_transactions_db,
+    skip_scheduled_occurrence_db, update_scheduled_transaction_db,
+    CreateScheduledTransactionArgs, UpdateScheduledTransactionArgs,
 };
 
 // Re-export markets helpers used by tests
@@ -122,6 +130,13 @@ pub fn run() {
             rules::update_rule,
             rules::delete_rule,
             rules::update_rules_order,
+            scheduled::get_scheduled_transactions,
+            scheduled::create_scheduled_transaction,
+            scheduled::update_scheduled_transaction,
+            scheduled::delete_scheduled_transaction,
+            scheduled::get_pending_occurrences,
+            scheduled::apply_scheduled_occurrence,
+            scheduled::skip_scheduled_occurrence,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
