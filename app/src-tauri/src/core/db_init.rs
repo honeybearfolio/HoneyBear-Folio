@@ -240,6 +240,33 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
 
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS scheduled_transactions (
+            id INTEGER PRIMARY KEY,
+            account_id INTEGER NOT NULL,
+            payee TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT,
+            notes TEXT,
+            currency TEXT,
+            recurrence_type TEXT NOT NULL DEFAULT 'every_n',
+            interval_value INTEGER,
+            interval_unit TEXT,
+            days_of_week TEXT,
+            ordinal INTEGER,
+            weekday INTEGER,
+            start_date TEXT NOT NULL,
+            end_date TEXT,
+            max_occurrences INTEGER,
+            occurrences_count INTEGER NOT NULL DEFAULT 0,
+            last_applied_date TEXT,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            FOREIGN KEY(account_id) REFERENCES accounts(id)
+        )",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
     Ok(())
 }
 

@@ -1,0 +1,133 @@
+/* Ghost rows for scheduled/pending transactions in AccountDetails */
+
+.scheduled-ghost-row {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(251, 191, 36, 0.03) 8px,
+    rgba(251, 191, 36, 0.03) 16px
+  );
+  border-left: 3px solid rgb(251, 191, 36);
+  opacity: 0.85;
+  transition:
+    opacity 0.2s,
+    background-color 0.2s;
+}
+
+.scheduled-ghost-row:hover {
+  opacity: 1;
+  background: rgba(251, 191, 36, 0.06);
+}
+
+.dark .scheduled-ghost-row {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(251, 191, 36, 0.04) 8px,
+    rgba(251, 191, 36, 0.04) 16px
+  );
+  border-left: 3px solid rgba(251, 191, 36, 0.6);
+}
+
+.dark .scheduled-ghost-row:hover {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+/* Status badges */
+.scheduled-ghost-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.scheduled-ghost-badge-missed {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: rgb(220, 38, 38);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.dark .scheduled-ghost-badge-missed {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: rgb(252, 165, 165);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.scheduled-ghost-badge-upcoming {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgb(37, 99, 235);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.dark .scheduled-ghost-badge-upcoming {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: rgb(147, 197, 253);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Action buttons */
+.scheduled-ghost-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.scheduled-ghost-action-apply {
+  color: rgb(34, 197, 94);
+}
+
+.scheduled-ghost-action-apply:hover {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: rgb(22, 163, 74);
+}
+
+.dark .scheduled-ghost-action-apply:hover {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: rgb(134, 239, 172);
+}
+
+.scheduled-ghost-action-schedule {
+  color: rgb(59, 130, 246);
+}
+
+.scheduled-ghost-action-schedule:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: rgb(37, 99, 235);
+}
+
+.dark .scheduled-ghost-action-schedule:hover {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: rgb(147, 197, 253);
+}
+
+.scheduled-ghost-action-skip {
+  color: rgb(148, 163, 184);
+}
+
+.scheduled-ghost-action-skip:hover {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: rgb(100, 116, 139);
+}
+
+.dark .scheduled-ghost-action-skip:hover {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: rgb(203, 213, 225);
+}
+
+/* Separator row */
+.scheduled-ghost-separator td {
+  border-top: none !important;
+  border-bottom: none !important;
+}

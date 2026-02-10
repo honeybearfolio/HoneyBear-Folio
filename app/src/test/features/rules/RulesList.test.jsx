@@ -120,6 +120,12 @@ describe("RulesList", () => {
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
 
+    // open the create-rule form (header Add button)
+    const headerAddBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtn) fireEvent.click(headerAddBtn);
+
     // Fill new rule form
     const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
     const patternInput = within(conditionGroup).getByPlaceholderText("Value");
@@ -290,6 +296,12 @@ describe("RulesList", () => {
     render(<RulesList />);
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
 
+    // open the create-rule form
+    const headerAddBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtn) fireEvent.click(headerAddBtn);
+
     // Add a second condition
     const addCond = screen.getByRole("button", { name: /rules.add_condition/ });
     fireEvent.click(addCond);
@@ -314,7 +326,7 @@ describe("RulesList", () => {
     const actionInput = within(actionGroup).getByPlaceholderText("Value");
     fireEvent.change(actionInput, { target: { value: "SomeCat" } });
 
-    // Submit and assert payload includes logic: 'or' and two conditions
+    // Submit while both conditions present and assert payload includes logic: 'or' and two conditions
     const submit = screen
       .getAllByRole("button", { name: /rules.add/ })
       .find((b) => b.getAttribute("type") === "submit");
@@ -337,21 +349,45 @@ describe("RulesList", () => {
       expect(payload.conditions.length).toBe(2);
     });
 
-    // Remove the extra condition UI
-    const removeBtns = within(secondCond).getByTitle("rules.remove_condition");
-    fireEvent.click(removeBtns);
-    expect(screen.getAllByText("rules.if").length).toBe(1);
+    // Re-open create form to test add/remove UI (form closes after submit)
+    const headerAddBtnAgain = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtnAgain) fireEvent.click(headerAddBtnAgain);
 
-    // Add & remove action
+    await waitFor(() =>
+      expect(screen.getAllByText("rules.if").length).toBeGreaterThan(0),
+    );
+
+    // Add then remove a condition and assert UI updates
+    const addCond2 = screen.getByRole("button", {
+      name: /rules.add_condition/,
+    });
+    fireEvent.click(addCond2);
+    await waitFor(() => expect(screen.getAllByText("rules.if").length).toBe(2));
+
+    const condsAfter = screen.getAllByText("rules.if");
+    const secondCondAfter = condsAfter[1].closest("div");
+    const removeBtns2 = within(secondCondAfter).getByTitle(
+      "rules.remove_condition",
+    );
+    fireEvent.click(removeBtns2);
+    await waitFor(() => expect(screen.getAllByText("rules.if").length).toBe(1));
+
+    // Add & remove action (UI) and assert updates
     const addAction = screen.getByRole("button", { name: /rules.add_action/ });
     fireEvent.click(addAction);
-    expect(screen.getAllByText("rules.then_set").length).toBe(2);
+    await waitFor(() =>
+      expect(screen.getAllByText("rules.then_set").length).toBe(2),
+    );
 
     const removeActionBtn = within(
       screen.getAllByText("rules.then_set")[1].closest("div"),
     ).getByTitle("rules.remove_action");
     fireEvent.click(removeActionBtn);
-    expect(screen.getAllByText("rules.then_set").length).toBe(1);
+    await waitFor(() =>
+      expect(screen.getAllByText("rules.then_set").length).toBe(1),
+    );
   });
 
   it("supports numeric fields for condition and action (NumberInput) and stringifies action values", async () => {
@@ -359,6 +395,12 @@ describe("RulesList", () => {
 
     render(<RulesList />);
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // open the create-rule form
+    const headerAddBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
     // there are two selects inside the condition: [0] = field, [1] = operator
@@ -404,6 +446,12 @@ describe("RulesList", () => {
 
     render(<RulesList />);
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // open the create-rule form
+    const headerAddBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
     const operatorSelect = within(conditionGroup).getAllByTestId("select")[1];

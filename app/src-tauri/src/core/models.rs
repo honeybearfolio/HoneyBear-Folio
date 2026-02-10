@@ -150,3 +150,40 @@ pub struct DailyPrice {
     pub date: String,
     pub price: f64,
 }
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ScheduledTransaction {
+    pub id: i32,
+    pub account_id: i32,
+    pub payee: String,
+    pub amount: f64,
+    pub category: Option<String>,
+    pub notes: Option<String>,
+    pub currency: Option<String>,
+    pub recurrence_type: String, // "every_n", "day_of_week", "ordinal_weekday"
+    pub interval_value: Option<i32>, // e.g. 2 (for "every 2 weeks")
+    pub interval_unit: Option<String>, // "day", "week", "month", "year"
+    pub days_of_week: Option<Vec<u32>>, // e.g. [1,3] for Mon/Wed (0=Sun..6=Sat)
+    pub ordinal: Option<i32>,    // 1-5 or -1 for last
+    pub weekday: Option<u32>,    // 0=Sun..6=Sat
+    pub start_date: String,      // "YYYY-MM-DD"
+    pub end_date: Option<String>,
+    pub max_occurrences: Option<i32>,
+    pub occurrences_count: i32,
+    pub last_applied_date: Option<String>,
+    pub enabled: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ScheduledOccurrence {
+    pub scheduled_tx_id: i32,
+    pub date: String,
+    pub status: String, // "upcoming" or "missed"
+    pub account_id: i32,
+    pub payee: String,
+    pub amount: f64,
+    pub category: Option<String>,
+    pub notes: Option<String>,
+    pub currency: Option<String>,
+    pub account_name: Option<String>,
+}
