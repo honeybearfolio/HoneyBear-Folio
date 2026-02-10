@@ -1574,7 +1574,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   {pendingOccurrences.map((occ, idx) => (
                     <tr
                       key={`sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`}
-                      className="scheduled-ghost-row"
+                      className="scheduled-ghost-row group"
                     >
                       <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
@@ -1660,30 +1660,88 @@ export default function AccountDetails({ account, onUpdate }) {
                         {formatNumber(occ.amount, { style: "currency" })}
                       </td>
 
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-0.5">
-                          <button
-                            onClick={() => handleApplyOccurrence(occ, true)}
-                            className="scheduled-ghost-action scheduled-ghost-action-apply"
-                            title={t("scheduled.action.apply_today")}
-                          >
-                            <CalendarCheck size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleApplyOccurrence(occ, false)}
-                            className="scheduled-ghost-action scheduled-ghost-action-schedule"
-                            title={t("scheduled.action.apply_scheduled")}
-                          >
-                            <CalendarClock size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleSkipOccurrence(occ)}
-                            className="scheduled-ghost-action scheduled-ghost-action-skip"
-                            title={t("scheduled.action.skip")}
-                          >
-                            <SkipForward size={14} />
-                          </button>
-                        </div>
+                      <td className="px-2 py-4 whitespace-nowrap text-right text-sm font-medium relative action-menu-container">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const occId = `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`;
+                            if (menuOpenId === occId) {
+                              setMenuOpenId(null);
+                              setMenuCoords(null);
+                            } else {
+                              const rect =
+                                e.currentTarget.getBoundingClientRect();
+                              setMenuCoords({
+                                top: rect.top + window.scrollY,
+                                left: rect.left + window.scrollX,
+                                right: rect.right + window.scrollX,
+                                bottom: rect.bottom + window.scrollY,
+                                width: rect.width,
+                                height: rect.height,
+                              });
+                              setMenuOpenId(occId);
+                            }
+                          }}
+                          className={`p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 ${
+                            menuOpenId ===
+                            `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`
+                              ? "opacity-100 bg-slate-100 dark:bg-slate-700"
+                              : "opacity-0 group-hover:opacity-100"
+                          }`}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {menuOpenId ===
+                          `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}` &&
+                          menuCoords &&
+                          createPortal(
+                            <div
+                              className="fixed z-50 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in action-menu-portal"
+                              style={{
+                                top: `${menuCoords.top + menuCoords.height + 8}px`,
+                                left: `${Math.min(
+                                  Math.max(menuCoords.right - 224, 8),
+                                  window.innerWidth - 224 - 8,
+                                )}px`,
+                              }}
+                            >
+                              <button
+                                onClick={() => {
+                                  handleApplyOccurrence(occ, true);
+                                  setMenuOpenId(null);
+                                  setMenuCoords(null);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
+                              >
+                                <CalendarCheck className="w-4 h-4 text-emerald-500" />
+                                {t("scheduled.action.apply_today")}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleApplyOccurrence(occ, false);
+                                  setMenuOpenId(null);
+                                  setMenuCoords(null);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
+                              >
+                                <CalendarClock className="w-4 h-4 text-amber-500" />
+                                {t("scheduled.action.apply_scheduled")}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleSkipOccurrence(occ);
+                                  setMenuOpenId(null);
+                                  setMenuCoords(null);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center gap-3 font-medium transition-colors"
+                              >
+                                <SkipForward className="w-4 h-4" />
+                                {t("scheduled.action.skip")}
+                              </button>
+                            </div>,
+                            document.body,
+                          )}
                       </td>
                     </tr>
                   ))}
