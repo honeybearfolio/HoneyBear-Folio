@@ -17,10 +17,7 @@ import { useConfirm } from "../../contexts/confirm";
 import { useToast } from "../../contexts/toast";
 import { t } from "../../i18n/i18n";
 import { useNumberFormat } from "../../contexts/number-format";
-import {
-  useFormatNumber,
-  getDatePickerFormat,
-} from "../../utils/format";
+import { useFormatNumber, getDatePickerFormat } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";

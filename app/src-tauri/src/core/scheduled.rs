@@ -24,7 +24,12 @@ fn to_chrono_weekday(d: u32) -> Option<Weekday> {
 
 /// Find the Nth occurrence (1-based) of a given weekday in a month.
 /// ordinal == -1 means "last occurrence".
-fn nth_weekday_of_month(year: i32, month: u32, weekday: Weekday, ordinal: i32) -> Option<NaiveDate> {
+fn nth_weekday_of_month(
+    year: i32,
+    month: u32,
+    weekday: Weekday,
+    ordinal: i32,
+) -> Option<NaiveDate> {
     if ordinal == -1 {
         // Last occurrence: start from last day and go backwards
         let last_day = last_day_of_month(year, month)?;
@@ -275,8 +280,7 @@ fn add_months(date: NaiveDate, months: i32) -> NaiveDate {
         .map(|d| d.day())
         .unwrap_or(28);
 
-    NaiveDate::from_ymd_opt(target_year, target_month, target_day.min(max_day))
-        .unwrap_or(date)
+    NaiveDate::from_ymd_opt(target_year, target_month, target_day.min(max_day)).unwrap_or(date)
 }
 
 // ---------------------------------------------------------------------------
@@ -313,8 +317,7 @@ fn row_to_scheduled(row: &rusqlite::Row<'_>) -> rusqlite::Result<ScheduledTransa
     })
 }
 
-const SELECT_COLUMNS: &str =
-    "id, account_id, payee, amount, category, notes, currency, \
+const SELECT_COLUMNS: &str = "id, account_id, payee, amount, category, notes, currency, \
      days_of_week, interval_value, interval_unit, ordinal, weekday, \
      start_date, end_date, max_occurrences, enabled, recurrence_type, \
      occurrences_count, last_applied_date";
@@ -323,7 +326,10 @@ pub fn get_scheduled_transactions_db(
     db_path: &PathBuf,
 ) -> Result<Vec<ScheduledTransaction>, String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let sql = format!("SELECT {} FROM scheduled_transactions ORDER BY id ASC", SELECT_COLUMNS);
+    let sql = format!(
+        "SELECT {} FROM scheduled_transactions ORDER BY id ASC",
+        SELECT_COLUMNS
+    );
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
     let iter = stmt
@@ -520,18 +526,13 @@ pub fn get_pending_occurrences_db(
             .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
             .map(|d| d + Duration::days(1))
             .unwrap_or_else(|| {
-                NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d")
-                    .unwrap_or(today)
+                NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d").unwrap_or(today)
             });
 
         let dates = compute_occurrences(sched, range_start, lookahead);
 
         for date in dates {
-            let status = if date < today {
-                "missed"
-            } else {
-                "upcoming"
-            };
+            let status = if date < today { "missed" } else { "upcoming" };
             occurrences.push(ScheduledOccurrence {
                 scheduled_tx_id: sched.id,
                 date: date.format("%Y-%m-%d").to_string(),
@@ -730,7 +731,15 @@ mod tests {
 
     #[test]
     fn test_every_n_days() {
-        let sched = make_schedule("every_n", "2026-01-01", Some(3), Some("day"), None, None, None);
+        let sched = make_schedule(
+            "every_n",
+            "2026-01-01",
+            Some(3),
+            Some("day"),
+            None,
+            None,
+            None,
+        );
         let from = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 1, 10).unwrap();
         let dates = compute_occurrences(&sched, from, to);
@@ -747,7 +756,15 @@ mod tests {
 
     #[test]
     fn test_every_n_weeks() {
-        let sched = make_schedule("every_n", "2026-01-05", Some(2), Some("week"), None, None, None);
+        let sched = make_schedule(
+            "every_n",
+            "2026-01-05",
+            Some(2),
+            Some("week"),
+            None,
+            None,
+            None,
+        );
         let from = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 2, 28).unwrap();
         let dates = compute_occurrences(&sched, from, to);
@@ -764,7 +781,15 @@ mod tests {
 
     #[test]
     fn test_every_n_months() {
-        let sched = make_schedule("every_n", "2026-01-31", Some(1), Some("month"), None, None, None);
+        let sched = make_schedule(
+            "every_n",
+            "2026-01-31",
+            Some(1),
+            Some("month"),
+            None,
+            None,
+            None,
+        );
         let from = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 4, 30).unwrap();
         let dates = compute_occurrences(&sched, from, to);
@@ -783,7 +808,15 @@ mod tests {
     #[test]
     fn test_day_of_week() {
         // Every Monday and Wednesday
-        let sched = make_schedule("day_of_week", "2026-02-01", None, None, Some(vec![1, 3]), None, None);
+        let sched = make_schedule(
+            "day_of_week",
+            "2026-02-01",
+            None,
+            None,
+            Some(vec![1, 3]),
+            None,
+            None,
+        );
         let from = NaiveDate::from_ymd_opt(2026, 2, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 2, 10).unwrap();
         let dates = compute_occurrences(&sched, from, to);
@@ -791,9 +824,9 @@ mod tests {
         assert_eq!(
             dates,
             vec![
-                NaiveDate::from_ymd_opt(2026, 2, 2).unwrap(),  // Mon
-                NaiveDate::from_ymd_opt(2026, 2, 4).unwrap(),  // Wed
-                NaiveDate::from_ymd_opt(2026, 2, 9).unwrap(),  // Mon
+                NaiveDate::from_ymd_opt(2026, 2, 2).unwrap(), // Mon
+                NaiveDate::from_ymd_opt(2026, 2, 4).unwrap(), // Wed
+                NaiveDate::from_ymd_opt(2026, 2, 9).unwrap(), // Mon
             ]
         );
     }
@@ -801,7 +834,15 @@ mod tests {
     #[test]
     fn test_ordinal_weekday_second_tuesday() {
         // 2nd Tuesday of every month
-        let sched = make_schedule("ordinal_weekday", "2026-01-01", None, None, None, Some(2), Some(2));
+        let sched = make_schedule(
+            "ordinal_weekday",
+            "2026-01-01",
+            None,
+            None,
+            None,
+            Some(2),
+            Some(2),
+        );
         let from = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 3, 31).unwrap();
         let dates = compute_occurrences(&sched, from, to);
@@ -818,7 +859,15 @@ mod tests {
     #[test]
     fn test_ordinal_weekday_last_friday() {
         // Last Friday of every month
-        let sched = make_schedule("ordinal_weekday", "2026-01-01", None, None, None, Some(-1), Some(5));
+        let sched = make_schedule(
+            "ordinal_weekday",
+            "2026-01-01",
+            None,
+            None,
+            None,
+            Some(-1),
+            Some(5),
+        );
         let from = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 3, 31).unwrap();
         let dates = compute_occurrences(&sched, from, to);
@@ -834,7 +883,15 @@ mod tests {
 
     #[test]
     fn test_max_occurrences() {
-        let mut sched = make_schedule("every_n", "2026-01-01", Some(1), Some("day"), None, None, None);
+        let mut sched = make_schedule(
+            "every_n",
+            "2026-01-01",
+            Some(1),
+            Some("day"),
+            None,
+            None,
+            None,
+        );
         sched.max_occurrences = Some(3);
         let from = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 1, 31).unwrap();
@@ -844,7 +901,15 @@ mod tests {
 
     #[test]
     fn test_end_date() {
-        let mut sched = make_schedule("every_n", "2026-01-01", Some(1), Some("week"), None, None, None);
+        let mut sched = make_schedule(
+            "every_n",
+            "2026-01-01",
+            Some(1),
+            Some("week"),
+            None,
+            None,
+            None,
+        );
         sched.end_date = Some("2026-01-20".to_string());
         let from = NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let to = NaiveDate::from_ymd_opt(2026, 2, 28).unwrap();
@@ -863,11 +928,17 @@ mod tests {
     fn test_add_months_clamping() {
         // Jan 31 + 1 month → Feb 28 (2026 is not a leap year)
         let d = NaiveDate::from_ymd_opt(2026, 1, 31).unwrap();
-        assert_eq!(add_months(d, 1), NaiveDate::from_ymd_opt(2026, 2, 28).unwrap());
+        assert_eq!(
+            add_months(d, 1),
+            NaiveDate::from_ymd_opt(2026, 2, 28).unwrap()
+        );
 
         // Mar 31 + 1 month → Apr 30
         let d2 = NaiveDate::from_ymd_opt(2026, 3, 31).unwrap();
-        assert_eq!(add_months(d2, 1), NaiveDate::from_ymd_opt(2026, 4, 30).unwrap());
+        assert_eq!(
+            add_months(d2, 1),
+            NaiveDate::from_ymd_opt(2026, 4, 30).unwrap()
+        );
     }
 
     #[test]

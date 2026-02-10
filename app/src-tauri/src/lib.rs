@@ -1,5 +1,7 @@
 mod core;
-pub use crate::core::{accounts, db_init, io, markets, models, rules, scheduled, transactions, utils};
+pub use crate::core::{
+    accounts, db_init, io, markets, models, rules, scheduled, transactions, utils,
+};
 
 pub use crate::models::{
     Account, AppSettings, DailyPrice, Rule, ScheduledOccurrence, ScheduledTransaction, Transaction,
@@ -45,8 +47,8 @@ pub use crate::rules::{
 pub use crate::scheduled::{
     apply_scheduled_occurrence_db, compute_occurrences, create_scheduled_transaction_db,
     delete_scheduled_transaction_db, get_pending_occurrences_db, get_scheduled_transactions_db,
-    skip_scheduled_occurrence_db, update_scheduled_transaction_db,
-    CreateScheduledTransactionArgs, UpdateScheduledTransactionArgs,
+    skip_scheduled_occurrence_db, update_scheduled_transaction_db, CreateScheduledTransactionArgs,
+    UpdateScheduledTransactionArgs,
 };
 
 // Re-export markets helpers used by tests

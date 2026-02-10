@@ -10,6 +10,6 @@ pub mod multicurrency;
 pub mod payees;
 pub mod property;
 pub mod rules;
+pub mod scheduled;
 pub mod stock;
 pub mod transactions;
-pub mod scheduled;

@@ -1,5 +1,5 @@
-use crate::models::ScheduledTransaction;
 use crate::core::scheduled::compute_occurrences;
+use crate::models::ScheduledTransaction;
 use chrono::NaiveDate;
 
 fn create_base_schedule() -> ScheduledTransaction {
@@ -120,14 +120,14 @@ fn test_max_occurrences_limit() {
     schedule.interval_unit = Some("month".to_string());
     schedule.start_date = "2023-01-01".to_string();
     schedule.max_occurrences = Some(3); // Only 3 total allowed
-    // Suppose 1 already happened
+                                        // Suppose 1 already happened
     schedule.occurrences_count = 1;
 
     let _from = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
     let _to = NaiveDate::from_ymd_opt(2023, 6, 1).unwrap();
 
-    // Occurrences logic handles `occurrences_count`. 
-    // It should skip the ones already counted? 
+    // Occurrences logic handles `occurrences_count`.
+    // It should skip the ones already counted?
     // Wait, `compute_occurrences` logic needs to be checked.
     // Reading code of `compute_occurrences` showed it reads `max_occurrences` but it *doesn't* seem to subtract `occurrences_count` automatically unless logic inside does it.
     // Let's re-read the implementation to be sure.
