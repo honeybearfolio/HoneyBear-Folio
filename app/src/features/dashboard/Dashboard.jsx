@@ -213,18 +213,23 @@ export default function Dashboard({
   });
 
   // Auto-select newly added accounts
+  // Defer the state update so we don't call setState synchronously inside the effect
   useEffect(() => {
-    setToggledAccounts((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      accounts.forEach((a) => {
-        if (!(a.id in next)) {
-          next[a.id] = true;
-          changed = true;
-        }
+    const timer = setTimeout(() => {
+      setToggledAccounts((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        accounts.forEach((a) => {
+          if (!(a.id in next)) {
+            next[a.id] = true;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
       });
-      return changed ? next : prev;
-    });
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [accounts]);
 
   const selectedAccountIds = useMemo(() => {
@@ -284,14 +289,17 @@ export default function Dashboard({
 
   const chartData = useMemo(() => {
     // Require accounts and at least one transaction to render the net worth evolution chart
-    if (filteredAccounts.length === 0 || filteredTransactions.length === 0) return null;
+    if (filteredAccounts.length === 0 || filteredTransactions.length === 0)
+      return null;
 
     // 1. Calculate initial balances for each account
     // current_balance = initial_balance + sum(transactions)
     // initial_balance = current_balance - sum(transactions)
     const accountInitialBalances = {};
     filteredAccounts.forEach((acc) => {
-      const accTxs = filteredTransactions.filter((t) => t.account_id === acc.id);
+      const accTxs = filteredTransactions.filter(
+        (t) => t.account_id === acc.id,
+      );
       const totalChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
       accountInitialBalances[acc.id] = acc.balance - totalChange;
     });
@@ -432,7 +440,10 @@ export default function Dashboard({
 
     // Ensure current (last) data point uses current market values (same as Sidebar/Investments)
     if (totalData.length > 0) {
-      const currentTotal = computeNetWorth(filteredAccounts, filteredMarketValues);
+      const currentTotal = computeNetWorth(
+        filteredAccounts,
+        filteredMarketValues,
+      );
       totalData[totalData.length - 1] = currentTotal;
     }
 
@@ -573,7 +584,9 @@ export default function Dashboard({
 
       // Check if this account has any holdings (transactions with ticker)
       // If it does, we treat it as an investment capable account regardless of 'kind'
-      const accTxs = filteredTransactions.filter((t) => t.account_id === acc.id);
+      const accTxs = filteredTransactions.filter(
+        (t) => t.account_id === acc.id,
+      );
       const { currentHoldings } = buildHoldingsFromTransactions(accTxs);
 
       if (currentHoldings.length > 0) {
@@ -676,7 +689,14 @@ export default function Dashboard({
         },
       ],
     };
-  }, [filteredAccounts, filteredTransactions, quotes, dailyPrices, isDark, chartColors]);
+  }, [
+    filteredAccounts,
+    filteredTransactions,
+    quotes,
+    dailyPrices,
+    isDark,
+    chartColors,
+  ]);
 
   const expensesByCategoryData = useMemo(() => {
     if (filteredTransactions.length === 0) return null;
@@ -1391,7 +1411,9 @@ export default function Dashboard({
                     >
                       {t("dashboard.show_all")}
                     </button>
-                    <span className="text-slate-300 dark:text-slate-600">|</span>
+                    <span className="text-slate-300 dark:text-slate-600">
+                      |
+                    </span>
                     <button
                       className="toggle-all text-xs"
                       onClick={() => setAllAccountsVisibility(false)}
@@ -1407,10 +1429,7 @@ export default function Dashboard({
                     );
                     const color = ds?._color || "rgb(148, 163, 184)";
                     return (
-                      <label
-                        key={acc.id}
-                        className="account-filter-item"
-                      >
+                      <label key={acc.id} className="account-filter-item">
                         <input
                           type="checkbox"
                           className="account-checkbox"
@@ -1423,7 +1442,9 @@ export default function Dashboard({
                           className="account-dot w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: color }}
                         />
-                        <span className="account-name truncate">{acc.name}</span>
+                        <span className="account-name truncate">
+                          {acc.name}
+                        </span>
                         <span className="account-balance ml-auto text-slate-500 dark:text-slate-400 text-xs">
                           <MaskedNumber
                             value={
