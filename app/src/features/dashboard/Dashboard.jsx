@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
-import { Calendar } from "lucide-react";
+import { Calendar, Filter, ChevronDown } from "lucide-react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -204,16 +204,102 @@ export default function Dashboard({
     [dailyPrices],
   );
 
+  // Track user toggles for account visibility (dashboard-wide filter).
+  // Default: all accounts selected so the full picture is shown on load.
+  const [toggledAccounts, setToggledAccounts] = useState(() => {
+    const map = {};
+    propAccounts.forEach((a) => (map[a.id] = true));
+    return map;
+  });
+
+  // Auto-select newly added accounts
+  // Defer the state update so we don't call setState synchronously inside the effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setToggledAccounts((prev) => {
+        const next = { ...prev };
+        let changed = false;
+        accounts.forEach((a) => {
+          if (!(a.id in next)) {
+            next[a.id] = true;
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [accounts]);
+
+  const selectedAccountIds = useMemo(() => {
+    const set = new Set();
+    accounts.forEach((a) => {
+      if (toggledAccounts[a.id]) set.add(a.id);
+    });
+    return set;
+  }, [accounts, toggledAccounts]);
+
+  const toggleAccountVisibility = (accountId) => {
+    setToggledAccounts((prev) => ({ ...prev, [accountId]: !prev[accountId] }));
+  };
+
+  const setAllAccountsVisibility = (visible) => {
+    const map = {};
+    accounts.forEach((a) => (map[a.id] = visible));
+    setToggledAccounts(map);
+  };
+
+  // Filtered data based on the dashboard-wide account selection.
+  // Data fetching (FX pairs, daily prices) stays unfiltered.
+  const filteredAccounts = useMemo(
+    () => accounts.filter((a) => selectedAccountIds.has(a.id)),
+    [accounts, selectedAccountIds],
+  );
+
+  const filteredTransactions = useMemo(
+    () => transactions.filter((t) => selectedAccountIds.has(t.account_id)),
+    [transactions, selectedAccountIds],
+  );
+
+  const filteredMarketValues = useMemo(() => {
+    const mv = {};
+    for (const [id, val] of Object.entries(marketValues)) {
+      if (selectedAccountIds.has(Number(id))) mv[id] = val;
+    }
+    return mv;
+  }, [marketValues, selectedAccountIds]);
+
+  // Popover state for account filter
+  const [showAccountFilter, setShowAccountFilter] = useState(false);
+  const filterRef = useRef(null);
+
+  // Close popover on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setShowAccountFilter(false);
+      }
+    };
+    if (showAccountFilter) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showAccountFilter]);
+
   const chartData = useMemo(() => {
     // Require accounts and at least one transaction to render the net worth evolution chart
-    if (accounts.length === 0 || transactions.length === 0) return null;
+    if (filteredAccounts.length === 0 || filteredTransactions.length === 0)
+      return null;
 
     // 1. Calculate initial balances for each account
     // current_balance = initial_balance + sum(transactions)
     // initial_balance = current_balance - sum(transactions)
     const accountInitialBalances = {};
-    accounts.forEach((acc) => {
-      const accTxs = transactions.filter((t) => t.account_id === acc.id);
+    filteredAccounts.forEach((acc) => {
+      const accTxs = filteredTransactions.filter(
+        (t) => t.account_id === acc.id,
+      );
       const totalChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
       accountInitialBalances[acc.id] = acc.balance - totalChange;
     });
@@ -239,11 +325,11 @@ export default function Dashboard({
     endDate.setHours(0, 0, 0, 0);
 
     // If ALL, find the first transaction date
-    if (timeRange === "ALL" && transactions.length > 0) {
+    if (timeRange === "ALL" && filteredTransactions.length > 0) {
       const firstTxDate = new Date(
-        transactions.reduce(
+        filteredTransactions.reduce(
           (min, t) => (t.date < min ? t.date : min),
-          transactions[0].date,
+          filteredTransactions[0].date,
         ),
       );
       cutoffDate = firstTxDate;
@@ -254,11 +340,11 @@ export default function Dashboard({
     }
 
     // Ensure we never show dates earlier than the first transaction — start chart at firstTxDate
-    if (transactions.length > 0) {
+    if (filteredTransactions.length > 0) {
       const firstTxDate = new Date(
-        transactions.reduce(
+        filteredTransactions.reduce(
           (min, t) => (t.date < min ? t.date : min),
-          transactions[0].date,
+          filteredTransactions[0].date,
         ),
       );
       // Normalize to midnight for consistent comparisons
@@ -284,7 +370,7 @@ export default function Dashboard({
 
     // Index ticker currencies from transactions
     const tickerCurrencies = {};
-    transactions.forEach((t) => {
+    filteredTransactions.forEach((t) => {
       if (t.ticker && t.currency) {
         tickerCurrencies[t.ticker] = t.currency;
       }
@@ -313,10 +399,10 @@ export default function Dashboard({
     // Total Net Worth Dataset
     const totalData = sortedDates.map((date) => {
       let total = 0;
-      accounts.forEach((acc) => {
+      filteredAccounts.forEach((acc) => {
         const accCurrency = acc.currency || appCurrency;
         const initial = accountInitialBalances[acc.id];
-        const accTxs = transactions.filter(
+        const accTxs = filteredTransactions.filter(
           (t) => t.account_id === acc.id && t.date <= date,
         );
         // Include all transactions (even stock buys/sells) to get correct cash balance
@@ -354,7 +440,10 @@ export default function Dashboard({
 
     // Ensure current (last) data point uses current market values (same as Sidebar/Investments)
     if (totalData.length > 0) {
-      const currentTotal = computeNetWorth(accounts, marketValues);
+      const currentTotal = computeNetWorth(
+        filteredAccounts,
+        filteredMarketValues,
+      );
       totalData[totalData.length - 1] = currentTotal;
     }
 
@@ -380,7 +469,7 @@ export default function Dashboard({
     });
 
     // Individual Account Datasets
-    accounts.forEach((acc, index) => {
+    filteredAccounts.forEach((acc, index) => {
       const accCurrency = acc.currency || appCurrency;
 
       // Build both the native (account currency) and converted (app currency) series
@@ -389,7 +478,7 @@ export default function Dashboard({
 
       sortedDates.forEach((date) => {
         const initial = accountInitialBalances[acc.id];
-        const accTxs = transactions.filter(
+        const accTxs = filteredTransactions.filter(
           (t) => t.account_id === acc.id && t.date <= date,
         );
         // Include all transactions (even stock buys/sells) to get correct cash balance
@@ -442,7 +531,7 @@ export default function Dashboard({
         pointRadius: 0,
         pointHoverRadius: 4,
         borderDash: [5, 5], // Dashed lines for individual accounts to reduce noise
-        hidden: true, // Hide individual accounts by default to keep it clean
+        hidden: false, // Visibility controlled by the dashboard-wide account filter
         accountId: acc.id,
         _color: color, // helper for legend rendering
       });
@@ -453,53 +542,20 @@ export default function Dashboard({
       datasets: datasets,
     };
   }, [
-    accounts,
-    transactions,
+    filteredAccounts,
+    filteredTransactions,
     timeRange,
     customStartDate,
     customEndDate,
-    marketValues,
+    filteredMarketValues,
     formatDate,
     appCurrency,
     getPrice,
     chartColors,
   ]);
 
-  // Track user toggles for account visibility; derive the actual visibility from accounts + toggles
-  const [toggledAccounts, setToggledAccounts] = useState(() => ({}));
-
-  const visibleAccounts = useMemo(() => {
-    const map = {};
-    accounts.forEach((a) => {
-      map[a.id] = !!toggledAccounts[a.id];
-    });
-    return map;
-  }, [accounts, toggledAccounts]);
-
-  const toggleAccountVisibility = (accountId) => {
-    setToggledAccounts((prev) => ({ ...prev, [accountId]: !prev[accountId] }));
-  };
-
-  const setAllAccountsVisibility = (visible) => {
-    const map = {};
-    accounts.forEach((a) => (map[a.id] = visible));
-    setToggledAccounts(map);
-  };
-
-  const chartDataVisible = useMemo(() => {
-    if (!chartData) return null;
-    const datasets = chartData.datasets.map((ds) => {
-      if (ds.accountId) {
-        const isVisible = !!visibleAccounts[ds.accountId];
-        return { ...ds, hidden: !isVisible };
-      }
-      return ds;
-    });
-    return { ...chartData, datasets };
-  }, [chartData, visibleAccounts]);
-
   const doughnutData = useMemo(() => {
-    if (accounts.length === 0) return null;
+    if (filteredAccounts.length === 0) return null;
 
     const assetTypes = {};
 
@@ -521,14 +577,16 @@ export default function Dashboard({
       return t("dashboard.assets.stock");
     };
 
-    accounts.forEach((acc) => {
+    filteredAccounts.forEach((acc) => {
       let kind = acc.kind || "cash";
       let accKindLower = kind.toLowerCase();
       const exchangeRate = acc.exchange_rate || 1.0;
 
       // Check if this account has any holdings (transactions with ticker)
       // If it does, we treat it as an investment capable account regardless of 'kind'
-      const accTxs = transactions.filter((t) => t.account_id === acc.id);
+      const accTxs = filteredTransactions.filter(
+        (t) => t.account_id === acc.id,
+      );
       const { currentHoldings } = buildHoldingsFromTransactions(accTxs);
 
       if (currentHoldings.length > 0) {
@@ -631,10 +689,17 @@ export default function Dashboard({
         },
       ],
     };
-  }, [accounts, transactions, quotes, dailyPrices, isDark, chartColors]);
+  }, [
+    filteredAccounts,
+    filteredTransactions,
+    quotes,
+    dailyPrices,
+    isDark,
+    chartColors,
+  ]);
 
   const expensesByCategoryData = useMemo(() => {
-    if (transactions.length === 0) return null;
+    if (filteredTransactions.length === 0) return null;
 
     const now = new Date();
     let startDate = new Date(0);
@@ -665,7 +730,7 @@ export default function Dashboard({
     const startStr = startDate.toISOString().split("T")[0];
     const endStr = endDate.toISOString().split("T")[0];
 
-    const expenses = transactions.filter(
+    const expenses = filteredTransactions.filter(
       (t) =>
         t.amount < 0 &&
         t.category !== "Transfer" &&
@@ -725,7 +790,7 @@ export default function Dashboard({
       ],
     };
   }, [
-    transactions,
+    filteredTransactions,
     timeRange,
     customStartDate,
     customEndDate,
@@ -737,7 +802,7 @@ export default function Dashboard({
   ]);
 
   const incomeVsExpensesData = useMemo(() => {
-    if (transactions.length === 0) return null;
+    if (filteredTransactions.length === 0) return null;
 
     const now = new Date();
     const keys = []; // keys for matching (YYYY-MM-DD for days or YYYY-MM for months)
@@ -776,7 +841,7 @@ export default function Dashboard({
       else if (timeRange === "YTD") start = new Date(now.getFullYear(), 0, 1);
       else if (timeRange === "1Y") start.setFullYear(now.getFullYear() - 1);
       else if (timeRange === "ALL") {
-        const txDates = transactions.map((t) => t.date).sort();
+        const txDates = filteredTransactions.map((t) => t.date).sort();
         start = new Date(txDates[0]);
       } else if (timeRange === "CUSTOM") {
         start = new Date(customStartDate);
@@ -806,7 +871,7 @@ export default function Dashboard({
     const incomeData = new Array(keys.length).fill(0);
     const expenseData = new Array(keys.length).fill(0);
 
-    transactions.forEach((t) => {
+    filteredTransactions.forEach((t) => {
       if (t.category === "Transfer" || t.ticker) return; // Exclude transfers and investments
       const key = isDayBucket ? t.date : t.date.slice(0, 7);
       const index = keys.indexOf(key);
@@ -846,7 +911,7 @@ export default function Dashboard({
       ],
     };
   }, [
-    transactions,
+    filteredTransactions,
     timeRange,
     customStartDate,
     customEndDate,
@@ -1306,6 +1371,100 @@ export default function Dashboard({
               </div>
             </div>
           )}
+
+          {/* Account filter popover */}
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setShowAccountFilter((v) => !v)}
+              className={`account-filter-trigger ${
+                selectedAccountIds.size < accounts.length
+                  ? "account-filter-trigger-active"
+                  : ""
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {t("dashboard.accounts_filter")}
+              </span>
+              {selectedAccountIds.size < accounts.length && (
+                <span className="account-filter-badge">
+                  {selectedAccountIds.size}/{accounts.length}
+                </span>
+              )}
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${
+                  showAccountFilter ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {showAccountFilter && (
+              <div className="account-filter-popover">
+                <div className="account-filter-header">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {t("dashboard.accounts_filter")}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="toggle-all text-xs"
+                      onClick={() => setAllAccountsVisibility(true)}
+                    >
+                      {t("dashboard.show_all")}
+                    </button>
+                    <span className="text-slate-300 dark:text-slate-600">
+                      |
+                    </span>
+                    <button
+                      className="toggle-all text-xs"
+                      onClick={() => setAllAccountsVisibility(false)}
+                    >
+                      {t("dashboard.hide_all")}
+                    </button>
+                  </div>
+                </div>
+                <div className="account-filter-list">
+                  {accounts.map((acc) => {
+                    const ds = chartData?.datasets.find(
+                      (d) => d.accountId === acc.id,
+                    );
+                    const color = ds?._color || "rgb(148, 163, 184)";
+                    return (
+                      <label key={acc.id} className="account-filter-item">
+                        <input
+                          type="checkbox"
+                          className="account-checkbox"
+                          checked={!!toggledAccounts[acc.id]}
+                          onChange={() => toggleAccountVisibility(acc.id)}
+                          aria-label={acc.name}
+                          style={{ ["--hb-account-color"]: color }}
+                        />
+                        <span
+                          className="account-dot w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="account-name truncate">
+                          {acc.name}
+                        </span>
+                        <span className="account-balance ml-auto text-slate-500 dark:text-slate-400 text-xs">
+                          <MaskedNumber
+                            value={
+                              marketValues && marketValues[acc.id] !== undefined
+                                ? (acc.balance || 0) + marketValues[acc.id]
+                                : acc.balance || 0
+                            }
+                            options={{
+                              style: "currency",
+                              currency: acc.currency || appCurrency,
+                            }}
+                          />
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1317,7 +1476,7 @@ export default function Dashboard({
           </h3>
           <p className="summary-card-value">
             <MaskedNumber
-              value={computeNetWorth(accounts, marketValues)}
+              value={computeNetWorth(filteredAccounts, filteredMarketValues)}
               options={{ style: "currency" }}
             />
           </p>
@@ -1326,86 +1485,28 @@ export default function Dashboard({
           <h3 className="summary-card-title">
             {t("dashboard.total_accounts")}
           </h3>
-          <p className="summary-card-value">{accounts.length}</p>
+          <p className="summary-card-value">{filteredAccounts.length}</p>
         </div>
         <div className="summary-card">
           <h3 className="summary-card-title">
             {t("dashboard.total_transactions")}
           </h3>
-          <p className="summary-card-value">{transactions.length}</p>
+          <p className="summary-card-value">{filteredTransactions.length}</p>
         </div>
       </div>
 
-      {transactions.length === 0 ? null : (
+      {filteredTransactions.length === 0 ? null : (
         <div className="chart-container">
           <div className="chart-header">
             <h3 className="chart-title">{t("dashboard.networth_evolution")}</h3>
             <p className="chart-subtitle">
               {t("dashboard.subtitle.networth_growth")}
             </p>
-
-            <div className="account-visibility mt-4">
-              <div className="flex items-center gap-3 mb-2">
-                <button
-                  className="toggle-all text-sm"
-                  onClick={() => setAllAccountsVisibility(true)}
-                >
-                  {t("dashboard.show_all")}
-                </button>
-                <button
-                  className="toggle-all text-sm"
-                  onClick={() => setAllAccountsVisibility(false)}
-                >
-                  {t("dashboard.hide_all")}
-                </button>
-              </div>
-              <div className="account-list flex flex-wrap gap-3">
-                {accounts.map((acc) => {
-                  const ds = chartData?.datasets.find(
-                    (d) => d.accountId === acc.id,
-                  );
-                  const color = ds?._color || "rgb(148, 163, 184)";
-                  return (
-                    <label
-                      key={acc.id}
-                      className="account-item inline-flex items-center gap-2 bg-white dark:bg-slate-700 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        className="account-checkbox"
-                        checked={!!visibleAccounts[acc.id]}
-                        onChange={() => toggleAccountVisibility(acc.id)}
-                        aria-label={acc.name}
-                        style={{ ["--hb-account-color"]: color }}
-                      />
-                      <span
-                        className="account-dot w-3 h-3 rounded-full"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span className="account-name">{acc.name}</span>
-                      <span className="account-balance ml-2 text-slate-500 dark:text-slate-400">
-                        <MaskedNumber
-                          value={
-                            marketValues && marketValues[acc.id] !== undefined
-                              ? (acc.balance || 0) + marketValues[acc.id]
-                              : acc.balance || 0
-                          }
-                          options={{
-                            style: "currency",
-                            currency: acc.currency || appCurrency,
-                          }}
-                        />
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
           </div>
           <div className="chart-wrapper">
             <div className="chart-body">
-              {chartDataVisible ? (
-                <Line options={options} data={chartDataVisible} />
+              {chartData ? (
+                <Line options={options} data={chartData} />
               ) : (
                 <div className="loading-container">
                   <div className="loading-content">
@@ -1422,7 +1523,7 @@ export default function Dashboard({
       )}
 
       <div className="charts-grid">
-        {transactions.length === 0 ? (
+        {filteredTransactions.length === 0 ? (
           <div className="col-span-full flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-16">
             <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-2xl mb-4">
               <svg
@@ -1487,7 +1588,7 @@ export default function Dashboard({
               </div>
               <div className="chart-body">
                 <SankeyDiagram
-                  transactions={transactions}
+                  transactions={filteredTransactions}
                   timeRange={timeRange}
                   customStartDate={customStartDate}
                   customEndDate={customEndDate}
