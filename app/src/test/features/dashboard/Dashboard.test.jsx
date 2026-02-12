@@ -82,9 +82,8 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith("get_all_transactions");
       expect(invoke).toHaveBeenCalledWith("get_accounts");
+      expect(screen.getByTestId("line-chart")).toBeInTheDocument();
     });
-
-    expect(screen.getByTestId("line-chart")).toBeInTheDocument();
   });
 
   it("uses provided accounts prop if available", async () => {
