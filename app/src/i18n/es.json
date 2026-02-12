@@ -82,6 +82,7 @@
   "customselect.search_placeholder": "Buscar...",
 
   "dashboard.accounts_breakdown": "Cuentas",
+  "dashboard.accounts_filter": "Cuentas",
   "dashboard.asset_allocation": "Asignación de activos",
   "dashboard.assets.cash": "Efectivo",
   "dashboard.assets.commodities": "Materias primas",

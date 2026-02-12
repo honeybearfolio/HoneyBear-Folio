@@ -82,6 +82,7 @@
   "customselect.search_placeholder": "Search...",
 
   "dashboard.accounts_breakdown": "Accounts",
+  "dashboard.accounts_filter": "Accounts",
   "dashboard.asset_allocation": "Asset Allocation",
   "dashboard.assets.cash": "Cash",
   "dashboard.assets.commodities": "Commodities",

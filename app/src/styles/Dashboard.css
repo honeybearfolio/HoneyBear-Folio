@@ -499,4 +499,95 @@
   .account-visibility .toggle-all {
     @apply text-sm font-medium text-slate-600 dark:text-slate-300 underline hover:no-underline;
   }
+
+  /* ── Account Filter Popover (dashboard header) ── */
+  .account-filter-trigger {
+    @apply inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl
+           bg-white dark:bg-slate-800
+           border border-slate-200 dark:border-slate-700
+           text-slate-700 dark:text-slate-200
+           hover:bg-slate-50 dark:hover:bg-slate-700
+           shadow-sm transition-colors cursor-pointer;
+  }
+
+  .account-filter-trigger-active {
+    @apply border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/30
+           text-blue-700 dark:text-blue-300;
+  }
+
+  .account-filter-badge {
+    @apply text-xs font-semibold px-1.5 py-0.5 rounded-md
+           bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200;
+  }
+
+  .account-filter-popover {
+    @apply absolute right-0 top-full mt-2 z-50
+           bg-white dark:bg-slate-800
+           border border-slate-200 dark:border-slate-700
+           rounded-xl shadow-lg
+           w-80 max-h-96 overflow-hidden
+           flex flex-col;
+  }
+
+  .account-filter-header {
+    @apply flex items-center justify-between px-4 py-3
+           border-b border-slate-100 dark:border-slate-700;
+  }
+
+  .account-filter-header .toggle-all {
+    @apply text-xs font-medium text-slate-600 dark:text-slate-300
+           underline hover:no-underline cursor-pointer;
+  }
+
+  .account-filter-list {
+    @apply overflow-y-auto p-2 flex flex-col gap-1;
+  }
+
+  .account-filter-item {
+    @apply flex items-center gap-2 px-3 py-2 rounded-lg
+           hover:bg-slate-50 dark:hover:bg-slate-700/50
+           cursor-pointer text-sm transition-colors;
+  }
+
+  .account-filter-item .account-checkbox {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 2px solid rgba(148, 163, 184, 0.4);
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    transition: all 120ms ease;
+    flex: 0 0 auto;
+  }
+
+  .account-filter-item .account-checkbox::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 6px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform 120ms ease-in-out;
+  }
+
+  .account-filter-item .account-checkbox:checked {
+    background: var(--hb-account-color, rgb(59, 130, 246));
+    border-color: transparent;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+  }
+
+  .account-filter-item .account-checkbox:checked::after {
+    transform: rotate(45deg) scale(1);
+  }
+
+  .account-filter-item .account-checkbox:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+  }
 }
