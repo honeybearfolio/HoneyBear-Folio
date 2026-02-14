@@ -10,7 +10,7 @@ import {
   Lightbulb,
   Bug,
   Github,
-  Layout,
+  Brush,
 } from "lucide-react";
 import "../../styles/Modal.css";
 import "../../styles/SettingsModal.css";
@@ -248,7 +248,7 @@ export default function SettingsModal({
                 onClick={() => setActiveTab("customization")}
                 className={`settings-tab ${activeTab === "customization" ? "settings-tab-active" : ""}`}
               >
-                <Layout className="w-4 h-4 text-slate-400" />
+                <Brush className="w-4 h-4 text-slate-400" />
                 <span>{t("settings.customization")}</span>
               </button>
             )}
@@ -327,40 +327,6 @@ export default function SettingsModal({
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip={t("settings.tooltip.theme")}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={t("settings.tooltip.theme")}
-                      onMouseEnter={showTooltip}
-                      onFocus={showTooltip}
-                      onMouseLeave={hideTooltip}
-                      onBlur={hideTooltip}
-                    >
-                      <HelpCircle
-                        className="w-4 h-4 text-slate-400 help-icon"
-                        aria-hidden="true"
-                      />
-                    </span>
-                    <label className="modal-label">{t("settings.theme")}</label>
-                  </div>
-                </div>
-                <div className="relative settings-select">
-                  <CustomSelect
-                    value={theme}
-                    onChange={(v) => setTheme(v)}
-                    options={[
-                      { value: "light", label: t("settings.theme.light") },
-                      { value: "dark", label: t("settings.theme.dark") },
-                      { value: "system", label: t("settings.theme.system") },
-                    ]}
-                    placeholder={t("settings.select_theme_placeholder")}
-                    fullWidth={false}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="label-with-help">
-                    <span
-                      className="help-wrapper"
                       data-tooltip={t("settings.tooltip.database_file")}
                       role="button"
                       tabIndex={0}
@@ -400,14 +366,15 @@ export default function SettingsModal({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-4">
+                {/* Exchange Rates Section */}
+                <div className="flex items-center justify-between mt-6">
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip={t("settings.tooltip.font_size")}
+                      data-tooltip={t("settings.tooltip.exchange_rates")}
                       role="button"
                       tabIndex={0}
-                      aria-label={t("settings.tooltip.font_size")}
+                      aria-label={t("settings.tooltip.exchange_rates")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -419,32 +386,111 @@ export default function SettingsModal({
                       />
                     </span>
                     <label className="modal-label">
-                      {t("settings.font_size")}
+                      {t("settings.exchange_rates")}
                     </label>
                   </div>
-                  <div className="text-sm text-slate-500">
-                    {Math.round(fontSize * 100)}%
-                  </div>
                 </div>
-                <div className="relative mt-1 settings-slider">
-                  <input
-                    type="range"
-                    min={0.75}
-                    max={1.25}
-                    step={0.05}
-                    value={fontSize}
-                    onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="w-full accent-brand-500"
-                    aria-label={t("settings.font_size")}
-                  />
-                </div>
+                <ExchangeRatesList />
               </>
             )}
 
             {activeTab === "customization" && sidebarVisibility && (
               <>
+                <div className="mt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="label-with-help">
+                      <span
+                        className="help-wrapper"
+                        data-tooltip={t("settings.tooltip.theme")}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={t("settings.tooltip.theme")}
+                        onMouseEnter={showTooltip}
+                        onFocus={showTooltip}
+                        onMouseLeave={hideTooltip}
+                        onBlur={hideTooltip}
+                      >
+                        <HelpCircle
+                          className="w-4 h-4 text-slate-400 help-icon"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <label className="modal-label">{t("settings.theme")}</label>
+                    </div>
+                  </div>
+
+                  <div className="relative settings-select mt-2">
+                    <CustomSelect
+                      value={theme}
+                      onChange={(v) => setTheme(v)}
+                      options={[
+                        { value: "light", label: t("settings.theme.light") },
+                        { value: "dark", label: t("settings.theme.dark") },
+                        { value: "system", label: t("settings.theme.system") },
+                      ]}
+                      placeholder={t("settings.select_theme_placeholder")}
+                      fullWidth={false}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="label-with-help">
+                      <span
+                        className="help-wrapper"
+                        data-tooltip={t("settings.tooltip.font_size")}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={t("settings.tooltip.font_size")}
+                        onMouseEnter={showTooltip}
+                        onFocus={showTooltip}
+                        onMouseLeave={hideTooltip}
+                        onBlur={hideTooltip}
+                      >
+                        <HelpCircle
+                          className="w-4 h-4 text-slate-400 help-icon"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <label className="modal-label">
+                        {t("settings.font_size")}
+                      </label>
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {Math.round(fontSize * 100)}%
+                    </div>
+                  </div>
+                  <div className="relative mt-1 settings-slider">
+                    <input
+                      type="range"
+                      min={0.75}
+                      max={1.25}
+                      step={0.05}
+                      value={fontSize}
+                      onChange={(e) => setFontSize(Number(e.target.value))}
+                      className="w-full accent-brand-500"
+                      aria-label={t("settings.font_size")}
+                    />
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between mb-4">
                   <div className="label-with-help">
+                    <span
+                      className="help-wrapper"
+                      data-tooltip={t("settings.tooltip.sidebar_items")}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t("settings.tooltip.sidebar_items")}
+                      onMouseEnter={showTooltip}
+                      onFocus={showTooltip}
+                      onMouseLeave={hideTooltip}
+                      onBlur={hideTooltip}
+                    >
+                      <HelpCircle
+                        className="w-4 h-4 text-slate-400 help-icon"
+                        aria-hidden="true"
+                      />
+                    </span>
                     <label className="modal-label">
                       {t("settings.sidebar_items")}
                     </label>
@@ -660,31 +706,7 @@ export default function SettingsModal({
                   />
                 </div>
 
-                {/* Exchange Rates Section */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="label-with-help">
-                    <span
-                      className="help-wrapper"
-                      data-tooltip={t("settings.tooltip.exchange_rates")}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={t("settings.tooltip.exchange_rates")}
-                      onMouseEnter={showTooltip}
-                      onFocus={showTooltip}
-                      onMouseLeave={hideTooltip}
-                      onBlur={hideTooltip}
-                    >
-                      <HelpCircle
-                        className="w-4 h-4 text-slate-400 help-icon"
-                        aria-hidden="true"
-                      />
-                    </span>
-                    <label className="modal-label">
-                      {t("settings.exchange_rates")}
-                    </label>
-                  </div>
-                </div>
-                <ExchangeRatesList />
+
               </>
             )}
 
