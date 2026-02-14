@@ -415,7 +415,9 @@ export default function SettingsModal({
                           aria-hidden="true"
                         />
                       </span>
-                      <label className="modal-label">{t("settings.theme")}</label>
+                      <label className="modal-label">
+                        {t("settings.theme")}
+                      </label>
                     </div>
                   </div>
 
@@ -705,8 +707,6 @@ export default function SettingsModal({
                     fullWidth={false}
                   />
                 </div>
-
-
               </>
             )}
 
@@ -974,4 +974,11 @@ export default function SettingsModal({
 
 SettingsModal.propTypes = {
   onClose: PropTypes.func.isRequired,
+  sidebarVisibility: PropTypes.objectOf(PropTypes.bool),
+  onChangeSidebarVisibility: PropTypes.func,
+};
+
+SettingsModal.defaultProps = {
+  sidebarVisibility: undefined,
+  onChangeSidebarVisibility: undefined,
 };

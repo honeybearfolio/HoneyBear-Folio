@@ -242,10 +242,12 @@ describe("SettingsModal (language placement)", () => {
     const firstSwitch = screen.getAllByRole("switch")[0];
 
     expect(
-      themeLabel.compareDocumentPosition(fontLabel) & Node.DOCUMENT_POSITION_FOLLOWING,
+      themeLabel.compareDocumentPosition(fontLabel) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      fontLabel.compareDocumentPosition(firstSwitch) & Node.DOCUMENT_POSITION_FOLLOWING,
+      fontLabel.compareDocumentPosition(firstSwitch) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 });
