@@ -8,11 +8,15 @@ vi.mock("../../../i18n/i18n", () => ({
     const map = {
       "settings.title": "Settings",
       "settings.general": "General",
+      "settings.customization": "Customization",
       "settings.formats": "Formats",
       "settings.language": "Language",
       "settings.select_language_placeholder": "Select language",
       "settings.language_help":
         "Select the language used by the UI (affects menus, labels and tooltips).",
+      "settings.exchange_rates": "Exchange Rates",
+      "settings.theme": "Theme",
+      "settings.font_size": "Font size",
 
       "settings.tooltip.theme":
         "Choose light/dark or follow system preference.",
@@ -134,6 +138,17 @@ describe("SettingsModal (language placement)", () => {
     expect(screen.queryByText("Language")).not.toBeInTheDocument();
   });
 
+  it("shows exchange rates in General tab and not in Formats tab", () => {
+    render(<SettingsModal onClose={vi.fn()} />);
+
+    // label for the section should be visible in General (default) tab
+    expect(screen.getByText("Exchange Rates")).toBeInTheDocument();
+
+    // when switching to Formats, the Exchange Rates label should disappear
+    fireEvent.click(screen.getByText("Formats"));
+    expect(screen.queryByText("Exchange Rates")).not.toBeInTheDocument();
+  });
+
   it("uses AVAILABLE_LANGUAGES for options and calls setter on change", () => {
     render(<SettingsModal onClose={vi.fn()} />);
     const sel = screen.getByTestId("language-select");
@@ -190,5 +205,49 @@ describe("SettingsModal (language placement)", () => {
     expect(mockSetLocale).not.toHaveBeenCalled();
     expect(mockSetUiLanguage).not.toHaveBeenCalled();
     expect(setters.setUiLanguage).not.toHaveBeenCalled();
+  });
+
+  it("shows theme selector and font size under Customization tab", () => {
+    const sidebarVisibility = {
+      dashboard: true,
+      investments: true,
+      fire: true,
+      rules: true,
+      scheduled: true,
+      all: true,
+    };
+    render(
+      <SettingsModal
+        onClose={vi.fn()}
+        sidebarVisibility={sidebarVisibility}
+        onChangeSidebarVisibility={vi.fn()}
+      />,
+    );
+
+    // Not visible in General tab
+    expect(screen.queryByTestId("theme-select")).not.toBeInTheDocument();
+    expect(screen.queryByText("Font size")).not.toBeInTheDocument();
+
+    // Switch to Customization tab
+    fireEvent.click(screen.getByText("Customization"));
+
+    expect(screen.getByText("Theme")).toBeInTheDocument();
+    expect(screen.getByTestId("theme-select")).toBeInTheDocument();
+    expect(screen.getByText("Font size")).toBeInTheDocument();
+    expect(screen.getByRole("slider")).toBeInTheDocument();
+
+    // verify order: Theme -> Font size -> sidebar switches
+    const themeLabel = screen.getByText("Theme");
+    const fontLabel = screen.getByText("Font size");
+    const firstSwitch = screen.getAllByRole("switch")[0];
+
+    expect(
+      themeLabel.compareDocumentPosition(fontLabel) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      fontLabel.compareDocumentPosition(firstSwitch) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 });

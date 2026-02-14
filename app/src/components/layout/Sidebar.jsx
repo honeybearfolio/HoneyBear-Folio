@@ -51,6 +51,40 @@ export default function Sidebar({
   });
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
 
+  const [sidebarVisibility, setSidebarVisibility] = useState(() => {
+    try {
+      const stored = localStorage.getItem("hb_sidebar_visibility");
+      const defaults = {
+        dashboard: true,
+        investments: true,
+        fire: true,
+        rules: true,
+        scheduled: true,
+        all: true,
+      };
+      if (stored) {
+        return { ...defaults, ...JSON.parse(stored) };
+      }
+      return defaults;
+    } catch {
+      return {
+        dashboard: true,
+        investments: true,
+        fire: true,
+        rules: true,
+        scheduled: true,
+        all: true,
+      };
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "hb_sidebar_visibility",
+      JSON.stringify(sidebarVisibility),
+    );
+  }, [sidebarVisibility]);
+
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [sortConfig, setSortConfig] = useState(() => {
     try {
@@ -214,89 +248,101 @@ export default function Sidebar({
         <div>
           <h2 className="sidebar-section-title">{t("nav.overview")}</h2>
           <div className="space-y-1">
-            <button
-              onClick={() => handleSelect("dashboard")}
-              className={`sidebar-nav-item group ${
-                selectedId === "dashboard"
-                  ? "sidebar-nav-item-active"
-                  : "sidebar-nav-item-inactive"
-              }`}
-            >
-              <LayoutDashboard
-                className={`sidebar-nav-icon ${selectedId === "dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-              />
-              <span className="font-medium">{t("nav.dashboard")}</span>
-            </button>
+            {sidebarVisibility.dashboard !== false && (
+              <button
+                onClick={() => handleSelect("dashboard")}
+                className={`sidebar-nav-item group ${
+                  selectedId === "dashboard"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
+              >
+                <LayoutDashboard
+                  className={`sidebar-nav-icon ${selectedId === "dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("nav.dashboard")}</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => handleSelect("investment-dashboard")}
-              className={`sidebar-nav-item group ${
-                selectedId === "investment-dashboard"
-                  ? "sidebar-nav-item-active"
-                  : "sidebar-nav-item-inactive"
-              }`}
-            >
-              <PieChart
-                className={`sidebar-nav-icon ${selectedId === "investment-dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-              />
-              <span className="font-medium">{t("nav.investments")}</span>
-            </button>
+            {sidebarVisibility.investments !== false && (
+              <button
+                onClick={() => handleSelect("investment-dashboard")}
+                className={`sidebar-nav-item group ${
+                  selectedId === "investment-dashboard"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
+              >
+                <PieChart
+                  className={`sidebar-nav-icon ${selectedId === "investment-dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("nav.investments")}</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => handleSelect("fire-calculator")}
-              className={`sidebar-nav-item group ${
-                selectedId === "fire-calculator"
-                  ? "sidebar-nav-item-active"
-                  : "sidebar-nav-item-inactive"
-              }`}
-            >
-              <Calculator
-                className={`sidebar-nav-icon ${selectedId === "fire-calculator" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-              />
-              <span className="font-medium">{t("nav.fire_calculator")}</span>
-            </button>
+            {sidebarVisibility.fire !== false && (
+              <button
+                onClick={() => handleSelect("fire-calculator")}
+                className={`sidebar-nav-item group ${
+                  selectedId === "fire-calculator"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
+              >
+                <Calculator
+                  className={`sidebar-nav-icon ${selectedId === "fire-calculator" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("nav.fire_calculator")}</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => handleSelect("rules")}
-              className={`sidebar-nav-item group ${
-                selectedId === "rules"
-                  ? "sidebar-nav-item-active"
-                  : "sidebar-nav-item-inactive"
-              }`}
-            >
-              <BookOpenCheck
-                className={`sidebar-nav-icon ${selectedId === "rules" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-              />
-              <span className="font-medium">{t("nav.rules")}</span>
-            </button>
+            {sidebarVisibility.rules !== false && (
+              <button
+                onClick={() => handleSelect("rules")}
+                className={`sidebar-nav-item group ${
+                  selectedId === "rules"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
+              >
+                <BookOpenCheck
+                  className={`sidebar-nav-icon ${selectedId === "rules" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("nav.rules")}</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => handleSelect("scheduled")}
-              className={`sidebar-nav-item group ${
-                selectedId === "scheduled"
-                  ? "sidebar-nav-item-active"
-                  : "sidebar-nav-item-inactive"
-              }`}
-            >
-              <CalendarClock
-                className={`sidebar-nav-icon ${selectedId === "scheduled" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-              />
-              <span className="font-medium">{t("nav.scheduled")}</span>
-            </button>
+            {sidebarVisibility.scheduled !== false && (
+              <button
+                onClick={() => handleSelect("scheduled")}
+                className={`sidebar-nav-item group ${
+                  selectedId === "scheduled"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
+              >
+                <CalendarClock
+                  className={`sidebar-nav-icon ${selectedId === "scheduled" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("nav.scheduled")}</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => handleSelect("all")}
-              className={`sidebar-nav-item group ${
-                selectedId === "all"
-                  ? "sidebar-nav-item-active"
-                  : "sidebar-nav-item-inactive"
-              }`}
-            >
-              <List
-                className={`sidebar-nav-icon ${selectedId === "all" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-              />
-              <span className="font-medium">{t("nav.all_transactions")}</span>
-            </button>
+            {sidebarVisibility.all !== false && (
+              <button
+                onClick={() => handleSelect("all")}
+                className={`sidebar-nav-item group ${
+                  selectedId === "all"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
+              >
+                <List
+                  className={`sidebar-nav-icon ${selectedId === "all" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("nav.all_transactions")}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -441,7 +487,11 @@ export default function Sidebar({
       )}
 
       {showSettingsModal && (
-        <SettingsModal onClose={() => setShowSettingsModal(false)} />
+        <SettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          sidebarVisibility={sidebarVisibility}
+          onChangeSidebarVisibility={setSidebarVisibility}
+        />
       )}
 
       {showAccountModal && (

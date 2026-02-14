@@ -10,6 +10,7 @@ import {
   Lightbulb,
   Bug,
   Github,
+  Brush,
 } from "lucide-react";
 import "../../styles/Modal.css";
 import "../../styles/SettingsModal.css";
@@ -19,6 +20,7 @@ import { useTheme } from "../../contexts/theme-core";
 import { formatNumberWithLocale } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../ui/CustomSelect";
+import Switch from "../ui/Switch";
 import ErrorBoundary from "../layout/ErrorBoundary";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -45,7 +47,11 @@ const WEBSITE_URL = "https://honeybearfolio.github.io";
 const DOCS_URL = `${WEBSITE_URL}/docs`;
 const LICENSE_URL = `${GITHUB_REPO}/blob/main/LICENSE`;
 
-export default function SettingsModal({ onClose }) {
+export default function SettingsModal({
+  onClose,
+  sidebarVisibility,
+  onChangeSidebarVisibility,
+}) {
   const {
     locale,
     setLocale,
@@ -235,6 +241,17 @@ export default function SettingsModal({ onClose }) {
               <SlidersHorizontal className="w-4 h-4 text-slate-400" />
               <span>{t("settings.general")}</span>
             </button>
+            {sidebarVisibility && (
+              <button
+                role="tab"
+                aria-selected={activeTab === "customization"}
+                onClick={() => setActiveTab("customization")}
+                className={`settings-tab ${activeTab === "customization" ? "settings-tab-active" : ""}`}
+              >
+                <Brush className="w-4 h-4 text-slate-400" />
+                <span>{t("settings.customization")}</span>
+              </button>
+            )}
             <button
               role="tab"
               aria-selected={activeTab === "formats"}
@@ -260,9 +277,11 @@ export default function SettingsModal({ onClose }) {
               <h3 className="settings-section-heading">
                 {activeTab === "general"
                   ? t("settings.general")
-                  : activeTab === "formats"
-                    ? t("settings.formats")
-                    : t("settings.about")}
+                  : activeTab === "customization"
+                    ? t("settings.customization")
+                    : activeTab === "formats"
+                      ? t("settings.formats")
+                      : t("settings.about")}
               </h3>
             </div>
             {activeTab === "general" && (
@@ -308,40 +327,6 @@ export default function SettingsModal({ onClose }) {
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip={t("settings.tooltip.theme")}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={t("settings.tooltip.theme")}
-                      onMouseEnter={showTooltip}
-                      onFocus={showTooltip}
-                      onMouseLeave={hideTooltip}
-                      onBlur={hideTooltip}
-                    >
-                      <HelpCircle
-                        className="w-4 h-4 text-slate-400 help-icon"
-                        aria-hidden="true"
-                      />
-                    </span>
-                    <label className="modal-label">{t("settings.theme")}</label>
-                  </div>
-                </div>
-                <div className="relative settings-select">
-                  <CustomSelect
-                    value={theme}
-                    onChange={(v) => setTheme(v)}
-                    options={[
-                      { value: "light", label: t("settings.theme.light") },
-                      { value: "dark", label: t("settings.theme.dark") },
-                      { value: "system", label: t("settings.theme.system") },
-                    ]}
-                    placeholder={t("settings.select_theme_placeholder")}
-                    fullWidth={false}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="label-with-help">
-                    <span
-                      className="help-wrapper"
                       data-tooltip={t("settings.tooltip.database_file")}
                       role="button"
                       tabIndex={0}
@@ -381,14 +366,15 @@ export default function SettingsModal({ onClose }) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-4">
+                {/* Exchange Rates Section */}
+                <div className="flex items-center justify-between mt-6">
                   <div className="label-with-help">
                     <span
                       className="help-wrapper"
-                      data-tooltip={t("settings.tooltip.font_size")}
+                      data-tooltip={t("settings.tooltip.exchange_rates")}
                       role="button"
                       tabIndex={0}
-                      aria-label={t("settings.tooltip.font_size")}
+                      aria-label={t("settings.tooltip.exchange_rates")}
                       onMouseEnter={showTooltip}
                       onFocus={showTooltip}
                       onMouseLeave={hideTooltip}
@@ -400,24 +386,161 @@ export default function SettingsModal({ onClose }) {
                       />
                     </span>
                     <label className="modal-label">
-                      {t("settings.font_size")}
+                      {t("settings.exchange_rates")}
                     </label>
                   </div>
-                  <div className="text-sm text-slate-500">
-                    {Math.round(fontSize * 100)}%
+                </div>
+                <ExchangeRatesList />
+              </>
+            )}
+
+            {activeTab === "customization" && sidebarVisibility && (
+              <>
+                <div className="mt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="label-with-help">
+                      <span
+                        className="help-wrapper"
+                        data-tooltip={t("settings.tooltip.theme")}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={t("settings.tooltip.theme")}
+                        onMouseEnter={showTooltip}
+                        onFocus={showTooltip}
+                        onMouseLeave={hideTooltip}
+                        onBlur={hideTooltip}
+                      >
+                        <HelpCircle
+                          className="w-4 h-4 text-slate-400 help-icon"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <label className="modal-label">
+                        {t("settings.theme")}
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="relative settings-select mt-2">
+                    <CustomSelect
+                      value={theme}
+                      onChange={(v) => setTheme(v)}
+                      options={[
+                        { value: "light", label: t("settings.theme.light") },
+                        { value: "dark", label: t("settings.theme.dark") },
+                        { value: "system", label: t("settings.theme.system") },
+                      ]}
+                      placeholder={t("settings.select_theme_placeholder")}
+                      fullWidth={false}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="label-with-help">
+                      <span
+                        className="help-wrapper"
+                        data-tooltip={t("settings.tooltip.font_size")}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={t("settings.tooltip.font_size")}
+                        onMouseEnter={showTooltip}
+                        onFocus={showTooltip}
+                        onMouseLeave={hideTooltip}
+                        onBlur={hideTooltip}
+                      >
+                        <HelpCircle
+                          className="w-4 h-4 text-slate-400 help-icon"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <label className="modal-label">
+                        {t("settings.font_size")}
+                      </label>
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {Math.round(fontSize * 100)}%
+                    </div>
+                  </div>
+                  <div className="relative mt-1 settings-slider">
+                    <input
+                      type="range"
+                      min={0.75}
+                      max={1.25}
+                      step={0.05}
+                      value={fontSize}
+                      onChange={(e) => setFontSize(Number(e.target.value))}
+                      className="w-full accent-brand-500"
+                      aria-label={t("settings.font_size")}
+                    />
                   </div>
                 </div>
-                <div className="relative mt-1 settings-slider">
-                  <input
-                    type="range"
-                    min={0.75}
-                    max={1.25}
-                    step={0.05}
-                    value={fontSize}
-                    onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="w-full accent-brand-500"
-                    aria-label={t("settings.font_size")}
-                  />
+
+                <div className="flex items-center justify-between mb-4">
+                  <div className="label-with-help">
+                    <span
+                      className="help-wrapper"
+                      data-tooltip={t("settings.tooltip.sidebar_items")}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t("settings.tooltip.sidebar_items")}
+                      onMouseEnter={showTooltip}
+                      onFocus={showTooltip}
+                      onMouseLeave={hideTooltip}
+                      onBlur={hideTooltip}
+                    >
+                      <HelpCircle
+                        className="w-4 h-4 text-slate-400 help-icon"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <label className="modal-label">
+                      {t("settings.sidebar_items")}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 overflow-hidden">
+                  {[
+                    {
+                      key: "dashboard",
+                      label: t("settings.sidebar.dashboard"),
+                    },
+                    {
+                      key: "investments",
+                      label: t("settings.sidebar.investments"),
+                    },
+                    {
+                      key: "fire",
+                      label: t("settings.sidebar.fire_calculator"),
+                    },
+                    { key: "rules", label: t("settings.sidebar.rules") },
+                    {
+                      key: "scheduled",
+                      label: t("settings.sidebar.scheduled"),
+                    },
+                    {
+                      key: "all",
+                      label: t("settings.sidebar.all_transactions"),
+                    },
+                  ].map(({ key, label }) => (
+                    <div
+                      key={key}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {label}
+                      </span>
+                      <Switch
+                        checked={sidebarVisibility[key]}
+                        onChange={(val) =>
+                          onChangeSidebarVisibility({
+                            ...sidebarVisibility,
+                            [key]: val,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
                 </div>
               </>
             )}
@@ -584,32 +707,6 @@ export default function SettingsModal({ onClose }) {
                     fullWidth={false}
                   />
                 </div>
-
-                {/* Exchange Rates Section */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="label-with-help">
-                    <span
-                      className="help-wrapper"
-                      data-tooltip={t("settings.tooltip.exchange_rates")}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={t("settings.tooltip.exchange_rates")}
-                      onMouseEnter={showTooltip}
-                      onFocus={showTooltip}
-                      onMouseLeave={hideTooltip}
-                      onBlur={hideTooltip}
-                    >
-                      <HelpCircle
-                        className="w-4 h-4 text-slate-400 help-icon"
-                        aria-hidden="true"
-                      />
-                    </span>
-                    <label className="modal-label">
-                      {t("settings.exchange_rates")}
-                    </label>
-                  </div>
-                </div>
-                <ExchangeRatesList />
               </>
             )}
 
@@ -877,4 +974,11 @@ export default function SettingsModal({ onClose }) {
 
 SettingsModal.propTypes = {
   onClose: PropTypes.func.isRequired,
+  sidebarVisibility: PropTypes.objectOf(PropTypes.bool),
+  onChangeSidebarVisibility: PropTypes.func,
+};
+
+SettingsModal.defaultProps = {
+  sidebarVisibility: undefined,
+  onChangeSidebarVisibility: undefined,
 };
