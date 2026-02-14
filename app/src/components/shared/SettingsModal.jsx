@@ -10,6 +10,7 @@ import {
   Lightbulb,
   Bug,
   Github,
+  Layout,
 } from "lucide-react";
 import "../../styles/Modal.css";
 import "../../styles/SettingsModal.css";
@@ -19,6 +20,7 @@ import { useTheme } from "../../contexts/theme-core";
 import { formatNumberWithLocale } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../ui/CustomSelect";
+import Switch from "../ui/Switch";
 import ErrorBoundary from "../layout/ErrorBoundary";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -45,7 +47,11 @@ const WEBSITE_URL = "https://honeybearfolio.github.io";
 const DOCS_URL = `${WEBSITE_URL}/docs`;
 const LICENSE_URL = `${GITHUB_REPO}/blob/main/LICENSE`;
 
-export default function SettingsModal({ onClose }) {
+export default function SettingsModal({
+  onClose,
+  sidebarVisibility,
+  onChangeSidebarVisibility,
+}) {
   const {
     locale,
     setLocale,
@@ -235,6 +241,17 @@ export default function SettingsModal({ onClose }) {
               <SlidersHorizontal className="w-4 h-4 text-slate-400" />
               <span>{t("settings.general")}</span>
             </button>
+            {sidebarVisibility && (
+              <button
+                role="tab"
+                aria-selected={activeTab === "customization"}
+                onClick={() => setActiveTab("customization")}
+                className={`settings-tab ${activeTab === "customization" ? "settings-tab-active" : ""}`}
+              >
+                <Layout className="w-4 h-4 text-slate-400" />
+                <span>{t("settings.customization")}</span>
+              </button>
+            )}
             <button
               role="tab"
               aria-selected={activeTab === "formats"}
@@ -260,9 +277,11 @@ export default function SettingsModal({ onClose }) {
               <h3 className="settings-section-heading">
                 {activeTab === "general"
                   ? t("settings.general")
-                  : activeTab === "formats"
-                    ? t("settings.formats")
-                    : t("settings.about")}
+                  : activeTab === "customization"
+                    ? t("settings.customization")
+                    : activeTab === "formats"
+                      ? t("settings.formats")
+                      : t("settings.about")}
               </h3>
             </div>
             {activeTab === "general" && (
@@ -418,6 +437,62 @@ export default function SettingsModal({ onClose }) {
                     className="w-full accent-brand-500"
                     aria-label={t("settings.font_size")}
                   />
+                </div>
+              </>
+            )}
+
+            {activeTab === "customization" && sidebarVisibility && (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="label-with-help">
+                    <label className="modal-label">
+                      {t("settings.sidebar_items")}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 overflow-hidden">
+                  {[
+                    {
+                      key: "dashboard",
+                      label: t("settings.sidebar.dashboard"),
+                    },
+                    {
+                      key: "investments",
+                      label: t("settings.sidebar.investments"),
+                    },
+                    {
+                      key: "fire",
+                      label: t("settings.sidebar.fire_calculator"),
+                    },
+                    { key: "rules", label: t("settings.sidebar.rules") },
+                    {
+                      key: "scheduled",
+                      label: t("settings.sidebar.scheduled"),
+                    },
+                    {
+                      key: "all",
+                      label: t("settings.sidebar.all_transactions"),
+                    },
+                  ].map(({ key, label }) => (
+                    <div
+                      key={key}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {label}
+                      </span>
+                      <Switch
+                        checked={sidebarVisibility[key]}
+                        onChange={(val) =>
+                          onChangeSidebarVisibility({
+                            ...sidebarVisibility,
+                            [key]: val,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
                 </div>
               </>
             )}
