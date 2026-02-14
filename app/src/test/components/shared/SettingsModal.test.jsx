@@ -8,6 +8,7 @@ vi.mock("../../../i18n/i18n", () => ({
     const map = {
       "settings.title": "Settings",
       "settings.general": "General",
+      "settings.customization": "Customization",
       "settings.formats": "Formats",
       "settings.language": "Language",
       "settings.select_language_placeholder": "Select language",
