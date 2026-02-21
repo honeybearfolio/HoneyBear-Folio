@@ -601,9 +601,9 @@ describe("RulesList", () => {
     const patternInput = within(conditionGroup).getByPlaceholderText("^pattern.*$");
     fireEvent.change(patternInput, { target: { value: "^Star.*Coffee$" } });
 
-    // Should show help text, not error
+    // Should show help text as title, not error
     expect(screen.queryByText("rules.regex_invalid")).toBeNull();
-    expect(screen.getByText("rules.regex_help")).toBeInTheDocument();
+    expect(patternInput.getAttribute("title")).toBe("rules.regex_help");
 
     // Fill action value
     const actionGroup = screen.getAllByText("rules.then_set")[0].closest("div");

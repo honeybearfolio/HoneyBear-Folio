@@ -505,7 +505,7 @@ export default function RulesList() {
                           placeholder="0.00"
                         />
                       ) : (
-                        <div className="flex flex-col">
+                        <div className="relative">
                           <input
                             type="text"
                             placeholder={
@@ -524,19 +524,17 @@ export default function RulesList() {
                             onChange={(e) =>
                               updateCondition(index, { value: e.target.value })
                             }
+                            title={
+                              isRegexOperator(condition.operator)
+                                ? t("rules.regex_help")
+                                : undefined
+                            }
                           />
                           {isRegexOperator(condition.operator) &&
                             condition.value &&
                             !isValidRegex(condition.value) && (
-                              <span className="text-xs text-red-500 mt-1">
+                              <span className="absolute left-0 top-full mt-0.5 text-xs text-red-500 whitespace-nowrap">
                                 {t("rules.regex_invalid")}
-                              </span>
-                            )}
-                          {isRegexOperator(condition.operator) &&
-                            (!condition.value ||
-                              isValidRegex(condition.value)) && (
-                              <span className="text-xs text-slate-400 mt-1">
-                                {t("rules.regex_help")}
                               </span>
                             )}
                         </div>
