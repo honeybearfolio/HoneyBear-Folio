@@ -568,7 +568,8 @@ describe("RulesList", () => {
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
     // Enter invalid regex
-    const patternInput = within(conditionGroup).getByPlaceholderText("^pattern.*$");
+    const patternInput =
+      within(conditionGroup).getByPlaceholderText("^pattern.*$");
     fireEvent.change(patternInput, { target: { value: "[invalid" } });
 
     // Should show validation error
@@ -598,7 +599,8 @@ describe("RulesList", () => {
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
     // Enter valid regex
-    const patternInput = within(conditionGroup).getByPlaceholderText("^pattern.*$");
+    const patternInput =
+      within(conditionGroup).getByPlaceholderText("^pattern.*$");
     fireEvent.change(patternInput, { target: { value: "^Star.*Coffee$" } });
 
     // Should show help text as title, not error
