@@ -103,7 +103,7 @@ pub struct Transaction {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct RuleCondition {
     pub field: String,
-    pub operator: String, // equals, contains, starts_with, ends_with, greater_than, less_than
+    pub operator: String, // equals, contains, starts_with, ends_with, greater_than, less_than, matches_regex, not_matches_regex
     pub value: String,
     #[serde(default)]
     pub negated: bool, // NOT operator

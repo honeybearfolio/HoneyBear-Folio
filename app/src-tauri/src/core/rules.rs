@@ -1,4 +1,5 @@
 use crate::models::{Rule, RuleAction, RuleCondition, Transaction};
+use regex::Regex;
 use rusqlite::{params, Connection};
 use std::path::PathBuf;
 use tauri::AppHandle;
@@ -58,6 +59,21 @@ fn matches_condition(transaction: &Transaction, condition: &RuleCondition) -> bo
         "contains" => val.to_lowercase().contains(&pattern.to_lowercase()),
         "starts_with" => val.to_lowercase().starts_with(&pattern.to_lowercase()),
         "ends_with" => val.to_lowercase().ends_with(&pattern.to_lowercase()),
+        "matches_regex" | "not_matches_regex" => {
+            // Prepend (?i) for case-insensitive matching, consistent with other text operators
+            let ci_pattern = format!("(?i){}", pattern);
+            match Regex::new(&ci_pattern) {
+                Ok(re) => {
+                    let result = re.is_match(&val);
+                    if condition.operator == "not_matches_regex" {
+                        !result
+                    } else {
+                        result
+                    }
+                }
+                Err(_) => false, // Invalid regex silently doesn't match
+            }
+        }
         "greater_than" => {
             let v = val.parse::<f64>().unwrap_or(0.0);
             let p = pattern.parse::<f64>().unwrap_or(0.0);

@@ -530,4 +530,143 @@ describe("RulesList", () => {
       });
     });
   });
+
+  it("shows regex operators in the operator list for text fields", async () => {
+    invoke.mockResolvedValueOnce([]);
+    render(<RulesList />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // Open the create-rule form
+    const headerAddBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtn) fireEvent.click(headerAddBtn);
+
+    // Regex operators should appear in the operator select for text fields
+    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const operatorSelect = within(conditionGroup).getAllByTestId("select")[1];
+    const options = within(operatorSelect).getAllByRole("option");
+    const optionValues = options.map((o) => o.value);
+    expect(optionValues).toContain("matches_regex");
+    expect(optionValues).toContain("not_matches_regex");
+  });
+
+  it("shows validation error for invalid regex and disables submit", async () => {
+    invoke.mockResolvedValueOnce([]);
+    render(<RulesList />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // Open the create-rule form
+    const headerAddBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtn) fireEvent.click(headerAddBtn);
+
+    // Select matches_regex operator
+    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const operatorSelect = within(conditionGroup).getAllByTestId("select")[1];
+    fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
+
+    // Enter invalid regex
+    const patternInput =
+      within(conditionGroup).getByPlaceholderText("^pattern.*$");
+    fireEvent.change(patternInput, { target: { value: "[invalid" } });
+
+    // Should show validation error
+    expect(screen.getByText("rules.regex_invalid")).toBeInTheDocument();
+
+    // Submit button should be disabled
+    const submitBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") === "submit");
+    expect(submitBtn.disabled).toBe(true);
+  });
+
+  it("allows submit with valid regex pattern", async () => {
+    invoke.mockResolvedValueOnce([]);
+    render(<RulesList />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // Open the create-rule form
+    const headerAddBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") !== "submit");
+    if (headerAddBtn) fireEvent.click(headerAddBtn);
+
+    // Select matches_regex operator
+    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const operatorSelect = within(conditionGroup).getAllByTestId("select")[1];
+    fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
+
+    // Enter valid regex
+    const patternInput =
+      within(conditionGroup).getByPlaceholderText("^pattern.*$");
+    fireEvent.change(patternInput, { target: { value: "^Star.*Coffee$" } });
+
+    // Should show help text as title, not error
+    expect(screen.queryByText("rules.regex_invalid")).toBeNull();
+    expect(patternInput.getAttribute("title")).toBe("rules.regex_help");
+
+    // Fill action value
+    const actionGroup = screen.getAllByText("rules.then_set")[0].closest("div");
+    const actionInput = within(actionGroup).getByPlaceholderText("Value");
+    fireEvent.change(actionInput, { target: { value: "Coffee" } });
+
+    // Submit button should be enabled
+    const submitBtn = screen
+      .getAllByRole("button", { name: /rules.add/ })
+      .find((b) => b.getAttribute("type") === "submit");
+    expect(submitBtn.disabled).toBe(false);
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith(
+        "create_rule",
+        expect.objectContaining({
+          args: expect.objectContaining({
+            conditions: expect.arrayContaining([
+              expect.objectContaining({
+                operator: "matches_regex",
+                value: "^Star.*Coffee$",
+              }),
+            ]),
+          }),
+        }),
+      );
+    });
+  });
+
+  it("renders regex operator correctly when editing a rule with regex", async () => {
+    const regexRule = {
+      id: 20,
+      priority: 1,
+      match_field: "payee",
+      match_pattern: "",
+      action_field: "category",
+      action_value: "",
+      logic: "and",
+      conditions: [
+        {
+          field: "payee",
+          operator: "matches_regex",
+          value: "^Star.*$",
+          negated: false,
+        },
+      ],
+      actions: [{ field: "category", value: "Coffee" }],
+    };
+    invoke.mockResolvedValueOnce([regexRule]);
+    render(<RulesList />);
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // Click edit
+    const editBtn = screen.getByText("Edit").closest("button");
+    fireEvent.click(editBtn);
+
+    // The regex operator should be visible and selected
+    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const operatorSelect = within(conditionGroup).getAllByTestId("select")[1];
+    expect(operatorSelect.value).toBe("matches_regex");
+  });
 });
