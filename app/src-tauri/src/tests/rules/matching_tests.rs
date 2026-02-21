@@ -287,3 +287,201 @@ fn test_operators() {
     apply_rules_to_transaction(&mut tx, &[rule_ew]);
     assert_eq!(tx.category, Some("Ends with Coffee".to_string()));
 }
+
+#[test]
+fn test_matches_regex_basic() {
+    let mut tx = create_base_transaction(); // payee: Starbucks Coffee
+
+    let rule = Rule {
+        id: 1,
+        priority: 10,
+        match_field: "".to_string(),
+        match_pattern: "".to_string(),
+        action_field: "".to_string(),
+        action_value: "".to_string(),
+        logic: "and".to_string(),
+        conditions: vec![RuleCondition {
+            field: "payee".to_string(),
+            operator: "matches_regex".to_string(),
+            value: "^Star.*Coffee$".to_string(),
+            negated: false,
+        }],
+        actions: vec![RuleAction {
+            field: "category".to_string(),
+            value: "Regex Match".to_string(),
+        }],
+    };
+
+    apply_rules_to_transaction(&mut tx, &[rule]);
+    assert_eq!(tx.category, Some("Regex Match".to_string()));
+}
+
+#[test]
+fn test_matches_regex_case_insensitive() {
+    let mut tx = create_base_transaction(); // payee: Starbucks Coffee
+
+    let rule = Rule {
+        id: 1,
+        priority: 10,
+        match_field: "".to_string(),
+        match_pattern: "".to_string(),
+        action_field: "".to_string(),
+        action_value: "".to_string(),
+        logic: "and".to_string(),
+        conditions: vec![RuleCondition {
+            field: "payee".to_string(),
+            operator: "matches_regex".to_string(),
+            value: "starbucks".to_string(),
+            negated: false,
+        }],
+        actions: vec![RuleAction {
+            field: "category".to_string(),
+            value: "Case Insensitive".to_string(),
+        }],
+    };
+
+    apply_rules_to_transaction(&mut tx, &[rule]);
+    assert_eq!(tx.category, Some("Case Insensitive".to_string()));
+}
+
+#[test]
+fn test_matches_regex_no_match() {
+    let mut tx = create_base_transaction(); // payee: Starbucks Coffee
+
+    let rule = Rule {
+        id: 1,
+        priority: 10,
+        match_field: "".to_string(),
+        match_pattern: "".to_string(),
+        action_field: "".to_string(),
+        action_value: "".to_string(),
+        logic: "and".to_string(),
+        conditions: vec![RuleCondition {
+            field: "payee".to_string(),
+            operator: "matches_regex".to_string(),
+            value: "^McDonalds".to_string(),
+            negated: false,
+        }],
+        actions: vec![RuleAction {
+            field: "category".to_string(),
+            value: "Should Not Match".to_string(),
+        }],
+    };
+
+    apply_rules_to_transaction(&mut tx, &[rule]);
+    assert_eq!(tx.category, None); // Should not have matched
+}
+
+#[test]
+fn test_not_matches_regex() {
+    let mut tx = create_base_transaction(); // payee: Starbucks Coffee
+
+    let rule = Rule {
+        id: 1,
+        priority: 10,
+        match_field: "".to_string(),
+        match_pattern: "".to_string(),
+        action_field: "".to_string(),
+        action_value: "".to_string(),
+        logic: "and".to_string(),
+        conditions: vec![RuleCondition {
+            field: "payee".to_string(),
+            operator: "not_matches_regex".to_string(),
+            value: "^McDonalds".to_string(),
+            negated: false,
+        }],
+        actions: vec![RuleAction {
+            field: "category".to_string(),
+            value: "Not McDonalds".to_string(),
+        }],
+    };
+
+    apply_rules_to_transaction(&mut tx, &[rule]);
+    assert_eq!(tx.category, Some("Not McDonalds".to_string()));
+}
+
+#[test]
+fn test_matches_regex_invalid_pattern() {
+    let mut tx = create_base_transaction();
+
+    let rule = Rule {
+        id: 1,
+        priority: 10,
+        match_field: "".to_string(),
+        match_pattern: "".to_string(),
+        action_field: "".to_string(),
+        action_value: "".to_string(),
+        logic: "and".to_string(),
+        conditions: vec![RuleCondition {
+            field: "payee".to_string(),
+            operator: "matches_regex".to_string(),
+            value: "[invalid".to_string(), // Malformed regex
+            negated: false,
+        }],
+        actions: vec![RuleAction {
+            field: "category".to_string(),
+            value: "Should Not Match".to_string(),
+        }],
+    };
+
+    apply_rules_to_transaction(&mut tx, &[rule]);
+    assert_eq!(tx.category, None); // Invalid regex should not match (not panic)
+}
+
+#[test]
+fn test_matches_regex_with_negated_flag() {
+    let mut tx = create_base_transaction(); // payee: Starbucks Coffee
+
+    let rule = Rule {
+        id: 1,
+        priority: 10,
+        match_field: "".to_string(),
+        match_pattern: "".to_string(),
+        action_field: "".to_string(),
+        action_value: "".to_string(),
+        logic: "and".to_string(),
+        conditions: vec![RuleCondition {
+            field: "payee".to_string(),
+            operator: "matches_regex".to_string(),
+            value: "^Star.*".to_string(),
+            negated: true, // Negate the regex match
+        }],
+        actions: vec![RuleAction {
+            field: "category".to_string(),
+            value: "Should Not Apply".to_string(),
+        }],
+    };
+
+    apply_rules_to_transaction(&mut tx, &[rule]);
+    // The regex matches "Starbucks Coffee", but negated=true inverts it, so rule should NOT apply
+    assert_eq!(tx.category, None);
+}
+
+#[test]
+fn test_matches_regex_empty_value() {
+    let mut tx = create_base_transaction();
+
+    let rule = Rule {
+        id: 1,
+        priority: 10,
+        match_field: "".to_string(),
+        match_pattern: "".to_string(),
+        action_field: "".to_string(),
+        action_value: "".to_string(),
+        logic: "and".to_string(),
+        conditions: vec![RuleCondition {
+            field: "payee".to_string(),
+            operator: "matches_regex".to_string(),
+            value: "".to_string(), // Empty regex
+            negated: false,
+        }],
+        actions: vec![RuleAction {
+            field: "category".to_string(),
+            value: "Empty Regex".to_string(),
+        }],
+    };
+
+    apply_rules_to_transaction(&mut tx, &[rule]);
+    // Empty regex matches everything (regex "" matches any string)
+    assert_eq!(tx.category, Some("Empty Regex".to_string()));
+}

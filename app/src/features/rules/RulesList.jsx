@@ -298,6 +298,14 @@ export default function RulesList() {
     { value: "ends_with", label: t("rules.operator.ends_with") },
     { value: "is_empty", label: t("rules.operator.is_empty") },
     { value: "is_not_empty", label: t("rules.operator.is_not_empty") },
+    {
+      value: "matches_regex",
+      label: t("rules.operator.matches_regex"),
+    },
+    {
+      value: "not_matches_regex",
+      label: t("rules.operator.not_matches_regex"),
+    },
   ];
 
   const numberOperators = [
@@ -328,6 +336,25 @@ export default function RulesList() {
     return operator === "is_empty" || operator === "is_not_empty";
   }
 
+  function isRegexOperator(operator) {
+    return operator === "matches_regex" || operator === "not_matches_regex";
+  }
+
+  function isValidRegex(pattern) {
+    if (!pattern) return true; // empty is ok (won't match anything)
+    try {
+      new RegExp(pattern);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Check if any regex condition has an invalid pattern
+  const hasInvalidRegex = formState.conditions.some(
+    (c) => isRegexOperator(c.operator) && c.value && !isValidRegex(c.value),
+  );
+
   // Format condition for display
   function formatCondition(condition) {
     const fieldLabel = t(`rules.field.${condition.field}`) || condition.field;
@@ -335,6 +362,9 @@ export default function RulesList() {
       t(`rules.operator.${condition.operator}`) || condition.operator;
     if (isValuelessOperator(condition.operator)) {
       return `${fieldLabel} ${operatorLabel}`;
+    }
+    if (isRegexOperator(condition.operator)) {
+      return `${fieldLabel} ${operatorLabel} /${condition.value}/`;
     }
     return `${fieldLabel} ${operatorLabel} "${condition.value}"`;
   }
@@ -475,15 +505,41 @@ export default function RulesList() {
                           placeholder="0.00"
                         />
                       ) : (
-                        <input
-                          type="text"
-                          placeholder="Value"
-                          className="form-input w-40"
-                          value={condition.value}
-                          onChange={(e) =>
-                            updateCondition(index, { value: e.target.value })
-                          }
-                        />
+                        <div className="flex flex-col">
+                          <input
+                            type="text"
+                            placeholder={
+                              isRegexOperator(condition.operator)
+                                ? "^pattern.*$"
+                                : "Value"
+                            }
+                            className={`form-input w-40 ${
+                              isRegexOperator(condition.operator) &&
+                              condition.value &&
+                              !isValidRegex(condition.value)
+                                ? "!border-red-400 dark:!border-red-500"
+                                : ""
+                            }`}
+                            value={condition.value}
+                            onChange={(e) =>
+                              updateCondition(index, { value: e.target.value })
+                            }
+                          />
+                          {isRegexOperator(condition.operator) &&
+                            condition.value &&
+                            !isValidRegex(condition.value) && (
+                              <span className="text-xs text-red-500 mt-1">
+                                {t("rules.regex_invalid")}
+                              </span>
+                            )}
+                          {isRegexOperator(condition.operator) &&
+                            (!condition.value ||
+                              isValidRegex(condition.value)) && (
+                              <span className="text-xs text-slate-400 mt-1">
+                                {t("rules.regex_help")}
+                              </span>
+                            )}
+                        </div>
                       ))}
 
                     {formState.conditions.length > 1 && (
@@ -606,7 +662,11 @@ export default function RulesList() {
                   {t("rules.cancel_edit")}
                 </button>
               )}
-              <button type="submit" className="btn-primary">
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={hasInvalidRegex}
+              >
                 <Save size={15} />
                 {isEditing ? t("rules.update") : t("rules.add")}
               </button>
