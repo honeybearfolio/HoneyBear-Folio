@@ -189,11 +189,7 @@ export default function ExportModal({ onClose }) {
   if (typeof document === "undefined") return null;
   return (
     <Modal onClose={onClose}>
-      <ModalHeader
-        onClose={onClose}
-        title={t("export.title")}
-        icon={Upload}
-      />
+      <ModalHeader onClose={onClose} title={t("export.title")} icon={Upload} />
       <ModalBody>
         <label className="modal-label">{t("export.select_format")}</label>
         <div className="format-grid">
