@@ -261,6 +261,8 @@
   "nav.overview": "Overview",
   "nav.rules": "Rules",
   "nav.scheduled": "Scheduled",
+  "nav.settings": "Settings",
+  "settings.back": "Back",
 
   "number_format": "Number Format",
 

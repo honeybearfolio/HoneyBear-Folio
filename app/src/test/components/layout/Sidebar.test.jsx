@@ -34,6 +34,11 @@ vi.mock("lucide-react", () => ({
   ArrowUpDown: () => <span>Sort</span>,
   BookOpenCheck: () => <span>Rules</span>,
   CalendarClock: () => <span>CalendarClock</span>,
+  SlidersHorizontal: () => <span>SlidersHorizontal</span>,
+  Brush: () => <span>Brush</span>,
+  Globe: () => <span>Globe</span>,
+  Info: () => <span>Info</span>,
+  ArrowLeft: () => <span>ArrowLeft</span>,
 }));
 
 // Mock child components that might use contexts or API
@@ -46,9 +51,7 @@ vi.mock("../../../shared/ImportModal", () => ({
 vi.mock("../../../shared/ExportModal", () => ({
   default: () => <div data-testid="ExportModal" />,
 }));
-vi.mock("../../../shared/SettingsModal", () => ({
-  default: () => <div data-testid="SettingsModal" />,
-}));
+
 vi.mock("../../../features/accounts/AccountList", () => ({
   default: () => <div data-testid="AccountList" />,
 }));
@@ -64,6 +67,14 @@ const renderWithContext = (ui) => {
 describe("Sidebar", () => {
   const mockTogglePrivacy = vi.fn();
   const mockOnSelectAccount = vi.fn();
+  const defaultVisibility = {
+    dashboard: true,
+    investments: true,
+    fire: true,
+    rules: true,
+    scheduled: true,
+    all: true,
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -75,7 +86,11 @@ describe("Sidebar", () => {
 
   it("renders navigation links correctly", () => {
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
 
     expect(screen.getByText("nav.dashboard")).toBeInTheDocument();
@@ -86,7 +101,11 @@ describe("Sidebar", () => {
 
   it("displays computed net worth", () => {
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
 
     // We mocked computeNetWorth to 12345.67 and formatNumber to prefix 'fmt-'
@@ -95,7 +114,11 @@ describe("Sidebar", () => {
 
   it("toggles privacy mode", () => {
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
 
     // The eye icon button
@@ -112,7 +135,11 @@ describe("Sidebar", () => {
     });
 
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
     expect(screen.getByText("EyeOff")).toBeInTheDocument();
   });
@@ -123,6 +150,7 @@ describe("Sidebar", () => {
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
         selectedId="investments"
+        sidebarVisibility={defaultVisibility}
       />,
     );
 
@@ -137,6 +165,7 @@ describe("Sidebar", () => {
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
         selectedId="fire-calculator"
+        sidebarVisibility={defaultVisibility}
       />,
     );
 

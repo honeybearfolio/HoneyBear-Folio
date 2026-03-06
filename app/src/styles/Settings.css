@@ -2,76 +2,23 @@
 @import "./theme.css";
 
 @layer components {
-  /* SettingsModal specific styles - common modal styles are in Modal.css */
+  /* SettingsView — embedded page layout (replaces the old modal-based SettingsModal) */
 
-  /* Ensure settings modal width cannot be overridden by other modal styles.
-     Keep the modal at a fixed height so switching tabs doesn't resize the window. */
-  .modal-container.settings-modal-container {
-    @apply flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 max-h-[98vh] min-h-[320px] overflow-hidden overflow-x-visible;
-    height: min(85vh, 720px);
-    /* fixed height to prevent resizing when switching tabs */
+  .settings-view {
+    @apply flex flex-col h-full max-w-3xl mx-auto;
   }
 
-  /* Narrow select triggers within settings modal */
-  .settings-modal-container .settings-select .custom-select-trigger {
-    @apply w-[18rem] max-w-full;
+  .settings-view-header {
+    @apply flex items-center gap-3 mb-6;
   }
 
-  @media (max-width: 640px) {
-    .settings-modal-container .settings-select .custom-select-trigger {
-      @apply w-full;
-    }
+  .settings-view-title {
+    @apply text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight;
   }
 
-  /* Header action group on the right */
-  .modal-header > .flex.items-center.gap-2 {
-    @apply items-center;
-  }
-
-  @media (max-width: 640px) {
-    .modal-container {
-      @apply p-4;
-    }
-
-    .settings-tab {
-      @apply px-2 py-1 text-xs;
-    }
-
-    .settings-tabs {
-      @apply flex-row border-b border-slate-100 dark:border-slate-800 pr-0 mr-0 min-w-0;
-    }
-
-    /* Mobile: allow larger height but constrain to viewport to avoid overflow */
-    .modal-container.settings-modal-container {
-      @apply h-[90vh];
-    }
-  }
-
-  /* Tabs */
-  .settings-tabs {
-    @apply flex flex-col gap-2 items-start border-r border-slate-100 dark:border-slate-800 pr-4 mr-6 min-w-[12rem];
-  }
-
-  .settings-tab {
-    @apply flex items-center gap-3 px-3 py-2 rounded-md text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer w-full text-left;
-  }
-
-  .settings-tab-active {
-    @apply text-slate-900 dark:text-white font-semibold bg-slate-50 dark:bg-slate-800;
-  }
-
-  .settings-content {
-    @apply flex gap-4 flex-1 min-h-0;
-    /* reserve space for the vertical scrollbar so it doesn't overlap content */
+  .settings-view-body {
+    @apply flex-1 space-y-4 overflow-y-auto pb-6;
     scrollbar-gutter: stable;
-  }
-
-  /* Override modal-body for settings modal */
-  .settings-modal-container .modal-body {
-    @apply space-y-4 flex-1 overflow-y-auto min-h-0 pb-6;
-    /* reserve scrollbar gutter and keep content away from overlay scrollbar */
-    scrollbar-gutter: stable;
-    padding-inline-end: 1.5rem;
   }
 
   .settings-section-title {
@@ -82,19 +29,23 @@
     @apply text-lg font-semibold text-slate-700 dark:text-slate-200;
   }
 
-  /* Fallback: target generic selects used elsewhere */
-  select {
-    color-scheme: light dark;
+  .settings-label {
+    @apply inline-block mb-0 text-sm font-medium text-slate-500 dark:text-slate-400;
   }
 
-  .dark select,
-  :root.dark select {
-    color-scheme: dark;
+  /* Narrow select triggers within settings */
+  .settings-select .custom-select-trigger {
+    @apply w-[18rem] max-w-full;
   }
 
-  /* Footer and reset button styles - override modal-footer for settings */
-  .settings-modal-container .modal-footer {
-    @apply mt-4 border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-start z-10;
+  @media (max-width: 640px) {
+    .settings-select .custom-select-trigger {
+      @apply w-full;
+    }
+  }
+
+  .settings-view-footer {
+    @apply mt-4 border-t border-slate-100 dark:border-slate-800 pt-3 flex justify-start;
   }
 
   .reset-button {
@@ -110,7 +61,7 @@
     @apply inline-flex items-center gap-2;
   }
 
-  .label-with-help .modal-label {
+  .label-with-help .settings-label {
     @apply inline-block mb-0 text-sm font-medium text-slate-500 dark:text-slate-400;
   }
 
@@ -134,7 +85,7 @@
     vertical-align: middle;
   }
 
-  /* Custom tooltips for help icons (show immediately on hover/focus) */
+  /* Custom tooltips for help icons */
   .label-with-help .help-wrapper {
     position: relative;
   }
@@ -142,13 +93,10 @@
   .label-with-help .help-wrapper[data-tooltip]::after {
     content: attr(data-tooltip);
     position: fixed;
-    /* render in viewport so it doesn't get clipped */
     top: var(--tooltip-top, 0);
     left: var(--tooltip-left, 0);
     transform: translateX(-50%) translateY(-100%);
-    /* default: above and centered */
     background-color: rgba(15, 23, 42, 0.95);
-    /* slate-900 */
     color: #fff;
     padding: 0.25rem 0.25rem;
     border-radius: 0.35rem;
@@ -178,12 +126,10 @@
     color: #fff;
   }
 
-  /* Make the font-size slider explicitly show a clickable cursor */
+  /* Font-size slider cursor */
   .settings-slider input[type="range"] {
     cursor: pointer;
   }
-
-  /* Ensure the native slider thumb also shows pointer on all engines */
   .settings-slider input[type="range"]::-webkit-slider-thumb {
     cursor: pointer;
   }
@@ -200,13 +146,9 @@
     color: #fff;
   }
 
-  /* About tab styles */
+  /* About section styles */
   .about-header {
     @apply flex flex-col items-center text-center mb-6;
-  }
-
-  .about-logo {
-    @apply w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mb-3 shadow-lg;
   }
 
   .about-app-name {
@@ -356,9 +298,5 @@
 
   .exchange-rate-input {
     @apply w-24 px-2 py-1 text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200;
-  }
-
-  .btn-sm {
-    @apply text-xs px-2 py-1;
   }
 }

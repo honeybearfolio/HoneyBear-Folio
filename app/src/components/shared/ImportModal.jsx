@@ -10,7 +10,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import "../../styles/Modal.css";
-import "../../styles/SettingsModal.css";
+import "../../styles/Settings.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import CustomSelect from "../ui/CustomSelect";
 import Papa from "papaparse";
