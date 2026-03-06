@@ -77,6 +77,12 @@
     @apply w-full text-left py-2.5 px-3 rounded-xl transition-all duration-200 flex items-center gap-3 cursor-pointer;
   }
 
+  .sidebar-back-button {
+    @apply w-full text-left py-2 px-3 rounded-lg transition-all duration-200 flex items-center gap-2 cursor-pointer
+           text-slate-500 hover:text-slate-300 text-sm border border-transparent
+           hover:border-slate-700/60 hover:bg-slate-800/50;
+  }
+
   .sidebar-nav-item-active {
     @apply bg-brand-600 text-white shadow-lg shadow-brand-900/20 ring-1 ring-white/10;
   }

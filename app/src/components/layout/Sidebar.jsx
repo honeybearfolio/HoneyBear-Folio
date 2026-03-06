@@ -2,7 +2,6 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import ImportModal from "../shared/ImportModal";
 import ExportModal from "../shared/ExportModal";
-import SettingsModal from "../shared/SettingsModal";
 import AccountModal from "../../features/accounts/AccountModal";
 import AccountList from "../../features/accounts/AccountList";
 import {
@@ -16,12 +15,17 @@ import {
   Download,
   Upload,
   Settings,
+  SlidersHorizontal,
+  Brush,
+  Globe,
+  Info,
   Eye,
   EyeOff,
   PanelLeftClose,
   ArrowUpDown,
   BookOpenCheck,
   CalendarClock,
+  ArrowLeft,
 } from "lucide-react";
 import { computeNetWorth } from "../../utils/networth";
 import { t } from "../../i18n/i18n";
@@ -37,10 +41,13 @@ export default function Sidebar({
   onSelectAccount,
   onUpdate,
   onClose,
+  sidebarVisibility,
+  onChangeSidebarVisibility,
+  settingsSection,
+  onChangeSettingsSection,
 }) {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
   // Compute total balance using helper so logic is shared with Dashboard/App
@@ -50,40 +57,6 @@ export default function Sidebar({
     style: "currency",
   });
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
-
-  const [sidebarVisibility, setSidebarVisibility] = useState(() => {
-    try {
-      const stored = localStorage.getItem("hb_sidebar_visibility");
-      const defaults = {
-        dashboard: true,
-        investments: true,
-        fire: true,
-        rules: true,
-        scheduled: true,
-        all: true,
-      };
-      if (stored) {
-        return { ...defaults, ...JSON.parse(stored) };
-      }
-      return defaults;
-    } catch {
-      return {
-        dashboard: true,
-        investments: true,
-        fire: true,
-        rules: true,
-        scheduled: true,
-        all: true,
-      };
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem(
-      "hb_sidebar_visibility",
-      JSON.stringify(sidebarVisibility),
-    );
-  }, [sidebarVisibility]);
 
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [sortConfig, setSortConfig] = useState(() => {
@@ -203,247 +176,322 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Net Worth Card */}
-        <div className="net-worth-card">
-          <div className="flex items-center justify-between mb-2">
-            <div className="net-worth-label !mb-0">
-              <TrendingUp className="w-3.5 h-3.5" />
-              {t("sidebar.net_worth")}
+        {/* Net Worth Card — hidden in settings mode */}
+        {selectedId !== "settings" && (
+          <div className="net-worth-card">
+            <div className="flex items-center justify-between mb-2">
+              <div className="net-worth-label !mb-0">
+                <TrendingUp className="w-3.5 h-3.5" />
+                {t("sidebar.net_worth")}
+              </div>
+              <button
+                onClick={togglePrivacyMode}
+                className="text-slate-400 hover:text-white transition-colors p-1 rounded-md hover:bg-slate-700/50"
+                title={
+                  isPrivacyMode
+                    ? t("sidebar.show_values")
+                    : t("sidebar.hide_values")
+                }
+              >
+                {isPrivacyMode ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
             </div>
-            <button
-              onClick={togglePrivacyMode}
-              className="text-slate-400 hover:text-white transition-colors p-1 rounded-md hover:bg-slate-700/50"
-              title={
-                isPrivacyMode
-                  ? t("sidebar.show_values")
-                  : t("sidebar.hide_values")
-              }
+            <div
+              className={`net-worth-value ${
+                formattedTotalBalance.length > 20
+                  ? "text-lg"
+                  : formattedTotalBalance.length > 15
+                    ? "text-xl"
+                    : "text-2xl"
+              }`}
             >
-              {isPrivacyMode ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
+              <MaskedNumber
+                value={totalBalance}
+                options={{ style: "currency" }}
+              />
+            </div>
           </div>
-          <div
-            className={`net-worth-value ${
-              formattedTotalBalance.length > 20
-                ? "text-lg"
-                : formattedTotalBalance.length > 15
-                  ? "text-xl"
-                  : "text-2xl"
-            }`}
-          >
-            <MaskedNumber
-              value={totalBalance}
-              options={{ style: "currency" }}
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Navigation */}
       <div className="sidebar-nav">
-        <div>
-          <h2 className="sidebar-section-title">{t("nav.overview")}</h2>
-          <div className="space-y-1">
-            {sidebarVisibility.dashboard !== false && (
+        {selectedId === "settings" ? (
+          /* Settings sub-navigation */
+          <div>
+            <button
+              onClick={() => handleSelect("dashboard")}
+              className="sidebar-back-button group mb-6"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+              <span className="font-medium">{t("settings.back")}</span>
+            </button>
+            <h2 className="sidebar-section-title">{t("nav.settings")}</h2>
+            <div className="space-y-1">
               <button
-                onClick={() => handleSelect("dashboard")}
+                onClick={() => onChangeSettingsSection("general")}
                 className={`sidebar-nav-item group ${
-                  selectedId === "dashboard"
+                  settingsSection === "general"
                     ? "sidebar-nav-item-active"
                     : "sidebar-nav-item-inactive"
                 }`}
               >
-                <LayoutDashboard
-                  className={`sidebar-nav-icon ${selectedId === "dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                <SlidersHorizontal
+                  className={`sidebar-nav-icon ${settingsSection === "general" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                 />
-                <span className="font-medium">{t("nav.dashboard")}</span>
+                <span className="font-medium">{t("settings.general")}</span>
               </button>
-            )}
-
-            {sidebarVisibility.investments !== false && (
-              <button
-                onClick={() => handleSelect("investment-dashboard")}
-                className={`sidebar-nav-item group ${
-                  selectedId === "investment-dashboard"
-                    ? "sidebar-nav-item-active"
-                    : "sidebar-nav-item-inactive"
-                }`}
-              >
-                <PieChart
-                  className={`sidebar-nav-icon ${selectedId === "investment-dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-                />
-                <span className="font-medium">{t("nav.investments")}</span>
-              </button>
-            )}
-
-            {sidebarVisibility.fire !== false && (
-              <button
-                onClick={() => handleSelect("fire-calculator")}
-                className={`sidebar-nav-item group ${
-                  selectedId === "fire-calculator"
-                    ? "sidebar-nav-item-active"
-                    : "sidebar-nav-item-inactive"
-                }`}
-              >
-                <Calculator
-                  className={`sidebar-nav-icon ${selectedId === "fire-calculator" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-                />
-                <span className="font-medium">{t("nav.fire_calculator")}</span>
-              </button>
-            )}
-
-            {sidebarVisibility.rules !== false && (
-              <button
-                onClick={() => handleSelect("rules")}
-                className={`sidebar-nav-item group ${
-                  selectedId === "rules"
-                    ? "sidebar-nav-item-active"
-                    : "sidebar-nav-item-inactive"
-                }`}
-              >
-                <BookOpenCheck
-                  className={`sidebar-nav-icon ${selectedId === "rules" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-                />
-                <span className="font-medium">{t("nav.rules")}</span>
-              </button>
-            )}
-
-            {sidebarVisibility.scheduled !== false && (
-              <button
-                onClick={() => handleSelect("scheduled")}
-                className={`sidebar-nav-item group ${
-                  selectedId === "scheduled"
-                    ? "sidebar-nav-item-active"
-                    : "sidebar-nav-item-inactive"
-                }`}
-              >
-                <CalendarClock
-                  className={`sidebar-nav-icon ${selectedId === "scheduled" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-                />
-                <span className="font-medium">{t("nav.scheduled")}</span>
-              </button>
-            )}
-
-            {sidebarVisibility.all !== false && (
-              <button
-                onClick={() => handleSelect("all")}
-                className={`sidebar-nav-item group ${
-                  selectedId === "all"
-                    ? "sidebar-nav-item-active"
-                    : "sidebar-nav-item-inactive"
-                }`}
-              >
-                <List
-                  className={`sidebar-nav-icon ${selectedId === "all" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
-                />
-                <span className="font-medium">{t("nav.all_transactions")}</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Accounts */}
-        <div>
-          <div className="sidebar-section-header">
-            <h2 className="sidebar-section-title-inline">
-              {t("dashboard.accounts_breakdown")}
-            </h2>
-            <div className="flex items-center gap-1">
-              <div className="relative" ref={sortMenuRef}>
+              {sidebarVisibility && (
                 <button
-                  onClick={() => setShowSortMenu(!showSortMenu)}
-                  className="sidebar-add-button"
-                  title={t("sort.sort_by")}
+                  onClick={() => onChangeSettingsSection("customization")}
+                  className={`sidebar-nav-item group ${
+                    settingsSection === "customization"
+                      ? "sidebar-nav-item-active"
+                      : "sidebar-nav-item-inactive"
+                  }`}
                 >
-                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <Brush
+                    className={`sidebar-nav-icon ${settingsSection === "customization" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                  />
+                  <span className="font-medium">{t("settings.customization")}</span>
                 </button>
-                {showSortMenu && (
-                  <div className="absolute right-0 top-full mt-2 min-w-[12rem] max-w-full bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
-                    <div className="py-1">
-                      <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-800/50 border-b border-slate-700/50">
-                        {t("sort.sort_by")}
-                      </div>
-                      {[
-                        {
-                          label: t("sort.manual"),
-                          field: "manual",
-                          dir: "asc",
-                        },
-                        {
-                          label: t("sort.name_asc"),
-                          field: "name",
-                          dir: "asc",
-                        },
-                        {
-                          label: t("sort.name_desc"),
-                          field: "name",
-                          dir: "desc",
-                        },
-                        {
-                          label: t("sort.balance_asc"),
-                          field: "balance",
-                          dir: "asc",
-                        },
-                        {
-                          label: t("sort.balance_desc"),
-                          field: "balance",
-                          dir: "desc",
-                        },
-                        {
-                          label: t("sort.value_asc"),
-                          field: "value",
-                          dir: "asc",
-                        },
-                        {
-                          label: t("sort.value_desc"),
-                          field: "value",
-                          dir: "desc",
-                        },
-                      ].map((opt) => (
-                        <button
-                          key={`${opt.field}-${opt.dir}`}
-                          onClick={() => handleSort(opt.field, opt.dir)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors flex items-center justify-between ${
-                            sortConfig.field === opt.field &&
-                            sortConfig.direction === opt.dir
-                              ? "text-brand-400 bg-slate-700/50"
-                              : "text-slate-300"
-                          }`}
-                        >
-                          {opt.label}
-                          {sortConfig.field === opt.field &&
-                            sortConfig.direction === opt.dir && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-brand-500"></div>
-                            )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
               <button
-                onClick={() => setShowAccountModal(true)}
-                className="sidebar-add-button"
+                onClick={() => onChangeSettingsSection("formats")}
+                className={`sidebar-nav-item group ${
+                  settingsSection === "formats"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
               >
-                <Plus className="w-4 h-4" />
+                <Globe
+                  className={`sidebar-nav-icon ${settingsSection === "formats" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("settings.formats")}</span>
+              </button>
+              <button
+                onClick={() => onChangeSettingsSection("about")}
+                className={`sidebar-nav-item group ${
+                  settingsSection === "about"
+                    ? "sidebar-nav-item-active"
+                    : "sidebar-nav-item-inactive"
+                }`}
+              >
+                <Info
+                  className={`sidebar-nav-icon ${settingsSection === "about" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                />
+                <span className="font-medium">{t("settings.about")}</span>
               </button>
             </div>
           </div>
+        ) : (
+          /* Normal navigation */
+          <>
+            <div>
+              <h2 className="sidebar-section-title">{t("nav.overview")}</h2>
+              <div className="space-y-1">
+                {sidebarVisibility.dashboard !== false && (
+                  <button
+                    onClick={() => handleSelect("dashboard")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "dashboard"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <LayoutDashboard
+                      className={`sidebar-nav-icon ${selectedId === "dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.dashboard")}</span>
+                  </button>
+                )}
 
-          <AccountList
-            accounts={sortedAccounts}
-            selectedId={selectedId}
-            onSelectAccount={onSelectAccount}
-            marketValues={marketValues}
-            Icon={CreditCard}
-            onReorder={handleReorder}
-            isDraggable={sortConfig.field === "manual"}
-          />
-        </div>
+                {sidebarVisibility.investments !== false && (
+                  <button
+                    onClick={() => handleSelect("investment-dashboard")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "investment-dashboard"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <PieChart
+                      className={`sidebar-nav-icon ${selectedId === "investment-dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.investments")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.fire !== false && (
+                  <button
+                    onClick={() => handleSelect("fire-calculator")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "fire-calculator"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <Calculator
+                      className={`sidebar-nav-icon ${selectedId === "fire-calculator" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.fire_calculator")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.rules !== false && (
+                  <button
+                    onClick={() => handleSelect("rules")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "rules"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <BookOpenCheck
+                      className={`sidebar-nav-icon ${selectedId === "rules" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.rules")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.scheduled !== false && (
+                  <button
+                    onClick={() => handleSelect("scheduled")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "scheduled"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <CalendarClock
+                      className={`sidebar-nav-icon ${selectedId === "scheduled" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.scheduled")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.all !== false && (
+                  <button
+                    onClick={() => handleSelect("all")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "all"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <List
+                      className={`sidebar-nav-icon ${selectedId === "all" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.all_transactions")}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Accounts */}
+            <div>
+              <div className="sidebar-section-header">
+                <h2 className="sidebar-section-title-inline">
+                  {t("dashboard.accounts_breakdown")}
+                </h2>
+                <div className="flex items-center gap-1">
+                  <div className="relative" ref={sortMenuRef}>
+                    <button
+                      onClick={() => setShowSortMenu(!showSortMenu)}
+                      className="sidebar-add-button"
+                      title={t("sort.sort_by")}
+                    >
+                      <ArrowUpDown className="w-3.5 h-3.5" />
+                    </button>
+                    {showSortMenu && (
+                      <div className="absolute right-0 top-full mt-2 min-w-[12rem] max-w-full bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                        <div className="py-1">
+                          <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-800/50 border-b border-slate-700/50">
+                            {t("sort.sort_by")}
+                          </div>
+                          {[
+                            {
+                              label: t("sort.manual"),
+                              field: "manual",
+                              dir: "asc",
+                            },
+                            {
+                              label: t("sort.name_asc"),
+                              field: "name",
+                              dir: "asc",
+                            },
+                            {
+                              label: t("sort.name_desc"),
+                              field: "name",
+                              dir: "desc",
+                            },
+                            {
+                              label: t("sort.balance_asc"),
+                              field: "balance",
+                              dir: "asc",
+                            },
+                            {
+                              label: t("sort.balance_desc"),
+                              field: "balance",
+                              dir: "desc",
+                            },
+                            {
+                              label: t("sort.value_asc"),
+                              field: "value",
+                              dir: "asc",
+                            },
+                            {
+                              label: t("sort.value_desc"),
+                              field: "value",
+                              dir: "desc",
+                            },
+                          ].map((opt) => (
+                            <button
+                              key={`${opt.field}-${opt.dir}`}
+                              onClick={() => handleSort(opt.field, opt.dir)}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors flex items-center justify-between ${
+                                sortConfig.field === opt.field &&
+                                sortConfig.direction === opt.dir
+                                  ? "text-brand-400 bg-slate-700/50"
+                                  : "text-slate-300"
+                              }`}
+                            >
+                              {opt.label}
+                              {sortConfig.field === opt.field &&
+                                sortConfig.direction === opt.dir && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-brand-500"></div>
+                                )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowAccountModal(true)}
+                    className="sidebar-add-button"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <AccountList
+                accounts={sortedAccounts}
+                selectedId={selectedId}
+                onSelectAccount={onSelectAccount}
+                marketValues={marketValues}
+                Icon={CreditCard}
+                onReorder={handleReorder}
+                isDraggable={sortConfig.field === "manual"}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Footer */}
@@ -464,7 +512,7 @@ export default function Sidebar({
             <span className="text-xs font-medium">{t("footer.export")}</span>
           </button>
           <button
-            onClick={() => setShowSettingsModal(true)}
+            onClick={() => handleSelect("settings")}
             className="sidebar-footer-button"
           >
             <Settings className="w-4 h-4" />
@@ -484,14 +532,6 @@ export default function Sidebar({
 
       {showExportModal && (
         <ExportModal onClose={() => setShowExportModal(false)} />
-      )}
-
-      {showSettingsModal && (
-        <SettingsModal
-          onClose={() => setShowSettingsModal(false)}
-          sidebarVisibility={sidebarVisibility}
-          onChangeSidebarVisibility={setSidebarVisibility}
-        />
       )}
 
       {showAccountModal && (
@@ -519,4 +559,8 @@ Sidebar.propTypes = {
   onSelectAccount: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
+  sidebarVisibility: PropTypes.objectOf(PropTypes.bool).isRequired,
+  onChangeSidebarVisibility: PropTypes.func.isRequired,
+  settingsSection: PropTypes.string,
+  onChangeSettingsSection: PropTypes.func,
 };

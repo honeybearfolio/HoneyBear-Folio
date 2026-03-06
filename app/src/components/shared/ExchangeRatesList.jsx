@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Pencil, Trash2, RefreshCw } from "lucide-react";
 import { t } from "../../i18n/i18n";
 import { useConfirm } from "../../contexts/confirm";
-import "../../styles/SettingsModal.css";
+import "../../styles/Settings.css";
 
 /**
  * Component to display and manage exchange rates.

@@ -8,6 +8,7 @@ import InvestmentDashboard from "./features/investments/InvestmentDashboard";
 import FireCalculator from "./features/fire/FireCalculator";
 import RulesList from "./features/rules/RulesList";
 import ScheduledList from "./features/scheduled/ScheduledList";
+import SettingsView from "./features/settings/SettingsView";
 import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
 import { ToastProvider } from "./components/ui/Toast";
@@ -34,6 +35,40 @@ function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [accounts, setAccounts] = useState([]);
   const [marketValues, setMarketValues] = useState({});
+  const [settingsSection, setSettingsSection] = useState("general");
+  const [sidebarVisibility, setSidebarVisibility] = useState(() => {
+    try {
+      const stored = localStorage.getItem("hb_sidebar_visibility");
+      const defaults = {
+        dashboard: true,
+        investments: true,
+        fire: true,
+        rules: true,
+        scheduled: true,
+        all: true,
+      };
+      if (stored) {
+        return { ...defaults, ...JSON.parse(stored) };
+      }
+      return defaults;
+    } catch {
+      return {
+        dashboard: true,
+        investments: true,
+        fire: true,
+        rules: true,
+        scheduled: true,
+        all: true,
+      };
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "hb_sidebar_visibility",
+      JSON.stringify(sidebarVisibility),
+    );
+  }, [sidebarVisibility]);
 
   const startResizing = useCallback(() => {
     setIsResizing(true);
@@ -325,6 +360,10 @@ function App() {
                           onSelectAccount={setSelectedAccountId}
                           onUpdate={handleAccountUpdate}
                           onClose={() => setIsSidebarOpen(false)}
+                          sidebarVisibility={sidebarVisibility}
+                          onChangeSidebarVisibility={setSidebarVisibility}
+                          settingsSection={settingsSection}
+                          onChangeSettingsSection={setSettingsSection}
                         />
                       </div>
                       <div
@@ -352,7 +391,13 @@ function App() {
                       </button>
                     </div>
                     <div>
-                      {selectedAccountId === "dashboard" ? (
+                      {selectedAccountId === "settings" ? (
+                        <SettingsView
+                          activeSection={settingsSection}
+                          sidebarVisibility={sidebarVisibility}
+                          onChangeSidebarVisibility={setSidebarVisibility}
+                        />
+                      ) : selectedAccountId === "dashboard" ? (
                         <Dashboard
                           accounts={accounts}
                           marketValues={marketValues}

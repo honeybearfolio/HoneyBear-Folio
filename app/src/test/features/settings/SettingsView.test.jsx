@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import SettingsModal from "../../../components/shared/SettingsModal";
+import SettingsView from "../../../features/settings/SettingsView";
 
 // Mock i18n (provide AVAILABLE_LANGUAGES used by the component)
 vi.mock("../../../i18n/i18n", () => ({
@@ -120,40 +120,42 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
   },
 }));
 
-describe("SettingsModal (language placement)", () => {
+describe("SettingsView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
   });
 
-  it("shows language selector in General tab and not in Formats tab", () => {
-    render(<SettingsModal onClose={vi.fn()} />);
+  it("shows language selector in General section", () => {
+    render(<SettingsView activeSection="general" />);
 
     expect(screen.getByText("Language")).toBeInTheDocument();
     expect(screen.getByTestId("language-select")).toBeInTheDocument();
     expect(screen.getByText("Select language")).toBeInTheDocument();
+  });
 
-    // switch to Formats tab — language should not be visible there
-    fireEvent.click(screen.getByText("Formats"));
+  it("does not show language selector in Formats section", () => {
+    render(<SettingsView activeSection="formats" />);
+
     expect(screen.queryByText("Language")).not.toBeInTheDocument();
   });
 
-  it("shows exchange rates in General tab and not in Formats tab", () => {
-    render(<SettingsModal onClose={vi.fn()} />);
+  it("shows exchange rates in General section", () => {
+    render(<SettingsView activeSection="general" />);
 
-    // label for the section should be visible in General (default) tab
     expect(screen.getByText("Exchange Rates")).toBeInTheDocument();
+  });
 
-    // when switching to Formats, the Exchange Rates label should disappear
-    fireEvent.click(screen.getByText("Formats"));
+  it("does not show exchange rates in Formats section", () => {
+    render(<SettingsView activeSection="formats" />);
+
     expect(screen.queryByText("Exchange Rates")).not.toBeInTheDocument();
   });
 
   it("uses AVAILABLE_LANGUAGES for options and calls setter on change", () => {
-    render(<SettingsModal onClose={vi.fn()} />);
+    render(<SettingsView activeSection="general" />);
     const sel = screen.getByTestId("language-select");
 
-    // options are rendered by the mocked CustomSelect
     expect(screen.getByText("English")).toBeInTheDocument();
     expect(screen.getByText("Español")).toBeInTheDocument();
 
@@ -166,21 +168,17 @@ describe("SettingsModal (language placement)", () => {
     const mockConfirmLocal = mockConfirm;
     mockConfirmLocal.mockResolvedValueOnce(true);
 
-    render(<SettingsModal onClose={vi.fn()} />);
+    render(<SettingsView activeSection="general" />);
 
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
     fireEvent.click(btn);
 
-    // confirm should be shown and resolved (use the mocked translator so the
-    // assertion doesn't depend on the literal string)
     const { t } = await import("../../../i18n/i18n");
     await expect(mockConfirmLocal).toHaveBeenCalledWith(
       t("settings.reset_confirm"),
       expect.objectContaining({ kind: "warning" }),
     );
 
-    // setters should be called to apply defaults (async effects may run
-    // after the click — waitFor ensures we observe the final state)
     await waitFor(() => {
       expect(mockSetLocale).toHaveBeenCalledWith("en-US");
       expect(mockSetCurrency).toHaveBeenCalledWith("USD");
@@ -196,7 +194,7 @@ describe("SettingsModal (language placement)", () => {
     const { useNumberFormat } = await import("../../../contexts/number-format");
     const setters = useNumberFormat();
 
-    render(<SettingsModal onClose={vi.fn()} />);
+    render(<SettingsView activeSection="general" />);
 
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
     fireEvent.click(btn);
@@ -207,7 +205,7 @@ describe("SettingsModal (language placement)", () => {
     expect(setters.setUiLanguage).not.toHaveBeenCalled();
   });
 
-  it("shows theme selector and font size under Customization tab", () => {
+  it("shows theme selector and font size in Customization section", () => {
     const sidebarVisibility = {
       dashboard: true,
       investments: true,
@@ -217,19 +215,12 @@ describe("SettingsModal (language placement)", () => {
       all: true,
     };
     render(
-      <SettingsModal
-        onClose={vi.fn()}
+      <SettingsView
+        activeSection="customization"
         sidebarVisibility={sidebarVisibility}
         onChangeSidebarVisibility={vi.fn()}
       />,
     );
-
-    // Not visible in General tab
-    expect(screen.queryByTestId("theme-select")).not.toBeInTheDocument();
-    expect(screen.queryByText("Font size")).not.toBeInTheDocument();
-
-    // Switch to Customization tab
-    fireEvent.click(screen.getByText("Customization"));
 
     expect(screen.getByText("Theme")).toBeInTheDocument();
     expect(screen.getByTestId("theme-select")).toBeInTheDocument();
