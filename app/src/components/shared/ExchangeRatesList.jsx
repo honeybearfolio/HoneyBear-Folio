@@ -8,7 +8,8 @@ import "../../styles/SettingsModal.css";
 
 /**
  * Component to display and manage exchange rates.
- * Shows custom rates with edit/delete options.
+ * Shows custom rates with edit/delete options and Yahoo-sourced
+ * currencies with an option to override.
  */
 export default function ExchangeRatesList({ onRateChange }) {
   const [rates, setRates] = useState([]);
@@ -20,9 +21,15 @@ export default function ExchangeRatesList({ onRateChange }) {
   const loadRates = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await invoke("get_all_exchange_rates");
-      // Sort alphabetically by currency
-      result.sort((a, b) => a.currency.localeCompare(b.currency));
+      const appCurrency = localStorage.getItem("hb_currency") || "USD";
+      const result = await invoke("get_all_exchange_rates", {
+        appCurrency,
+      });
+      // Sort: custom rates first, then Yahoo, alphabetically within each group
+      result.sort((a, b) => {
+        if (a.isCustom !== b.isCustom) return a.isCustom ? -1 : 1;
+        return a.currency.localeCompare(b.currency);
+      });
       setRates(result);
     } catch (e) {
       console.error("Failed to load exchange rates:", e);
@@ -37,7 +44,7 @@ export default function ExchangeRatesList({ onRateChange }) {
 
   const handleEdit = (currency, currentRate) => {
     setEditingCurrency(currency);
-    setEditValue(String(currentRate));
+    setEditValue(currentRate ? String(currentRate) : "");
   };
 
   const handleCancelEdit = () => {
@@ -110,8 +117,12 @@ export default function ExchangeRatesList({ onRateChange }) {
         <div key={entry.currency} className="exchange-rate-row">
           <div className="exchange-rate-info">
             <span className="exchange-rate-currency">{entry.currency}</span>
-            <span className="exchange-rate-badge exchange-rate-badge-custom">
-              {t("settings.exchange_rates_custom")}
+            <span
+              className={`exchange-rate-badge ${entry.isCustom ? "exchange-rate-badge-custom" : "exchange-rate-badge-auto"}`}
+            >
+              {entry.isCustom
+                ? t("settings.exchange_rates_custom")
+                : t("settings.exchange_rates_auto")}
             </span>
           </div>
 
@@ -124,6 +135,7 @@ export default function ExchangeRatesList({ onRateChange }) {
                 onChange={(e) => setEditValue(e.target.value)}
                 onKeyDown={(e) => handleKeyDown(e, entry.currency)}
                 className="exchange-rate-input"
+                placeholder={t("settings.exchange_rate_placeholder")}
                 autoFocus
               />
               <button
@@ -141,7 +153,7 @@ export default function ExchangeRatesList({ onRateChange }) {
                 {t("account.cancel")}
               </button>
             </div>
-          ) : (
+          ) : entry.isCustom ? (
             <div className="exchange-rate-value-actions">
               <span className="exchange-rate-value">
                 {entry.rate.toFixed(6)}
@@ -166,6 +178,19 @@ export default function ExchangeRatesList({ onRateChange }) {
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
+            </div>
+          ) : (
+            <div className="exchange-rate-value-actions">
+              <span className="exchange-rate-value exchange-rate-value-auto">
+                Yahoo Finance
+              </span>
+              <button
+                type="button"
+                onClick={() => handleEdit(entry.currency, "")}
+                className="btn-secondary btn-sm"
+              >
+                {t("settings.exchange_rate_override")}
+              </button>
             </div>
           )}
         </div>
