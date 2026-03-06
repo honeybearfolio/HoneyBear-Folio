@@ -1,16 +1,13 @@
 import PropTypes from "prop-types";
 import {
   Settings,
-  SlidersHorizontal,
   Globe,
   HelpCircle,
-  Info,
   ExternalLink,
   BookOpen,
   Lightbulb,
   Bug,
   Github,
-  Brush,
 } from "lucide-react";
 import "../../styles/Settings.css";
 import { useNumberFormat } from "../../contexts/number-format";
@@ -566,8 +563,7 @@ export default function SettingsView({
                               (!tagColors[cat] &&
                                 ((cat === "Transfer" &&
                                   colorKey === "purple") ||
-                                  (cat !== "Transfer" &&
-                                    colorKey === "slate")))
+                                  (cat !== "Transfer" && colorKey === "slate")))
                                 ? "border-slate-900 dark:border-white scale-110"
                                 : "border-transparent hover:scale-110"
                             }`}
@@ -807,17 +803,13 @@ export default function SettingsView({
               </div>
 
               <div className="about-section">
-                <h4 className="about-section-title">
-                  {t("about.copyright")}
-                </h4>
+                <h4 className="about-section-title">{t("about.copyright")}</h4>
                 <p className="about-section-content">© 2026 HoneyBearFolio</p>
               </div>
 
               <div className="about-section">
                 <h4 className="about-section-title">{t("about.license")}</h4>
-                <p className="about-license-text">
-                  {t("about.license_text")}
-                </p>
+                <p className="about-license-text">{t("about.license_text")}</p>
                 <a
                   href={LICENSE_URL}
                   className="about-link"
@@ -1005,7 +997,12 @@ export default function SettingsView({
 }
 
 SettingsView.propTypes = {
-  activeSection: PropTypes.oneOf(["general", "customization", "formats", "about"]),
+  activeSection: PropTypes.oneOf([
+    "general",
+    "customization",
+    "formats",
+    "about",
+  ]),
   sidebarVisibility: PropTypes.objectOf(PropTypes.bool),
   onChangeSidebarVisibility: PropTypes.func,
 };

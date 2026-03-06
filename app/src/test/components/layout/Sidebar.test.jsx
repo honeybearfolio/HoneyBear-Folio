@@ -86,7 +86,11 @@ describe("Sidebar", () => {
 
   it("renders navigation links correctly", () => {
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} sidebarVisibility={defaultVisibility} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
 
     expect(screen.getByText("nav.dashboard")).toBeInTheDocument();
@@ -97,7 +101,11 @@ describe("Sidebar", () => {
 
   it("displays computed net worth", () => {
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} sidebarVisibility={defaultVisibility} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
 
     // We mocked computeNetWorth to 12345.67 and formatNumber to prefix 'fmt-'
@@ -106,7 +114,11 @@ describe("Sidebar", () => {
 
   it("toggles privacy mode", () => {
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} sidebarVisibility={defaultVisibility} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
 
     // The eye icon button
@@ -123,7 +135,11 @@ describe("Sidebar", () => {
     });
 
     renderWithContext(
-      <Sidebar accounts={[]} onSelectAccount={mockOnSelectAccount} sidebarVisibility={defaultVisibility} />,
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+      />,
     );
     expect(screen.getByText("EyeOff")).toBeInTheDocument();
   });

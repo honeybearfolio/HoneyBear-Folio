@@ -42,7 +42,6 @@ export default function Sidebar({
   onUpdate,
   onClose,
   sidebarVisibility,
-  onChangeSidebarVisibility,
   settingsSection,
   onChangeSettingsSection,
 }) {
@@ -257,7 +256,9 @@ export default function Sidebar({
                   <Brush
                     className={`sidebar-nav-icon ${settingsSection === "customization" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                   />
-                  <span className="font-medium">{t("settings.customization")}</span>
+                  <span className="font-medium">
+                    {t("settings.customization")}
+                  </span>
                 </button>
               )}
               <button
@@ -338,7 +339,9 @@ export default function Sidebar({
                     <Calculator
                       className={`sidebar-nav-icon ${selectedId === "fire-calculator" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                     />
-                    <span className="font-medium">{t("nav.fire_calculator")}</span>
+                    <span className="font-medium">
+                      {t("nav.fire_calculator")}
+                    </span>
                   </button>
                 )}
 
@@ -386,7 +389,9 @@ export default function Sidebar({
                     <List
                       className={`sidebar-nav-icon ${selectedId === "all" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                     />
-                    <span className="font-medium">{t("nav.all_transactions")}</span>
+                    <span className="font-medium">
+                      {t("nav.all_transactions")}
+                    </span>
                   </button>
                 )}
               </div>
