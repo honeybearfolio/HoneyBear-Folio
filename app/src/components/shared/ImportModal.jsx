@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import {
-  Upload,
+  Download,
   FileSpreadsheet,
   FileJson,
   AlertCircle,
@@ -736,7 +736,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
         <ModalHeader
           onClose={onClose}
           title={t("import.title")}
-          icon={Upload}
+          icon={Download}
         />
       </div>
 
@@ -757,7 +757,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
           >
             {isDragging ? (
               <>
-                <Upload className="w-12 h-12 text-brand-500 mb-4 animate-pulse" />
+                <Download className="w-12 h-12 text-brand-500 mb-4 animate-pulse" />
                 <p className="text-brand-600 dark:text-brand-400 font-medium">
                   {t("import.drop_file_here") || "Drop file here"}
                 </p>
@@ -770,7 +770,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
                   <FileSpreadsheet className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
                 )}
                 <p className="text-slate-600 dark:text-slate-300 font-medium">
-                  {t("import.drag_or_click") || t("import.click_to_upload")}
+                  {t("import.drag_or_click") || t("import.click_to_Download")}
                 </p>
                 <p className="text-slate-500 dark:text-slate-500 text-sm mt-1">
                   {t("import.supports")}

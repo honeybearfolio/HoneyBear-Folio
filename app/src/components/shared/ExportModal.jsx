@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
-import { Download, FileJson, FileSpreadsheet, FileText } from "lucide-react";
+import { Upload, FileJson, FileSpreadsheet, FileText } from "lucide-react";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import { t } from "../../i18n/i18n";
 import "../../styles/Modal.css";
@@ -189,11 +189,7 @@ export default function ExportModal({ onClose }) {
   if (typeof document === "undefined") return null;
   return (
     <Modal onClose={onClose}>
-      <ModalHeader
-        onClose={onClose}
-        title={t("export.title")}
-        icon={Download}
-      />
+      <ModalHeader onClose={onClose} title={t("export.title")} icon={Upload} />
       <ModalBody>
         <label className="modal-label">{t("export.select_format")}</label>
         <div className="format-grid">
