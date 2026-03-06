@@ -130,9 +130,7 @@ describe("useTagColors", () => {
       Rent: "green",
       Transfer: "indigo",
     });
-    expect(result.current.getTagClasses("Rent")).toBe(
-      getColorClasses("green"),
-    );
+    expect(result.current.getTagClasses("Rent")).toBe(getColorClasses("green"));
     expect(result.current.getTagClasses("Transfer")).toBe(
       getColorClasses("indigo"),
     );

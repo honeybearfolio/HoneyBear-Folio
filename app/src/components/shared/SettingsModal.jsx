@@ -42,7 +42,11 @@ import THIRD_PARTY_LICENSES from "../../config/licenses";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import ExchangeRatesList from "./ExchangeRatesList";
 import useTagColors from "../../hooks/useTagColors";
-import { TAG_COLOR_KEYS, getColorClasses, getColorDot } from "../../config/tag-colors";
+import {
+  TAG_COLOR_KEYS,
+  getColorClasses,
+  getColorDot,
+} from "../../config/tag-colors";
 
 const GITHUB_REPO = "https://github.com/HoneyBearFolio/HoneyBear-Folio";
 const WEBSITE_URL = "https://honeybearfolio.github.io";
@@ -71,7 +75,12 @@ export default function SettingsModal({
   const { checkAndPrompt, dialog } = useCustomRate();
   const confirm = useConfirm();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
-  const { tagColors, setTagColor, removeTagColor, resetAll: resetTagColors } = useTagColors();
+  const {
+    tagColors,
+    setTagColor,
+    removeTagColor,
+    resetAll: resetTagColors,
+  } = useTagColors();
   const [categories, setCategories] = useState([]);
   const [fontSize, setFontSize] = useState(() => {
     try {
@@ -619,8 +628,10 @@ export default function SettingsModal({
                               className={`w-5 h-5 rounded-full border-2 transition-transform ${getColorDot(colorKey)} ${
                                 tagColors[cat] === colorKey ||
                                 (!tagColors[cat] &&
-                                  ((cat === "Transfer" && colorKey === "purple") ||
-                                    (cat !== "Transfer" && colorKey === "slate")))
+                                  ((cat === "Transfer" &&
+                                    colorKey === "purple") ||
+                                    (cat !== "Transfer" &&
+                                      colorKey === "slate")))
                                   ? "border-slate-900 dark:border-white scale-110"
                                   : "border-transparent hover:scale-110"
                               }`}
