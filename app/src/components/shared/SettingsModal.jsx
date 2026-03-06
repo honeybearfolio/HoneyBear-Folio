@@ -41,6 +41,12 @@ import CONTRIBUTORS from "../../config/contributors";
 import THIRD_PARTY_LICENSES from "../../config/licenses";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import ExchangeRatesList from "./ExchangeRatesList";
+import useTagColors from "../../hooks/useTagColors";
+import {
+  TAG_COLOR_KEYS,
+  getColorClasses,
+  getColorDot,
+} from "../../config/tag-colors";
 
 const GITHUB_REPO = "https://github.com/HoneyBearFolio/HoneyBear-Folio";
 const WEBSITE_URL = "https://honeybearfolio.github.io";
@@ -69,6 +75,13 @@ export default function SettingsModal({
   const { checkAndPrompt, dialog } = useCustomRate();
   const confirm = useConfirm();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
+  const {
+    tagColors,
+    setTagColor,
+    removeTagColor,
+    resetAll: resetTagColors,
+  } = useTagColors();
+  const [categories, setCategories] = useState([]);
   const [fontSize, setFontSize] = useState(() => {
     try {
       const v = localStorage.getItem("hb_font_size");
@@ -189,6 +202,7 @@ export default function SettingsModal({
       setFirstDayOfWeek(1);
       // Restore UI language to English (provider will apply this to the i18n runtime)
       setUiLanguage("en");
+      resetTagColors();
 
       try {
         await invoke("reset_db_path");
@@ -203,6 +217,21 @@ export default function SettingsModal({
   }
 
   const [activeTab, setActiveTab] = useState("general");
+
+  useEffect(() => {
+    if (activeTab === "customization") {
+      (async () => {
+        try {
+          const cats = await invoke("get_categories");
+          // Include "Transfer" which is filtered from get_categories
+          const all = cats.includes("Transfer") ? cats : ["Transfer", ...cats];
+          setCategories(all.sort((a, b) => a.localeCompare(b)));
+        } catch (e) {
+          console.error("Failed to fetch categories:", e);
+        }
+      })();
+    }
+  }, [activeTab]);
 
   // Example labels that show the current date in each available date format
   const _today = new Date();
@@ -542,6 +571,88 @@ export default function SettingsModal({
                     </div>
                   ))}
                 </div>
+
+                <div className="flex items-center justify-between mt-6 mb-4">
+                  <div className="label-with-help">
+                    <span
+                      className="help-wrapper"
+                      data-tooltip={t("settings.tooltip.tag_colors")}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t("settings.tooltip.tag_colors")}
+                      onMouseEnter={showTooltip}
+                      onFocus={showTooltip}
+                      onMouseLeave={hideTooltip}
+                      onBlur={hideTooltip}
+                    >
+                      <HelpCircle
+                        className="w-4 h-4 text-slate-400 help-icon"
+                        aria-hidden="true"
+                      />
+                    </span>
+                    <label className="modal-label">
+                      {t("settings.tag_colors")}
+                    </label>
+                  </div>
+                </div>
+
+                {categories.length === 0 ? (
+                  <p className="text-sm text-slate-400 dark:text-slate-500 italic">
+                    {t("settings.tag_colors.empty")}
+                  </p>
+                ) : (
+                  <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 overflow-hidden">
+                    {categories.map((cat) => (
+                      <div
+                        key={cat}
+                        className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                      >
+                        <span
+                          className={`px-2 py-1 inline-flex text-xs font-bold rounded-lg border ${
+                            tagColors[cat]
+                              ? getColorClasses(tagColors[cat])
+                              : cat === "Transfer"
+                                ? getColorClasses("purple")
+                                : getColorClasses("slate")
+                          }`}
+                        >
+                          {cat}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {TAG_COLOR_KEYS.map((colorKey) => (
+                            <button
+                              key={colorKey}
+                              type="button"
+                              onClick={() => setTagColor(cat, colorKey)}
+                              title={colorKey}
+                              className={`w-5 h-5 rounded-full border-2 transition-transform ${getColorDot(colorKey)} ${
+                                tagColors[cat] === colorKey ||
+                                (!tagColors[cat] &&
+                                  ((cat === "Transfer" &&
+                                    colorKey === "purple") ||
+                                    (cat !== "Transfer" &&
+                                      colorKey === "slate")))
+                                  ? "border-slate-900 dark:border-white scale-110"
+                                  : "border-transparent hover:scale-110"
+                              }`}
+                              aria-label={colorKey}
+                            />
+                          ))}
+                          {tagColors[cat] && (
+                            <button
+                              type="button"
+                              onClick={() => removeTagColor(cat)}
+                              className="ml-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                              title={t("settings.tag_colors.default")}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
