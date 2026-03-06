@@ -346,6 +346,10 @@
     @apply hover:text-red-600 dark:hover:text-red-400;
   }
 
+  .exchange-rate-value-auto {
+    @apply text-slate-400 dark:text-slate-500 italic;
+  }
+
   .exchange-rate-edit {
     @apply flex items-center gap-2;
   }

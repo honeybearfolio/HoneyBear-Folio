@@ -303,22 +303,77 @@ pub struct ExchangeRateEntry {
     pub is_custom: bool,
 }
 
-/// Get all custom exchange rates from the database
+/// Get all exchange rates: custom rates + all currencies used in accounts.
+/// Currencies with custom rates are marked `is_custom: true`.
+/// Account currencies without a custom rate are included with `is_custom: false`
+/// and `rate: 0.0` so the UI can offer an override option.
 #[tauri::command]
-pub fn get_all_exchange_rates(app_handle: AppHandle) -> Result<Vec<ExchangeRateEntry>, String> {
+pub fn get_all_exchange_rates(
+    app_handle: AppHandle,
+    app_currency: Option<String>,
+) -> Result<Vec<ExchangeRateEntry>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     let custom_rates = get_custom_rates_map(&db_path)?;
 
-    let entries: Vec<ExchangeRateEntry> = custom_rates
-        .into_iter()
-        .map(|(currency, rate)| ExchangeRateEntry {
-            currency,
-            rate,
+    // Collect all unique currencies from accounts
+    let account_currencies = get_account_currencies(&db_path)?;
+
+    let mut seen = std::collections::HashSet::new();
+    let mut entries = Vec::new();
+
+    // Add custom rates first
+    for (currency, rate) in &custom_rates {
+        seen.insert(currency.clone());
+        entries.push(ExchangeRateEntry {
+            currency: currency.clone(),
+            rate: *rate,
             is_custom: true,
-        })
-        .collect();
+        });
+    }
+
+    // Add account currencies that don't have a custom rate (Yahoo-based).
+    // USD is the pivot currency, so skip it — its rate is always 1.0.
+    for currency in account_currencies {
+        if currency != "USD" && !seen.contains(&currency) {
+            seen.insert(currency.clone());
+            entries.push(ExchangeRateEntry {
+                currency,
+                rate: 0.0,
+                is_custom: false,
+            });
+        }
+    }
+
+    // Ensure the app's default currency appears so the user can override its
+    // rate to USD even when no account uses it directly.
+    if let Some(ref app_curr) = app_currency {
+        if app_curr != "USD" && !seen.contains(app_curr) {
+            entries.push(ExchangeRateEntry {
+                currency: app_curr.clone(),
+                rate: 0.0,
+                is_custom: false,
+            });
+        }
+    }
 
     Ok(entries)
+}
+
+/// Get all unique currencies used across accounts
+fn get_account_currencies(db_path: &PathBuf) -> Result<Vec<String>, String> {
+    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT DISTINCT currency FROM accounts WHERE currency IS NOT NULL")
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(|e| e.to_string())?;
+
+    let mut currencies = Vec::new();
+    for r in rows {
+        currencies.push(r.map_err(|e| e.to_string())?);
+    }
+    Ok(currencies)
 }
 
 /// Delete a custom exchange rate from the database

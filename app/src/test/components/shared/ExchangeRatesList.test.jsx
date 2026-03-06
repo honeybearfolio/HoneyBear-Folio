@@ -8,8 +8,10 @@ vi.mock("../../../i18n/i18n", () => ({
     const map = {
       "settings.exchange_rates_empty": "No custom exchange rates configured.",
       "settings.exchange_rates_custom": "custom",
+      "settings.exchange_rates_auto": "auto",
       "settings.exchange_rate_edit": "Edit rate",
       "settings.exchange_rate_delete": "Remove custom rate",
+      "settings.exchange_rate_override": "Override rate",
       "settings.exchange_rate_delete_confirm": `Remove custom rate for ${opts?.currency}?`,
       "confirm.save": "Save",
       "account.cancel": "Cancel",
@@ -70,8 +72,8 @@ describe("ExchangeRatesList", () => {
 
   it("lists custom rates (sorted) and shows badges", async () => {
     inMemoryRates = [
-      { currency: "EUR", rate: 0.987654 },
-      { currency: "ABC", rate: 1.2345 },
+      { currency: "EUR", rate: 0.987654, isCustom: true },
+      { currency: "ABC", rate: 1.2345, isCustom: true },
     ];
 
     render(<ExchangeRatesList />);
@@ -91,7 +93,7 @@ describe("ExchangeRatesList", () => {
   });
 
   it("allows editing a rate and calls backend then refreshes list", async () => {
-    inMemoryRates = [{ currency: "GBP", rate: 1.1 }];
+    inMemoryRates = [{ currency: "GBP", rate: 1.1, isCustom: true }];
     const { invoke } = await import("@tauri-apps/api/core");
 
     render(<ExchangeRatesList />);
@@ -124,7 +126,7 @@ describe("ExchangeRatesList", () => {
   });
 
   it("asks for confirmation and deletes a custom rate", async () => {
-    inMemoryRates = [{ currency: "JPY", rate: 150.0 }];
+    inMemoryRates = [{ currency: "JPY", rate: 150.0, isCustom: true }];
     mockConfirm.mockResolvedValueOnce(true);
     const { invoke } = await import("@tauri-apps/api/core");
 
