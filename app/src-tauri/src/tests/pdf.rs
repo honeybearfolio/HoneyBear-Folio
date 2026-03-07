@@ -1,7 +1,5 @@
+use crate::core::models::{ReportCashFlow, ReportData, ReportLabels, ReportSummary};
 use crate::core::pdf::{generate_pdf_report, generate_report};
-use crate::core::models::{
-    ReportCashFlow, ReportData, ReportLabels, ReportSummary,
-};
 use std::fs;
 
 // Helper builder for minimal report data in tests
@@ -57,7 +55,14 @@ fn make_empty_report() -> ReportData {
             portfolio_total: String::new(),
             overall_roi: String::new(),
         },
-        summary: ReportSummary { net_worth: 0.0, total_income: 0.0, total_expenses: 0.0, net_savings: 0.0, savings_rate: 0.0, account_count: 0 },
+        summary: ReportSummary {
+            net_worth: 0.0,
+            total_income: 0.0,
+            total_expenses: 0.0,
+            net_savings: 0.0,
+            savings_rate: 0.0,
+            account_count: 0,
+        },
         account_balances: Vec::new(),
         net_worth_points: Vec::new(),
         monthly_income_expenses: Vec::new(),
