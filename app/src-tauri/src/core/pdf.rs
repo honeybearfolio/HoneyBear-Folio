@@ -7,7 +7,6 @@ use std::io::BufWriter;
 // Embed fonts at compile-time
 const FONT_REGULAR: &[u8] = include_bytes!("../assets/LiberationSans-Regular.ttf");
 const FONT_BOLD: &[u8] = include_bytes!("../assets/LiberationSans-Bold.ttf");
-const LOGO_PNG: &[u8] = include_bytes!("../../icons/icon.png");
 
 // Page dimensions (A4 in mm)
 const PAGE_W: f32 = 210.0;
@@ -236,41 +235,29 @@ fn draw_cover_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportDa
         fonts,
     };
 
-    // Logo — load the embedded PNG via printpdf's Image::try_from
-    if let Ok(image) = Image::try_from(image_crate::codecs::png::PngDecoder::new(std::io::Cursor::new(LOGO_PNG)).unwrap()) {
-        let transform = ImageTransform {
-            translate_x: Some(mm((PAGE_W - 40.0) / 2.0)),
-            translate_y: Some(y(110.0)),
-            scale_x: Some(40.0 / 512.0), // scale to ~40mm
-            scale_y: Some(40.0 / 512.0),
-            ..Default::default()
-        };
-        image.add_to_layer(layer_ref.clone(), transform);
-    }
-
     // Title
     let title = "HoneyBear Folio";
     let tw = text_width(title, 26.0);
-    write_text_color(&ctx, title, (PAGE_W - tw) / 2.0, 125.0, 26.0, true, BRAND_R, BRAND_G, BRAND_B);
+    write_text_color(&ctx, title, (PAGE_W - tw) / 2.0, 110.0, 26.0, true, BRAND_R, BRAND_G, BRAND_B);
 
     let subtitle = &data.labels.title;
     let sw = text_width(subtitle, 16.0);
-    write_text(&ctx, subtitle, (PAGE_W - sw) / 2.0, 138.0, 16.0, false);
+    write_text(&ctx, subtitle, (PAGE_W - sw) / 2.0, 123.0, 16.0, false);
 
     // Date range
     let range = format!("{} — {}", data.date_range_start, data.date_range_end);
     let rw = text_width(&range, 11.0);
-    write_text_color(&ctx, &range, (PAGE_W - rw) / 2.0, 150.0, 11.0, false, 0.4, 0.4, 0.4);
+    write_text_color(&ctx, &range, (PAGE_W - rw) / 2.0, 135.0, 11.0, false, 0.4, 0.4, 0.4);
 
     // Generation date
     let gen = &data.generation_date;
     let gw = text_width(gen, 9.0);
-    write_text_color(&ctx, gen, (PAGE_W - gw) / 2.0, 160.0, 9.0, false, 0.6, 0.6, 0.6);
+    write_text_color(&ctx, gen, (PAGE_W - gw) / 2.0, 145.0, 9.0, false, 0.6, 0.6, 0.6);
 
     // Currency
     let cur = format!("Currency: {}", data.currency_symbol);
     let cw = text_width(&cur, 9.0);
-    write_text_color(&ctx, &cur, (PAGE_W - cw) / 2.0, 168.0, 9.0, false, 0.6, 0.6, 0.6);
+    write_text_color(&ctx, &cur, (PAGE_W - cw) / 2.0, 153.0, 9.0, false, 0.6, 0.6, 0.6);
 }
 
 // ── Financial Summary page ──────────────────────────────────────────

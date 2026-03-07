@@ -193,7 +193,7 @@ export default function ExportModal({ onClose }) {
         defaultPath += ".xlsx";
         filters = [{ name: t("export.format.xlsx"), extensions: ["xlsx"] }];
       } else if (format === "pdf") {
-        defaultPath = `honeybear_report_${new Date().toISOString().split("T")[0]}`;
+        defaultPath = `honeybear_report_${pdfDateRange.start}_${pdfDateRange.end}`;
         defaultPath += ".pdf";
         filters = [{ name: t("export.format.pdf"), extensions: ["pdf"] }];
       }
@@ -249,19 +249,41 @@ export default function ExportModal({ onClose }) {
         const appCurrency = localStorage.getItem("hb_currency") || "USD";
 
         try {
-          const allRates = await invoke("get_all_exchange_rates");
-          if (allRates && typeof allRates === "object") {
-            Object.entries(allRates).forEach(([pair, rate]) => {
-              exchangeRates[pair] = {
-                map: { [new Date().toISOString().slice(0, 10)]: rate },
-                list: [
-                  {
-                    date: new Date().toISOString().slice(0, 10),
-                    price: rate,
-                  },
-                ],
-              };
-            });
+          const allRates = await invoke("get_all_exchange_rates", { appCurrency });
+          if (Array.isArray(allRates)) {
+            for (const entry of allRates) {
+              if (!entry.currency || entry.currency === appCurrency) continue;
+              const pair = `${entry.currency}${appCurrency}=X`;
+              // Try to fetch historical daily prices for this currency pair
+              let dailyPrices = [];
+              try {
+                dailyPrices = await invoke("get_daily_stock_prices", { ticker: pair });
+              } catch {
+                // Historical prices may not be available
+              }
+              const map = {};
+              const list = [];
+              if (Array.isArray(dailyPrices) && dailyPrices.length > 0) {
+                dailyPrices.forEach((dp) => {
+                  map[dp.date] = dp.price;
+                  list.push({ date: dp.date, price: dp.price });
+                });
+              }
+              // Add the current custom rate as a fallback
+              if (entry.rate > 0) {
+                const today = new Date().toISOString().slice(0, 10);
+                map[today] = entry.rate;
+                list.push({ date: today, price: entry.rate });
+                // Also add an early date so historical lookups always have a fallback
+                if (!list.some((p) => p.date <= pdfDateRange.start)) {
+                  map["1970-01-01"] = entry.rate;
+                  list.unshift({ date: "1970-01-01", price: entry.rate });
+                }
+              }
+              if (list.length > 0) {
+                exchangeRates[pair] = { map, list };
+              }
+            }
           }
         } catch {
           // Exchange rates are optional — continue without them
