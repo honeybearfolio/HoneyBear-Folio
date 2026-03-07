@@ -225,16 +225,13 @@ fn add_page(doc: &PdfDocumentReference, fonts: &PdfFonts, page_num: usize, label
     layer_ref
 }
 
-// ── Cover page ──────────────────────────────────────────────────────
+// ── Cover page drawing helpers ──────────────────────────────────────
 
-fn draw_cover_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData) {
-    let (page, layer) = doc.add_page(mm(PAGE_W), mm(PAGE_H), "Cover");
-    let layer_ref = doc.get_page(page).get_layer(layer);
-    let ctx = PageCtx {
-        layer: &layer_ref,
-        fonts,
-    };
-
+// Draw the actual content of the cover page onto an already-prepared layer
+// context. This keeps the layout code in one place while allowing the caller to
+// decide whether to allocate a fresh page or reuse the automatically-created
+// first page from `PdfDocument::new`.
+fn draw_cover(ctx: &PageCtx<'_>, data: &ReportData) {
     // Title
     let title = "HoneyBear Folio";
     let tw = text_width(title, 26.0);
@@ -254,10 +251,23 @@ fn draw_cover_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportDa
     let gw = text_width(gen, 9.0);
     write_text_color(&ctx, gen, (PAGE_W - gw) / 2.0, 145.0, 9.0, false, 0.6, 0.6, 0.6);
 
-    // Currency
+    // Currency label
     let cur = format!("Currency: {}", data.currency_symbol);
     let cw = text_width(&cur, 9.0);
     write_text_color(&ctx, &cur, (PAGE_W - cw) / 2.0, 153.0, 9.0, false, 0.6, 0.6, 0.6);
+}
+
+// Convenience wrapper that allocates a new page and then invokes `draw_cover`.
+//
+// This helper is currently unused in production because we draw the cover onto
+// the document's initial page, but it may be convenient to keep around for
+// unit tests or future features where an extra cover page is desired.
+#[allow(dead_code)]
+fn draw_cover_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData) {
+    let (page, layer) = doc.add_page(mm(PAGE_W), mm(PAGE_H), "Cover");
+    let layer_ref = doc.get_page(page).get_layer(layer);
+    let ctx = PageCtx { layer: &layer_ref, fonts };
+    draw_cover(&ctx, data);
 }
 
 // ── Financial Summary page ──────────────────────────────────────────
@@ -706,12 +716,17 @@ fn draw_transactions_pages(
 ) -> usize {
     let labels = &data.labels;
 
+    // columns arranged date / payee / category / notes / amount
+    // ensure total width stays comfortably under CONTENT_W so header background
+    // doesn’t spill past the right margin (offset used in draw_table_header)
     let cash_cols = vec![
         TableColumn { header: labels.date.clone(), width: 22.0, align_right: false },
         TableColumn { header: labels.payee.clone(), width: 42.0, align_right: false },
         TableColumn { header: labels.category.clone(), width: 30.0, align_right: false },
-        TableColumn { header: labels.amount.clone(), width: 28.0, align_right: true },
-        TableColumn { header: labels.notes.clone(), width: 48.0, align_right: false },
+        // narrower notes column now that space is tight
+        TableColumn { header: labels.notes.clone(), width: 40.0, align_right: false },
+        // still enough room for amounts
+        TableColumn { header: labels.amount.clone(), width: 34.0, align_right: true },
     ];
 
     let inv_cols = vec![
@@ -762,8 +777,9 @@ fn draw_transactions_pages(
                         tx.date.clone(),
                         truncate(&tx.payee, 25),
                         truncate(&tx.category, 18),
+                        // notes column now before amount
+                        truncate(&tx.notes, 25),
                         format_currency(tx.amount, &account_txs.currency_symbol),
-                        truncate(&tx.notes, 30),
                     ],
                     top,
                     i % 2 == 1,
@@ -817,7 +833,11 @@ fn draw_transactions_pages(
 // ── Public entry point ──────────────────────────────────────────────
 
 pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
-    let (doc, _, _) = PdfDocument::new("HoneyBear Folio Report", mm(PAGE_W), mm(PAGE_H), "Cover");
+    // `PdfDocument::new` already allocates a single page; we'll reuse that first
+    // page for the cover to avoid the empty page that was previously appearing
+    // at the start of every report.
+    let (doc, first_page, first_layer) =
+        PdfDocument::new("HoneyBear Folio Report", mm(PAGE_W), mm(PAGE_H), "Cover");
 
     let font_regular = doc
         .add_external_font(std::io::Cursor::new(FONT_REGULAR))
@@ -831,10 +851,14 @@ pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
         bold: font_bold,
     };
 
-    // The first page created by PdfDocument::new is unused; we draw our own cover.
-    // printpdf always creates an initial page, so page 1 is the cover.
+    // draw the cover on the automatically-created first page instead of
+    // allocating an extra blank page
+    {
+        let layer_ref = doc.get_page(first_page).get_layer(first_layer);
+        let ctx = PageCtx { layer: &layer_ref, fonts: &fonts };
+        draw_cover(&ctx, data);
+    }
 
-    draw_cover_page(&doc, &fonts, data);
     draw_summary_page(&doc, &fonts, data);
     draw_net_worth_page(&doc, &fonts, data);
     draw_income_expenses_page(&doc, &fonts, data);
