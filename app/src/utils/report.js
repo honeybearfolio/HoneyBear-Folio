@@ -126,7 +126,6 @@ export function computeReportData({
     endDate,
     appCurrency,
     exchangeRates,
-    quotes || [],
   );
 
   // ── Monthly income vs expenses ────────────────────────────────────
