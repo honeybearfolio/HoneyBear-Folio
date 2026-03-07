@@ -70,11 +70,7 @@ export default function SettingsView({
   const { checkAndPrompt, dialog } = useCustomRate();
   const confirm = useConfirm();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
-  const {
-    tagColors,
-    setTagColor,
-    resetAll: resetTagColors,
-  } = useTagColors();
+  const { tagColors, setTagColor, resetAll: resetTagColors } = useTagColors();
   const [categories, setCategories] = useState([]);
   const [fontSize, setFontSize] = useState(() => {
     try {
