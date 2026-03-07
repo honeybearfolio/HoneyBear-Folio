@@ -11,5 +11,6 @@ pub mod payees;
 pub mod property;
 pub mod rules;
 pub mod scheduled;
+pub mod pdf;
 pub mod stock;
 pub mod transactions;

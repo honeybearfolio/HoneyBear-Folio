@@ -250,7 +250,6 @@ function computeNetWorthTimeSeries(
   endDate,
   appCurrency,
   exchangeRates,
-  quotes,
 ) {
   // Build a running balance per account from the beginning to endDate
   const sorted = [...allTransactions].sort((a, b) =>
@@ -344,7 +343,10 @@ function computeMonthlyIncomeExpenses(
   const d = new Date(start);
   while (d <= end) {
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("en", { month: "short", year: "numeric" });
+    const label = d.toLocaleDateString("en", {
+      month: "short",
+      year: "numeric",
+    });
     months.push({ key, label, income: 0, expenses: 0 });
     d.setMonth(d.getMonth() + 1);
   }

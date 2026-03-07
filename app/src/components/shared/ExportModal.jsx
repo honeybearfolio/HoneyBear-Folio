@@ -32,8 +32,12 @@ export default function ExportModal({ onClose }) {
   // PDF time range state
   const [rangeType, setRangeType] = useState("ytd"); // "ytd", "annual", "month", "custom"
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonthYear, setSelectedMonthYear] = useState(new Date().getFullYear());
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(new Date().getMonth());
+  const [selectedMonthYear, setSelectedMonthYear] = useState(
+    new Date().getFullYear(),
+  );
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(
+    new Date().getMonth(),
+  );
   const [customStartDate, setCustomStartDate] = useState(
     new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
   );
@@ -60,7 +64,10 @@ export default function ExportModal({ onClose }) {
 
     if (rangeType === "annual") {
       start = new Date(selectedYear, 0, 1);
-      end = selectedYear === now.getFullYear() ? now : new Date(selectedYear, 11, 31);
+      end =
+        selectedYear === now.getFullYear()
+          ? now
+          : new Date(selectedYear, 11, 31);
     } else if (rangeType === "month") {
       start = new Date(selectedMonthYear, selectedMonthIndex, 1);
       end = new Date(selectedMonthYear, selectedMonthIndex + 1, 0); // last day of month
@@ -75,14 +82,23 @@ export default function ExportModal({ onClose }) {
 
     const fmt = (d) => d.toISOString().slice(0, 10);
     return { start: fmt(start), end: fmt(end) };
-  }, [rangeType, selectedYear, selectedMonthYear, selectedMonthIndex, customStartDate, customEndDate]);
+  }, [
+    rangeType,
+    selectedYear,
+    selectedMonthYear,
+    selectedMonthIndex,
+    customStartDate,
+    customEndDate,
+  ]);
 
   // Available years derived from actual transaction data
   const availableYears = useMemo(() => {
     if (transactionDates.length === 0) {
       return [new Date().getFullYear()];
     }
-    const years = [...new Set(transactionDates.map((d) => Number(d.slice(0, 4))))];
+    const years = [
+      ...new Set(transactionDates.map((d) => Number(d.slice(0, 4)))),
+    ];
     years.sort((a, b) => b - a);
     return years;
   }, [transactionDates]);
@@ -107,7 +123,8 @@ export default function ExportModal({ onClose }) {
     ].sort((a, b) => a - b);
 
     // Cap at current month if current year
-    const maxMonth = selectedMonthYear === now.getFullYear() ? now.getMonth() : 11;
+    const maxMonth =
+      selectedMonthYear === now.getFullYear() ? now.getMonth() : 11;
     const filtered = monthsWithTxs.filter((m) => m <= maxMonth);
 
     if (filtered.length === 0) {
@@ -249,7 +266,9 @@ export default function ExportModal({ onClose }) {
         const appCurrency = localStorage.getItem("hb_currency") || "USD";
 
         try {
-          const allRates = await invoke("get_all_exchange_rates", { appCurrency });
+          const allRates = await invoke("get_all_exchange_rates", {
+            appCurrency,
+          });
           if (Array.isArray(allRates)) {
             for (const entry of allRates) {
               if (!entry.currency || entry.currency === appCurrency) continue;
@@ -257,7 +276,9 @@ export default function ExportModal({ onClose }) {
               // Try to fetch historical daily prices for this currency pair
               let dailyPrices = [];
               try {
-                dailyPrices = await invoke("get_daily_stock_prices", { ticker: pair });
+                dailyPrices = await invoke("get_daily_stock_prices", {
+                  ticker: pair,
+                });
               } catch {
                 // Historical prices may not be available
               }
@@ -295,9 +316,7 @@ export default function ExportModal({ onClose }) {
           const { currentHoldings } =
             buildHoldingsFromTransactions(transactions);
           if (currentHoldings.length > 0) {
-            const tickers = [
-              ...new Set(currentHoldings.map((h) => h.ticker)),
-            ];
+            const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
             quotes = await invoke("get_stock_quotes", { tickers });
           }
         } catch {
@@ -476,9 +495,7 @@ export default function ExportModal({ onClose }) {
         {/* PDF Time Range Selector */}
         {format === "pdf" && (
           <div className="pdf-range-section">
-            <label className="modal-label">
-              {t("export.pdf.time_range")}
-            </label>
+            <label className="modal-label">{t("export.pdf.time_range")}</label>
 
             {/* Range type dropdown */}
             <CustomSelect
@@ -495,11 +512,16 @@ export default function ExportModal({ onClose }) {
             {/* Annual: year picker */}
             {rangeType === "annual" && (
               <div className="pdf-sub-select">
-                <label className="pdf-sub-label">{t("export.pdf.select_year")}</label>
+                <label className="pdf-sub-label">
+                  {t("export.pdf.select_year")}
+                </label>
                 <CustomSelect
                   value={selectedYear}
                   onChange={(v) => setSelectedYear(Number(v))}
-                  options={availableYears.map((yr) => ({ value: yr, label: String(yr) }))}
+                  options={availableYears.map((yr) => ({
+                    value: yr,
+                    label: String(yr),
+                  }))}
                 />
               </div>
             )}
@@ -507,7 +529,9 @@ export default function ExportModal({ onClose }) {
             {/* Monthly: year + month pickers */}
             {rangeType === "month" && (
               <div className="pdf-sub-select">
-                <label className="pdf-sub-label">{t("export.pdf.select_year")}</label>
+                <label className="pdf-sub-label">
+                  {t("export.pdf.select_year")}
+                </label>
                 <CustomSelect
                   value={selectedMonthYear}
                   onChange={(v) => {
@@ -515,17 +539,28 @@ export default function ExportModal({ onClose }) {
                     setSelectedMonthYear(yr);
                     // Reset month if not available for the new year
                     const now = new Date();
-                    if (yr === now.getFullYear() && selectedMonthIndex > now.getMonth()) {
+                    if (
+                      yr === now.getFullYear() &&
+                      selectedMonthIndex > now.getMonth()
+                    ) {
                       setSelectedMonthIndex(now.getMonth());
                     }
                   }}
-                  options={availableYears.map((yr) => ({ value: yr, label: String(yr) }))}
+                  options={availableYears.map((yr) => ({
+                    value: yr,
+                    label: String(yr),
+                  }))}
                 />
-                <label className="pdf-sub-label mt-2">{t("export.pdf.select_month")}</label>
+                <label className="pdf-sub-label mt-2">
+                  {t("export.pdf.select_month")}
+                </label>
                 <CustomSelect
                   value={selectedMonthIndex}
                   onChange={(v) => setSelectedMonthIndex(Number(v))}
-                  options={availableMonths.map((m) => ({ value: m.index, label: m.label }))}
+                  options={availableMonths.map((m) => ({
+                    value: m.index,
+                    label: m.label,
+                  }))}
                 />
               </div>
             )}
@@ -533,7 +568,9 @@ export default function ExportModal({ onClose }) {
             {/* Custom: date pickers */}
             {rangeType === "custom" && (
               <div className="pdf-sub-select">
-                <label className="pdf-sub-label">{t("export.pdf.start_date")}</label>
+                <label className="pdf-sub-label">
+                  {t("export.pdf.start_date")}
+                </label>
                 <DatePicker
                   selected={customStartDate}
                   onChange={(date) => {
@@ -551,7 +588,9 @@ export default function ExportModal({ onClose }) {
                   calendarStartDay={firstDayOfWeek}
                   className="pdf-date-input"
                 />
-                <label className="pdf-sub-label mt-2">{t("export.pdf.end_date")}</label>
+                <label className="pdf-sub-label mt-2">
+                  {t("export.pdf.end_date")}
+                </label>
                 <DatePicker
                   selected={customEndDate}
                   onChange={(date) => setCustomEndDate(date)}
