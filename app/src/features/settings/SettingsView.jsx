@@ -70,12 +70,7 @@ export default function SettingsView({
   const { checkAndPrompt, dialog } = useCustomRate();
   const confirm = useConfirm();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
-  const {
-    tagColors,
-    setTagColor,
-    removeTagColor,
-    resetAll: resetTagColors,
-  } = useTagColors();
+  const { tagColors, setTagColor, resetAll: resetTagColors } = useTagColors();
   const [categories, setCategories] = useState([]);
   const [fontSize, setFontSize] = useState(() => {
     try {
@@ -570,16 +565,7 @@ export default function SettingsView({
                             aria-label={colorKey}
                           />
                         ))}
-                        {tagColors[cat] && (
-                          <button
-                            type="button"
-                            onClick={() => removeTagColor(cat)}
-                            className="ml-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                            title={t("settings.tag_colors.default")}
-                          >
-                            ✕
-                          </button>
-                        )}
+                        {/* cross reset button removed per user request; default color can still be restored by clearing storage or via reset-all setting */}
                       </div>
                     </div>
                   ))}

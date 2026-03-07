@@ -45,6 +45,9 @@ vi.mock("../../../i18n/i18n", () => ({
       "settings.exchange_rate_delete": "Remove custom rate",
       "settings.exchange_rate_delete_confirm":
         "Remove custom rate for {currency}?",
+      "settings.tag_colors": "Tag Colors",
+      "settings.tag_colors.empty": "No tags",
+      "settings.tag_colors.default": "Default",
       "confirm.save": "Save",
       "account.cancel": "Cancel",
     };
