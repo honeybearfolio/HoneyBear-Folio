@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
@@ -14,6 +14,7 @@ import {
   FileDown,
 } from "lucide-react";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
+import CustomSelect from "../ui/CustomSelect";
 import { t } from "../../i18n/i18n";
 import "../../styles/Modal.css";
 import "../../styles/ExportModal.css";
@@ -37,6 +38,17 @@ export default function ExportModal({ onClose }) {
     new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
   );
   const [customEndDate, setCustomEndDate] = useState(new Date());
+
+  // Fetch transaction dates on mount to derive available years/months
+  const [transactionDates, setTransactionDates] = useState([]);
+  useEffect(() => {
+    invoke("get_all_transactions")
+      .then((txs) => {
+        const dates = txs.map((tx) => tx.date).filter(Boolean);
+        setTransactionDates(dates);
+      })
+      .catch(() => {});
+  }, []);
 
   const dateFormat = localStorage.getItem("hb_dateFormat") || "yyyy-MM-dd";
   const firstDayOfWeek = Number(localStorage.getItem("hb_firstDayOfWeek") || 1);
@@ -65,11 +77,15 @@ export default function ExportModal({ onClose }) {
     return { start: fmt(start), end: fmt(end) };
   }, [rangeType, selectedYear, selectedMonthYear, selectedMonthIndex, customStartDate, customEndDate]);
 
-  // Available years (current year + 5 previous)
+  // Available years derived from actual transaction data
   const availableYears = useMemo(() => {
-    const y = new Date().getFullYear();
-    return Array.from({ length: 6 }, (_, i) => y - i);
-  }, []);
+    if (transactionDates.length === 0) {
+      return [new Date().getFullYear()];
+    }
+    const years = [...new Set(transactionDates.map((d) => Number(d.slice(0, 4))))];
+    years.sort((a, b) => b - a);
+    return years;
+  }, [transactionDates]);
 
   // Month names
   const monthNames = useMemo(() => {
@@ -78,15 +94,27 @@ export default function ExportModal({ onClose }) {
     );
   }, []);
 
-  // Available months for the selected year (cap at current month if current year)
+  // Available months for the selected year — only months that have transactions
   const availableMonths = useMemo(() => {
     const now = new Date();
+    const prefix = String(selectedMonthYear);
+    const monthsWithTxs = [
+      ...new Set(
+        transactionDates
+          .filter((d) => d.startsWith(prefix))
+          .map((d) => Number(d.slice(5, 7)) - 1),
+      ),
+    ].sort((a, b) => a - b);
+
+    // Cap at current month if current year
     const maxMonth = selectedMonthYear === now.getFullYear() ? now.getMonth() : 11;
-    return Array.from({ length: maxMonth + 1 }, (_, i) => ({
-      index: i,
-      label: monthNames[i],
-    }));
-  }, [selectedMonthYear, monthNames]);
+    const filtered = monthsWithTxs.filter((m) => m <= maxMonth);
+
+    if (filtered.length === 0) {
+      return [{ index: now.getMonth(), label: monthNames[now.getMonth()] }];
+    }
+    return filtered.map((i) => ({ index: i, label: monthNames[i] }));
+  }, [selectedMonthYear, monthNames, transactionDates]);
 
   const handleExport = async () => {
     try {
@@ -431,30 +459,26 @@ export default function ExportModal({ onClose }) {
             </label>
 
             {/* Range type dropdown */}
-            <select
+            <CustomSelect
               value={rangeType}
-              onChange={(e) => setRangeType(e.target.value)}
-              className="pdf-range-select"
-            >
-              <option value="ytd">{t("export.pdf.ytd")}</option>
-              <option value="annual">{t("export.pdf.annual")}</option>
-              <option value="month">{t("export.pdf.month")}</option>
-              <option value="custom">{t("export.pdf.custom")}</option>
-            </select>
+              onChange={(v) => setRangeType(v)}
+              options={[
+                { value: "ytd", label: t("export.pdf.ytd") },
+                { value: "annual", label: t("export.pdf.annual") },
+                { value: "month", label: t("export.pdf.month") },
+                { value: "custom", label: t("export.pdf.custom") },
+              ]}
+            />
 
             {/* Annual: year picker */}
             {rangeType === "annual" && (
               <div className="pdf-sub-select">
                 <label className="pdf-sub-label">{t("export.pdf.select_year")}</label>
-                <select
+                <CustomSelect
                   value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="pdf-range-select"
-                >
-                  {availableYears.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setSelectedYear(Number(v))}
+                  options={availableYears.map((yr) => ({ value: yr, label: String(yr) }))}
+                />
               </div>
             )}
 
@@ -462,33 +486,25 @@ export default function ExportModal({ onClose }) {
             {rangeType === "month" && (
               <div className="pdf-sub-select">
                 <label className="pdf-sub-label">{t("export.pdf.select_year")}</label>
-                <select
+                <CustomSelect
                   value={selectedMonthYear}
-                  onChange={(e) => {
-                    const yr = Number(e.target.value);
+                  onChange={(v) => {
+                    const yr = Number(v);
                     setSelectedMonthYear(yr);
-                    // Reset month if out of range for new year
+                    // Reset month if not available for the new year
                     const now = new Date();
                     if (yr === now.getFullYear() && selectedMonthIndex > now.getMonth()) {
                       setSelectedMonthIndex(now.getMonth());
                     }
                   }}
-                  className="pdf-range-select"
-                >
-                  {availableYears.map((yr) => (
-                    <option key={yr} value={yr}>{yr}</option>
-                  ))}
-                </select>
+                  options={availableYears.map((yr) => ({ value: yr, label: String(yr) }))}
+                />
                 <label className="pdf-sub-label mt-2">{t("export.pdf.select_month")}</label>
-                <select
+                <CustomSelect
                   value={selectedMonthIndex}
-                  onChange={(e) => setSelectedMonthIndex(Number(e.target.value))}
-                  className="pdf-range-select"
-                >
-                  {availableMonths.map((m) => (
-                    <option key={m.index} value={m.index}>{m.label}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setSelectedMonthIndex(Number(v))}
+                  options={availableMonths.map((m) => ({ value: m.index, label: m.label }))}
+                />
               </div>
             )}
 

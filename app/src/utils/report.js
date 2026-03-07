@@ -106,14 +106,16 @@ export function computeReportData({
     account_count: accounts.length,
   };
 
-  // ── Account balances ──────────────────────────────────────────────
-  const accountBalances = accounts.map((acc) => ({
-    name: acc.name,
-    currency: acc.currency || appCurrency,
-    cash_balance: acc.balance,
-    market_value: marketValues[acc.id] || 0,
-    total: acc.balance + (marketValues[acc.id] || 0),
-  }));
+  // ── Account balances (exclude accounts with all-zero values) ─────
+  const accountBalances = accounts
+    .map((acc) => ({
+      name: acc.name,
+      currency: acc.currency || appCurrency,
+      cash_balance: acc.balance,
+      market_value: marketValues[acc.id] || 0,
+      total: acc.balance + (marketValues[acc.id] || 0),
+    }))
+    .filter((a) => a.cash_balance !== 0 || a.market_value !== 0);
 
   // ── Net worth evolution (sampled daily points) ────────────────────
   const netWorthPoints = computeNetWorthTimeSeries(
@@ -190,29 +192,31 @@ export function computeReportData({
     };
   }
 
-  // ── Transactions grouped by account ───────────────────────────────
-  const accountsTransactions = accounts.map((acc) => {
-    const accTxs = filtered
-      .filter((t) => t.account_id === acc.id)
-      .sort((a, b) => (a.date > b.date ? 1 : -1))
-      .map((t) => ({
-        date: t.date,
-        payee: t.payee || "",
-        category: t.category || "",
-        amount: t.amount,
-        notes: t.notes || "",
-        ticker: t.ticker || "",
-        shares: t.shares || 0,
-        price_per_share: t.price_per_share || 0,
-        fee: t.fee || 0,
-      }));
+  // ── Transactions grouped by account (only accounts with transactions) ──
+  const accountsTransactions = accounts
+    .map((acc) => {
+      const accTxs = filtered
+        .filter((t) => t.account_id === acc.id)
+        .sort((a, b) => (a.date > b.date ? 1 : -1))
+        .map((t) => ({
+          date: t.date,
+          payee: t.payee || "",
+          category: t.category || "",
+          amount: t.amount,
+          notes: t.notes || "",
+          ticker: t.ticker || "",
+          shares: t.shares || 0,
+          price_per_share: t.price_per_share || 0,
+          fee: t.fee || 0,
+        }));
 
-    return {
-      account_name: acc.name,
-      currency: acc.currency || appCurrency,
-      transactions: accTxs,
-    };
-  });
+      return {
+        account_name: acc.name,
+        currency: acc.currency || appCurrency,
+        transactions: accTxs,
+      };
+    })
+    .filter((a) => a.transactions.length > 0);
 
   return {
     date_range_start: startDate,
@@ -364,11 +368,13 @@ function computeMonthlyIncomeExpenses(
     else bucket.expenses += Math.abs(amount);
   });
 
-  return months.map((m) => ({
-    label: m.label,
-    income: m.income,
-    expenses: m.expenses,
-  }));
+  return months
+    .filter((m) => m.income > 0 || m.expenses > 0)
+    .map((m) => ({
+      label: m.label,
+      income: m.income,
+      expenses: m.expenses,
+    }));
 }
 
 /**
