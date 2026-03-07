@@ -8,6 +8,7 @@ pub mod brokerage;
 pub mod errors;
 pub mod multicurrency;
 pub mod payees;
+pub mod pdf;
 pub mod property;
 pub mod rules;
 pub mod scheduled;

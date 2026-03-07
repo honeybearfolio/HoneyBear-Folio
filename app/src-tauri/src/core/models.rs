@@ -187,3 +187,160 @@ pub struct ScheduledOccurrence {
     pub currency: Option<String>,
     pub account_name: Option<String>,
 }
+
+// ── PDF Report data structures ──────────────────────────────────────
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportSummary {
+    pub net_worth: f64,
+    pub total_income: f64,
+    pub total_expenses: f64,
+    pub net_savings: f64,
+    pub savings_rate: f64,
+    pub account_count: usize,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportAccountBalance {
+    pub name: String,
+    pub currency: String,
+    pub currency_symbol: String,
+    pub cash_balance: f64,
+    pub market_value: f64,
+    pub total: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportDataPoint {
+    pub label: String,
+    pub value: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportMonthlyData {
+    pub label: String,
+    pub income: f64,
+    pub expenses: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportCategoryAmount {
+    pub category: String,
+    pub amount: f64,
+    pub percentage: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportCashFlow {
+    pub total_income: f64,
+    pub total_expenses: f64,
+    pub total_investments: f64,
+    pub surplus_or_deficit: f64,
+    pub expense_categories: Vec<ReportCategoryAmount>,
+    pub investment_categories: Vec<ReportCategoryAmount>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportHolding {
+    pub ticker: String,
+    pub shares: f64,
+    pub price: f64,
+    pub current_value: f64,
+    pub cost_basis: f64,
+    pub roi: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportPortfolio {
+    pub total_value: f64,
+    pub total_cost_basis: f64,
+    pub overall_roi: f64,
+    pub holdings: Vec<ReportHolding>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportTransaction {
+    pub date: String,
+    pub payee: String,
+    pub category: String,
+    pub amount: f64,
+    pub notes: String,
+    pub ticker: String,
+    pub shares: f64,
+    pub price_per_share: f64,
+    pub fee: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportAccountTransactions {
+    pub account_name: String,
+    pub currency: String,
+    pub currency_symbol: String,
+    pub transactions: Vec<ReportTransaction>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportLabels {
+    pub title: String,
+    pub financial_summary: String,
+    pub net_worth_evolution: String,
+    pub income_vs_expenses: String,
+    pub expense_breakdown: String,
+    pub income_breakdown: String,
+    pub cash_flow_summary: String,
+    pub investment_holdings: String,
+    pub transactions_title: String,
+    pub net_worth: String,
+    pub total_income: String,
+    pub total_expenses: String,
+    pub net_savings: String,
+    pub savings_rate: String,
+    pub accounts: String,
+    pub account: String,
+    pub currency: String,
+    pub cash_balance: String,
+    pub market_value: String,
+    pub total: String,
+    pub category: String,
+    pub amount: String,
+    pub percentage: String,
+    pub month: String,
+    pub income: String,
+    pub expenses: String,
+    pub net: String,
+    pub investments: String,
+    pub surplus: String,
+    pub deficit: String,
+    pub ticker: String,
+    pub shares: String,
+    pub price: String,
+    pub value: String,
+    pub cost_basis: String,
+    pub roi: String,
+    pub date: String,
+    pub payee: String,
+    pub notes: String,
+    pub fee: String,
+    pub page: String,
+    pub no_transactions: String,
+    pub portfolio_total: String,
+    pub overall_roi: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportData {
+    pub date_range_start: String,
+    pub date_range_end: String,
+    pub currency_symbol: String,
+    pub generation_date: String,
+    pub labels: ReportLabels,
+    pub summary: ReportSummary,
+    pub account_balances: Vec<ReportAccountBalance>,
+    pub net_worth_points: Vec<ReportDataPoint>,
+    pub monthly_income_expenses: Vec<ReportMonthlyData>,
+    pub expense_categories: Vec<ReportCategoryAmount>,
+    pub income_categories: Vec<ReportCategoryAmount>,
+    pub cash_flow: ReportCashFlow,
+    pub portfolio: Option<ReportPortfolio>,
+    pub accounts_transactions: Vec<ReportAccountTransactions>,
+}

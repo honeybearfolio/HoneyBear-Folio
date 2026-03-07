@@ -1,6 +1,6 @@
 mod core;
 pub use crate::core::{
-    accounts, db_init, io, markets, models, rules, scheduled, transactions, utils,
+    accounts, db_init, io, markets, models, pdf, rules, scheduled, transactions, utils,
 };
 
 pub use crate::models::{
@@ -139,6 +139,7 @@ pub fn run() {
             scheduled::get_pending_occurrences,
             scheduled::apply_scheduled_occurrence,
             scheduled::skip_scheduled_occurrence,
+            pdf::generate_pdf_report,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

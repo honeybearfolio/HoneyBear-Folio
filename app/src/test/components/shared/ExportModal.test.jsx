@@ -11,6 +11,7 @@ vi.mock("../../../i18n/i18n", () => ({
       "export.format.json": "JSON",
       "export.format.csv": "CSV",
       "export.format.xlsx": "Excel",
+      "export.format.pdf": "PDF",
       "export.select_location_export": "Export",
       "export.exporting": "Exporting...",
       "account.cancel": "Cancel",
@@ -176,6 +177,49 @@ describe("ExportModal", () => {
         expect.objectContaining({
           filePath: "/path/to/export.xlsx",
           sheets: expect.any(Array),
+        }),
+      );
+    });
+  });
+
+  it("allows selecting PDF format", () => {
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("PDF"));
+    const pdfButton = screen.getByText("PDF").closest("button");
+    expect(pdfButton).toHaveClass("format-button-active");
+  });
+
+  it("opens save dialog with PDF filter for PDF format", async () => {
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("PDF"));
+    fireEvent.click(screen.getByText("Export"));
+
+    await waitFor(() => {
+      expect(mockSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: [{ name: "PDF", extensions: ["pdf"] }],
+        }),
+      );
+    });
+  });
+
+  it("calls generate_pdf_report when PDF format selected", async () => {
+    mockSave.mockResolvedValue("/path/to/export.pdf");
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("PDF"));
+    fireEvent.click(screen.getByText("Export"));
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith(
+        "generate_pdf_report",
+        expect.objectContaining({
+          filePath: "/path/to/export.pdf",
+          data: expect.objectContaining({
+            date_range_start: expect.any(String),
+          }),
         }),
       );
     });
