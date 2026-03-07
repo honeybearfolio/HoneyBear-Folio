@@ -111,6 +111,7 @@ export function computeReportData({
     .map((acc) => ({
       name: acc.name,
       currency: acc.currency || appCurrency,
+      currency_symbol: getCurrencySymbol(acc.currency || appCurrency),
       cash_balance: acc.balance,
       market_value: marketValues[acc.id] || 0,
       total: acc.balance + (marketValues[acc.id] || 0),
@@ -213,6 +214,7 @@ export function computeReportData({
       return {
         account_name: acc.name,
         currency: acc.currency || appCurrency,
+        currency_symbol: getCurrencySymbol(acc.currency || appCurrency),
         transactions: accTxs,
       };
     })

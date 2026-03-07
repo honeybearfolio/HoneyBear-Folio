@@ -204,6 +204,7 @@ pub struct ReportSummary {
 pub struct ReportAccountBalance {
     pub name: String,
     pub currency: String,
+    pub currency_symbol: String,
     pub cash_balance: f64,
     pub market_value: f64,
     pub total: f64,
@@ -274,6 +275,7 @@ pub struct ReportTransaction {
 pub struct ReportAccountTransactions {
     pub account_name: String,
     pub currency: String,
+    pub currency_symbol: String,
     pub transactions: Vec<ReportTransaction>,
 }
 

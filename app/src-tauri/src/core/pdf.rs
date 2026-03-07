@@ -319,9 +319,9 @@ fn draw_summary_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &Report
             &[
                 ab.name.clone(),
                 ab.currency.clone(),
-                format_currency(ab.cash_balance, sym),
-                format_currency(ab.market_value, sym),
-                format_currency(ab.total, sym),
+                format_currency(ab.cash_balance, &ab.currency_symbol),
+                format_currency(ab.market_value, &ab.currency_symbol),
+                format_currency(ab.total, &ab.currency_symbol),
             ],
             top,
             i % 2 == 1,
@@ -705,7 +705,6 @@ fn draw_transactions_pages(
     mut page_num: usize,
 ) -> usize {
     let labels = &data.labels;
-    let sym = &data.currency_symbol;
 
     let cash_cols = vec![
         TableColumn { header: labels.date.clone(), width: 22.0, align_right: false },
@@ -763,7 +762,7 @@ fn draw_transactions_pages(
                         tx.date.clone(),
                         truncate(&tx.payee, 25),
                         truncate(&tx.category, 18),
-                        format_currency(tx.amount, sym),
+                        format_currency(tx.amount, &account_txs.currency_symbol),
                         truncate(&tx.notes, 30),
                     ],
                     top,
@@ -801,9 +800,9 @@ fn draw_transactions_pages(
                         tx.date.clone(),
                         tx.ticker.clone(),
                         format!("{:.4}", tx.shares),
-                        format_currency(tx.price_per_share, sym),
-                        format_currency(tx.fee, sym),
-                        format_currency(tx.amount, sym),
+                        format_currency(tx.price_per_share, &account_txs.currency_symbol),
+                        format_currency(tx.fee, &account_txs.currency_symbol),
+                        format_currency(tx.amount, &account_txs.currency_symbol),
                     ],
                     top,
                     i % 2 == 1,
