@@ -117,6 +117,21 @@ fn write_text_right(ctx: &PageCtx, text: &str, right_x: f32, from_top: f32, size
     write_text(ctx, text, right_x - w, from_top, size, bold);
 }
 
+fn write_text_right_color(
+    ctx: &PageCtx,
+    text: &str,
+    right_x: f32,
+    from_top: f32,
+    size: f32,
+    bold: bool,
+    r: f32,
+    g: f32,
+    b: f32,
+) {
+    let w = text_width(text, size);
+    write_text_color(ctx, text, right_x - w, from_top, size, bold, r, g, b);
+}
+
 // ── Shapes ──────────────────────────────────────────────────────────
 
 fn draw_rect(layer: &PdfLayerReference, x: f32, from_top: f32, w: f32, h: f32, r: f32, g: f32, b: f32) {
@@ -150,10 +165,16 @@ fn draw_line(layer: &PdfLayerReference, x1: f32, y1_top: f32, x2: f32, y2_top: f
 
 // ── Header / Footer ────────────────────────────────────────────────
 
-fn draw_header_footer(ctx: &PageCtx, page_num: usize, labels: &ReportLabels) {
+fn draw_header_footer(ctx: &PageCtx, page_num: usize, data: &ReportData) {
+    let labels = &data.labels;
+
     // Header: brand bar
     draw_rect(ctx.layer, 0.0, 0.0, PAGE_W, HEADER_HEIGHT, BRAND_R, BRAND_G, BRAND_B);
     write_text_color(ctx, "HoneyBear Folio", MARGIN_LEFT, 8.5, 9.0, true, 1.0, 1.0, 1.0);
+
+    // Add date range and generation date to the right side of the header
+    let right_text = format!("{} — {} | {}", data.date_range_start, data.date_range_end, data.currency_symbol);
+    write_text_right_color(ctx, &right_text, PAGE_W - MARGIN_RIGHT, 8.5, 7.0, false, 1.0, 1.0, 1.0);
 
     // Footer: thin accent line + page number
     draw_line(ctx.layer, MARGIN_LEFT, PAGE_H - 12.0, MARGIN_LEFT + CONTENT_W, PAGE_H - 12.0, 0.3, 0.85, 0.85, 0.85);
@@ -214,67 +235,22 @@ fn draw_table_row(ctx: &PageCtx, cols: &[TableColumn], values: &[String], from_t
 
 // ── Page factory ────────────────────────────────────────────────────
 
-fn add_page(doc: &PdfDocumentReference, fonts: &PdfFonts, page_num: usize, labels: &ReportLabels) -> PdfLayerReference {
+fn add_page(doc: &PdfDocumentReference, fonts: &PdfFonts, page_num: usize, data: &ReportData) -> PdfLayerReference {
     let (page, layer) = doc.add_page(mm(PAGE_W), mm(PAGE_H), &format!("Page {}", page_num));
     let layer_ref = doc.get_page(page).get_layer(layer);
     let ctx = PageCtx {
         layer: &layer_ref,
         fonts,
     };
-    draw_header_footer(&ctx, page_num, labels);
+    draw_header_footer(&ctx, page_num, data);
     layer_ref
-}
-
-// ── Cover page drawing helpers ──────────────────────────────────────
-
-// Draw the actual content of the cover page onto an already-prepared layer
-// context. This keeps the layout code in one place while allowing the caller to
-// decide whether to allocate a fresh page or reuse the automatically-created
-// first page from `PdfDocument::new`.
-fn draw_cover(ctx: &PageCtx<'_>, data: &ReportData) {
-    // Title
-    let title = "HoneyBear Folio";
-    let tw = text_width(title, 26.0);
-    write_text_color(&ctx, title, (PAGE_W - tw) / 2.0, 110.0, 26.0, true, BRAND_R, BRAND_G, BRAND_B);
-
-    let subtitle = &data.labels.title;
-    let sw = text_width(subtitle, 16.0);
-    write_text(&ctx, subtitle, (PAGE_W - sw) / 2.0, 123.0, 16.0, false);
-
-    // Date range
-    let range = format!("{} — {}", data.date_range_start, data.date_range_end);
-    let rw = text_width(&range, 11.0);
-    write_text_color(&ctx, &range, (PAGE_W - rw) / 2.0, 135.0, 11.0, false, 0.4, 0.4, 0.4);
-
-    // Generation date
-    let gen = &data.generation_date;
-    let gw = text_width(gen, 9.0);
-    write_text_color(&ctx, gen, (PAGE_W - gw) / 2.0, 145.0, 9.0, false, 0.6, 0.6, 0.6);
-
-    // Currency label
-    let cur = format!("Currency: {}", data.currency_symbol);
-    let cw = text_width(&cur, 9.0);
-    write_text_color(&ctx, &cur, (PAGE_W - cw) / 2.0, 153.0, 9.0, false, 0.6, 0.6, 0.6);
-}
-
-// Convenience wrapper that allocates a new page and then invokes `draw_cover`.
-//
-// This helper is currently unused in production because we draw the cover onto
-// the document's initial page, but it may be convenient to keep around for
-// unit tests or future features where an extra cover page is desired.
-#[allow(dead_code)]
-fn draw_cover_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData) {
-    let (page, layer) = doc.add_page(mm(PAGE_W), mm(PAGE_H), "Cover");
-    let layer_ref = doc.get_page(page).get_layer(layer);
-    let ctx = PageCtx { layer: &layer_ref, fonts };
-    draw_cover(&ctx, data);
 }
 
 // ── Financial Summary page ──────────────────────────────────────────
 
-fn draw_summary_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData) {
-    let layer = add_page(doc, fonts, 2, &data.labels);
+fn draw_summary_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData, layer: PdfLayerReference) {
     let ctx = PageCtx { layer: &layer, fonts };
+    draw_header_footer(&ctx, 1, data);
     let sym = &data.currency_symbol;
     let labels = &data.labels;
     let s = &data.summary;
@@ -342,7 +318,7 @@ fn draw_summary_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &Report
 // ── Net Worth Evolution chart ───────────────────────────────────────
 
 fn draw_net_worth_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData) {
-    let layer = add_page(doc, fonts, 3, &data.labels);
+    let layer = add_page(doc, fonts, 2, data);
     let ctx = PageCtx { layer: &layer, fonts };
 
     let mut top = MARGIN_TOP + HEADER_HEIGHT;
@@ -400,7 +376,7 @@ fn draw_net_worth_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &Repo
 // ── Income vs Expenses chart ────────────────────────────────────────
 
 fn draw_income_expenses_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData) {
-    let layer = add_page(doc, fonts, 4, &data.labels);
+    let layer = add_page(doc, fonts, 3, data);
     let ctx = PageCtx { layer: &layer, fonts };
     let labels = &data.labels;
     let sym = &data.currency_symbol;
@@ -495,7 +471,7 @@ fn draw_income_expenses_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data:
 // ── Expense Breakdown page ──────────────────────────────────────────
 
 fn draw_expense_breakdown_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData, page_num: usize) {
-    let layer = add_page(doc, fonts, page_num, &data.labels);
+    let layer = add_page(doc, fonts, page_num, data);
     let ctx = PageCtx { layer: &layer, fonts };
     let labels = &data.labels;
     let sym = &data.currency_symbol;
@@ -555,7 +531,7 @@ fn draw_expense_breakdown_page(doc: &PdfDocumentReference, fonts: &PdfFonts, dat
 // ── Income Breakdown page ───────────────────────────────────────────
 
 fn draw_income_breakdown_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData, page_num: usize) {
-    let layer = add_page(doc, fonts, page_num, &data.labels);
+    let layer = add_page(doc, fonts, page_num, data);
     let ctx = PageCtx { layer: &layer, fonts };
     let labels = &data.labels;
     let sym = &data.currency_symbol;
@@ -598,7 +574,7 @@ fn draw_income_breakdown_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data
 // ── Cash Flow Summary page ──────────────────────────────────────────
 
 fn draw_cash_flow_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &ReportData, page_num: usize) {
-    let layer = add_page(doc, fonts, page_num, &data.labels);
+    let layer = add_page(doc, fonts, page_num, data);
     let ctx = PageCtx { layer: &layer, fonts };
     let labels = &data.labels;
     let sym = &data.currency_symbol;
@@ -650,7 +626,7 @@ fn draw_holdings_page(doc: &PdfDocumentReference, fonts: &PdfFonts, data: &Repor
         _ => return false,
     };
 
-    let layer = add_page(doc, fonts, page_num, &data.labels);
+    let layer = add_page(doc, fonts, page_num, data);
     let ctx = PageCtx { layer: &layer, fonts };
     let labels = &data.labels;
     let sym = &data.currency_symbol;
@@ -740,7 +716,7 @@ fn draw_transactions_pages(
 
     for account_txs in &data.accounts_transactions {
         page_num += 1;
-        let mut layer = add_page(doc, fonts, page_num, labels);
+        let mut layer = add_page(doc, fonts, page_num, data);
         let mut ctx = PageCtx { layer: &layer, fonts };
 
         let mut top = MARGIN_TOP + HEADER_HEIGHT;
@@ -765,7 +741,7 @@ fn draw_transactions_pages(
                 if top > PAGE_H - MARGIN_BOTTOM - FOOTER_HEIGHT - 10.0 {
                     // New page
                     page_num += 1;
-                    layer = add_page(doc, fonts, page_num, labels);
+                    layer = add_page(doc, fonts, page_num, data);
                     ctx = PageCtx { layer: &layer, fonts };
                     top = MARGIN_TOP + HEADER_HEIGHT;
                     top = draw_table_header(&ctx, &cash_cols, top);
@@ -792,7 +768,7 @@ fn draw_transactions_pages(
         if !inv_txs.is_empty() {
             if top > PAGE_H - MARGIN_BOTTOM - FOOTER_HEIGHT - 30.0 {
                 page_num += 1;
-                layer = add_page(doc, fonts, page_num, labels);
+                layer = add_page(doc, fonts, page_num, data);
                 ctx = PageCtx { layer: &layer, fonts };
                 top = MARGIN_TOP + HEADER_HEIGHT;
             }
@@ -804,7 +780,7 @@ fn draw_transactions_pages(
             for (i, tx) in inv_txs.iter().enumerate() {
                 if top > PAGE_H - MARGIN_BOTTOM - FOOTER_HEIGHT - 10.0 {
                     page_num += 1;
-                    layer = add_page(doc, fonts, page_num, labels);
+                    layer = add_page(doc, fonts, page_num, data);
                     ctx = PageCtx { layer: &layer, fonts };
                     top = MARGIN_TOP + HEADER_HEIGHT;
                     top = draw_table_header(&ctx, &inv_cols, top);
@@ -834,10 +810,9 @@ fn draw_transactions_pages(
 
 pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
     // `PdfDocument::new` already allocates a single page; we'll reuse that first
-    // page for the cover to avoid the empty page that was previously appearing
-    // at the start of every report.
+    // page for the first report page (Financial Summary) since we removed the cover.
     let (doc, first_page, first_layer) =
-        PdfDocument::new("HoneyBear Folio Report", mm(PAGE_W), mm(PAGE_H), "Cover");
+        PdfDocument::new("HoneyBear Folio Report", mm(PAGE_W), mm(PAGE_H), "Page 1");
 
     let font_regular = doc
         .add_external_font(std::io::Cursor::new(FONT_REGULAR))
@@ -851,19 +826,13 @@ pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
         bold: font_bold,
     };
 
-    // draw the cover on the automatically-created first page instead of
-    // allocating an extra blank page
-    {
-        let layer_ref = doc.get_page(first_page).get_layer(first_layer);
-        let ctx = PageCtx { layer: &layer_ref, fonts: &fonts };
-        draw_cover(&ctx, data);
-    }
+    let layer_ref = doc.get_page(first_page).get_layer(first_layer);
+    draw_summary_page(&doc, &fonts, data, layer_ref);
 
-    draw_summary_page(&doc, &fonts, data);
     draw_net_worth_page(&doc, &fonts, data);
     draw_income_expenses_page(&doc, &fonts, data);
 
-    let mut next_page: usize = 5;
+    let mut next_page: usize = 4;
     draw_expense_breakdown_page(&doc, &fonts, data, next_page);
     next_page += 1;
     draw_income_breakdown_page(&doc, &fonts, data, next_page);
