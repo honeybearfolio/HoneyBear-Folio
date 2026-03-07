@@ -73,7 +73,6 @@ export default function SettingsView({
   const {
     tagColors,
     setTagColor,
-    removeTagColor,
     resetAll: resetTagColors,
   } = useTagColors();
   const [categories, setCategories] = useState([]);
@@ -570,16 +569,7 @@ export default function SettingsView({
                             aria-label={colorKey}
                           />
                         ))}
-                        {tagColors[cat] && (
-                          <button
-                            type="button"
-                            onClick={() => removeTagColor(cat)}
-                            className="ml-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                            title={t("settings.tag_colors.default")}
-                          >
-                            ✕
-                          </button>
-                        )}
+                        {/* cross reset button removed per user request; default color can still be restored by clearing storage or via reset-all setting */}
                       </div>
                     </div>
                   ))}
