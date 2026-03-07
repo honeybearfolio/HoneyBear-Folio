@@ -1,21 +1,92 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
-import { Upload, FileJson, FileSpreadsheet, FileText } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "../../styles/datepicker.css";
+import {
+  Upload,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
+  FileDown,
+} from "lucide-react";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import { t } from "../../i18n/i18n";
 import "../../styles/Modal.css";
 import "../../styles/ExportModal.css";
-import { formatNumberForExport } from "../../utils/format";
+import { formatNumberForExport, getDatePickerFormat } from "../../utils/format";
 import { useToast } from "../../contexts/toast";
+import { computeReportData } from "../../utils/report";
+import { buildHoldingsFromTransactions } from "../../utils/investments";
 
 export default function ExportModal({ onClose }) {
   const [format, setFormat] = useState("json");
   const [exporting, setExporting] = useState(false);
   // Toast API (safe noop provided by useToast when provider missing)
   const { showToast } = useToast();
+
+  // PDF time range state
+  const [rangeType, setRangeType] = useState("ytd"); // "ytd", "annual", "month", "custom"
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonthYear, setSelectedMonthYear] = useState(new Date().getFullYear());
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(new Date().getMonth());
+  const [customStartDate, setCustomStartDate] = useState(
+    new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
+  );
+  const [customEndDate, setCustomEndDate] = useState(new Date());
+
+  const dateFormat = localStorage.getItem("hb_dateFormat") || "yyyy-MM-dd";
+  const firstDayOfWeek = Number(localStorage.getItem("hb_firstDayOfWeek") || 1);
+
+  // Compute the effective date range for the PDF export
+  const pdfDateRange = useMemo(() => {
+    const now = new Date();
+    let start, end;
+
+    if (rangeType === "annual") {
+      start = new Date(selectedYear, 0, 1);
+      end = selectedYear === now.getFullYear() ? now : new Date(selectedYear, 11, 31);
+    } else if (rangeType === "month") {
+      start = new Date(selectedMonthYear, selectedMonthIndex, 1);
+      end = new Date(selectedMonthYear, selectedMonthIndex + 1, 0); // last day of month
+      if (end > now) end = now;
+    } else if (rangeType === "ytd") {
+      start = new Date(now.getFullYear(), 0, 1);
+      end = now;
+    } else {
+      start = customStartDate;
+      end = customEndDate;
+    }
+
+    const fmt = (d) => d.toISOString().slice(0, 10);
+    return { start: fmt(start), end: fmt(end) };
+  }, [rangeType, selectedYear, selectedMonthYear, selectedMonthIndex, customStartDate, customEndDate]);
+
+  // Available years (current year + 5 previous)
+  const availableYears = useMemo(() => {
+    const y = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, i) => y - i);
+  }, []);
+
+  // Month names
+  const monthNames = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) =>
+      new Date(2000, i, 1).toLocaleDateString(undefined, { month: "long" }),
+    );
+  }, []);
+
+  // Available months for the selected year (cap at current month if current year)
+  const availableMonths = useMemo(() => {
+    const now = new Date();
+    const maxMonth = selectedMonthYear === now.getFullYear() ? now.getMonth() : 11;
+    return Array.from({ length: maxMonth + 1 }, (_, i) => ({
+      index: i,
+      label: monthNames[i],
+    }));
+  }, [selectedMonthYear, monthNames]);
 
   const handleExport = async () => {
     try {
@@ -93,6 +164,10 @@ export default function ExportModal({ onClose }) {
       } else if (format === "xlsx") {
         defaultPath += ".xlsx";
         filters = [{ name: t("export.format.xlsx"), extensions: ["xlsx"] }];
+      } else if (format === "pdf") {
+        defaultPath = `honeybear_report_${new Date().toISOString().split("T")[0]}`;
+        defaultPath += ".pdf";
+        filters = [{ name: t("export.format.pdf"), extensions: ["pdf"] }];
       }
 
       // 3. Open Save Dialog
@@ -140,6 +215,107 @@ export default function ExportModal({ onClose }) {
         ];
 
         await invoke("write_xlsx", { filePath, sheets });
+      } else if (format === "pdf") {
+        // Fetch exchange rates
+        const exchangeRates = {};
+        const appCurrency = localStorage.getItem("hb_currency") || "USD";
+
+        try {
+          const allRates = await invoke("get_all_exchange_rates");
+          if (allRates && typeof allRates === "object") {
+            Object.entries(allRates).forEach(([pair, rate]) => {
+              exchangeRates[pair] = {
+                map: { [new Date().toISOString().slice(0, 10)]: rate },
+                list: [
+                  {
+                    date: new Date().toISOString().slice(0, 10),
+                    price: rate,
+                  },
+                ],
+              };
+            });
+          }
+        } catch {
+          // Exchange rates are optional — continue without them
+        }
+
+        // Fetch stock quotes if user has investments
+        let quotes = [];
+        try {
+          const { currentHoldings } =
+            buildHoldingsFromTransactions(transactions);
+          if (currentHoldings.length > 0) {
+            const tickers = [
+              ...new Set(currentHoldings.map((h) => h.ticker)),
+            ];
+            quotes = await invoke("get_stock_quotes", { tickers });
+          }
+        } catch {
+          // Quotes are optional
+        }
+
+        const reportLabels = {
+          title: t("report.title"),
+          financial_summary: t("report.financial_summary"),
+          net_worth_evolution: t("report.net_worth_evolution"),
+          income_vs_expenses: t("report.income_vs_expenses"),
+          expense_breakdown: t("report.expense_breakdown"),
+          income_breakdown: t("report.income_breakdown"),
+          cash_flow_summary: t("report.cash_flow_summary"),
+          investment_holdings: t("report.investment_holdings"),
+          transactions_title: t("report.transactions"),
+          net_worth: t("report.net_worth"),
+          total_income: t("report.total_income"),
+          total_expenses: t("report.total_expenses"),
+          net_savings: t("report.net_savings"),
+          savings_rate: t("report.savings_rate"),
+          accounts: t("settings.accounts"),
+          account: t("report.account"),
+          currency: t("report.currency"),
+          cash_balance: t("report.cash_balance"),
+          market_value: t("report.market_value"),
+          total: t("report.total"),
+          category: t("report.category"),
+          amount: t("report.amount"),
+          percentage: t("report.percentage"),
+          month: t("report.month"),
+          income: t("report.income"),
+          expenses: t("report.expenses"),
+          net: t("report.net"),
+          investments: t("report.investments"),
+          surplus: t("report.surplus"),
+          deficit: t("report.deficit"),
+          ticker: t("report.ticker"),
+          shares: t("report.shares"),
+          price: t("report.price"),
+          value: t("report.value"),
+          cost_basis: t("report.cost_basis"),
+          roi: t("report.roi"),
+          date: t("report.date"),
+          payee: t("report.payee"),
+          notes: t("report.notes"),
+          fee: t("report.fee"),
+          page: t("report.page"),
+          no_transactions: t("report.no_transactions"),
+          portfolio_total: t("report.portfolio_total"),
+          overall_roi: t("report.overall_roi"),
+        };
+
+        const reportData = computeReportData({
+          accounts,
+          transactions,
+          startDate: pdfDateRange.start,
+          endDate: pdfDateRange.end,
+          appCurrency,
+          exchangeRates,
+          quotes,
+          labels: reportLabels,
+        });
+
+        await invoke("generate_pdf_report", {
+          filePath,
+          data: reportData,
+        });
       } else {
         await writeTextFile(filePath, content);
       }
@@ -232,7 +408,136 @@ export default function ExportModal({ onClose }) {
               {t("export.format.xlsx")}
             </span>
           </button>
+          <button
+            onClick={() => setFormat("pdf")}
+            className={`format-button ${
+              format === "pdf"
+                ? "format-button-active"
+                : "format-button-inactive"
+            }`}
+          >
+            <FileDown className="w-6 h-6 mb-2" />
+            <span className="text-xs font-medium">
+              {t("export.format.pdf")}
+            </span>
+          </button>
         </div>
+
+        {/* PDF Time Range Selector */}
+        {format === "pdf" && (
+          <div className="pdf-range-section">
+            <label className="modal-label">
+              {t("export.pdf.time_range")}
+            </label>
+
+            {/* Range type dropdown */}
+            <select
+              value={rangeType}
+              onChange={(e) => setRangeType(e.target.value)}
+              className="pdf-range-select"
+            >
+              <option value="ytd">{t("export.pdf.ytd")}</option>
+              <option value="annual">{t("export.pdf.annual")}</option>
+              <option value="month">{t("export.pdf.month")}</option>
+              <option value="custom">{t("export.pdf.custom")}</option>
+            </select>
+
+            {/* Annual: year picker */}
+            {rangeType === "annual" && (
+              <div className="pdf-sub-select">
+                <label className="pdf-sub-label">{t("export.pdf.select_year")}</label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="pdf-range-select"
+                >
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Monthly: year + month pickers */}
+            {rangeType === "month" && (
+              <div className="pdf-sub-select">
+                <label className="pdf-sub-label">{t("export.pdf.select_year")}</label>
+                <select
+                  value={selectedMonthYear}
+                  onChange={(e) => {
+                    const yr = Number(e.target.value);
+                    setSelectedMonthYear(yr);
+                    // Reset month if out of range for new year
+                    const now = new Date();
+                    if (yr === now.getFullYear() && selectedMonthIndex > now.getMonth()) {
+                      setSelectedMonthIndex(now.getMonth());
+                    }
+                  }}
+                  className="pdf-range-select"
+                >
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>{yr}</option>
+                  ))}
+                </select>
+                <label className="pdf-sub-label mt-2">{t("export.pdf.select_month")}</label>
+                <select
+                  value={selectedMonthIndex}
+                  onChange={(e) => setSelectedMonthIndex(Number(e.target.value))}
+                  className="pdf-range-select"
+                >
+                  {availableMonths.map((m) => (
+                    <option key={m.index} value={m.index}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Custom: date pickers */}
+            {rangeType === "custom" && (
+              <div className="pdf-sub-select">
+                <label className="pdf-sub-label">{t("export.pdf.start_date")}</label>
+                <DatePicker
+                  selected={customStartDate}
+                  onChange={(date) => {
+                    setCustomStartDate(date);
+                    if (date > customEndDate) setCustomEndDate(date);
+                  }}
+                  selectsStart
+                  startDate={customStartDate}
+                  endDate={customEndDate}
+                  maxDate={new Date()}
+                  showPopperArrow={false}
+                  portalId="datepicker-portal"
+                  popperPlacement="bottom-start"
+                  dateFormat={getDatePickerFormat(dateFormat)}
+                  calendarStartDay={firstDayOfWeek}
+                  className="pdf-date-input"
+                />
+                <label className="pdf-sub-label mt-2">{t("export.pdf.end_date")}</label>
+                <DatePicker
+                  selected={customEndDate}
+                  onChange={(date) => setCustomEndDate(date)}
+                  selectsEnd
+                  startDate={customStartDate}
+                  endDate={customEndDate}
+                  minDate={customStartDate}
+                  maxDate={new Date()}
+                  showPopperArrow={false}
+                  portalId="datepicker-portal"
+                  popperPlacement="bottom-start"
+                  dateFormat={getDatePickerFormat(dateFormat)}
+                  calendarStartDay={firstDayOfWeek}
+                  className="pdf-date-input"
+                />
+              </div>
+            )}
+
+            {/* Date range preview */}
+            <div className="pdf-range-preview">
+              {pdfDateRange.start} — {pdfDateRange.end}
+            </div>
+          </div>
+        )}
       </ModalBody>
       <ModalFooter>
         <button
@@ -249,7 +554,9 @@ export default function ExportModal({ onClose }) {
         >
           <span className="text-white">
             {exporting
-              ? t("export.exporting")
+              ? format === "pdf"
+                ? t("export.pdf.generating")
+                : t("export.exporting")
               : t("export.select_location_export")}
           </span>
         </button>
