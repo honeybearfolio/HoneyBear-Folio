@@ -34,12 +34,16 @@
   }
 
   /* Narrow select triggers within settings */
+  .settings-select {
+    @apply w-[20rem] max-w-full;
+  }
+
   .settings-select .custom-select-trigger {
-    @apply w-[18rem] max-w-full;
+    @apply w-full;
   }
 
   @media (max-width: 640px) {
-    .settings-select .custom-select-trigger {
+    .settings-select {
       @apply w-full;
     }
   }

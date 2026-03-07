@@ -308,7 +308,7 @@ export default function SettingsView({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="bg-white dark:bg-slate-700 text-slate-700 dark:text-white text-sm py-1 px-2 rounded w-full sm:w-[20rem] max-w-full text-left overflow-hidden truncate border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                    className="bg-white dark:bg-slate-700 text-slate-700 dark:text-white text-sm py-1 px-2 rounded w-full max-w-full text-left overflow-hidden truncate border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
                     onClick={handleSelectDb}
                     data-tooltip={dbPath || t("settings.select_db_file")}
                     aria-label={dbPath || t("settings.select_db_file")}
