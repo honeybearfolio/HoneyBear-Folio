@@ -112,11 +112,9 @@ export default function InvestmentDashboard() {
           display: false,
         },
         tooltip: {
-          backgroundColor: isDark
-            ? "rgba(15, 23, 42, 0.9)"
-            : "rgba(255, 255, 255, 0.9)",
-          titleColor: isDark ? "rgb(255, 255, 255)" : "rgb(15, 23, 42)",
-          bodyColor: isDark ? "rgb(255, 255, 255)" : "rgb(15, 23, 42)",
+          backgroundColor: chartColors.tooltipBg,
+          titleColor: chartColors.tooltipText,
+          bodyColor: chartColors.tooltipText,
           padding: 12,
           cornerRadius: 8,
           titleFont: { family: "Inter", size: 13 },
@@ -138,9 +136,7 @@ export default function InvestmentDashboard() {
             labelColor: function (context) {
               const dataset = context.dataset;
               const index = context.dataIndex;
-              const tooltipBg = isDark
-                ? "rgba(15, 23, 42, 0.9)"
-                : "rgba(255, 255, 255, 0.9)";
+              const tooltipBg = chartColors.tooltipBg;
               const bg =
                 Array.isArray(dataset.backgroundColor) &&
                 dataset.backgroundColor[index] !== undefined

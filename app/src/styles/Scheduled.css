@@ -131,3 +131,118 @@
   border-top: none !important;
   border-bottom: none !important;
 }
+
+/* ─── High-contrast overrides for scheduled ghost rows ─── */
+
+.high-contrast .scheduled-ghost-row {
+  opacity: 1;
+}
+
+.high-contrast .scheduled-ghost-row {
+  border-left: 4px solid rgb(251, 191, 36);
+}
+
+.high-contrast.dark .scheduled-ghost-row {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(251, 191, 36, 0.08) 8px,
+    rgba(251, 191, 36, 0.08) 16px
+  );
+  border-left: 4px solid rgba(251, 191, 36, 0.85);
+}
+
+.high-contrast:not(.dark) .scheduled-ghost-row {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(251, 191, 36, 0.06) 8px,
+    rgba(251, 191, 36, 0.06) 16px
+  );
+  border-left: 4px solid rgb(217, 160, 15);
+}
+
+/* Badges */
+.high-contrast .scheduled-ghost-badge-missed {
+  border-width: 2px;
+}
+
+.high-contrast.dark .scheduled-ghost-badge-missed {
+  background-color: rgba(239, 68, 68, 0.25);
+  color: rgb(254, 202, 202);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.high-contrast:not(.dark) .scheduled-ghost-badge-missed {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: rgb(185, 28, 28);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.high-contrast .scheduled-ghost-badge-upcoming {
+  border-width: 2px;
+}
+
+.high-contrast.dark .scheduled-ghost-badge-upcoming {
+  background-color: rgba(59, 130, 246, 0.25);
+  color: rgb(191, 219, 254);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.high-contrast:not(.dark) .scheduled-ghost-badge-upcoming {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: rgb(29, 78, 216);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Action buttons */
+.high-contrast .scheduled-ghost-action-apply {
+  color: rgb(22, 163, 74);
+}
+
+.high-contrast.dark .scheduled-ghost-action-apply {
+  color: rgb(134, 239, 172);
+}
+
+.high-contrast .scheduled-ghost-action-schedule {
+  color: rgb(37, 99, 235);
+}
+
+.high-contrast.dark .scheduled-ghost-action-schedule {
+  color: rgb(147, 197, 253);
+}
+
+/* Scheduled row text — override the faded inline classes */
+.high-contrast .scheduled-ghost-row td {
+  opacity: 1;
+}
+
+.high-contrast.dark .scheduled-ghost-row .text-slate-500,
+.high-contrast.dark .scheduled-ghost-row .dark\:text-slate-400 {
+  color: rgb(210, 205, 200) !important;
+}
+
+.high-contrast.dark .scheduled-ghost-row .text-emerald-500\/60,
+.high-contrast.dark .scheduled-ghost-row .dark\:text-emerald-400\/60 {
+  color: rgb(52, 211, 153) !important;
+}
+
+.high-contrast.dark .scheduled-ghost-row .text-rose-500\/60,
+.high-contrast.dark .scheduled-ghost-row .dark\:text-rose-400\/60 {
+  color: rgb(251, 113, 133) !important;
+}
+
+.high-contrast:not(.dark) .scheduled-ghost-row .text-slate-500,
+.high-contrast:not(.dark) .scheduled-ghost-row .text-slate-400 {
+  color: rgb(68, 64, 60) !important;
+}
+
+.high-contrast:not(.dark) .scheduled-ghost-row .text-emerald-500\/60 {
+  color: rgb(5, 150, 105) !important;
+}
+
+.high-contrast:not(.dark) .scheduled-ghost-row .text-rose-500\/60 {
+  color: rgb(225, 29, 72) !important;
+}

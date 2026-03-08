@@ -1,8 +1,10 @@
 import { useMemo } from "react";
 import useIsDark from "./useIsDark";
+import useIsHighContrast from "./useIsHighContrast";
 
 export default function useChartColors() {
   const isDark = useIsDark();
+  const isHighContrast = useIsHighContrast();
 
   const colors = useMemo(() => {
     // Read computed styles from the root element to get CSS variables
@@ -21,10 +23,21 @@ export default function useChartColors() {
     const slate600 = getVal("--color-slate-600") || "#615a57";
     const slate800 = getVal("--color-slate-800") || "#474240";
     const slate900 = getVal("--color-slate-900") || "#3e3a38";
+    const slate950 = getVal("--color-slate-950") || "#211f1e";
 
     // Standard financial colors (hardcoded as requested)
     const emerald500 = "#10b981";
     const rose500 = "#f43f5e";
+
+    // Tooltip colors for Chart.js (avoid hardcoded rgba across components)
+    const tooltipBg = isDark
+      ? isHighContrast
+        ? "rgba(0, 0, 0, 0.95)"
+        : "rgba(15, 23, 42, 0.9)"
+      : isHighContrast
+        ? "rgba(255, 255, 255, 0.98)"
+        : "rgba(255, 255, 255, 0.9)";
+    const tooltipText = isDark ? "#ffffff" : slate950;
 
     return {
       primary: brand500,
@@ -36,6 +49,8 @@ export default function useChartColors() {
       text: isDark ? slate400 : slate600,
       grid: isDark ? slate800 : slate200,
       background: isDark ? slate900 : slate50,
+      tooltipBg,
+      tooltipText,
       palette: [
         brand500,
         slate600,
@@ -47,7 +62,7 @@ export default function useChartColors() {
         slate500,
       ],
     };
-  }, [isDark]);
+  }, [isDark, isHighContrast]);
 
   return colors;
 }

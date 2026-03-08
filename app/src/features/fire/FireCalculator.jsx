@@ -990,23 +990,15 @@ export default function FireCalculator() {
                       },
                     },
                     tooltip: {
-                      backgroundColor: isDark
-                        ? "rgba(15, 23, 42, 0.9)"
-                        : "rgba(255, 255, 255, 0.9)",
-                      titleColor: isDark
-                        ? "rgb(255, 255, 255)"
-                        : "rgb(15, 23, 42)",
-                      bodyColor: isDark
-                        ? "rgb(255, 255, 255)"
-                        : "rgb(15, 23, 42)",
+                      backgroundColor: chartColors.tooltipBg,
+                      titleColor: chartColors.tooltipText,
+                      bodyColor: chartColors.tooltipText,
                       padding: 12,
                       cornerRadius: 8,
                       callbacks: {
                         labelColor: function (context) {
                           const dataset = context.dataset;
-                          const tooltipBg = isDark
-                            ? "rgba(15, 23, 42, 0.9)"
-                            : "rgba(255, 255, 255, 0.9)";
+                          const tooltipBg = chartColors.tooltipBg;
 
                           // Always use the tooltip background as the fill color for the label box
                           // This ensures a "hollow" look matching the line style, avoiding issues

@@ -41,3 +41,89 @@
 }
 
 @variant dark (&:where(.dark, .dark *));
+
+/*
+ * High-contrast dark theme overrides.
+ * Activated when both .dark and .high-contrast are on <html>.
+ * Provides WCAG AAA (≥ 7:1) text contrast against backgrounds.
+ */
+.dark.high-contrast {
+  --color-brand-50: #fffaf0;
+  --color-brand-100: #fff2d9;
+  --color-brand-200: #ffe4aa;
+  --color-brand-300: #ffd26e;
+  --color-brand-400: #ffc23d;
+  --color-brand-500: #ffb420;
+  --color-brand-600: #f09500;
+  --color-brand-700: #d07800;
+  --color-brand-800: #aa5500;
+  --color-brand-900: #883800;
+  --color-brand-950: #552200;
+
+  --color-slate-50: #ffffff;
+  --color-slate-100: #f5f4f3;
+  --color-slate-200: #e8e6e5;
+  --color-slate-300: #d0cdcb;
+  --color-slate-400: #bab5b1;
+  --color-slate-500: #918a86;
+  --color-slate-600: #7a7370;
+  --color-slate-700: #6b6460;
+  --color-slate-800: #1f1c1a;
+  --color-slate-900: #111010;
+  --color-slate-950: #080807;
+
+  --color-bear-50: #ffffff;
+  --color-bear-100: #f5f4f3;
+  --color-bear-200: #e8e6e5;
+  --color-bear-300: #d0cdcb;
+  --color-bear-400: #bab5b1;
+  --color-bear-500: #918a86;
+  --color-bear-600: #7a7370;
+  --color-bear-700: #6b6460;
+  --color-bear-800: #1f1c1a;
+  --color-bear-900: #111010;
+  --color-bear-950: #080807;
+}
+
+/*
+ * High-contrast light theme overrides.
+ * Activated when both .light (or no .dark) and .high-contrast are on <html>.
+ * Provides WCAG AAA (≥ 7:1) text contrast against backgrounds.
+ */
+.high-contrast:not(.dark) {
+  --color-brand-50: #fff7e0;
+  --color-brand-100: #ffedbe;
+  --color-brand-200: #ffdb82;
+  --color-brand-300: #ffc440;
+  --color-brand-400: #e89e00;
+  --color-brand-500: #c47a00;
+  --color-brand-600: #a46200;
+  --color-brand-700: #854c00;
+  --color-brand-800: #6b3a00;
+  --color-brand-900: #522c00;
+  --color-brand-950: #331a00;
+
+  --color-slate-50: #ffffff;
+  --color-slate-100: #f7f6f6;
+  --color-slate-200: #d6d3d1;
+  --color-slate-300: #a8a29e;
+  --color-slate-400: #78716c;
+  --color-slate-500: #57534e;
+  --color-slate-600: #44403c;
+  --color-slate-700: #352f2b;
+  --color-slate-800: #231f1c;
+  --color-slate-900: #171412;
+  --color-slate-950: #0c0a09;
+
+  --color-bear-50: #ffffff;
+  --color-bear-100: #f7f6f6;
+  --color-bear-200: #d6d3d1;
+  --color-bear-300: #a8a29e;
+  --color-bear-400: #78716c;
+  --color-bear-500: #57534e;
+  --color-bear-600: #44403c;
+  --color-bear-700: #352f2b;
+  --color-bear-800: #231f1c;
+  --color-bear-900: #171412;
+  --color-bear-950: #0c0a09;
+}

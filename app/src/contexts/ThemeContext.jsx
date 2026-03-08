@@ -18,12 +18,19 @@ export function ThemeProvider({ children }) {
     const removeOldTheme = () => {
       root.classList.remove("dark");
       root.classList.remove("light");
+      root.classList.remove("high-contrast");
     };
 
     const applyTheme = (themeToApply) => {
       removeOldTheme();
       if (themeToApply === "dark") {
         root.classList.add("dark");
+      } else if (themeToApply === "high-contrast-dark") {
+        root.classList.add("dark");
+        root.classList.add("high-contrast");
+      } else if (themeToApply === "high-contrast-light") {
+        root.classList.add("light");
+        root.classList.add("high-contrast");
       } else if (themeToApply === "light") {
         root.classList.add("light"); // Optional, usually default
       }
