@@ -3,7 +3,7 @@
     { "title": "## 🚀 Features", "labels": ["feature"] },
     { "title": "## ✨ Enhancements", "labels": ["enhancement"] },
     { "title": "## 🐛 Fixes", "labels": ["fix", "bug"] },
-    { "title": "## 📚 Docs", "labels": ["docs"] },
+    { "title": "## 📚 Docs", "labels": ["docs", "documentation"] },
     { "title": "## 🧰 Maintenance", "labels": ["chore", "ci", "refactor", "infra", "deployment", "maintainability"] },
     { "title": "## 🔒 Security", "labels": ["security"] }
   ],
