@@ -24,6 +24,8 @@ import {
   CalendarClock,
   CalendarCheck,
   SkipForward,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   useFormatNumber,
@@ -96,6 +98,13 @@ export default function AccountDetails({ account, onUpdate }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [accountMenuOpen]);
 
+  useEffect(() => {
+    if (isAdding) {
+      const target = account.id === "all" ? addTargetAccount : account;
+      setSelectedCurrency(target?.currency || appCurrency || "USD");
+    }
+  }, [isAdding, account, addTargetAccount, appCurrency]);
+
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [payee, setPayee] = useState("");
@@ -103,7 +112,6 @@ export default function AccountDetails({ account, onUpdate }) {
   const [notes, setNotes] = useState("");
   const [amount, setAmount] = useState("");
   const [transactionType, setTransactionType] = useState("cash");
-  const [useCustomCurrency, setUseCustomCurrency] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(
     () => localStorage.getItem("hb_currency") || "USD",
   );
@@ -566,7 +574,7 @@ export default function AccountDetails({ account, onUpdate }) {
             pricePerShare: parseNumber(pricePerShare),
             fee: parseNumber(fee) || 0.0,
             isBuy,
-            currency: useCustomCurrency ? selectedCurrency : null,
+            currency: selectedCurrency,
             payee: isBuy ? t("transaction.buy") : t("transaction.sell"),
             notes: isBuy
               ? t("transaction.notes.bought_shares", {
@@ -585,7 +593,6 @@ export default function AccountDetails({ account, onUpdate }) {
         setShares("");
         setPricePerShare("");
         setFee("");
-        setUseCustomCurrency(false);
         setSelectedCurrency(localStorage.getItem("hb_currency") || "USD");
       } else {
         await invoke("create_transaction", {
@@ -600,7 +607,7 @@ export default function AccountDetails({ account, onUpdate }) {
             shares: null,
             pricePerShare: null,
             fee: null,
-            currency: useCustomCurrency ? selectedCurrency : null,
+            currency: selectedCurrency,
           },
         });
 
@@ -608,7 +615,6 @@ export default function AccountDetails({ account, onUpdate }) {
         setCategory("");
         setNotes("");
         setAmount("");
-        setUseCustomCurrency(false);
         setSelectedCurrency(localStorage.getItem("hb_currency") || "USD");
       }
 
@@ -1044,12 +1050,10 @@ export default function AccountDetails({ account, onUpdate }) {
 
       {/* Add Transaction Form */}
       {isAdding && (
-        <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 py-4 px-4 lg:px-6 rounded-2xl border-2 border-brand-200 dark:border-brand-800 shadow-xl mb-8 animate-slide-in">
-          <div className="flex items-start justify-between mb-6">
-            <h3 className="text-lg font-bold mb-0 text-slate-900 dark:text-slate-100 flex items-center gap-3">
-              <div className="bg-brand-100 dark:bg-brand-900/30 p-2.5 rounded-xl">
-                <Plus className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-              </div>
+        <div className="form-card animate-slide-in">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold mb-0 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Plus className="w-4 h-4 text-brand-500" />
               {t("account.new_transaction")}
               {account.id === "all" && effectiveAddTarget && (
                 <span className="ml-3 text-sm text-slate-500 dark:text-slate-400">
@@ -1062,14 +1066,14 @@ export default function AccountDetails({ account, onUpdate }) {
             </h3>
 
             <div className="ml-4">
-              <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg flex">
+              <div className="toggle-group">
                 <button
                   type="button"
                   onClick={() => setTransactionType("cash")}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  className={`toggle-group-btn ${
                     transactionType === "cash"
-                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                      ? "toggle-group-btn-active"
+                      : ""
                   }`}
                 >
                   {t("dashboard.assets.cash")}
@@ -1077,10 +1081,10 @@ export default function AccountDetails({ account, onUpdate }) {
                 <button
                   type="button"
                   onClick={() => setTransactionType("investment")}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                  className={`toggle-group-btn flex items-center gap-1.5 ${
                     transactionType === "investment"
-                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                      ? "toggle-group-btn-active"
+                      : ""
                   }`}
                 >
                   {t("transaction.type.investment")}
@@ -1092,43 +1096,13 @@ export default function AccountDetails({ account, onUpdate }) {
           {transactionType === "investment" ? (
             <form
               onSubmit={handleAddTransaction}
-              className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"
+              className="space-y-4"
             >
-              <div className="md:col-span-12 mb-2 flex items-center justify-between">
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="txType"
-                      checked={isBuy}
-                      onChange={() => setIsBuy(true)}
-                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
-                    />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {t("transaction.type.buy")}
-                    </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="form-label">
+                    {t("account.field.date")}
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="txType"
-                      checked={!isBuy}
-                      onChange={() => setIsBuy(false)}
-                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
-                    />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {t("transaction.type.sell")}
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                  {t("account.field.date")}
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
                   <DatePicker
                     selected={date ? new Date(date) : null}
                     onChange={(date) =>
@@ -1139,20 +1113,51 @@ export default function AccountDetails({ account, onUpdate }) {
                     shouldCloseOnSelect={false}
                     required
                     portalId="datepicker-portal"
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                    className="form-input"
                   />
                 </div>
-              </div>
 
-              <div className="md:col-span-2 relative">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                <div>
+                  <label className="form-label">
+                    {t("scheduled.field.operation")}
+                  </label>
+                  <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setIsBuy(true)}
+                      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                        isBuy
+                          ? "bg-emerald-500 text-white shadow-sm"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      <ArrowDownLeft size={13} />
+                      {t("transaction.type.buy")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsBuy(false)}
+                      className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                        !isBuy
+                          ? "bg-rose-500 text-white shadow-sm"
+                          : "text-slate-500 dark:text-slate-400"
+                      }`}
+                    >
+                      <ArrowUpRight size={13} />
+                      {t("transaction.type.sell")}
+                    </button>
+                  </div>
+                </div>
+
+              <div className="relative">
+                <label className="form-label">
                   {t("import.field.ticker")}
                 </label>
                 <input
                   type="text"
                   required
                   placeholder={"AAPL"}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all uppercase"
+                  className="form-input uppercase"
                   value={ticker}
                   onChange={(e) => {
                     const val = e.target.value.toUpperCase();
@@ -1177,12 +1182,7 @@ export default function AccountDetails({ account, onUpdate }) {
                           setTicker(suggestion.symbol);
                           setShowTickerSuggestions(false);
                           if (suggestion.currency) {
-                            if (suggestion.currency !== appCurrency) {
-                              setUseCustomCurrency(true);
-                              setSelectedCurrency(suggestion.currency);
-                            } else {
-                              setUseCustomCurrency(false);
-                            }
+                            setSelectedCurrency(suggestion.currency || appCurrency || "USD");
                           }
                         }}
                       >
@@ -1208,14 +1208,14 @@ export default function AccountDetails({ account, onUpdate }) {
                 )}
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              <div>
+                <label className="form-label">
                   {t("import.field.shares")}
                 </label>
                 <NumberInput
                   value={shares}
                   onChange={(num) => handleSharesChange(num)}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                  className="form-input"
                   placeholder={formatNumber(0, {
                     maximumFractionDigits: 6,
                     minimumFractionDigits: 0,
@@ -1225,82 +1225,69 @@ export default function AccountDetails({ account, onUpdate }) {
                   useGrouping={false}
                 />
               </div>
+              </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div>
+                <label className="form-label">
                   {t("account.field.price_per_share")}
                 </label>
-                <div className="relative">
-                  <NumberInput
-                    value={pricePerShare}
-                    onChange={(num) => handlePricePerShareChange(num)}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                    placeholder={formatNumber(0, {
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 2,
-                    })}
-                    maximumFractionDigits={4}
-                    minimumFractionDigits={2}
-                    useGrouping={false}
-                  />
-                </div>
+                <NumberInput
+                  value={pricePerShare}
+                  onChange={(num) => handlePricePerShareChange(num)}
+                  className="form-input"
+                  placeholder={formatNumber(0, {
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2,
+                  })}
+                  maximumFractionDigits={4}
+                  minimumFractionDigits={2}
+                  useGrouping={false}
+                />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              <div>
+                <label className="form-label">
                   {t("import.field.fee")}
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    step="0.01"
-                    placeholder={formatNumber(0, {
-                      maximumFractionDigits: 2,
-                      minimumFractionDigits: 2,
-                    })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
-                    value={fee}
-                    onChange={(e) => setFee(e.target.value)}
-                  />
-                </div>
+                <NumberInput
+                  value={fee}
+                  onChange={(val) => setFee(val)}
+                  className="form-input"
+                  placeholder={formatNumber(0, {
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2,
+                  })}
+                />
               </div>
 
-              <div className="md:col-span-12 flex items-center justify-between mt-2">
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={useCustomCurrency}
-                      onChange={(e) => setUseCustomCurrency(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+              <div>
+                <label className="form-label">
+                  {t("import.field.currency")}
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <CustomSelect
+                      options={CURRENCIES.map((c) => ({
+                        value: c.code,
+                        label: `${c.code} - ${c.name}`,
+                      }))}
+                      value={selectedCurrency}
+                      onChange={async (val) => {
+                        setSelectedCurrency(val);
+                        if (val) await checkAndPrompt(val);
+                      }}
+                      placeholder="Select currency"
                     />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Use different currency
-                    </span>
-                  </label>
-
-                  {useCustomCurrency && (
-                    <div className="w-64">
-                      <CustomSelect
-                        options={CURRENCIES.map((c) => ({
-                          value: c.code,
-                          label: `${c.code} - ${c.name}`,
-                        }))}
-                        value={selectedCurrency}
-                        onChange={async (val) => {
-                          setSelectedCurrency(val);
-                          if (val) await checkAndPrompt(val);
-                        }}
-                        placeholder="Select currency"
-                      />
-                    </div>
-                  )}
+                  </div>
                 </div>
+              </div>
+              </div>
 
+              <div className="flex items-center justify-end gap-3">
                 <button
                   type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5"
+                  className="btn-primary"
                 >
                   <Check className="w-4 h-4" />
                   {t("account.save_transaction")}
@@ -1310,14 +1297,13 @@ export default function AccountDetails({ account, onUpdate }) {
           ) : (
             <form
               onSubmit={handleAddTransaction}
-              className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"
+              className="space-y-4"
             >
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {t("account.field.date")}
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="form-label">
+                    {t("account.field.date")}
+                  </label>
                   <DatePicker
                     selected={date ? new Date(date) : null}
                     onChange={(date) =>
@@ -1328,39 +1314,33 @@ export default function AccountDetails({ account, onUpdate }) {
                     shouldCloseOnSelect={false}
                     required
                     portalId="datepicker-portal"
-                    className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all hover:border-slate-300 dark:hover:border-slate-600"
+                    className="form-input"
                   />
                 </div>
-              </div>
 
-              <div className="md:col-span-3">
-                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {t("import.field.payee")}
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+                <div>
+                  <label className="form-label">
+                    {t("import.field.payee")}
+                  </label>
                   <AutocompleteInput
                     suggestions={payeeSuggestions}
                     placeholder={t("account.placeholder.payee")}
-                    className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all hover:border-slate-300 dark:hover:border-slate-600"
+                    className="form-input"
                     value={payee}
                     onChange={setPayee}
                   />
                 </div>
-              </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {t("import.field.category")}
-                </label>
-                <div className="relative">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
+                <div>
+                  <label className="form-label">
+                    {t("import.field.category")}
+                  </label>
                   <AutocompleteInput
                     suggestions={categorySuggestions}
                     placeholder={t("import.field.category")}
-                    className={`w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all hover:border-slate-300 dark:hover:border-slate-600 ${
+                    className={`form-input ${
                       availableAccounts?.some((a) => a.name === payee)
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                        ? "!bg-slate-100 dark:!bg-slate-800 !text-slate-500 dark:!text-slate-400"
                         : ""
                     }`}
                     value={category}
@@ -1368,29 +1348,26 @@ export default function AccountDetails({ account, onUpdate }) {
                     disabled={availableAccounts?.some((a) => a.name === payee)}
                   />
                 </div>
-              </div>
 
-              <div className="md:col-span-3">
-                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {t("import.field.notes")}
-                </label>
-                <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <div>
+                  <label className="form-label">
+                    {t("import.field.notes")}
+                  </label>
                   <input
                     type="text"
                     placeholder={t("account.notes_placeholder")}
-                    className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all hover:border-slate-300 dark:hover:border-slate-600"
+                    className="form-input"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {t("import.field.amount")}
-                </label>
-                <div className="relative">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="form-label">
+                    {t("import.field.amount")}
+                  </label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -1400,29 +1377,18 @@ export default function AccountDetails({ account, onUpdate }) {
                       maximumFractionDigits: 2,
                       minimumFractionDigits: 2,
                     })}
-                    className="w-full px-3 py-2.5 text-sm border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold hover:border-slate-300 dark:hover:border-slate-600"
+                    className="form-input font-semibold"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                   />
                 </div>
-              </div>
 
-              <div className="md:col-span-12 flex items-center justify-between mt-2">
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={useCustomCurrency}
-                      onChange={(e) => setUseCustomCurrency(e.target.checked)}
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
-                    />
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Use different currency
-                    </span>
+                <div>
+                  <label className="form-label">
+                    {t("import.field.currency")}
                   </label>
-
-                  {useCustomCurrency && (
-                    <div className="w-64">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
                       <CustomSelect
                         options={CURRENCIES.map((c) => ({
                           value: c.code,
@@ -1436,17 +1402,17 @@ export default function AccountDetails({ account, onUpdate }) {
                         placeholder="Select currency"
                       />
                     </div>
-                  )}
+                  </div>
                 </div>
+              </div>
 
+              <div className="flex items-center justify-end gap-3">
                 <button
                   type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5"
+                  className="btn-primary"
                 >
                   <Check className="w-4 h-4" />
-                  <span className="text-white">
-                    {t("account.save_transaction")}
-                  </span>
+                  {t("account.save_transaction")}
                 </button>
               </div>
             </form>

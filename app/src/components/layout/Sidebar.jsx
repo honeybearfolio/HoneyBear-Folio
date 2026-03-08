@@ -161,7 +161,7 @@ export default function Sidebar({
             />
             <div>
               <span className="text-xl font-bold text-bear-100">
-                HoneyBear <span className="text-honey-500">Folio</span>
+                HoneyBear <span className="text-brand-500">Folio</span>
               </span>
               <p className="sidebar-subtitle">{t("sidebar.subtitle")}</p>
             </div>

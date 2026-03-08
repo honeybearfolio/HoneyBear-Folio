@@ -234,7 +234,7 @@ export default function CustomSelect({
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={t("customselect.search_placeholder")}
-                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1 text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                className="form-input !px-2 !py-1 !rounded-md"
               />
             </li>
 
