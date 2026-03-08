@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.fork == false }}
     runs-on: ubuntu-latest
     steps:
-      - name: Add labels based on title and files
+      - name: Add labels from linked issues and files
         uses: actions/github-script@v8
         with:
           script: |
@@ -35,14 +35,6 @@ jobs:
               return;
             }
 
-            const rules = [
-              { name: 'feature', regex: /\b(feat|feature|enhancement|\[feat\]|\[feature\]|^feat:|resolves)/i },
-              { name: 'fix', regex: /\b(fix|bug|bugfix|\[fix\]|^fix:)/i },
-              { name: 'docs', regex: /\b(doc|docs|documentation|\[docs\]|^docs:)/i },
-              { name: 'chore', regex: /\b(chore|ci|build|refactor|deps|dependency|\[chore\]|^chore:)/i },
-              { name: 'security', regex: /\b(security|cve|\[security\]|^security:)/i }
-            ];
-
             const found = new Set();
 
             // Auto-skip changelog for Dependabot PRs
@@ -51,16 +43,9 @@ jobs:
               found.add('skip-changelog');
             }
 
-            // track parser-derived labels separately so we can give precedence to mapped labels
-            const ruleFound = new Set();
-            for (const r of rules) {
-              if (r.regex.test(title) || r.regex.test(body)) ruleFound.add(r.name);
-            }
-
-            // Also check for linked issues and copy/ map their labels to PR labels
+            // Copy labels from linked issues to the PR
             //  - parses "fixes #NN" style references from title/body
             //  - checks the issue/PR timeline for cross-references
-            //  - maps issue labels to PR labels based on `labelMap`
             try {
               const refRegex = /(?:close[sd]?|fixe?s?|resolve[sd]?|resolves|closes|refs?)\s+#(\d+)/ig;
               const text = (title + '\n' + body);
@@ -78,39 +63,20 @@ jobs:
                 }
               }
 
-              const labelMap = {
-                'bug': 'fix',
-                'enhancement': 'feature',
-                'maintainability': 'chore',
-                'skip-changelog': 'skip-changelog'
-              };
-
-              // collect mapped labels separately so we can prefer them over parser matches
-              const mappedLabels = new Set();
-
               for (const issueNum of referenced) {
                 try {
                   const { data: labels } = await github.rest.issues.listLabelsOnIssue({
                     owner: context.repo.owner, repo: context.repo.repo, issue_number: issueNum
                   });
                   for (const l of labels) {
-                    const mapped = labelMap[l.name];
-                    if (mapped) {
-                      mappedLabels.add(mapped);
-                      found.add(mapped);
-                    }
+                    found.add(l.name === 'bug' ? 'fix' : l.name);
+                  }
+                  if (labels.length > 0) {
+                    console.log(`Copied labels from issue #${issueNum}: ${labels.map(l => l.name).join(', ')}`);
                   }
                 } catch (e) {
                   console.log(`Unable to get labels for issue #${issueNum}: ${e.message}`);
                 }
-              }
-
-              // If any mapped labels exist, prefer them and skip parser-derived type labels (fix/feature/etc.).
-              // Parser is still used to detect platform labels like `tauri` and `frontend`.
-              if (mappedLabels.size === 0) {
-                for (const rf of ruleFound) found.add(rf);
-              } else {
-                console.log('Mapped labels found, skipping parser-derived type labels:', Array.from(mappedLabels).join(', '));
               }
             } catch (e) {
               console.log('Error while resolving linked issues:', e.message);

@@ -1,6 +1,7 @@
 {
   "categories": [
-    { "title": "## 🚀 Features", "labels": ["feature", "enhancement"] },
+    { "title": "## 🚀 Features", "labels": ["feature"] },
+    { "title": "## ✨ Enhancements", "labels": ["enhancement"] },
     { "title": "## 🐛 Fixes", "labels": ["fix", "bug"] },
     { "title": "## 📚 Docs", "labels": ["docs"] },
     { "title": "## 🧰 Maintenance", "labels": ["chore", "ci", "refactor", "infra"] },
