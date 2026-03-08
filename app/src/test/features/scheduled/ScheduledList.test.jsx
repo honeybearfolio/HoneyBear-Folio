@@ -249,7 +249,6 @@ describe("ScheduledList", () => {
     renderWithContext(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
-
     const trashBtn = screen.getByTestId("trash-icon").closest("button");
     fireEvent.click(trashBtn);
 
