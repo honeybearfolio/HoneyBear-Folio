@@ -1632,11 +1632,11 @@ export default function AccountDetails({ account, onUpdate }) {
                               setMenuOpenId(occId);
                             }
                           }}
-                          className={`p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 ${
+                          className={`p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 ${
                             menuOpenId ===
                             `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`
-                              ? "opacity-100 bg-slate-100 dark:bg-slate-700"
-                              : "opacity-0 group-hover:opacity-100"
+                              ? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                              : ""
                           }`}
                         >
                           <MoreVertical className="w-4 h-4" />
@@ -2301,7 +2301,7 @@ export default function AccountDetails({ account, onUpdate }) {
                                 setMenuOpenId(tx.id);
                               }
                             }}
-                            className={`p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 ${menuOpenId === tx.id ? "opacity-100 bg-slate-100 dark:bg-slate-700" : "opacity-0 group-hover:opacity-100"}`}
+                            className={`p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 ${menuOpenId === tx.id ? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200" : ""}`}
                           >
                             <MoreVertical className="w-4 h-4" />
                           </button>
