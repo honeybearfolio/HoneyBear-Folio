@@ -7,6 +7,7 @@ use std::io::BufWriter;
 // Embed fonts at compile-time
 const FONT_REGULAR: &[u8] = include_bytes!("../assets/LiberationSans-Regular.ttf");
 const FONT_BOLD: &[u8] = include_bytes!("../assets/LiberationSans-Bold.ttf");
+const APP_ICON: &[u8] = include_bytes!("../../icons/128x128.png");
 
 // Page dimensions (A4 in mm)
 const PAGE_W: f32 = 210.0;
@@ -187,10 +188,27 @@ fn draw_header_footer(ctx: &PageCtx, page_num: usize, data: &ReportData) {
         HEADER_HEIGHT,
         Color::Rgb(Rgb::new(BRAND_R, BRAND_G, BRAND_B, None)),
     );
+
+    // Header: Icon
+    if let Ok(dynamic_img) = ::image::load_from_memory(APP_ICON) {
+        let pdf_image = Image::from_dynamic_image(&dynamic_img);
+        
+        let icon_target_size_mm = 8.0;
+        let original_width_px = dynamic_img.width() as f32;
+        let dpi = (original_width_px / icon_target_size_mm) * 25.4;
+
+        pdf_image.add_to_layer(ctx.layer.clone(), ImageTransform {
+            translate_x: Some(Mm(MARGIN_LEFT)),
+            translate_y: Some(y(HEADER_HEIGHT - (HEADER_HEIGHT - icon_target_size_mm) / 2.0)),
+            dpi: Some(dpi),
+            ..Default::default()
+        });
+    }
+
     write_text_color(
         ctx,
         "HoneyBear Folio",
-        MARGIN_LEFT,
+        MARGIN_LEFT + 10.0,
         8.5,
         9.0,
         true,
