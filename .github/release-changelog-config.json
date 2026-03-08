@@ -4,7 +4,7 @@
     { "title": "## ✨ Enhancements", "labels": ["enhancement"] },
     { "title": "## 🐛 Fixes", "labels": ["fix", "bug"] },
     { "title": "## 📚 Docs", "labels": ["docs"] },
-    { "title": "## 🧰 Maintenance", "labels": ["chore", "ci", "refactor", "infra", "deployment"] },
+    { "title": "## 🧰 Maintenance", "labels": ["chore", "ci", "refactor", "infra", "deployment", "maintainability"] },
     { "title": "## 🔒 Security", "labels": ["security"] }
   ],
   "ignore_labels": ["skip-changelog"],
