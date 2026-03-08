@@ -954,36 +954,10 @@ export default function AccountDetails({ account, onUpdate }) {
             />
           </div>
           <div className="flex items-center gap-3">
-            {account.id === "all" && availableAccounts.length > 0 && (
-              <div className="relative w-64">
-                <CustomSelect
-                  value={addTargetAccount ? addTargetAccount.id : ""}
-                  onChange={(val) => {
-                    const selected = availableAccounts.find(
-                      (a) => String(a.id) === String(val),
-                    );
-                    setAddTargetAccount(selected || null);
-                  }}
-                  options={availableAccounts.map((a) => ({
-                    value: a.id,
-                    label: a.name,
-                  }))}
-                  placeholder={t("account.placeholder.select_account")}
-                />
-              </div>
-            )}
-
             {!(account.id === "all" && availableAccounts.length === 0) &&
               (!isAdding ? (
                 <button
                   onClick={() => {
-                    if (
-                      account.id === "all" &&
-                      !addTargetAccount &&
-                      availableAccounts.length
-                    ) {
-                      setAddTargetAccount(availableAccounts[0]);
-                    }
                     setIsAdding(true);
                   }}
                   className="btn-primary px-3 sm:px-5 py-3 rounded-xl font-semibold text-sm shadow-sm"
@@ -1051,15 +1025,25 @@ export default function AccountDetails({ account, onUpdate }) {
             <h3 className="text-base font-semibold mb-0 text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <Plus className="w-4 h-4 text-brand-500" />
               {t("account.new_transaction")}
-              {account.id === "all" && effectiveAddTarget && (
-                <span className="ml-3 text-sm text-slate-500 dark:text-slate-400">
-                  {t("account.for")}{" "}
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {effectiveAddTarget.name}
-                  </span>
-                </span>
-              )}
             </h3>
+            {account.id === "all" && availableAccounts.length > 0 && (
+              <div className="w-48">
+                <CustomSelect
+                  value={addTargetAccount ? addTargetAccount.id : ""}
+                  onChange={(val) => {
+                    const selected = availableAccounts.find(
+                      (a) => String(a.id) === String(val),
+                    );
+                    setAddTargetAccount(selected || null);
+                  }}
+                  options={availableAccounts.map((a) => ({
+                    value: a.id,
+                    label: a.name,
+                  }))}
+                  placeholder={t("account.placeholder.select_account")}
+                />
+              </div>
+            )}
 
             <div className="ml-4">
               <div className="toggle-group">
