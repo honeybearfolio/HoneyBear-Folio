@@ -162,7 +162,7 @@ export default function InvestmentDashboard() {
         },
       },
     }),
-    [isDark, formatNumber, chartColors],
+    [formatNumber, chartColors],
   );
 
   return (

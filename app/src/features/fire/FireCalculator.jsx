@@ -21,7 +21,6 @@ import {
   runMonteCarloSimulation,
   calculateDeterministicProjection,
 } from "../../utils/fire";
-import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
 import { t } from "../../i18n/i18n";
 import {
@@ -102,7 +101,6 @@ export default function FireCalculator() {
   );
 
   const [loading, setLoading] = useState(!savedState);
-  const isDark = useIsDark();
   const chartColors = useChartColors();
 
   // Track which fields the user has manually edited during the session so

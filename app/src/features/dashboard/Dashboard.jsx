@@ -1003,7 +1003,7 @@ export default function Dashboard({
         },
       },
     }),
-    [isDark, formatNumber],
+    [isDark, formatNumber, chartColors],
   );
 
   const expensesOptions = useMemo(
@@ -1076,7 +1076,7 @@ export default function Dashboard({
         },
       },
     }),
-    [isDark, formatNumber],
+    [isDark, formatNumber, chartColors],
   );
 
   const barOptions = useMemo(() => {
@@ -1173,7 +1173,7 @@ export default function Dashboard({
         },
       },
     };
-  }, [formatNumber, isDark, chartColors]);
+  }, [formatNumber, chartColors]);
 
   const options = useMemo(
     () => ({
@@ -1285,7 +1285,7 @@ export default function Dashboard({
         },
       },
     }),
-    [formatNumber, isDark, chartColors],
+    [formatNumber, chartColors],
   );
 
   return (
