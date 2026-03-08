@@ -261,11 +261,40 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
             occurrences_count INTEGER NOT NULL DEFAULT 0,
             last_applied_date TEXT,
             enabled INTEGER NOT NULL DEFAULT 1,
+            transaction_type TEXT NOT NULL DEFAULT 'regular',
+            ticker TEXT,
+            shares REAL,
+            price_per_share REAL,
+            fee REAL,
+            is_buy INTEGER,
             FOREIGN KEY(account_id) REFERENCES accounts(id)
         )",
         [],
     )
     .map_err(|e| e.to_string())?;
+
+    // Migration: Add investment columns to existing scheduled_transactions table
+    let _ = conn.execute(
+        "ALTER TABLE scheduled_transactions ADD COLUMN transaction_type TEXT NOT NULL DEFAULT 'regular'",
+        [],
+    );
+    let _ = conn.execute(
+        "ALTER TABLE scheduled_transactions ADD COLUMN ticker TEXT",
+        [],
+    );
+    let _ = conn.execute(
+        "ALTER TABLE scheduled_transactions ADD COLUMN shares REAL",
+        [],
+    );
+    let _ = conn.execute(
+        "ALTER TABLE scheduled_transactions ADD COLUMN price_per_share REAL",
+        [],
+    );
+    let _ = conn.execute("ALTER TABLE scheduled_transactions ADD COLUMN fee REAL", []);
+    let _ = conn.execute(
+        "ALTER TABLE scheduled_transactions ADD COLUMN is_buy INTEGER",
+        [],
+    );
 
     Ok(())
 }

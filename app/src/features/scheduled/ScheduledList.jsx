@@ -12,6 +12,9 @@ import {
   CalendarClock,
   ToggleLeft,
   ToggleRight,
+  TrendingUp,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from "lucide-react";
 import { useConfirm } from "../../contexts/confirm";
 import { useToast } from "../../contexts/toast";
@@ -36,6 +39,7 @@ const WEEKDAY_KEYS = [
 const DEFAULT_FORM = {
   id: null,
   accountId: null,
+  transactionType: "regular",
   payee: "",
   amount: "",
   category: "",
@@ -51,6 +55,11 @@ const DEFAULT_FORM = {
   endDate: "",
   maxOccurrences: "",
   enabled: true,
+  ticker: "",
+  shares: "",
+  pricePerShare: "",
+  fee: "",
+  isBuy: true,
 };
 
 const currencyOptions = [
@@ -114,6 +123,7 @@ export default function ScheduledList() {
     setFormState({
       id: sched.id,
       accountId: sched.account_id,
+      transactionType: sched.transaction_type || "regular",
       payee: sched.payee,
       amount: sched.amount,
       category: sched.category || "",
@@ -129,6 +139,11 @@ export default function ScheduledList() {
       endDate: sched.end_date || "",
       maxOccurrences: sched.max_occurrences ?? "",
       enabled: sched.enabled,
+      ticker: sched.ticker || "",
+      shares: sched.shares ?? "",
+      pricePerShare: sched.price_per_share ?? "",
+      fee: sched.fee ?? "",
+      isBuy: sched.is_buy ?? true,
     });
     setIsEditing(true);
     setShowForm(true);
@@ -175,6 +190,12 @@ export default function ScheduledList() {
           endDate: sched.end_date,
           maxOccurrences: sched.max_occurrences,
           enabled: !sched.enabled,
+          transactionType: sched.transaction_type,
+          ticker: sched.ticker,
+          shares: sched.shares,
+          pricePerShare: sched.price_per_share,
+          fee: sched.fee,
+          isBuy: sched.is_buy,
         },
       });
       fetchSchedules();
@@ -190,8 +211,15 @@ export default function ScheduledList() {
       showToast(t("scheduled.validation.account_required"), "error");
       return;
     }
-    if (!formState.payee.trim()) {
+    if (formState.transactionType === "regular" && !formState.payee.trim()) {
       showToast(t("scheduled.validation.payee_required"), "error");
+      return;
+    }
+    if (
+      formState.transactionType === "investment" &&
+      !formState.ticker.trim()
+    ) {
+      showToast(t("scheduled.validation.ticker_required"), "error");
       return;
     }
     if (
@@ -203,11 +231,32 @@ export default function ScheduledList() {
     }
 
     try {
+      const isInvestment = formState.transactionType === "investment";
+
+      // Compute amount for investment transactions
+      let amount = Number(formState.amount) || 0;
+      if (isInvestment) {
+        const sharesNum = Number(formState.shares) || 0;
+        const priceNum = Number(formState.pricePerShare) || 0;
+        const feeNum = Number(formState.fee) || 0;
+        amount = formState.isBuy
+          ? -(sharesNum * priceNum + feeNum)
+          : sharesNum * priceNum - feeNum;
+      }
+
       const payload = {
         accountId: formState.accountId,
-        payee: formState.payee.trim(),
-        amount: Number(formState.amount) || 0,
-        category: formState.category.trim() || null,
+        payee: isInvestment
+          ? formState.payee.trim() ||
+            (formState.isBuy
+              ? t("scheduled.field.buy")
+              : t("scheduled.field.sell"))
+          : formState.payee.trim(),
+        amount,
+        category: isInvestment
+          ? formState.category.trim() ||
+            t("scheduled.field.investment_category")
+          : formState.category.trim() || null,
         notes: formState.notes.trim() || null,
         currency: formState.currency || null,
         recurrenceType: formState.recurrenceType,
@@ -236,6 +285,14 @@ export default function ScheduledList() {
         maxOccurrences: formState.maxOccurrences
           ? Number(formState.maxOccurrences)
           : null,
+        transactionType: formState.transactionType,
+        ticker: isInvestment ? formState.ticker.trim() : null,
+        shares: isInvestment ? Number(formState.shares) || null : null,
+        pricePerShare: isInvestment
+          ? Number(formState.pricePerShare) || null
+          : null,
+        fee: isInvestment ? Number(formState.fee) || 0 : null,
+        isBuy: isInvestment ? formState.isBuy : null,
       };
 
       if (formState.id) {
@@ -379,99 +436,295 @@ export default function ScheduledList() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Row 1: Account, Payee, Amount, Currency */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  {t("scheduled.field.account")} *
-                </label>
-                <CustomSelect
-                  value={formState.accountId}
-                  onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, accountId: val }))
-                  }
-                  options={accountOptions}
-                  placeholder={t("scheduled.field.account")}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  {t("scheduled.field.payee")} *
-                </label>
-                <input
-                  type="text"
-                  value={formState.payee}
-                  onChange={(e) =>
-                    setFormState((prev) => ({ ...prev, payee: e.target.value }))
-                  }
-                  className="form-input"
-                  placeholder={t("scheduled.field.payee")}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  {t("scheduled.field.amount")}
-                </label>
-                <NumberInput
-                  value={formState.amount}
-                  onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, amount: val }))
-                  }
-                  className="form-input"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  {t("scheduled.field.currency")}
-                </label>
-                <CustomSelect
-                  value={formState.currency}
-                  onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, currency: val }))
-                  }
-                  options={currencyOptions}
-                  placeholder={t("scheduled.field.currency")}
-                  className="w-full"
-                />
-              </div>
+            {/* Transaction Type Toggle */}
+            <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg w-fit">
+              <button
+                type="button"
+                onClick={() =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    transactionType: "regular",
+                  }))
+                }
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                  formState.transactionType === "regular"
+                    ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                }`}
+              >
+                {t("scheduled.type.regular")}
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    transactionType: "investment",
+                  }))
+                }
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                  formState.transactionType === "investment"
+                    ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                }`}
+              >
+                <TrendingUp size={13} />
+                {t("scheduled.type.investment")}
+              </button>
             </div>
 
-            {/* Row 2: Category, Notes */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  {t("scheduled.field.category")}
-                </label>
-                <input
-                  type="text"
-                  value={formState.category}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      category: e.target.value,
-                    }))
-                  }
-                  className="form-input"
-                  placeholder={t("scheduled.field.category")}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  {t("scheduled.field.notes")}
-                </label>
-                <input
-                  type="text"
-                  value={formState.notes}
-                  onChange={(e) =>
-                    setFormState((prev) => ({ ...prev, notes: e.target.value }))
-                  }
-                  className="form-input"
-                  placeholder={t("scheduled.field.notes")}
-                />
-              </div>
-            </div>
+            {formState.transactionType === "regular" ? (
+              <>
+                {/* Row 1: Account, Payee, Amount, Currency */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.account")} *
+                    </label>
+                    <CustomSelect
+                      value={formState.accountId}
+                      onChange={(val) =>
+                        setFormState((prev) => ({ ...prev, accountId: val }))
+                      }
+                      options={accountOptions}
+                      placeholder={t("scheduled.field.account")}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.payee")} *
+                    </label>
+                    <input
+                      type="text"
+                      value={formState.payee}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          payee: e.target.value,
+                        }))
+                      }
+                      className="form-input"
+                      placeholder={t("scheduled.field.payee")}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.amount")}
+                    </label>
+                    <NumberInput
+                      value={formState.amount}
+                      onChange={(val) =>
+                        setFormState((prev) => ({ ...prev, amount: val }))
+                      }
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.currency")}
+                    </label>
+                    <CustomSelect
+                      value={formState.currency}
+                      onChange={(val) =>
+                        setFormState((prev) => ({ ...prev, currency: val }))
+                      }
+                      options={currencyOptions}
+                      placeholder={t("scheduled.field.currency")}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Category, Notes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.category")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formState.category}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          category: e.target.value,
+                        }))
+                      }
+                      className="form-input"
+                      placeholder={t("scheduled.field.category")}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.notes")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formState.notes}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          notes: e.target.value,
+                        }))
+                      }
+                      className="form-input"
+                      placeholder={t("scheduled.field.notes")}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Investment Row 1: Account, Buy/Sell, Ticker, Shares */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.account")} *
+                    </label>
+                    <CustomSelect
+                      value={formState.accountId}
+                      onChange={(val) =>
+                        setFormState((prev) => ({ ...prev, accountId: val }))
+                      }
+                      options={accountOptions}
+                      placeholder={t("scheduled.field.account")}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.operation")}
+                    </label>
+                    <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormState((prev) => ({ ...prev, isBuy: true }))
+                        }
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                          formState.isBuy
+                            ? "bg-emerald-500 text-white shadow-sm"
+                            : "text-slate-500 dark:text-slate-400"
+                        }`}
+                      >
+                        <ArrowDownLeft size={13} />
+                        {t("scheduled.field.buy")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormState((prev) => ({ ...prev, isBuy: false }))
+                        }
+                        className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                          !formState.isBuy
+                            ? "bg-rose-500 text-white shadow-sm"
+                            : "text-slate-500 dark:text-slate-400"
+                        }`}
+                      >
+                        <ArrowUpRight size={13} />
+                        {t("scheduled.field.sell")}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.ticker")} *
+                    </label>
+                    <input
+                      type="text"
+                      value={formState.ticker}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          ticker: e.target.value.toUpperCase(),
+                        }))
+                      }
+                      className="form-input"
+                      placeholder="AAPL"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.shares")}
+                    </label>
+                    <NumberInput
+                      value={formState.shares}
+                      onChange={(val) =>
+                        setFormState((prev) => ({ ...prev, shares: val }))
+                      }
+                      className="form-input"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Investment Row 2: Price, Fee, Currency, Notes */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.price_per_share")}
+                    </label>
+                    <NumberInput
+                      value={formState.pricePerShare}
+                      onChange={(val) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          pricePerShare: val,
+                        }))
+                      }
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.fee")}
+                    </label>
+                    <NumberInput
+                      value={formState.fee}
+                      onChange={(val) =>
+                        setFormState((prev) => ({ ...prev, fee: val }))
+                      }
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.currency")}
+                    </label>
+                    <CustomSelect
+                      value={formState.currency}
+                      onChange={(val) =>
+                        setFormState((prev) => ({ ...prev, currency: val }))
+                      }
+                      options={currencyOptions}
+                      placeholder={t("scheduled.field.currency")}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      {t("scheduled.field.notes")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formState.notes}
+                      onChange={(e) =>
+                        setFormState((prev) => ({
+                          ...prev,
+                          notes: e.target.value,
+                        }))
+                      }
+                      className="form-input"
+                      placeholder={t("scheduled.field.notes")}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Row 3: Recurrence configuration */}
             <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg space-y-3">
@@ -710,7 +963,15 @@ export default function ScheduledList() {
                     {getAccountName(sched.account_id)}
                   </td>
                   <td className="px-4 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200">
-                    {sched.payee}
+                    <div className="flex items-center gap-1.5">
+                      {sched.transaction_type === "investment" && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+                          <TrendingUp size={10} className="mr-0.5" />
+                          {sched.ticker}
+                        </span>
+                      )}
+                      {sched.payee}
+                    </div>
                   </td>
                   <td
                     className={`px-4 py-2.5 text-sm font-semibold text-right tabular-nums ${

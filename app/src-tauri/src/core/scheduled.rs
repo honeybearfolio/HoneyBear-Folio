@@ -293,6 +293,7 @@ fn row_to_scheduled(row: &rusqlite::Row<'_>) -> rusqlite::Result<ScheduledTransa
         days_of_week_json.and_then(|s| serde_json::from_str(&s).ok());
 
     let enabled_int: i32 = row.get(15)?;
+    let is_buy_int: Option<i32> = row.get(24)?;
 
     Ok(ScheduledTransaction {
         id: row.get(0)?,
@@ -314,13 +315,22 @@ fn row_to_scheduled(row: &rusqlite::Row<'_>) -> rusqlite::Result<ScheduledTransa
         occurrences_count: row.get(17)?,
         last_applied_date: row.get(18)?,
         enabled: enabled_int != 0,
+        transaction_type: row
+            .get::<_, Option<String>>(19)?
+            .unwrap_or_else(|| "regular".to_string()),
+        ticker: row.get(20)?,
+        shares: row.get(21)?,
+        price_per_share: row.get(22)?,
+        fee: row.get(23)?,
+        is_buy: is_buy_int.map(|v| v != 0),
     })
 }
 
 const SELECT_COLUMNS: &str = "id, account_id, payee, amount, category, notes, currency, \
      days_of_week, interval_value, interval_unit, ordinal, weekday, \
      start_date, end_date, max_occurrences, enabled, recurrence_type, \
-     occurrences_count, last_applied_date";
+     occurrences_count, last_applied_date, transaction_type, ticker, \
+     shares, price_per_share, fee, is_buy";
 
 pub fn get_scheduled_transactions_db(
     db_path: &PathBuf,
@@ -361,6 +371,12 @@ pub struct CreateScheduledTransactionArgs {
     pub start_date: String,
     pub end_date: Option<String>,
     pub max_occurrences: Option<i32>,
+    pub transaction_type: Option<String>,
+    pub ticker: Option<String>,
+    pub shares: Option<f64>,
+    pub price_per_share: Option<f64>,
+    pub fee: Option<f64>,
+    pub is_buy: Option<bool>,
 }
 
 pub fn create_scheduled_transaction_db(
@@ -374,12 +390,16 @@ pub fn create_scheduled_transaction_db(
         .as_ref()
         .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
 
+    let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
+    let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
+
     conn.execute(
         "INSERT INTO scheduled_transactions \
          (account_id, payee, amount, category, notes, currency, \
           recurrence_type, interval_value, interval_unit, days_of_week, \
-          ordinal, weekday, start_date, end_date, max_occurrences) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+          ordinal, weekday, start_date, end_date, max_occurrences, \
+          transaction_type, ticker, shares, price_per_share, fee, is_buy) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)",
         params![
             args.account_id,
             args.payee,
@@ -396,6 +416,12 @@ pub fn create_scheduled_transaction_db(
             args.start_date,
             args.end_date,
             args.max_occurrences,
+            tx_type,
+            args.ticker,
+            args.shares,
+            args.price_per_share,
+            args.fee,
+            is_buy_int,
         ],
     )
     .map_err(|e| e.to_string())?;
@@ -423,6 +449,12 @@ pub struct UpdateScheduledTransactionArgs {
     pub end_date: Option<String>,
     pub max_occurrences: Option<i32>,
     pub enabled: bool,
+    pub transaction_type: Option<String>,
+    pub ticker: Option<String>,
+    pub shares: Option<f64>,
+    pub price_per_share: Option<f64>,
+    pub fee: Option<f64>,
+    pub is_buy: Option<bool>,
 }
 
 pub fn update_scheduled_transaction_db(
@@ -437,6 +469,8 @@ pub fn update_scheduled_transaction_db(
         .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
 
     let enabled_int: i32 = if args.enabled { 1 } else { 0 };
+    let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
+    let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
 
     conn.execute(
         "UPDATE scheduled_transactions SET \
@@ -444,8 +478,10 @@ pub fn update_scheduled_transaction_db(
          notes = ?5, currency = ?6, recurrence_type = ?7, \
          interval_value = ?8, interval_unit = ?9, days_of_week = ?10, \
          ordinal = ?11, weekday = ?12, start_date = ?13, \
-         end_date = ?14, max_occurrences = ?15, enabled = ?16 \
-         WHERE id = ?17",
+         end_date = ?14, max_occurrences = ?15, enabled = ?16, \
+         transaction_type = ?17, ticker = ?18, shares = ?19, \
+         price_per_share = ?20, fee = ?21, is_buy = ?22 \
+         WHERE id = ?23",
         params![
             args.account_id,
             args.payee,
@@ -463,6 +499,12 @@ pub fn update_scheduled_transaction_db(
             args.end_date,
             args.max_occurrences,
             enabled_int,
+            tx_type,
+            args.ticker,
+            args.shares,
+            args.price_per_share,
+            args.fee,
+            is_buy_int,
             args.id,
         ],
     )
@@ -544,6 +586,12 @@ pub fn get_pending_occurrences_db(
                 notes: sched.notes.clone(),
                 currency: sched.currency.clone(),
                 account_name: account_names.get(&sched.account_id).cloned(),
+                transaction_type: sched.transaction_type.clone(),
+                ticker: sched.ticker.clone(),
+                shares: sched.shares,
+                price_per_share: sched.price_per_share,
+                fee: sched.fee,
+                is_buy: sched.is_buy,
             });
         }
     }
@@ -580,21 +628,44 @@ pub fn apply_scheduled_occurrence_db(
         .query_row(&sql, params![scheduled_tx_id], row_to_scheduled)
         .map_err(|e| e.to_string())?;
 
-    // Create the real transaction using the same logic as create_transaction_db
-    let create_args = crate::transactions::CreateTransactionArgs {
-        account_id: sched.account_id,
-        date: apply_date.to_string(),
-        payee: sched.payee.clone(),
-        notes: sched.notes.clone(),
-        category: sched.category.clone(),
-        amount: sched.amount,
-        ticker: None,
-        shares: None,
-        price_per_share: None,
-        fee: None,
-        currency: sched.currency.clone(),
-    };
-    crate::transactions::create_transaction_db(db_path, create_args)?;
+    // Create the real transaction based on transaction type
+    if sched.transaction_type == "investment" {
+        let ticker = sched.ticker.clone().unwrap_or_default();
+        let shares = sched.shares.unwrap_or(0.0);
+        let price_per_share = sched.price_per_share.unwrap_or(0.0);
+        let fee = sched.fee.unwrap_or(0.0);
+        let is_buy = sched.is_buy.unwrap_or(true);
+
+        let invest_args = crate::transactions::CreateInvestmentTransactionArgs {
+            account_id: sched.account_id,
+            date: apply_date.to_string(),
+            ticker,
+            shares,
+            price_per_share,
+            fee,
+            is_buy,
+            currency: sched.currency.clone(),
+            payee: Some(sched.payee.clone()),
+            notes: sched.notes.clone(),
+            category: sched.category.clone(),
+        };
+        crate::transactions::create_investment_transaction_db(db_path, invest_args)?;
+    } else {
+        let create_args = crate::transactions::CreateTransactionArgs {
+            account_id: sched.account_id,
+            date: apply_date.to_string(),
+            payee: sched.payee.clone(),
+            notes: sched.notes.clone(),
+            category: sched.category.clone(),
+            amount: sched.amount,
+            ticker: None,
+            shares: None,
+            price_per_share: None,
+            fee: None,
+            currency: sched.currency.clone(),
+        };
+        crate::transactions::create_transaction_db(db_path, create_args)?;
+    }
 
     // Update tracking: increment occurrences_count and set last_applied_date
     conn.execute(
@@ -726,6 +797,12 @@ mod tests {
             occurrences_count: 0,
             last_applied_date: None,
             enabled: true,
+            transaction_type: "regular".to_string(),
+            ticker: None,
+            shares: None,
+            price_per_share: None,
+            fee: None,
+            is_buy: None,
         }
     }
 

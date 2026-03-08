@@ -172,6 +172,12 @@ pub struct ScheduledTransaction {
     pub occurrences_count: i32,
     pub last_applied_date: Option<String>,
     pub enabled: bool,
+    pub transaction_type: String, // "regular" or "investment"
+    pub ticker: Option<String>,
+    pub shares: Option<f64>,
+    pub price_per_share: Option<f64>,
+    pub fee: Option<f64>,
+    pub is_buy: Option<bool>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -186,6 +192,12 @@ pub struct ScheduledOccurrence {
     pub notes: Option<String>,
     pub currency: Option<String>,
     pub account_name: Option<String>,
+    pub transaction_type: String,
+    pub ticker: Option<String>,
+    pub shares: Option<f64>,
+    pub price_per_share: Option<f64>,
+    pub fee: Option<f64>,
+    pub is_buy: Option<bool>,
 }
 
 // ── PDF Report data structures ──────────────────────────────────────
