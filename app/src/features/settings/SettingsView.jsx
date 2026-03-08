@@ -178,7 +178,7 @@ export default function SettingsView({
       setLocale("en-US");
       setCurrency("USD");
       setTheme("system");
-      setFontSize(1.0);
+      setFontSize(0.9);
       setDateFormat("YYYY-MM-DD");
       setFirstDayOfWeek(1);
       setUiLanguage("en");

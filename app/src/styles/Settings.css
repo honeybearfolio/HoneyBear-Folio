@@ -14,6 +14,7 @@
 
   .settings-view-title {
     @apply text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight;
+    font-size: calc(1.5rem * var(--hb-font-size));
   }
 
   .settings-view-body {
@@ -27,10 +28,12 @@
 
   .settings-section-title .settings-section-heading {
     @apply text-lg font-semibold text-slate-700 dark:text-slate-200;
+    font-size: calc(1.125rem * var(--hb-font-size));
   }
 
   .settings-label {
     @apply inline-block mb-0 text-sm font-medium text-slate-500 dark:text-slate-400;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   /* Narrow select triggers within settings */
@@ -54,6 +57,7 @@
 
   .reset-button {
     @apply text-sm font-medium px-3 py-1 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .reset-button:hover {
@@ -67,6 +71,7 @@
 
   .label-with-help .settings-label {
     @apply inline-block mb-0 text-sm font-medium text-slate-500 dark:text-slate-400;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .label-with-help .help-wrapper {
@@ -104,8 +109,8 @@
     color: #fff;
     padding: 0.25rem 0.25rem;
     border-radius: 0.35rem;
-    font-size: 0.75rem;
-    line-height: 0.9rem;
+    font-size: calc(0.75rem * var(--hb-font-size));
+    line-height: calc(0.9rem * var(--hb-font-size));
     text-align: center;
     white-space: normal;
     max-width: 18rem;
@@ -157,10 +162,12 @@
 
   .about-app-name {
     @apply text-xl font-bold text-slate-900 dark:text-white;
+    font-size: calc(1.25rem * var(--hb-font-size));
   }
 
   .about-version-badge {
     @apply inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .about-version-link {
@@ -173,14 +180,17 @@
 
   .about-section-title {
     @apply text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .about-section-content {
     @apply text-sm text-slate-700 dark:text-slate-300;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .about-license-text {
     @apply text-sm text-slate-600 dark:text-slate-400 mb-2;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .about-license-list {
@@ -193,10 +203,12 @@
 
   .about-license-meta {
     @apply text-xs text-slate-500 dark:text-slate-400 ml-2;
+    font-size: calc(0.75rem * var(--hb-font-size));
   }
 
   .about-link {
     @apply inline-flex items-center gap-1.5 text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300 hover:underline cursor-pointer transition-colors;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .about-contributor {
@@ -205,6 +217,7 @@
 
   .about-contributor-avatar {
     @apply w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-sm font-medium;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .about-contributor-avatar img {
@@ -221,10 +234,12 @@
 
   .about-contributor-name {
     @apply text-sm font-medium text-slate-900 dark:text-white;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .about-contributor-role {
     @apply text-xs text-slate-500 dark:text-slate-400;
+    font-size: calc(0.75rem * var(--hb-font-size));
   }
 
   .about-links {
@@ -246,6 +261,7 @@
 
   .exchange-rates-empty {
     @apply text-sm text-slate-500 dark:text-slate-400 py-2;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .exchange-rate-row {
@@ -258,10 +274,12 @@
 
   .exchange-rate-currency {
     @apply font-medium text-sm text-slate-700 dark:text-slate-200;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .exchange-rate-badge {
     @apply text-xs px-2 py-0.5 rounded-full font-medium;
+    font-size: calc(0.75rem * var(--hb-font-size));
   }
 
   .exchange-rate-badge-custom {
@@ -278,6 +296,7 @@
 
   .exchange-rate-value {
     @apply text-sm font-mono text-slate-600 dark:text-slate-300;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
 
   .exchange-rate-actions {
@@ -302,5 +321,29 @@
 
   .exchange-rate-input {
     @apply w-24 px-2 py-1 text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200;
+    font-size: calc(0.875rem * var(--hb-font-size));
   }
+}
+
+/* Scale inline Tailwind text utilities within the settings view */
+.settings-view .text-xs {
+  font-size: calc(0.75rem * var(--hb-font-size));
+}
+.settings-view .text-sm {
+  font-size: calc(0.875rem * var(--hb-font-size));
+}
+.settings-view .text-base {
+  font-size: calc(1rem * var(--hb-font-size));
+}
+.settings-view .text-lg {
+  font-size: calc(1.125rem * var(--hb-font-size));
+}
+.settings-view .text-xl {
+  font-size: calc(1.25rem * var(--hb-font-size));
+}
+.settings-view .text-2xl {
+  font-size: calc(1.5rem * var(--hb-font-size));
+}
+.settings-view .text-3xl {
+  font-size: calc(1.875rem * var(--hb-font-size));
 }
