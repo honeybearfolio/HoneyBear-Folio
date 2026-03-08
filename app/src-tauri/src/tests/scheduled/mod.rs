@@ -23,6 +23,12 @@ fn create_base_schedule() -> ScheduledTransaction {
         occurrences_count: 0,
         last_applied_date: None,
         enabled: true,
+        transaction_type: "regular".to_string(),
+        ticker: None,
+        shares: None,
+        price_per_share: None,
+        fee: None,
+        is_buy: None,
     }
 }
 
