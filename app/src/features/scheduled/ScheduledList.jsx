@@ -211,10 +211,7 @@ export default function ScheduledList() {
       showToast(t("scheduled.validation.account_required"), "error");
       return;
     }
-    if (
-      formState.transactionType === "regular" &&
-      !formState.payee.trim()
-    ) {
+    if (formState.transactionType === "regular" && !formState.payee.trim()) {
       showToast(t("scheduled.validation.payee_required"), "error");
       return;
     }
@@ -250,12 +247,16 @@ export default function ScheduledList() {
       const payload = {
         accountId: formState.accountId,
         payee: isInvestment
-          ? (formState.payee.trim() || (formState.isBuy ? t("scheduled.field.buy") : t("scheduled.field.sell")))
+          ? formState.payee.trim() ||
+            (formState.isBuy
+              ? t("scheduled.field.buy")
+              : t("scheduled.field.sell"))
           : formState.payee.trim(),
         amount,
         category: isInvestment
-          ? (formState.category.trim() || t("scheduled.field.investment_category"))
-          : (formState.category.trim() || null),
+          ? formState.category.trim() ||
+            t("scheduled.field.investment_category")
+          : formState.category.trim() || null,
         notes: formState.notes.trim() || null,
         currency: formState.currency || null,
         recurrenceType: formState.recurrenceType,
@@ -286,11 +287,11 @@ export default function ScheduledList() {
           : null,
         transactionType: formState.transactionType,
         ticker: isInvestment ? formState.ticker.trim() : null,
-        shares: isInvestment ? (Number(formState.shares) || null) : null,
+        shares: isInvestment ? Number(formState.shares) || null : null,
         pricePerShare: isInvestment
-          ? (Number(formState.pricePerShare) || null)
+          ? Number(formState.pricePerShare) || null
           : null,
-        fee: isInvestment ? (Number(formState.fee) || 0) : null,
+        fee: isInvestment ? Number(formState.fee) || 0 : null,
         isBuy: isInvestment ? formState.isBuy : null,
       };
 

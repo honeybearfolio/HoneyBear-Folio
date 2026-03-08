@@ -290,10 +290,7 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
         "ALTER TABLE scheduled_transactions ADD COLUMN price_per_share REAL",
         [],
     );
-    let _ = conn.execute(
-        "ALTER TABLE scheduled_transactions ADD COLUMN fee REAL",
-        [],
-    );
+    let _ = conn.execute("ALTER TABLE scheduled_transactions ADD COLUMN fee REAL", []);
     let _ = conn.execute(
         "ALTER TABLE scheduled_transactions ADD COLUMN is_buy INTEGER",
         [],

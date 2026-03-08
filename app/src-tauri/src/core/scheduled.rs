@@ -315,7 +315,9 @@ fn row_to_scheduled(row: &rusqlite::Row<'_>) -> rusqlite::Result<ScheduledTransa
         occurrences_count: row.get(17)?,
         last_applied_date: row.get(18)?,
         enabled: enabled_int != 0,
-        transaction_type: row.get::<_, Option<String>>(19)?.unwrap_or_else(|| "regular".to_string()),
+        transaction_type: row
+            .get::<_, Option<String>>(19)?
+            .unwrap_or_else(|| "regular".to_string()),
         ticker: row.get(20)?,
         shares: row.get(21)?,
         price_per_share: row.get(22)?,
