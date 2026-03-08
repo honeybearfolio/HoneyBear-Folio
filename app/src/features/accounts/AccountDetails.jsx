@@ -1071,9 +1071,7 @@ export default function AccountDetails({ account, onUpdate }) {
                   type="button"
                   onClick={() => setTransactionType("cash")}
                   className={`toggle-group-btn ${
-                    transactionType === "cash"
-                      ? "toggle-group-btn-active"
-                      : ""
+                    transactionType === "cash" ? "toggle-group-btn-active" : ""
                   }`}
                 >
                   {t("dashboard.assets.cash")}
@@ -1094,10 +1092,7 @@ export default function AccountDetails({ account, onUpdate }) {
           </div>
 
           {transactionType === "investment" ? (
-            <form
-              onSubmit={handleAddTransaction}
-              className="space-y-4"
-            >
+            <form onSubmit={handleAddTransaction} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                   <label className="form-label">
@@ -1149,156 +1144,150 @@ export default function AccountDetails({ account, onUpdate }) {
                   </div>
                 </div>
 
-              <div className="relative">
-                <label className="form-label">
-                  {t("import.field.ticker")}
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder={"AAPL"}
-                  className="form-input uppercase"
-                  value={ticker}
-                  onChange={(e) => {
-                    const val = e.target.value.toUpperCase();
-                    setTicker(val);
-                    handleTickerChange(val);
-                    setShowTickerSuggestions(true);
-                  }}
-                  onBlur={() =>
-                    setTimeout(() => setShowTickerSuggestions(false), 200)
-                  }
-                  onFocus={() =>
-                    ticker.length >= 2 && setShowTickerSuggestions(true)
-                  }
-                />
-                {showTickerSuggestions && tickerSuggestions.length > 0 && (
-                  <div className="absolute z-50 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 mt-1 max-h-60 overflow-y-auto">
-                    {tickerSuggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm"
-                        onClick={() => {
-                          setTicker(suggestion.symbol);
-                          setShowTickerSuggestions(false);
-                          if (suggestion.currency) {
-                            setSelectedCurrency(suggestion.currency || appCurrency || "USD");
-                          }
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900 dark:text-slate-100">
-                            {suggestion.symbol}
-                          </span>
-                          {suggestion.currency && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                              {suggestion.currency}
+                <div className="relative">
+                  <label className="form-label">
+                    {t("import.field.ticker")}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={"AAPL"}
+                    className="form-input uppercase"
+                    value={ticker}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setTicker(val);
+                      handleTickerChange(val);
+                      setShowTickerSuggestions(true);
+                    }}
+                    onBlur={() =>
+                      setTimeout(() => setShowTickerSuggestions(false), 200)
+                    }
+                    onFocus={() =>
+                      ticker.length >= 2 && setShowTickerSuggestions(true)
+                    }
+                  />
+                  {showTickerSuggestions && tickerSuggestions.length > 0 && (
+                    <div className="absolute z-50 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 mt-1 max-h-60 overflow-y-auto">
+                      {tickerSuggestions.map((suggestion, index) => (
+                        <div
+                          key={index}
+                          className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm"
+                          onClick={() => {
+                            setTicker(suggestion.symbol);
+                            setShowTickerSuggestions(false);
+                            if (suggestion.currency) {
+                              setSelectedCurrency(
+                                suggestion.currency || appCurrency || "USD",
+                              );
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {suggestion.symbol}
                             </span>
-                          )}
+                            {suggestion.currency && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                {suggestion.currency}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {suggestion.shortname || suggestion.longname}
+                          </div>
+                          <div className="text-xs text-slate-400 dark:text-slate-500">
+                            {suggestion.exchange} - {suggestion.typeDisp}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {suggestion.shortname || suggestion.longname}
-                        </div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500">
-                          {suggestion.exchange} - {suggestion.typeDisp}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <label className="form-label">
-                  {t("import.field.shares")}
-                </label>
-                <NumberInput
-                  value={shares}
-                  onChange={(num) => handleSharesChange(num)}
-                  className="form-input"
-                  placeholder={formatNumber(0, {
-                    maximumFractionDigits: 6,
-                    minimumFractionDigits: 0,
-                    useGrouping: false,
-                  })}
-                  maximumFractionDigits={6}
-                  useGrouping={false}
-                />
-              </div>
+                <div>
+                  <label className="form-label">
+                    {t("import.field.shares")}
+                  </label>
+                  <NumberInput
+                    value={shares}
+                    onChange={(num) => handleSharesChange(num)}
+                    className="form-input"
+                    placeholder={formatNumber(0, {
+                      maximumFractionDigits: 6,
+                      minimumFractionDigits: 0,
+                      useGrouping: false,
+                    })}
+                    maximumFractionDigits={6}
+                    useGrouping={false}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="form-label">
-                  {t("account.field.price_per_share")}
-                </label>
-                <NumberInput
-                  value={pricePerShare}
-                  onChange={(num) => handlePricePerShareChange(num)}
-                  className="form-input"
-                  placeholder={formatNumber(0, {
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 2,
-                  })}
-                  maximumFractionDigits={4}
-                  minimumFractionDigits={2}
-                  useGrouping={false}
-                />
-              </div>
+                <div>
+                  <label className="form-label">
+                    {t("account.field.price_per_share")}
+                  </label>
+                  <NumberInput
+                    value={pricePerShare}
+                    onChange={(num) => handlePricePerShareChange(num)}
+                    className="form-input"
+                    placeholder={formatNumber(0, {
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 2,
+                    })}
+                    maximumFractionDigits={4}
+                    minimumFractionDigits={2}
+                    useGrouping={false}
+                  />
+                </div>
 
-              <div>
-                <label className="form-label">
-                  {t("import.field.fee")}
-                </label>
-                <NumberInput
-                  value={fee}
-                  onChange={(val) => setFee(val)}
-                  className="form-input"
-                  placeholder={formatNumber(0, {
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 2,
-                  })}
-                />
-              </div>
+                <div>
+                  <label className="form-label">{t("import.field.fee")}</label>
+                  <NumberInput
+                    value={fee}
+                    onChange={(val) => setFee(val)}
+                    className="form-input"
+                    placeholder={formatNumber(0, {
+                      maximumFractionDigits: 2,
+                      minimumFractionDigits: 2,
+                    })}
+                  />
+                </div>
 
-              <div>
-                <label className="form-label">
-                  {t("import.field.currency")}
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <CustomSelect
-                      options={CURRENCIES.map((c) => ({
-                        value: c.code,
-                        label: `${c.code} - ${c.name}`,
-                      }))}
-                      value={selectedCurrency}
-                      onChange={async (val) => {
-                        setSelectedCurrency(val);
-                        if (val) await checkAndPrompt(val);
-                      }}
-                      placeholder="Select currency"
-                    />
+                <div>
+                  <label className="form-label">
+                    {t("import.field.currency")}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <CustomSelect
+                        options={CURRENCIES.map((c) => ({
+                          value: c.code,
+                          label: `${c.code} - ${c.name}`,
+                        }))}
+                        value={selectedCurrency}
+                        onChange={async (val) => {
+                          setSelectedCurrency(val);
+                          if (val) await checkAndPrompt(val);
+                        }}
+                        placeholder="Select currency"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-              </div>
 
               <div className="flex items-center justify-end gap-3">
-                <button
-                  type="submit"
-                  className="btn-primary"
-                >
+                <button type="submit" className="btn-primary">
                   <Check className="w-4 h-4" />
                   {t("account.save_transaction")}
                 </button>
               </div>
             </form>
           ) : (
-            <form
-              onSubmit={handleAddTransaction}
-              className="space-y-4"
-            >
+            <form onSubmit={handleAddTransaction} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                   <label className="form-label">
@@ -1407,10 +1396,7 @@ export default function AccountDetails({ account, onUpdate }) {
               </div>
 
               <div className="flex items-center justify-end gap-3">
-                <button
-                  type="submit"
-                  className="btn-primary"
-                >
+                <button type="submit" className="btn-primary">
                   <Check className="w-4 h-4" />
                   {t("account.save_transaction")}
                 </button>

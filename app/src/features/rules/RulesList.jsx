@@ -405,10 +405,7 @@ export default function RulesList() {
 
       {/* Form Card */}
       {showForm && (
-        <div
-          ref={formRef}
-          className="form-card"
-        >
+        <div ref={formRef} className="form-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               {isEditing ? (
@@ -436,9 +433,7 @@ export default function RulesList() {
               {/* Conditions Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-4 min-h-[40px]">
-                  <h3 className="form-label !mb-0">
-                    {t("rules.conditions")}
-                  </h3>
+                  <h3 className="form-label !mb-0">{t("rules.conditions")}</h3>
                   {formState.conditions.length > 1 && (
                     <div className="flex items-center gap-2 whitespace-nowrap">
                       <span className="text-xs text-slate-500 leading-5">
@@ -574,9 +569,7 @@ export default function RulesList() {
               {/* Actions Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-4 min-h-[40px]">
-                  <h3 className="form-label !mb-0">
-                    {t("rules.actions")}
-                  </h3>
+                  <h3 className="form-label !mb-0">{t("rules.actions")}</h3>
                 </div>
 
                 {formState.actions.map((action, index) => {

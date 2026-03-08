@@ -409,10 +409,7 @@ export default function ScheduledList() {
 
       {/* Form Card */}
       {showForm && (
-        <div
-          ref={formRef}
-          className="form-card"
-        >
+        <div ref={formRef} className="form-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               {isEditing ? (
