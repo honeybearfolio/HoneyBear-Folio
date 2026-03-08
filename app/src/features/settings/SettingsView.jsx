@@ -75,9 +75,9 @@ export default function SettingsView({
   const [fontSize, setFontSize] = useState(() => {
     try {
       const v = localStorage.getItem("hb_font_size");
-      return v ? parseFloat(v) : 1.0;
+      return v ? parseFloat(v) : 0.9;
     } catch {
-      return 1.0;
+      return 0.9;
     }
   });
 

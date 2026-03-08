@@ -254,7 +254,7 @@ function App() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem("hb_font_size");
-      const fontSize = stored ? parseFloat(stored) : 1.0;
+      const fontSize = stored ? parseFloat(stored) : 0.9;
       document.documentElement.style.setProperty(
         "--hb-font-size",
         String(fontSize),

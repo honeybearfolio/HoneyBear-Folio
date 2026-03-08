@@ -16,7 +16,7 @@
     "Helvetica Neue",
     sans-serif;
   /* Global font size multiplier - default 1.0 (100%) */
-  --hb-font-size: 1;
+  --hb-font-size: 0.9;
 }
 
 @layer base {
@@ -27,7 +27,7 @@
   /* Apply font-size scaling only to specific components (not modals) */
   .sidebar-container,
   main {
-    font-size: calc(16px * var(--hb-font-size));
+    font-size: calc(14px * var(--hb-font-size));
   }
 
   /* Custom Scrollbar - Modern Styling */
