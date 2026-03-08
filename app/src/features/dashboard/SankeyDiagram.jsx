@@ -287,11 +287,9 @@ export default function SankeyDiagram({
         display: false,
       },
       tooltip: {
-        backgroundColor: isDark
-          ? "rgba(15, 23, 42, 0.9)"
-          : "rgba(255, 255, 255, 0.9)",
-        titleColor: isDark ? "rgb(255, 255, 255)" : "rgb(15, 23, 42)",
-        bodyColor: isDark ? "rgb(255, 255, 255)" : "rgb(15, 23, 42)",
+        backgroundColor: chartColors.tooltipBg,
+        titleColor: chartColors.tooltipText,
+        bodyColor: chartColors.tooltipText,
         padding: 12,
         cornerRadius: 8,
         titleFont: {

@@ -384,7 +384,15 @@ export default function SettingsView({
                     onChange={(v) => setTheme(v)}
                     options={[
                       { value: "light", label: t("settings.theme.light") },
+                      {
+                        value: "high-contrast-light",
+                        label: t("settings.theme.high_contrast_light"),
+                      },
                       { value: "dark", label: t("settings.theme.dark") },
+                      {
+                        value: "high-contrast-dark",
+                        label: t("settings.theme.high_contrast_dark"),
+                      },
                       { value: "system", label: t("settings.theme.system") },
                     ]}
                     placeholder={t("settings.select_theme_placeholder")}

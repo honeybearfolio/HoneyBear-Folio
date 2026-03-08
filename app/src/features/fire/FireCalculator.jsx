@@ -21,7 +21,6 @@ import {
   runMonteCarloSimulation,
   calculateDeterministicProjection,
 } from "../../utils/fire";
-import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
 import { t } from "../../i18n/i18n";
 import {
@@ -102,7 +101,6 @@ export default function FireCalculator() {
   );
 
   const [loading, setLoading] = useState(!savedState);
-  const isDark = useIsDark();
   const chartColors = useChartColors();
 
   // Track which fields the user has manually edited during the session so
@@ -990,23 +988,15 @@ export default function FireCalculator() {
                       },
                     },
                     tooltip: {
-                      backgroundColor: isDark
-                        ? "rgba(15, 23, 42, 0.9)"
-                        : "rgba(255, 255, 255, 0.9)",
-                      titleColor: isDark
-                        ? "rgb(255, 255, 255)"
-                        : "rgb(15, 23, 42)",
-                      bodyColor: isDark
-                        ? "rgb(255, 255, 255)"
-                        : "rgb(15, 23, 42)",
+                      backgroundColor: chartColors.tooltipBg,
+                      titleColor: chartColors.tooltipText,
+                      bodyColor: chartColors.tooltipText,
                       padding: 12,
                       cornerRadius: 8,
                       callbacks: {
                         labelColor: function (context) {
                           const dataset = context.dataset;
-                          const tooltipBg = isDark
-                            ? "rgba(15, 23, 42, 0.9)"
-                            : "rgba(255, 255, 255, 0.9)";
+                          const tooltipBg = chartColors.tooltipBg;
 
                           // Always use the tooltip background as the fill color for the label box
                           // This ensures a "hollow" look matching the line style, avoiding issues

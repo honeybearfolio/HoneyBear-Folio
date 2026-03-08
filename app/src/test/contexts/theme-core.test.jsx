@@ -78,5 +78,36 @@ describe("ThemeContext", () => {
 
       expect(screen.getByTestId("theme")).toHaveTextContent("system");
     });
+
+    it("works with high-contrast-dark theme value", () => {
+      const contextValue = { theme: "high-contrast-dark", setTheme: vi.fn() };
+
+      render(
+        <ThemeContext.Provider value={contextValue}>
+          <TestComponent />
+        </ThemeContext.Provider>,
+      );
+
+      expect(screen.getByTestId("theme")).toHaveTextContent(
+        "high-contrast-dark",
+      );
+    });
+
+    it("works with high-contrast-light theme value", () => {
+      const contextValue = {
+        theme: "high-contrast-light",
+        setTheme: vi.fn(),
+      };
+
+      render(
+        <ThemeContext.Provider value={contextValue}>
+          <TestComponent />
+        </ThemeContext.Provider>,
+      );
+
+      expect(screen.getByTestId("theme")).toHaveTextContent(
+        "high-contrast-light",
+      );
+    });
   });
 });
