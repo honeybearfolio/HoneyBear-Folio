@@ -517,7 +517,9 @@ export default function Sidebar({
             <span className="text-xs font-medium">{t("footer.export")}</span>
           </button>
           <button
-            onClick={() => handleSelect(selectedId === "settings" ? "dashboard" : "settings")}
+            onClick={() =>
+              handleSelect(selectedId === "settings" ? "dashboard" : "settings")
+            }
             className="sidebar-footer-button"
           >
             <Settings className="w-4 h-4" />
