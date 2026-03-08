@@ -409,10 +409,7 @@ export default function ScheduledList() {
 
       {/* Form Card */}
       {showForm && (
-        <div
-          ref={formRef}
-          className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 mb-6"
-        >
+        <div ref={formRef} className="form-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               {isEditing ? (
@@ -437,7 +434,7 @@ export default function ScheduledList() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Transaction Type Toggle */}
-            <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg w-fit">
+            <div className="toggle-group">
               <button
                 type="button"
                 onClick={() =>
@@ -446,10 +443,10 @@ export default function ScheduledList() {
                     transactionType: "regular",
                   }))
                 }
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                className={`toggle-group-btn ${
                   formState.transactionType === "regular"
-                    ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    ? "toggle-group-btn-active"
+                    : ""
                 }`}
               >
                 {t("scheduled.type.regular")}
@@ -462,10 +459,10 @@ export default function ScheduledList() {
                     transactionType: "investment",
                   }))
                 }
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                className={`toggle-group-btn flex items-center gap-1.5 ${
                   formState.transactionType === "investment"
-                    ? "bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    ? "toggle-group-btn-active"
+                    : ""
                 }`}
               >
                 <TrendingUp size={13} />
@@ -478,7 +475,7 @@ export default function ScheduledList() {
                 {/* Row 1: Account, Payee, Amount, Currency */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.account")} *
                     </label>
                     <CustomSelect
@@ -492,7 +489,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.payee")} *
                     </label>
                     <input
@@ -509,7 +506,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.amount")}
                     </label>
                     <NumberInput
@@ -522,7 +519,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.currency")}
                     </label>
                     <CustomSelect
@@ -540,7 +537,7 @@ export default function ScheduledList() {
                 {/* Row 2: Category, Notes */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.category")}
                     </label>
                     <input
@@ -557,7 +554,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.notes")}
                     </label>
                     <input
@@ -580,7 +577,7 @@ export default function ScheduledList() {
                 {/* Investment Row 1: Account, Buy/Sell, Ticker, Shares */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.account")} *
                     </label>
                     <CustomSelect
@@ -594,7 +591,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.operation")}
                     </label>
                     <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
@@ -629,7 +626,7 @@ export default function ScheduledList() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.ticker")} *
                     </label>
                     <input
@@ -646,7 +643,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.shares")}
                     </label>
                     <NumberInput
@@ -663,7 +660,7 @@ export default function ScheduledList() {
                 {/* Investment Row 2: Price, Fee, Currency, Notes */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.price_per_share")}
                     </label>
                     <NumberInput
@@ -679,7 +676,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.fee")}
                     </label>
                     <NumberInput
@@ -692,7 +689,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.currency")}
                     </label>
                     <CustomSelect
@@ -706,7 +703,7 @@ export default function ScheduledList() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    <label className="form-label">
                       {t("scheduled.field.notes")}
                     </label>
                     <input
@@ -728,7 +725,7 @@ export default function ScheduledList() {
 
             {/* Row 3: Recurrence configuration */}
             <div className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg space-y-3">
-              <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              <h3 className="form-label !mb-0">
                 {t("scheduled.field.recurrence")}
               </h3>
 
@@ -821,7 +818,7 @@ export default function ScheduledList() {
             {/* Row 4: Start date, End date, Max occurrences + Submit */}
             <div className="flex flex-wrap items-end gap-3">
               <div className="min-w-[140px]">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                <label className="form-label">
                   {t("scheduled.field.start_date")}
                 </label>
                 <DatePicker
@@ -849,7 +846,7 @@ export default function ScheduledList() {
                 />
               </div>
               <div className="min-w-[140px]">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                <label className="form-label">
                   {t("scheduled.field.end_date")}
                 </label>
                 <DatePicker
@@ -878,7 +875,7 @@ export default function ScheduledList() {
                 />
               </div>
               <div className="w-28">
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                <label className="form-label">
                   {t("scheduled.field.max_occurrences")}
                 </label>
                 <input

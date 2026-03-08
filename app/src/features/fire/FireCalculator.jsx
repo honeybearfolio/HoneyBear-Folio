@@ -558,7 +558,7 @@ export default function FireCalculator() {
           <div className="space-y-5">
             {/* Financial Parameters */}
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+              <label className="form-label !mb-2 flex items-center gap-2">
                 <Banknote className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                 {t("dashboard.current_net_worth")}
               </label>
@@ -569,7 +569,7 @@ export default function FireCalculator() {
                     setCurrentNetWorth(Number.isNaN(num) ? 0 : Math.round(num));
                     userModified.current.currentNetWorth = true;
                   }}
-                  className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                  className="form-input-lg font-semibold"
                   placeholder="0"
                   maximumFractionDigits={0}
                   minimumFractionDigits={0}
@@ -579,7 +579,7 @@ export default function FireCalculator() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+              <label className="form-label !mb-2 flex items-center gap-2">
                 <Banknote className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                 {t("fire.annual_expenses")}
               </label>
@@ -590,7 +590,7 @@ export default function FireCalculator() {
                     setAnnualExpenses(Number.isNaN(num) ? 0 : Math.round(num));
                     userModified.current.annualExpenses = true;
                   }}
-                  className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                  className="form-input-lg font-semibold"
                   placeholder="0"
                   maximumFractionDigits={0}
                   minimumFractionDigits={0}
@@ -600,7 +600,7 @@ export default function FireCalculator() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+              <label className="form-label !mb-2 flex items-center gap-2">
                 <Banknote className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                 {t("fire.annual_savings")}
               </label>
@@ -611,7 +611,7 @@ export default function FireCalculator() {
                     setAnnualSavings(Number.isNaN(num) ? 0 : Math.round(num));
                     userModified.current.annualSavings = true;
                   }}
-                  className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                  className="form-input-lg font-semibold"
                   placeholder="0"
                   maximumFractionDigits={0}
                   minimumFractionDigits={0}
@@ -621,7 +621,7 @@ export default function FireCalculator() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+              <label className="form-label !mb-2 flex items-center gap-2">
                 <Percent className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                 {t("fire.expected_return")}
               </label>
@@ -632,7 +632,7 @@ export default function FireCalculator() {
                     setExpectedReturn(Number.isNaN(num) ? 0 : num);
                     userModified.current.expectedReturn = true;
                   }}
-                  className="w-full px-4 py-3 pr-8 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                  className="form-input-lg font-semibold pr-8"
                   placeholder="0"
                   maximumFractionDigits={2}
                   minimumFractionDigits={0}
@@ -645,7 +645,7 @@ export default function FireCalculator() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+              <label className="form-label !mb-2 flex items-center gap-2">
                 <Percent className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                 {t("fire.inflation")}
               </label>
@@ -656,7 +656,7 @@ export default function FireCalculator() {
                     setInflation(Number.isNaN(num) ? 0 : num);
                     userModified.current.inflation = true;
                   }}
-                  className="w-full px-4 py-3 pr-8 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                  className="form-input-lg font-semibold pr-8"
                   placeholder="2"
                   maximumFractionDigits={2}
                   minimumFractionDigits={0}
@@ -669,7 +669,7 @@ export default function FireCalculator() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+              <label className="form-label !mb-2 flex items-center gap-2">
                 <Percent className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                 {t("fire.withdrawal_rate")}
               </label>
@@ -680,7 +680,7 @@ export default function FireCalculator() {
                     setWithdrawalRate(Number.isNaN(num) ? 0 : num);
                     userModified.current.withdrawalRate = true;
                   }}
-                  className="w-full px-4 py-3 pr-8 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                  className="form-input-lg font-semibold pr-8"
                   placeholder="4"
                   maximumFractionDigits={2}
                   minimumFractionDigits={0}
@@ -701,7 +701,7 @@ export default function FireCalculator() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <label className="form-label !mb-2 flex items-center gap-2">
                     <User className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                     {t("fire.current_age")}
                   </label>
@@ -712,7 +712,7 @@ export default function FireCalculator() {
                         setCurrentAge(Number.isNaN(num) ? 0 : Math.round(num));
                         userModified.current.currentAge = true;
                       }}
-                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                      className="form-input-lg font-semibold"
                       placeholder="30"
                       maximumFractionDigits={0}
                       minimumFractionDigits={0}
@@ -722,7 +722,7 @@ export default function FireCalculator() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <label className="form-label !mb-2 flex items-center gap-2">
                     <Target className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                     {t("fire.target_retirement_age")}
                   </label>
@@ -735,7 +735,7 @@ export default function FireCalculator() {
                         );
                         userModified.current.retirementAge = true;
                       }}
-                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                      className="form-input-lg font-semibold"
                       placeholder="65"
                       maximumFractionDigits={0}
                       minimumFractionDigits={0}
@@ -745,7 +745,7 @@ export default function FireCalculator() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <label className="form-label !mb-2 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                     {t("fire.retirement_duration")}
                   </label>
@@ -758,7 +758,7 @@ export default function FireCalculator() {
                         );
                         userModified.current.retirementDuration = true;
                       }}
-                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                      className="form-input-lg font-semibold"
                       placeholder="30"
                       maximumFractionDigits={0}
                       minimumFractionDigits={0}
@@ -799,7 +799,7 @@ export default function FireCalculator() {
                 </p>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <label className="form-label !mb-2 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                     {t("fire.return_volatility")}
                   </label>
@@ -810,7 +810,7 @@ export default function FireCalculator() {
                         setVolatility(Number.isNaN(num) ? 0 : num);
                         userModified.current.volatility = true;
                       }}
-                      className="w-full px-4 py-3 pr-8 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                      className="form-input-lg font-semibold pr-8"
                       placeholder="15"
                       maximumFractionDigits={1}
                       minimumFractionDigits={0}
@@ -826,7 +826,7 @@ export default function FireCalculator() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <label className="form-label !mb-2 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-brand-500 dark:text-brand-400" />
                     {t("fire.simulation_count")}
                   </label>
@@ -841,7 +841,7 @@ export default function FireCalculator() {
                         );
                         userModified.current.simulationCount = true;
                       }}
-                      className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-semibold text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600"
+                      className="form-input-lg font-semibold"
                       placeholder="1000"
                       maximumFractionDigits={0}
                       minimumFractionDigits={0}
