@@ -377,7 +377,7 @@
   "scheduled.validation.payee_required": "Please enter a payee",
   "scheduled.validation.days_required": "Please select at least one day of the week",
   "scheduled.validation.ticker_required": "Please enter a ticker symbol",
-  "scheduled.type.regular": "Regular Transaction",
+  "scheduled.type.regular": "Cash",
   "scheduled.type.investment": "Investment",
   "scheduled.field.operation": "Operation",
   "scheduled.field.buy": "Buy",

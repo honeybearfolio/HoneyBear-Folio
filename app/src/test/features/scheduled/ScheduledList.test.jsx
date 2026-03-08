@@ -29,6 +29,9 @@ vi.mock("lucide-react", () => ({
   CalendarClock: () => <span data-testid="calendar-icon">Calendar</span>,
   ToggleLeft: () => <span data-testid="toggle-left">ToggleOff</span>,
   ToggleRight: () => <span data-testid="toggle-right">ToggleOn</span>,
+  TrendingUp: () => <span data-testid="trending-icon">Trend</span>,
+  ArrowDownLeft: () => <span data-testid="arrow-down">Down</span>,
+  ArrowUpRight: () => <span data-testid="arrow-up">Up</span>,
 }));
 
 vi.mock("../../../i18n/i18n", () => ({
@@ -153,6 +156,10 @@ describe("ScheduledList", () => {
     expect(
       screen.getByPlaceholderText("scheduled.field.payee"),
     ).toBeInTheDocument();
+
+    // ensure type toggle buttons render
+    expect(screen.getByText("scheduled.type.regular")).toBeInTheDocument();
+    expect(screen.getByText("scheduled.type.investment")).toBeInTheDocument();
   });
 
   it("handles creating a new schedule", async () => {
@@ -162,18 +169,15 @@ describe("ScheduledList", () => {
     // Open form
     fireEvent.click(screen.getByText("scheduled.create"));
 
-    // Fill form
+    // Fill payee and account (regular transaction)
     fireEvent.change(screen.getByPlaceholderText("scheduled.field.payee"), {
       target: { value: "Amazon" },
     });
-
-    // Select account
     const accountSelect = screen.getAllByTestId("custom-select")[0];
     fireEvent.change(accountSelect, { target: { value: "1" } });
 
     // Submit
     const buttons = screen.getAllByRole("button");
-    // Find button that contains "scheduled.create"
     const submitButton = buttons.find(
       (b) => b.textContent && b.textContent.includes("scheduled.create"),
     );
@@ -193,11 +197,58 @@ describe("ScheduledList", () => {
     );
   });
 
+  it("handles creating an investment schedule", async () => {
+    renderWithContext(<ScheduledList />);
+    await waitFor(() => screen.getByText("Netflix"));
+
+    // Open form and toggle to investment type
+    fireEvent.click(screen.getByText("scheduled.create"));
+    const investToggle = screen.getByText("scheduled.type.investment");
+    fireEvent.click(investToggle);
+
+    // ticker field should appear via placeholder
+    const tickerInput = screen.getByPlaceholderText("AAPL");
+    expect(tickerInput).toBeInTheDocument();
+
+    // Fill investment-specific fields
+    fireEvent.change(tickerInput, {
+      target: { value: "AAPL" },
+    });
+    const accountSelect2 = screen.getAllByTestId("custom-select")[0];
+    fireEvent.change(accountSelect2, { target: { value: "1" } });
+
+    // Submit
+    const buttons2 = screen.getAllByRole("button");
+    const submitButton2 = buttons2.find(
+      (b) => b.textContent && b.textContent.includes("scheduled.create"),
+    );
+    if (!submitButton2) throw new Error("Submit button not found");
+    fireEvent.click(submitButton2);
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith(
+        "create_scheduled_transaction",
+        expect.objectContaining({
+          args: expect.objectContaining({
+            transactionType: "investment",
+            ticker: "AAPL",
+          }),
+        }),
+      );
+    });
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      "scheduled.created_success",
+      "success",
+    );
+  });
+
   it("handles deleting a schedule", async () => {
     mockConfirm.mockResolvedValue(true);
 
     renderWithContext(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
+
 
     const trashBtn = screen.getByTestId("trash-icon").closest("button");
     fireEvent.click(trashBtn);
