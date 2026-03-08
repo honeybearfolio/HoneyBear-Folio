@@ -170,6 +170,7 @@ export default function SettingsView({
         localStorage.removeItem("hb_date_format");
         localStorage.removeItem("hb_first_day_of_week");
         localStorage.removeItem("hb_ui_language");
+        localStorage.removeItem("hb_sidebar_visibility");
       } catch {
         /* ignore */
       }
@@ -182,6 +183,14 @@ export default function SettingsView({
       setFirstDayOfWeek(1);
       setUiLanguage("en");
       resetTagColors();
+      onChangeSidebarVisibility({
+        dashboard: true,
+        investments: true,
+        fire: true,
+        rules: true,
+        scheduled: true,
+        all: true,
+      });
 
       try {
         await invoke("reset_db_path");

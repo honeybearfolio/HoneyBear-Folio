@@ -171,7 +171,13 @@ describe("SettingsView", () => {
     const mockConfirmLocal = mockConfirm;
     mockConfirmLocal.mockResolvedValueOnce(true);
 
-    render(<SettingsView activeSection="general" />);
+    const mockOnChangeSidebarVisibility = vi.fn();
+    render(
+      <SettingsView
+        activeSection="general"
+        onChangeSidebarVisibility={mockOnChangeSidebarVisibility}
+      />,
+    );
 
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
     fireEvent.click(btn);
@@ -186,6 +192,14 @@ describe("SettingsView", () => {
       expect(mockSetLocale).toHaveBeenCalledWith("en-US");
       expect(mockSetCurrency).toHaveBeenCalledWith("USD");
       expect(mockSetUiLanguage).toHaveBeenCalledWith("en");
+      expect(mockOnChangeSidebarVisibility).toHaveBeenCalledWith({
+        dashboard: true,
+        investments: true,
+        fire: true,
+        rules: true,
+        scheduled: true,
+        all: true,
+      });
       expect(invoke).toHaveBeenCalledWith("reset_db_path");
     });
   });
