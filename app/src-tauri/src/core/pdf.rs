@@ -192,17 +192,22 @@ fn draw_header_footer(ctx: &PageCtx, page_num: usize, data: &ReportData) {
     // Header: Icon
     if let Ok(dynamic_img) = ::image::load_from_memory(APP_ICON) {
         let pdf_image = Image::from_dynamic_image(&dynamic_img);
-        
+
         let icon_target_size_mm = 8.0;
         let original_width_px = dynamic_img.width() as f32;
         let dpi = (original_width_px / icon_target_size_mm) * 25.4;
 
-        pdf_image.add_to_layer(ctx.layer.clone(), ImageTransform {
-            translate_x: Some(Mm(MARGIN_LEFT)),
-            translate_y: Some(y(HEADER_HEIGHT - (HEADER_HEIGHT - icon_target_size_mm) / 2.0)),
-            dpi: Some(dpi),
-            ..Default::default()
-        });
+        pdf_image.add_to_layer(
+            ctx.layer.clone(),
+            ImageTransform {
+                translate_x: Some(Mm(MARGIN_LEFT)),
+                translate_y: Some(y(
+                    HEADER_HEIGHT - (HEADER_HEIGHT - icon_target_size_mm) / 2.0
+                )),
+                dpi: Some(dpi),
+                ..Default::default()
+            },
+        );
     }
 
     write_text_color(
