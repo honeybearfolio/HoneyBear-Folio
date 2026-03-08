@@ -76,12 +76,15 @@ export default function ScheduledList() {
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState({ ...DEFAULT_FORM });
   const [showForm, setShowForm] = useState(false);
+  const [tickerSuggestions, setTickerSuggestions] = useState([]);
+  const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
 
   const confirm = useConfirm();
   const { showToast } = useToast();
   const formatNumber = useFormatNumber();
   const { dateFormat, firstDayOfWeek } = useNumberFormat();
   const formRef = useRef(null);
+  const tickerTimeoutRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -115,8 +118,29 @@ export default function ScheduledList() {
 
   function resetForm() {
     setFormState({ ...DEFAULT_FORM });
+    setTickerSuggestions([]);
+    setShowTickerSuggestions(false);
     setIsEditing(false);
     setShowForm(false);
+  }
+
+  function handleTickerChange(query) {
+    if (tickerTimeoutRef.current) clearTimeout(tickerTimeoutRef.current);
+
+    if (!query || query.length < 2) {
+      setTickerSuggestions([]);
+      return;
+    }
+
+    tickerTimeoutRef.current = setTimeout(async () => {
+      try {
+        const suggestions = await invoke("search_ticker", { query });
+        setTickerSuggestions(suggestions);
+        setShowTickerSuggestions(true);
+      } catch (error) {
+        console.error("Error fetching ticker suggestions:", error);
+      }
+    }, 300);
   }
 
   function handleEdit(sched) {
@@ -625,22 +649,66 @@ export default function ScheduledList() {
                       </button>
                     </div>
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="form-label">
                       {t("scheduled.field.ticker")} *
                     </label>
                     <input
                       type="text"
                       value={formState.ticker}
-                      onChange={(e) =>
-                        setFormState((prev) => ({
-                          ...prev,
-                          ticker: e.target.value.toUpperCase(),
-                        }))
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase();
+                        setFormState((prev) => ({ ...prev, ticker: val }));
+                        handleTickerChange(val);
+                        setShowTickerSuggestions(true);
+                      }}
+                      onBlur={() =>
+                        setTimeout(() => setShowTickerSuggestions(false), 200)
+                      }
+                      onFocus={() =>
+                        formState.ticker.length >= 2 &&
+                        setShowTickerSuggestions(true)
                       }
                       className="form-input"
                       placeholder="AAPL"
                     />
+                    {showTickerSuggestions && tickerSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 mt-1 max-h-60 overflow-y-auto">
+                        {tickerSuggestions.map((suggestion, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer text-sm"
+                            onClick={() => {
+                              setFormState((prev) => ({
+                                ...prev,
+                                ticker: suggestion.symbol,
+                                ...(suggestion.currency
+                                  ? { currency: suggestion.currency }
+                                  : {}),
+                              }));
+                              setShowTickerSuggestions(false);
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-900 dark:text-slate-100">
+                                {suggestion.symbol}
+                              </span>
+                              {suggestion.currency && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                                  {suggestion.currency}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              {suggestion.shortname || suggestion.longname}
+                            </div>
+                            <div className="text-xs text-slate-400 dark:text-slate-500">
+                              {suggestion.exchange} - {suggestion.typeDisp}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="form-label">
