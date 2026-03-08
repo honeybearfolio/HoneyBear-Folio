@@ -59,7 +59,7 @@ tauri-plugin-shell = "2"
 calamine = "0.34.0"
 rust_xlsxwriter = "0.94.0"
 printpdf = { version = "0.7", features = ["embedded_images"] }
-image = "0.24.9"
+image = "0.25.9"
 
 [dev-dependencies]
 tempfile = "3"
