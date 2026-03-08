@@ -326,10 +326,24 @@
 }
 
 /* Scale inline Tailwind text utilities within the settings view */
-.settings-view .text-xs   { font-size: calc(0.75rem  * var(--hb-font-size)); }
-.settings-view .text-sm   { font-size: calc(0.875rem * var(--hb-font-size)); }
-.settings-view .text-base { font-size: calc(1rem     * var(--hb-font-size)); }
-.settings-view .text-lg   { font-size: calc(1.125rem * var(--hb-font-size)); }
-.settings-view .text-xl   { font-size: calc(1.25rem  * var(--hb-font-size)); }
-.settings-view .text-2xl  { font-size: calc(1.5rem   * var(--hb-font-size)); }
-.settings-view .text-3xl  { font-size: calc(1.875rem * var(--hb-font-size)); }
+.settings-view .text-xs {
+  font-size: calc(0.75rem * var(--hb-font-size));
+}
+.settings-view .text-sm {
+  font-size: calc(0.875rem * var(--hb-font-size));
+}
+.settings-view .text-base {
+  font-size: calc(1rem * var(--hb-font-size));
+}
+.settings-view .text-lg {
+  font-size: calc(1.125rem * var(--hb-font-size));
+}
+.settings-view .text-xl {
+  font-size: calc(1.25rem * var(--hb-font-size));
+}
+.settings-view .text-2xl {
+  font-size: calc(1.5rem * var(--hb-font-size));
+}
+.settings-view .text-3xl {
+  font-size: calc(1.875rem * var(--hb-font-size));
+}
