@@ -804,9 +804,6 @@ export default function AccountDetails({ account, onUpdate }) {
     );
   }, [transactions]);
 
-  // When viewing the consolidated "All" view, allow adding to a selected account
-  const effectiveAddTarget = account.id === "all" ? addTargetAccount : account;
-
   const getSortIcon = (key) => {
     const active = sortConfig.key === key;
     const direction = active ? sortConfig.direction : null;
