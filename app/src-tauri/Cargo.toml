@@ -65,7 +65,7 @@ image = "0.24.9"
 tempfile = "3"
 rand = "0.10"
 httpmock = "0.8"
-proptest = "1.0"
+proptest = "1.10"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
