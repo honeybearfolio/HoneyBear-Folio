@@ -59,7 +59,7 @@ fn acquire_db_lock(db_path: &Path) -> Result<DbLockGuard, String> {
         let mut map = locks
             .lock()
             .map_err(|_| "Failed to lock database lock map".to_string())?;
-        *map.entry(key.clone())
+        map.entry(key.clone())
             .or_insert_with(|| Box::leak(Box::new(Mutex::new(()))))
     };
 
