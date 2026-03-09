@@ -1,5 +1,7 @@
 use crate::{calculate_account_balances, Account};
+use rusqlite::Connection;
 use std::collections::HashMap;
+use tempfile::tempdir;
 
 #[test]
 fn test_custom_rate_application() {
@@ -144,5 +146,59 @@ fn test_fallback_when_direct_rate_missing() {
         (updated[0].balance - 80.0).abs() < 1e-6,
         "Balance mismatch (pivot Yahoo): expected 80.0, got {}",
         updated[0].balance
+    );
+}
+
+#[test]
+fn test_get_custom_rates_map_returns_all_rows() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("rates.db");
+    let conn = Connection::open(&db_path).unwrap();
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS custom_exchange_rates (
+            currency TEXT PRIMARY KEY,
+            rate REAL NOT NULL
+        )",
+        [],
+    )
+    .unwrap();
+    drop(conn);
+
+    crate::set_custom_exchange_rate_db(&db_path, "EUR".to_string(), 1.25).unwrap();
+    crate::set_custom_exchange_rate_db(&db_path, "JPY".to_string(), 0.0071).unwrap();
+
+    let map = crate::utils::get_custom_rates_map(&db_path).unwrap();
+    assert_eq!(map.len(), 2);
+    assert_eq!(map.get("EUR"), Some(&1.25));
+    assert_eq!(map.get("JPY"), Some(&0.0071));
+}
+
+#[test]
+fn test_delete_custom_exchange_rate_db_removes_only_target_currency() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("rates.db");
+    let conn = Connection::open(&db_path).unwrap();
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS custom_exchange_rates (
+            currency TEXT PRIMARY KEY,
+            rate REAL NOT NULL
+        )",
+        [],
+    )
+    .unwrap();
+    drop(conn);
+
+    crate::set_custom_exchange_rate_db(&db_path, "EUR".to_string(), 1.25).unwrap();
+    crate::set_custom_exchange_rate_db(&db_path, "GBP".to_string(), 1.41).unwrap();
+
+    crate::utils::delete_custom_exchange_rate_db(&db_path, "EUR".to_string()).unwrap();
+
+    assert_eq!(
+        crate::get_custom_exchange_rate_db(&db_path, "EUR".to_string()).unwrap(),
+        None
+    );
+    assert_eq!(
+        crate::get_custom_exchange_rate_db(&db_path, "GBP".to_string()).unwrap(),
+        Some(1.41)
     );
 }
