@@ -1,9 +1,85 @@
 use rusqlite::Connection;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 use tauri::{AppHandle, Manager};
 
 use crate::models::AppSettings;
+
+static DB_PATH_LOCKS: OnceLock<Mutex<HashMap<PathBuf, &'static Mutex<()>>>> = OnceLock::new();
+
+thread_local! {
+    static DB_LOCK_DEPTH: RefCell<HashMap<PathBuf, usize>> = RefCell::new(HashMap::new());
+}
+
+pub struct DbLockGuard {
+    key: PathBuf,
+    _guard: Option<MutexGuard<'static, ()>>,
+}
+
+impl Drop for DbLockGuard {
+    fn drop(&mut self) {
+        let key = self.key.clone();
+        DB_LOCK_DEPTH.with(|depths| {
+            let mut depths = depths.borrow_mut();
+            if let Some(depth) = depths.get_mut(&key) {
+                if *depth > 1 {
+                    *depth -= 1;
+                } else {
+                    depths.remove(&key);
+                }
+            }
+        });
+    }
+}
+
+fn acquire_db_lock(db_path: &Path) -> Result<DbLockGuard, String> {
+    let key = db_path.to_path_buf();
+
+    let is_reentrant = DB_LOCK_DEPTH.with(|depths| {
+        let mut depths = depths.borrow_mut();
+        if let Some(depth) = depths.get_mut(&key) {
+            *depth += 1;
+            true
+        } else {
+            depths.insert(key.clone(), 1);
+            false
+        }
+    });
+
+    if is_reentrant {
+        return Ok(DbLockGuard { key, _guard: None });
+    }
+
+    let lock_ref: &'static Mutex<()> = {
+        let locks = DB_PATH_LOCKS.get_or_init(|| Mutex::new(HashMap::new()));
+        let mut map = locks
+            .lock()
+            .map_err(|_| "Failed to lock database lock map".to_string())?;
+        map.entry(key.clone())
+            .or_insert_with(|| Box::leak(Box::new(Mutex::new(()))))
+    };
+
+    let guard = lock_ref
+        .lock()
+        .map_err(|_| "Failed to lock database path mutex".to_string())?;
+
+    Ok(DbLockGuard {
+        key,
+        _guard: Some(guard),
+    })
+}
+
+pub fn with_db_lock<T, F>(db_path: &Path, operation: F) -> Result<T, String>
+where
+    F: FnOnce() -> Result<T, String>,
+{
+    let _lock = acquire_db_lock(db_path)?;
+    operation()
+}
 
 pub fn settings_file_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     let app_dir = app_handle
@@ -61,21 +137,22 @@ pub fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
 
 pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
     let db_path = get_db_path(app_handle)?;
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    with_db_lock(&db_path, || {
+        let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS accounts (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             balance REAL NOT NULL,
             kind TEXT DEFAULT 'cash'
         )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
+            [],
+        )
+        .map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS transactions (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY,
             account_id INTEGER NOT NULL,
             date TEXT NOT NULL,
@@ -89,120 +166,120 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
             fee REAL,
             FOREIGN KEY(account_id) REFERENCES accounts(id)
         )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
+            [],
+        )
+        .map_err(|e| e.to_string())?;
 
-    // Ensure we have a column to link transfer pairs so updates/deletes can keep both sides in sync
-    {
-        let mut stmt = conn
-            .prepare("PRAGMA table_info(transactions)")
-            .map_err(|e| e.to_string())?;
-        let mut has_linked = false;
-        let col_iter = stmt
-            .query_map([], |row| row.get::<_, String>(1))
-            .map_err(|e| e.to_string())?;
-        for name in col_iter.flatten() {
-            if name == "linked_tx_id" {
-                has_linked = true;
-                break;
+        // Ensure we have a column to link transfer pairs so updates/deletes can keep both sides in sync
+        {
+            let mut stmt = conn
+                .prepare("PRAGMA table_info(transactions)")
+                .map_err(|e| e.to_string())?;
+            let mut has_linked = false;
+            let col_iter = stmt
+                .query_map([], |row| row.get::<_, String>(1))
+                .map_err(|e| e.to_string())?;
+            for name in col_iter.flatten() {
+                if name == "linked_tx_id" {
+                    has_linked = true;
+                    break;
+                }
             }
-        }
-        if !has_linked {
-            match conn.execute(
-                "ALTER TABLE transactions ADD COLUMN linked_tx_id INTEGER",
-                [],
-            ) {
-                Ok(_) => {}
-                Err(e) => {
-                    let s = e.to_string();
-                    if !s.contains("duplicate column name") && !s.contains("already exists") {
-                        return Err(s);
+            if !has_linked {
+                match conn.execute(
+                    "ALTER TABLE transactions ADD COLUMN linked_tx_id INTEGER",
+                    [],
+                ) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        let s = e.to_string();
+                        if !s.contains("duplicate column name") && !s.contains("already exists") {
+                            return Err(s);
+                        }
                     }
                 }
             }
         }
-    }
 
-    // Ensure we have a column for currency (multi-currency support)
-    {
-        let mut stmt = conn
-            .prepare("PRAGMA table_info(transactions)")
-            .map_err(|e| e.to_string())?;
-        let mut has_currency = false;
-        let col_iter = stmt
-            .query_map([], |row| row.get::<_, String>(1))
-            .map_err(|e| e.to_string())?;
-        for name in col_iter.flatten() {
-            if name == "currency" {
-                has_currency = true;
-                break;
+        // Ensure we have a column for currency (multi-currency support)
+        {
+            let mut stmt = conn
+                .prepare("PRAGMA table_info(transactions)")
+                .map_err(|e| e.to_string())?;
+            let mut has_currency = false;
+            let col_iter = stmt
+                .query_map([], |row| row.get::<_, String>(1))
+                .map_err(|e| e.to_string())?;
+            for name in col_iter.flatten() {
+                if name == "currency" {
+                    has_currency = true;
+                    break;
+                }
             }
-        }
-        if !has_currency {
-            match conn.execute("ALTER TABLE transactions ADD COLUMN currency TEXT", []) {
-                Ok(_) => {}
-                Err(e) => {
-                    let s = e.to_string();
-                    if !s.contains("duplicate column name") && !s.contains("already exists") {
-                        return Err(s);
+            if !has_currency {
+                match conn.execute("ALTER TABLE transactions ADD COLUMN currency TEXT", []) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        let s = e.to_string();
+                        if !s.contains("duplicate column name") && !s.contains("already exists") {
+                            return Err(s);
+                        }
                     }
                 }
             }
         }
-    }
 
-    // Ensure we have a column for currency in accounts
-    {
-        let mut stmt = conn
-            .prepare("PRAGMA table_info(accounts)")
-            .map_err(|e| e.to_string())?;
-        let mut has_currency = false;
-        let col_iter = stmt
-            .query_map([], |row| row.get::<_, String>(1))
-            .map_err(|e| e.to_string())?;
-        for name in col_iter.flatten() {
-            if name == "currency" {
-                has_currency = true;
-                break;
+        // Ensure we have a column for currency in accounts
+        {
+            let mut stmt = conn
+                .prepare("PRAGMA table_info(accounts)")
+                .map_err(|e| e.to_string())?;
+            let mut has_currency = false;
+            let col_iter = stmt
+                .query_map([], |row| row.get::<_, String>(1))
+                .map_err(|e| e.to_string())?;
+            for name in col_iter.flatten() {
+                if name == "currency" {
+                    has_currency = true;
+                    break;
+                }
             }
-        }
-        if !has_currency {
-            match conn.execute("ALTER TABLE accounts ADD COLUMN currency TEXT", []) {
-                Ok(_) => {}
-                Err(e) => {
-                    let s = e.to_string();
-                    if !s.contains("duplicate column name") && !s.contains("already exists") {
-                        return Err(s);
+            if !has_currency {
+                match conn.execute("ALTER TABLE accounts ADD COLUMN currency TEXT", []) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        let s = e.to_string();
+                        if !s.contains("duplicate column name") && !s.contains("already exists") {
+                            return Err(s);
+                        }
                     }
                 }
             }
         }
-    }
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS stock_prices (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS stock_prices (
             ticker TEXT PRIMARY KEY,
             price REAL NOT NULL,
             last_updated TEXT NOT NULL
         )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
+            [],
+        )
+        .map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS daily_stock_prices (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS daily_stock_prices (
             ticker TEXT NOT NULL,
             date TEXT NOT NULL,
             price REAL NOT NULL,
             PRIMARY KEY (ticker, date)
         )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
+            [],
+        )
+        .map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS rules (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS rules (
             id INTEGER PRIMARY KEY,
             priority INTEGER NOT NULL DEFAULT 0,
             match_field TEXT NOT NULL,
@@ -213,35 +290,35 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
             conditions TEXT NOT NULL DEFAULT '[]',
             actions TEXT NOT NULL DEFAULT '[]'
         )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
+            [],
+        )
+        .map_err(|e| e.to_string())?;
 
-    // Migration: Add new columns to existing rules table if they don't exist
-    let _ = conn.execute(
-        "ALTER TABLE rules ADD COLUMN logic TEXT NOT NULL DEFAULT 'and'",
-        [],
-    );
-    let _ = conn.execute(
-        "ALTER TABLE rules ADD COLUMN conditions TEXT NOT NULL DEFAULT '[]'",
-        [],
-    );
-    let _ = conn.execute(
-        "ALTER TABLE rules ADD COLUMN actions TEXT NOT NULL DEFAULT '[]'",
-        [],
-    );
+        // Migration: Add new columns to existing rules table if they don't exist
+        let _ = conn.execute(
+            "ALTER TABLE rules ADD COLUMN logic TEXT NOT NULL DEFAULT 'and'",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE rules ADD COLUMN conditions TEXT NOT NULL DEFAULT '[]'",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE rules ADD COLUMN actions TEXT NOT NULL DEFAULT '[]'",
+            [],
+        );
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS custom_exchange_rates (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS custom_exchange_rates (
             currency TEXT PRIMARY KEY,
             rate REAL NOT NULL
         )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
+            [],
+        )
+        .map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS scheduled_transactions (
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS scheduled_transactions (
             id INTEGER PRIMARY KEY,
             account_id INTEGER NOT NULL,
             payee TEXT NOT NULL,
@@ -269,34 +346,35 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
             is_buy INTEGER,
             FOREIGN KEY(account_id) REFERENCES accounts(id)
         )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
+            [],
+        )
+        .map_err(|e| e.to_string())?;
 
-    // Migration: Add investment columns to existing scheduled_transactions table
-    let _ = conn.execute(
+        // Migration: Add investment columns to existing scheduled_transactions table
+        let _ = conn.execute(
         "ALTER TABLE scheduled_transactions ADD COLUMN transaction_type TEXT NOT NULL DEFAULT 'regular'",
         [],
     );
-    let _ = conn.execute(
-        "ALTER TABLE scheduled_transactions ADD COLUMN ticker TEXT",
-        [],
-    );
-    let _ = conn.execute(
-        "ALTER TABLE scheduled_transactions ADD COLUMN shares REAL",
-        [],
-    );
-    let _ = conn.execute(
-        "ALTER TABLE scheduled_transactions ADD COLUMN price_per_share REAL",
-        [],
-    );
-    let _ = conn.execute("ALTER TABLE scheduled_transactions ADD COLUMN fee REAL", []);
-    let _ = conn.execute(
-        "ALTER TABLE scheduled_transactions ADD COLUMN is_buy INTEGER",
-        [],
-    );
+        let _ = conn.execute(
+            "ALTER TABLE scheduled_transactions ADD COLUMN ticker TEXT",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE scheduled_transactions ADD COLUMN shares REAL",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE scheduled_transactions ADD COLUMN price_per_share REAL",
+            [],
+        );
+        let _ = conn.execute("ALTER TABLE scheduled_transactions ADD COLUMN fee REAL", []);
+        let _ = conn.execute(
+            "ALTER TABLE scheduled_transactions ADD COLUMN is_buy INTEGER",
+            [],
+        );
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[tauri::command]

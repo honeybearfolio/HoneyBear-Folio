@@ -335,22 +335,24 @@ const SELECT_COLUMNS: &str = "id, account_id, payee, amount, category, notes, cu
 pub fn get_scheduled_transactions_db(
     db_path: &PathBuf,
 ) -> Result<Vec<ScheduledTransaction>, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let sql = format!(
-        "SELECT {} FROM scheduled_transactions ORDER BY id ASC",
-        SELECT_COLUMNS
-    );
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let sql = format!(
+            "SELECT {} FROM scheduled_transactions ORDER BY id ASC",
+            SELECT_COLUMNS
+        );
+        let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
-    let iter = stmt
-        .query_map([], row_to_scheduled)
-        .map_err(|e| e.to_string())?;
+        let iter = stmt
+            .query_map([], row_to_scheduled)
+            .map_err(|e| e.to_string())?;
 
-    let mut results = Vec::new();
-    for item in iter {
-        results.push(item.map_err(|e| e.to_string())?);
-    }
-    Ok(results)
+        let mut results = Vec::new();
+        for item in iter {
+            results.push(item.map_err(|e| e.to_string())?);
+        }
+        Ok(results)
+    })
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
@@ -383,17 +385,18 @@ pub fn create_scheduled_transaction_db(
     db_path: &PathBuf,
     args: CreateScheduledTransactionArgs,
 ) -> Result<i32, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    let days_json = args
-        .days_of_week
-        .as_ref()
-        .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
+        let days_json = args
+            .days_of_week
+            .as_ref()
+            .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
 
-    let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
-    let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
+        let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
+        let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
 
-    conn.execute(
+        conn.execute(
         "INSERT INTO scheduled_transactions \
          (account_id, payee, amount, category, notes, currency, \
           recurrence_type, interval_value, interval_unit, days_of_week, \
@@ -426,7 +429,8 @@ pub fn create_scheduled_transaction_db(
     )
     .map_err(|e| e.to_string())?;
 
-    Ok(conn.last_insert_rowid() as i32)
+        Ok(conn.last_insert_rowid() as i32)
+    })
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
@@ -461,19 +465,20 @@ pub fn update_scheduled_transaction_db(
     db_path: &PathBuf,
     args: UpdateScheduledTransactionArgs,
 ) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    let days_json = args
-        .days_of_week
-        .as_ref()
-        .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
+        let days_json = args
+            .days_of_week
+            .as_ref()
+            .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
 
-    let enabled_int: i32 = if args.enabled { 1 } else { 0 };
-    let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
-    let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
+        let enabled_int: i32 = if args.enabled { 1 } else { 0 };
+        let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
+        let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
 
-    conn.execute(
-        "UPDATE scheduled_transactions SET \
+        conn.execute(
+            "UPDATE scheduled_transactions SET \
          account_id = ?1, payee = ?2, amount = ?3, category = ?4, \
          notes = ?5, currency = ?6, recurrence_type = ?7, \
          interval_value = ?8, interval_unit = ?9, days_of_week = ?10, \
@@ -482,45 +487,48 @@ pub fn update_scheduled_transaction_db(
          transaction_type = ?17, ticker = ?18, shares = ?19, \
          price_per_share = ?20, fee = ?21, is_buy = ?22 \
          WHERE id = ?23",
-        params![
-            args.account_id,
-            args.payee,
-            args.amount,
-            args.category,
-            args.notes,
-            args.currency,
-            args.recurrence_type,
-            args.interval_value,
-            args.interval_unit,
-            days_json,
-            args.ordinal,
-            args.weekday,
-            args.start_date,
-            args.end_date,
-            args.max_occurrences,
-            enabled_int,
-            tx_type,
-            args.ticker,
-            args.shares,
-            args.price_per_share,
-            args.fee,
-            is_buy_int,
-            args.id,
-        ],
-    )
-    .map_err(|e| e.to_string())?;
+            params![
+                args.account_id,
+                args.payee,
+                args.amount,
+                args.category,
+                args.notes,
+                args.currency,
+                args.recurrence_type,
+                args.interval_value,
+                args.interval_unit,
+                days_json,
+                args.ordinal,
+                args.weekday,
+                args.start_date,
+                args.end_date,
+                args.max_occurrences,
+                enabled_int,
+                tx_type,
+                args.ticker,
+                args.shares,
+                args.price_per_share,
+                args.fee,
+                is_buy_int,
+                args.id,
+            ],
+        )
+        .map_err(|e| e.to_string())?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 pub fn delete_scheduled_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    conn.execute(
-        "DELETE FROM scheduled_transactions WHERE id = ?1",
-        params![id],
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(())
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        conn.execute(
+            "DELETE FROM scheduled_transactions WHERE id = ?1",
+            params![id],
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(())
+    })
 }
 
 /// Compute pending occurrences (missed + upcoming 5 days) for an optional account_id.
@@ -530,84 +538,86 @@ pub fn get_pending_occurrences_db(
     account_id: Option<i32>,
     today_str: &str,
 ) -> Result<Vec<ScheduledOccurrence>, String> {
-    let today = NaiveDate::parse_from_str(today_str, "%Y-%m-%d")
-        .map_err(|e| format!("Invalid date: {}", e))?;
-    let lookahead = today + Duration::days(5);
+    crate::db_init::with_db_lock(db_path, || {
+        let today = NaiveDate::parse_from_str(today_str, "%Y-%m-%d")
+            .map_err(|e| format!("Invalid date: {}", e))?;
+        let lookahead = today + Duration::days(5);
 
-    let schedules = get_scheduled_transactions_db(db_path)?;
+        let schedules = get_scheduled_transactions_db(db_path)?;
 
-    // Also fetch account names for display
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let mut name_stmt = conn
-        .prepare("SELECT id, name FROM accounts")
-        .map_err(|e| e.to_string())?;
-    let account_names: std::collections::HashMap<i32, String> = name_stmt
-        .query_map([], |row| {
-            Ok((row.get::<_, i32>(0)?, row.get::<_, String>(1)?))
-        })
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+        // Also fetch account names for display
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut name_stmt = conn
+            .prepare("SELECT id, name FROM accounts")
+            .map_err(|e| e.to_string())?;
+        let account_names: std::collections::HashMap<i32, String> = name_stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, i32>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(|e| e.to_string())?
+            .filter_map(|r| r.ok())
+            .collect();
 
-    let mut occurrences = Vec::new();
+        let mut occurrences = Vec::new();
 
-    for sched in &schedules {
-        if !sched.enabled {
-            continue;
-        }
-        if let Some(aid) = account_id {
-            if sched.account_id != aid {
+        for sched in &schedules {
+            if !sched.enabled {
                 continue;
+            }
+            if let Some(aid) = account_id {
+                if sched.account_id != aid {
+                    continue;
+                }
+            }
+
+            // The range for scanning: from the day after last_applied_date (or start_date) through lookahead
+            let range_start = sched
+                .last_applied_date
+                .as_ref()
+                .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
+                .map(|d| d + Duration::days(1))
+                .unwrap_or_else(|| {
+                    NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d").unwrap_or(today)
+                });
+
+            let dates = compute_occurrences(sched, range_start, lookahead);
+
+            for date in dates {
+                let status = if date < today { "missed" } else { "upcoming" };
+                occurrences.push(ScheduledOccurrence {
+                    scheduled_tx_id: sched.id,
+                    date: date.format("%Y-%m-%d").to_string(),
+                    status: status.to_string(),
+                    account_id: sched.account_id,
+                    payee: sched.payee.clone(),
+                    amount: sched.amount,
+                    category: sched.category.clone(),
+                    notes: sched.notes.clone(),
+                    currency: sched.currency.clone(),
+                    account_name: account_names.get(&sched.account_id).cloned(),
+                    transaction_type: sched.transaction_type.clone(),
+                    ticker: sched.ticker.clone(),
+                    shares: sched.shares,
+                    price_per_share: sched.price_per_share,
+                    fee: sched.fee,
+                    is_buy: sched.is_buy,
+                });
             }
         }
 
-        // The range for scanning: from the day after last_applied_date (or start_date) through lookahead
-        let range_start = sched
-            .last_applied_date
-            .as_ref()
-            .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
-            .map(|d| d + Duration::days(1))
-            .unwrap_or_else(|| {
-                NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d").unwrap_or(today)
-            });
+        // Sort: missed first (oldest first), then upcoming (soonest first)
+        occurrences.sort_by(|a, b| {
+            let a_missed = a.status == "missed";
+            let b_missed = b.status == "missed";
+            match (a_missed, b_missed) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a.date.cmp(&b.date),
+            }
+        });
 
-        let dates = compute_occurrences(sched, range_start, lookahead);
-
-        for date in dates {
-            let status = if date < today { "missed" } else { "upcoming" };
-            occurrences.push(ScheduledOccurrence {
-                scheduled_tx_id: sched.id,
-                date: date.format("%Y-%m-%d").to_string(),
-                status: status.to_string(),
-                account_id: sched.account_id,
-                payee: sched.payee.clone(),
-                amount: sched.amount,
-                category: sched.category.clone(),
-                notes: sched.notes.clone(),
-                currency: sched.currency.clone(),
-                account_name: account_names.get(&sched.account_id).cloned(),
-                transaction_type: sched.transaction_type.clone(),
-                ticker: sched.ticker.clone(),
-                shares: sched.shares,
-                price_per_share: sched.price_per_share,
-                fee: sched.fee,
-                is_buy: sched.is_buy,
-            });
-        }
-    }
-
-    // Sort: missed first (oldest first), then upcoming (soonest first)
-    occurrences.sort_by(|a, b| {
-        let a_missed = a.status == "missed";
-        let b_missed = b.status == "missed";
-        match (a_missed, b_missed) {
-            (true, false) => std::cmp::Ordering::Less,
-            (false, true) => std::cmp::Ordering::Greater,
-            _ => a.date.cmp(&b.date),
-        }
-    });
-
-    Ok(occurrences)
+        Ok(occurrences)
+    })
 }
 
 /// Apply a scheduled occurrence: create a real transaction with the given date,
@@ -617,64 +627,66 @@ pub fn apply_scheduled_occurrence_db(
     scheduled_tx_id: i32,
     apply_date: &str,
 ) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    // Fetch the scheduled transaction
-    let sql = format!(
-        "SELECT {} FROM scheduled_transactions WHERE id = ?1",
-        SELECT_COLUMNS
-    );
-    let sched: ScheduledTransaction = conn
-        .query_row(&sql, params![scheduled_tx_id], row_to_scheduled)
-        .map_err(|e| e.to_string())?;
+        // Fetch the scheduled transaction
+        let sql = format!(
+            "SELECT {} FROM scheduled_transactions WHERE id = ?1",
+            SELECT_COLUMNS
+        );
+        let sched: ScheduledTransaction = conn
+            .query_row(&sql, params![scheduled_tx_id], row_to_scheduled)
+            .map_err(|e| e.to_string())?;
 
-    // Create the real transaction based on transaction type
-    if sched.transaction_type == "investment" {
-        let ticker = sched.ticker.clone().unwrap_or_default();
-        let shares = sched.shares.unwrap_or(0.0);
-        let price_per_share = sched.price_per_share.unwrap_or(0.0);
-        let fee = sched.fee.unwrap_or(0.0);
-        let is_buy = sched.is_buy.unwrap_or(true);
+        // Create the real transaction based on transaction type
+        if sched.transaction_type == "investment" {
+            let ticker = sched.ticker.clone().unwrap_or_default();
+            let shares = sched.shares.unwrap_or(0.0);
+            let price_per_share = sched.price_per_share.unwrap_or(0.0);
+            let fee = sched.fee.unwrap_or(0.0);
+            let is_buy = sched.is_buy.unwrap_or(true);
 
-        let invest_args = crate::transactions::CreateInvestmentTransactionArgs {
-            account_id: sched.account_id,
-            date: apply_date.to_string(),
-            ticker,
-            shares,
-            price_per_share,
-            fee,
-            is_buy,
-            currency: sched.currency.clone(),
-            payee: Some(sched.payee.clone()),
-            notes: sched.notes.clone(),
-            category: sched.category.clone(),
-        };
-        crate::transactions::create_investment_transaction_db(db_path, invest_args)?;
-    } else {
-        let create_args = crate::transactions::CreateTransactionArgs {
-            account_id: sched.account_id,
-            date: apply_date.to_string(),
-            payee: sched.payee.clone(),
-            notes: sched.notes.clone(),
-            category: sched.category.clone(),
-            amount: sched.amount,
-            ticker: None,
-            shares: None,
-            price_per_share: None,
-            fee: None,
-            currency: sched.currency.clone(),
-        };
-        crate::transactions::create_transaction_db(db_path, create_args)?;
-    }
+            let invest_args = crate::transactions::CreateInvestmentTransactionArgs {
+                account_id: sched.account_id,
+                date: apply_date.to_string(),
+                ticker,
+                shares,
+                price_per_share,
+                fee,
+                is_buy,
+                currency: sched.currency.clone(),
+                payee: Some(sched.payee.clone()),
+                notes: sched.notes.clone(),
+                category: sched.category.clone(),
+            };
+            crate::transactions::create_investment_transaction_db(db_path, invest_args)?;
+        } else {
+            let create_args = crate::transactions::CreateTransactionArgs {
+                account_id: sched.account_id,
+                date: apply_date.to_string(),
+                payee: sched.payee.clone(),
+                notes: sched.notes.clone(),
+                category: sched.category.clone(),
+                amount: sched.amount,
+                ticker: None,
+                shares: None,
+                price_per_share: None,
+                fee: None,
+                currency: sched.currency.clone(),
+            };
+            crate::transactions::create_transaction_db(db_path, create_args)?;
+        }
 
-    // Update tracking: increment occurrences_count and set last_applied_date
-    conn.execute(
+        // Update tracking: increment occurrences_count and set last_applied_date
+        conn.execute(
         "UPDATE scheduled_transactions SET occurrences_count = occurrences_count + 1, last_applied_date = ?1 WHERE id = ?2",
         params![apply_date, scheduled_tx_id],
     )
     .map_err(|e| e.to_string())?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 /// Skip a scheduled occurrence: advance last_applied_date without creating a transaction.
@@ -683,15 +695,17 @@ pub fn skip_scheduled_occurrence_db(
     scheduled_tx_id: i32,
     skip_date: &str,
 ) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    conn.execute(
-        "UPDATE scheduled_transactions SET last_applied_date = ?1 WHERE id = ?2",
-        params![skip_date, scheduled_tx_id],
-    )
-    .map_err(|e| e.to_string())?;
+        conn.execute(
+            "UPDATE scheduled_transactions SET last_applied_date = ?1 WHERE id = ?2",
+            params![skip_date, scheduled_tx_id],
+        )
+        .map_err(|e| e.to_string())?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 // ---------------------------------------------------------------------------
