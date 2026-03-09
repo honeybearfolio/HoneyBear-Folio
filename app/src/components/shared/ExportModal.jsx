@@ -46,7 +46,8 @@ export default function ExportModal({ onClose }) {
   // Fetch transaction dates on mount to derive available years/months
   const [transactionDates, setTransactionDates] = useState([]);
   useEffect(() => {
-    rust.get_all_transactions()
+    rust
+      .get_all_transactions()
       .then((txs) => {
         const dates = txs.map((tx) => tx.date).filter(Boolean);
         setTransactionDates(dates);

@@ -784,7 +784,9 @@ export default function SettingsView({
                       style={{ fontFamily: "monospace" }}
                       onClick={(e) => {
                         e.preventDefault();
-                        openExternal(`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`);
+                        openExternal(
+                          `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
+                        );
                       }}
                     >
                       {APP_COMMIT.substring(0, 7)}

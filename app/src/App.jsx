@@ -101,7 +101,7 @@ function App() {
   }, [isResizing]);
 
   const handleAccountUpdate = () => {
-      setRefreshTrigger((prev) => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   async function fetchAccounts() {

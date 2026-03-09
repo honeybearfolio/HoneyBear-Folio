@@ -4,7 +4,11 @@ import {
   createDefaultRuleFormState,
 } from "../../constants/app";
 
-export { createDefaultRuleFormState, DEFAULT_RULE_CONDITION, DEFAULT_RULE_ACTION };
+export {
+  createDefaultRuleFormState,
+  DEFAULT_RULE_CONDITION,
+  DEFAULT_RULE_ACTION,
+};
 
 export function toRuleFormState(rule) {
   const conditions =
@@ -47,7 +51,8 @@ export function toRulePayload(formState, rules) {
     actions: formState.actions.map((a) => ({ ...a, value: String(a.value) })),
   };
 
-  const maxPriority = rules.length > 0 ? Math.max(...rules.map((r) => r.priority)) : 0;
+  const maxPriority =
+    rules.length > 0 ? Math.max(...rules.map((r) => r.priority)) : 0;
 
   return { payload, maxPriority };
 }
@@ -86,8 +91,10 @@ export function isValidRegex(pattern) {
 }
 
 export function formatCondition(condition, translate) {
-  const fieldLabel = translate(`rules.field.${condition.field}`) || condition.field;
-  const operatorLabel = translate(`rules.operator.${condition.operator}`) || condition.operator;
+  const fieldLabel =
+    translate(`rules.field.${condition.field}`) || condition.field;
+  const operatorLabel =
+    translate(`rules.operator.${condition.operator}`) || condition.operator;
   if (isValuelessOperator(condition.operator)) {
     return `${fieldLabel} ${operatorLabel}`;
   }

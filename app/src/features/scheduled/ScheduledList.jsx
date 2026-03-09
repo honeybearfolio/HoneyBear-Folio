@@ -45,7 +45,9 @@ export default function ScheduledList() {
   const [schedules, setSchedules] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [formState, setFormState] = useState(() => createDefaultScheduledForm());
+  const [formState, setFormState] = useState(() =>
+    createDefaultScheduledForm(),
+  );
   const [showForm, setShowForm] = useState(false);
   const [tickerSuggestions, setTickerSuggestions] = useState([]);
   const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);

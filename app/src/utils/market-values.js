@@ -7,7 +7,8 @@ function buildAccountHoldings(transactions) {
   transactions.forEach((tx) => {
     if (tx.ticker && tx.shares) {
       if (!accountHoldings[tx.account_id]) accountHoldings[tx.account_id] = {};
-      if (!accountHoldings[tx.account_id][tx.ticker]) accountHoldings[tx.account_id][tx.ticker] = 0;
+      if (!accountHoldings[tx.account_id][tx.ticker])
+        accountHoldings[tx.account_id][tx.ticker] = 0;
       accountHoldings[tx.account_id][tx.ticker] += tx.shares;
       allTickers.add(tx.ticker);
     }
@@ -24,14 +25,21 @@ function buildQuoteMap(quotes) {
   return quoteMap;
 }
 
-async function fetchExchangeRates({ accountHoldings, accountCcyMap, appCurrency, quoteMap }) {
+async function fetchExchangeRates({
+  accountHoldings,
+  accountCcyMap,
+  appCurrency,
+  quoteMap,
+}) {
   const ratesToFetch = new Set();
   const quoteKeys = Object.keys(quoteMap);
 
   for (const [accountId, holdings] of Object.entries(accountHoldings)) {
     const targetCcy = accountCcyMap[Number(accountId)] || appCurrency;
     for (const ticker of Object.keys(holdings)) {
-      const matchingTicker = quoteKeys.find((name) => name.toLowerCase() === ticker.toLowerCase());
+      const matchingTicker = quoteKeys.find(
+        (name) => name.toLowerCase() === ticker.toLowerCase(),
+      );
       const quote = quoteMap[matchingTicker];
       if (quote && quote.currency && quote.currency !== targetCcy) {
         ratesToFetch.add(`${quote.currency}${targetCcy}=X`);
@@ -41,7 +49,9 @@ async function fetchExchangeRates({ accountHoldings, accountCcyMap, appCurrency,
 
   if (ratesToFetch.size === 0) return {};
 
-  const rateQuotes = await rust.get_stock_quotes({ tickers: Array.from(ratesToFetch) });
+  const rateQuotes = await rust.get_stock_quotes({
+    tickers: Array.from(ratesToFetch),
+  });
   const rates = {};
   rateQuotes.forEach((quote) => {
     rates[quote.symbol] = quote.regularMarketPrice;
@@ -49,7 +59,13 @@ async function fetchExchangeRates({ accountHoldings, accountCcyMap, appCurrency,
   return rates;
 }
 
-function computeMarketValues({ accountHoldings, accountCcyMap, appCurrency, quoteMap, exchangeRates }) {
+function computeMarketValues({
+  accountHoldings,
+  accountCcyMap,
+  appCurrency,
+  quoteMap,
+  exchangeRates,
+}) {
   const newMarketValues = {};
 
   for (const [accountId, holdings] of Object.entries(accountHoldings)) {
@@ -58,7 +74,9 @@ function computeMarketValues({ accountHoldings, accountCcyMap, appCurrency, quot
 
     for (const [ticker, shares] of Object.entries(holdings)) {
       if (shares > 0.0001) {
-        const quoteName = Object.keys(quoteMap).find((name) => name.toLowerCase() === ticker.toLowerCase());
+        const quoteName = Object.keys(quoteMap).find(
+          (name) => name.toLowerCase() === ticker.toLowerCase(),
+        );
         const quote = quoteMap[quoteName];
         if (!quote) continue;
 
@@ -77,7 +95,10 @@ function computeMarketValues({ accountHoldings, accountCcyMap, appCurrency, quot
   return newMarketValues;
 }
 
-export async function fetchMarketValuesForAccounts(currentAccounts = [], appCurrency = "USD") {
+export async function fetchMarketValuesForAccounts(
+  currentAccounts = [],
+  appCurrency = "USD",
+) {
   const transactions = await rust.get_all_transactions();
   const { accountHoldings, allTickers } = buildAccountHoldings(transactions);
   if (allTickers.size === 0) return {};
@@ -87,9 +108,22 @@ export async function fetchMarketValuesForAccounts(currentAccounts = [], appCurr
     if (acc.currency) accountCcyMap[acc.id] = acc.currency;
   });
 
-  const quotes = await rust.get_stock_quotes({ tickers: Array.from(allTickers) });
+  const quotes = await rust.get_stock_quotes({
+    tickers: Array.from(allTickers),
+  });
   const quoteMap = buildQuoteMap(quotes);
-  const exchangeRates = await fetchExchangeRates({ accountHoldings, accountCcyMap, appCurrency, quoteMap });
+  const exchangeRates = await fetchExchangeRates({
+    accountHoldings,
+    accountCcyMap,
+    appCurrency,
+    quoteMap,
+  });
 
-  return computeMarketValues({ accountHoldings, accountCcyMap, appCurrency, quoteMap, exchangeRates });
+  return computeMarketValues({
+    accountHoldings,
+    accountCcyMap,
+    appCurrency,
+    quoteMap,
+    exchangeRates,
+  });
 }

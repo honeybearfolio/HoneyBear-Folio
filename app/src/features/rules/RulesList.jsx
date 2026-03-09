@@ -20,7 +20,9 @@ export default function RulesList() {
   const [rules, setRules] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [formState, setFormState] = useState(() => createDefaultRuleFormState());
+  const [formState, setFormState] = useState(() =>
+    createDefaultRuleFormState(),
+  );
   const [draggingId, setDraggingId] = useState(null);
   const formRef = useRef(null);
 
