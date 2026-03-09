@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import { Plus, Trash2, Edit, Save, GripVertical, X } from "lucide-react";
 import { useConfirm } from "../../contexts/confirm";
 import { t } from "../../i18n/i18n";
@@ -7,26 +7,20 @@ import { useNumberFormat } from "../../contexts/number-format";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
 import "../../styles/Dashboard.css";
-
-const DEFAULT_CONDITION = {
-  field: "payee",
-  operator: "equals",
-  value: "",
-  negated: false,
-};
-const DEFAULT_ACTION = { field: "category", value: "" };
+import {
+  createDefaultRuleFormState,
+  DEFAULT_RULE_ACTION,
+  DEFAULT_RULE_CONDITION,
+  reorderRules,
+  toRuleFormState,
+  toRulePayload,
+} from "./rules-helpers";
 
 export default function RulesList() {
   const [rules, setRules] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [formState, setFormState] = useState({
-    id: null,
-    priority: 0,
-    logic: "and",
-    conditions: [{ ...DEFAULT_CONDITION }],
-    actions: [{ ...DEFAULT_ACTION }],
-  });
+  const [formState, setFormState] = useState(() => createDefaultRuleFormState());
   const [draggingId, setDraggingId] = useState(null);
   const formRef = useRef(null);
 
@@ -36,7 +30,7 @@ export default function RulesList() {
 
   async function fetchRules() {
     try {
-      const r = await invoke("get_rules");
+      const r = await rust.get_rules();
       setRules(r);
     } catch (e) {
       console.error("Failed to fetch rules:", e);
@@ -47,7 +41,7 @@ export default function RulesList() {
     let mounted = true;
     (async () => {
       try {
-        const r = await invoke("get_rules");
+        const r = await rust.get_rules();
         if (mounted) setRules(r);
       } catch (e) {
         console.error("Failed to fetch rules:", e);
@@ -59,43 +53,13 @@ export default function RulesList() {
   }, []);
 
   function resetForm() {
-    setFormState({
-      id: null,
-      priority: 0,
-      logic: "and",
-      conditions: [{ ...DEFAULT_CONDITION }],
-      actions: [{ ...DEFAULT_ACTION }],
-    });
+    setFormState(createDefaultRuleFormState());
     setIsEditing(false);
     setShowForm(false);
   }
 
   function handleEdit(rule) {
-    // Convert legacy rule format to new format if needed
-    const conditions =
-      rule.conditions?.length > 0
-        ? rule.conditions
-        : [
-            {
-              field: rule.match_field,
-              operator: "equals",
-              value: rule.match_pattern,
-              negated: false,
-            },
-          ];
-
-    const actions =
-      rule.actions?.length > 0
-        ? rule.actions
-        : [{ field: rule.action_field, value: rule.action_value }];
-
-    setFormState({
-      id: rule.id,
-      priority: rule.priority,
-      logic: rule.logic || "and",
-      conditions,
-      actions,
-    });
+    setFormState(toRuleFormState(rule));
     setShowForm(true);
     setTimeout(
       () =>
@@ -108,7 +72,7 @@ export default function RulesList() {
   async function handleDelete(id) {
     if (await confirm(t("rules.delete_confirm"), { kind: "warning" })) {
       try {
-        await invoke("delete_rule", { id });
+        await rust.delete_rule({ id });
         setRules((current) => current.filter((r) => r.id !== id));
         if (formState.id === id) resetForm();
       } catch (e) {
@@ -121,25 +85,10 @@ export default function RulesList() {
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      // For backward compatibility, use first condition/action for legacy fields
-      const firstCondition = formState.conditions[0] || DEFAULT_CONDITION;
-      const firstAction = formState.actions[0] || DEFAULT_ACTION;
-
-      const payload = {
-        match_field: firstCondition.field,
-        match_pattern: firstCondition.value,
-        action_field: firstAction.field,
-        action_value: String(firstAction.value),
-        logic: formState.logic,
-        conditions: formState.conditions,
-        actions: formState.actions.map((a) => ({
-          ...a,
-          value: String(a.value),
-        })),
-      };
+      const { payload, maxPriority } = toRulePayload(formState, rules);
 
       if (formState.id) {
-        await invoke("update_rule", {
+        await rust.update_rule({
           args: {
             ...payload,
             id: formState.id,
@@ -147,9 +96,7 @@ export default function RulesList() {
           },
         });
       } else {
-        const maxPriority =
-          rules.length > 0 ? Math.max(...rules.map((r) => r.priority)) : 0;
-        await invoke("create_rule", {
+        await rust.create_rule({
           args: {
             ...payload,
             priority: maxPriority + 1,
@@ -167,7 +114,7 @@ export default function RulesList() {
   function addCondition() {
     setFormState((prev) => ({
       ...prev,
-      conditions: [...prev.conditions, { ...DEFAULT_CONDITION }],
+      conditions: [...prev.conditions, { ...DEFAULT_RULE_CONDITION }],
     }));
   }
 
@@ -192,7 +139,7 @@ export default function RulesList() {
   function addAction() {
     setFormState((prev) => ({
       ...prev,
-      actions: [...prev.actions, { ...DEFAULT_ACTION }],
+      actions: [...prev.actions, { ...DEFAULT_RULE_ACTION }],
     }));
   }
 
@@ -242,23 +189,10 @@ export default function RulesList() {
     const now = e.timeStamp;
     if (now - lastReorder.current < 50) return;
 
-    const dragIndex = rules.findIndex((r) => r.id === currentDraggingId);
-    if (dragIndex === -1 || dragIndex === targetIndex) return;
-
     lastReorder.current = now;
-
-    const newItems = [...rules];
-    const item = newItems[dragIndex];
-    newItems.splice(dragIndex, 1);
-    newItems.splice(targetIndex, 0, item);
-
-    const total = newItems.length;
-    const updatedList = newItems.map((rule, idx) => ({
-      ...rule,
-      priority: total - idx,
-    }));
-
-    setRules(updatedList);
+    setRules((currentRules) =>
+      reorderRules(currentRules, currentDraggingId, targetIndex),
+    );
   };
 
   const handleDrop = (e) => {
@@ -270,7 +204,7 @@ export default function RulesList() {
     setDraggingId(null);
     draggingIdRef.current = null;
     try {
-      await invoke("update_rules_order", { ruleIds: rules.map((r) => r.id) });
+      await rust.update_rules_order({ ruleIds: rules.map((r) => r.id) });
     } catch (err) {
       console.error("Failed to reorder rules:", err);
       fetchRules();
@@ -386,11 +320,7 @@ export default function RulesList() {
           <button
             onClick={() => {
               setFormState({
-                id: null,
-                priority: 0,
-                logic: "and",
-                conditions: [{ ...DEFAULT_CONDITION }],
-                actions: [{ ...DEFAULT_ACTION }],
+                ...createDefaultRuleFormState(),
               });
               setIsEditing(false);
               setShowForm(true);

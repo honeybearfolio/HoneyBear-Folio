@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import DatePicker from "react-datepicker";
@@ -46,7 +46,7 @@ export default function ExportModal({ onClose }) {
   // Fetch transaction dates on mount to derive available years/months
   const [transactionDates, setTransactionDates] = useState([]);
   useEffect(() => {
-    invoke("get_all_transactions")
+    rust.get_all_transactions()
       .then((txs) => {
         const dates = txs.map((tx) => tx.date).filter(Boolean);
         setTransactionDates(dates);
@@ -138,8 +138,8 @@ export default function ExportModal({ onClose }) {
       setExporting(true);
 
       // 1. Fetch Data
-      const accounts = await invoke("get_accounts");
-      const transactions = await invoke("get_all_transactions");
+      const accounts = await rust.get_accounts();
+      const transactions = await rust.get_all_transactions();
 
       // 2. Prepare Data based on format
       let content;
@@ -259,14 +259,14 @@ export default function ExportModal({ onClose }) {
           { name: "Accounts", data: accounts },
         ];
 
-        await invoke("write_xlsx", { filePath, sheets });
+        await rust.write_xlsx({ filePath, sheets });
       } else if (format === "pdf") {
         // Fetch exchange rates
         const exchangeRates = {};
         const appCurrency = localStorage.getItem("hb_currency") || "USD";
 
         try {
-          const allRates = await invoke("get_all_exchange_rates", {
+          const allRates = await rust.get_all_exchange_rates({
             appCurrency,
           });
           if (Array.isArray(allRates)) {
@@ -276,7 +276,7 @@ export default function ExportModal({ onClose }) {
               // Try to fetch historical daily prices for this currency pair
               let dailyPrices = [];
               try {
-                dailyPrices = await invoke("get_daily_stock_prices", {
+                dailyPrices = await rust.get_daily_stock_prices({
                   ticker: pair,
                 });
               } catch {
@@ -317,7 +317,7 @@ export default function ExportModal({ onClose }) {
             buildHoldingsFromTransactions(transactions);
           if (currentHoldings.length > 0) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
-            quotes = await invoke("get_stock_quotes", { tickers });
+            quotes = await rust.get_stock_quotes({ tickers });
           }
         } catch {
           // Quotes are optional
@@ -381,7 +381,7 @@ export default function ExportModal({ onClose }) {
           labels: reportLabels,
         });
 
-        await invoke("generate_pdf_report", {
+        await rust.generate_pdf_report({
           filePath,
           data: reportData,
         });

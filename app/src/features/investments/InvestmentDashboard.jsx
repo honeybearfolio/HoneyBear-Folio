@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import PropTypes from "prop-types";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
@@ -34,7 +34,7 @@ export default function InvestmentDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      const transactions = await invoke("get_all_transactions");
+      const transactions = await rust.get_all_transactions();
       const { currentHoldings } = buildHoldingsFromTransactions(transactions);
 
       if (currentHoldings.length === 0) {
@@ -44,7 +44,7 @@ export default function InvestmentDashboard() {
       }
 
       const tickers = currentHoldings.map((h) => h.ticker);
-      const quotes = await invoke("get_stock_quotes", { tickers });
+      const quotes = await rust.get_stock_quotes({ tickers });
 
       const finalHoldings = mergeHoldingsWithQuotes(currentHoldings, quotes);
       setHoldings(finalHoldings);

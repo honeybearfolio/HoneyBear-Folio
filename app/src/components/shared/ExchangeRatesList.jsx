@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import { Pencil, Trash2, RefreshCw } from "lucide-react";
 import { t } from "../../i18n/i18n";
 import { useConfirm } from "../../contexts/confirm";
@@ -22,7 +22,7 @@ export default function ExchangeRatesList({ onRateChange }) {
     setLoading(true);
     try {
       const appCurrency = localStorage.getItem("hb_currency") || "USD";
-      const result = await invoke("get_all_exchange_rates", {
+      const result = await rust.get_all_exchange_rates({
         appCurrency,
       });
       // Sort: custom rates first, then Yahoo, alphabetically within each group
@@ -57,7 +57,7 @@ export default function ExchangeRatesList({ onRateChange }) {
     if (isNaN(newRate) || newRate <= 0) return;
 
     try {
-      await invoke("set_custom_exchange_rate", { currency, rate: newRate });
+      await rust.set_custom_exchange_rate({ currency, rate: newRate });
       setEditingCurrency(null);
       setEditValue("");
       await loadRates();
@@ -75,7 +75,7 @@ export default function ExchangeRatesList({ onRateChange }) {
     if (!confirmed) return;
 
     try {
-      await invoke("delete_custom_exchange_rate", { currency });
+      await rust.delete_custom_exchange_rate({ currency });
       await loadRates();
       onRateChange?.();
     } catch (e) {
