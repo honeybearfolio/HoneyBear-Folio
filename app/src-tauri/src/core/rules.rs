@@ -124,40 +124,43 @@ fn apply_action_legacy(transaction: &mut Transaction, field: &str, value: &str) 
 }
 
 pub fn get_rules_db(db_path: &PathBuf) -> Result<Vec<Rule>, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    let mut stmt = conn
+        let mut stmt = conn
         .prepare("SELECT id, priority, match_field, match_pattern, action_field, action_value, COALESCE(logic, 'and'), COALESCE(conditions, '[]'), COALESCE(actions, '[]') FROM rules ORDER BY priority DESC, id ASC")
         .map_err(|e| e.to_string())?;
 
-    let rule_iter = stmt
-        .query_map([], |row| {
-            let conditions_json: String = row.get(7)?;
-            let actions_json: String = row.get(8)?;
+        let rule_iter = stmt
+            .query_map([], |row| {
+                let conditions_json: String = row.get(7)?;
+                let actions_json: String = row.get(8)?;
 
-            let conditions: Vec<RuleCondition> =
-                serde_json::from_str(&conditions_json).unwrap_or_default();
-            let actions: Vec<RuleAction> = serde_json::from_str(&actions_json).unwrap_or_default();
+                let conditions: Vec<RuleCondition> =
+                    serde_json::from_str(&conditions_json).unwrap_or_default();
+                let actions: Vec<RuleAction> =
+                    serde_json::from_str(&actions_json).unwrap_or_default();
 
-            Ok(Rule {
-                id: row.get(0)?,
-                priority: row.get(1)?,
-                match_field: row.get(2)?,
-                match_pattern: row.get(3)?,
-                action_field: row.get(4)?,
-                action_value: row.get(5)?,
-                logic: row.get(6)?,
-                conditions,
-                actions,
+                Ok(Rule {
+                    id: row.get(0)?,
+                    priority: row.get(1)?,
+                    match_field: row.get(2)?,
+                    match_pattern: row.get(3)?,
+                    action_field: row.get(4)?,
+                    action_value: row.get(5)?,
+                    logic: row.get(6)?,
+                    conditions,
+                    actions,
+                })
             })
-        })
-        .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())?;
 
-    let mut rules = Vec::new();
-    for rule in rule_iter {
-        rules.push(rule.map_err(|e| e.to_string())?);
-    }
-    Ok(rules)
+        let mut rules = Vec::new();
+        for rule in rule_iter {
+            rules.push(rule.map_err(|e| e.to_string())?);
+        }
+        Ok(rules)
+    })
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
@@ -173,12 +176,14 @@ pub struct CreateRuleDbParams {
 }
 
 pub fn create_rule_db(db_path: &PathBuf, params: CreateRuleDbParams) -> Result<i32, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    let conditions_json = serde_json::to_string(&params.conditions).map_err(|e| e.to_string())?;
-    let actions_json = serde_json::to_string(&params.actions).map_err(|e| e.to_string())?;
+        let conditions_json =
+            serde_json::to_string(&params.conditions).map_err(|e| e.to_string())?;
+        let actions_json = serde_json::to_string(&params.actions).map_err(|e| e.to_string())?;
 
-    conn.execute(
+        conn.execute(
         "INSERT INTO rules (priority, match_field, match_pattern, action_field, action_value, logic, conditions, actions) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             params.priority,
@@ -193,8 +198,9 @@ pub fn create_rule_db(db_path: &PathBuf, params: CreateRuleDbParams) -> Result<i
     )
     .map_err(|e| e.to_string())?;
 
-    let id = conn.last_insert_rowid() as i32;
-    Ok(id)
+        let id = conn.last_insert_rowid() as i32;
+        Ok(id)
+    })
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug)]
@@ -211,12 +217,14 @@ pub struct UpdateRuleDbParams {
 }
 
 pub fn update_rule_db(db_path: &PathBuf, params: UpdateRuleDbParams) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    let conditions_json = serde_json::to_string(&params.conditions).map_err(|e| e.to_string())?;
-    let actions_json = serde_json::to_string(&params.actions).map_err(|e| e.to_string())?;
+        let conditions_json =
+            serde_json::to_string(&params.conditions).map_err(|e| e.to_string())?;
+        let actions_json = serde_json::to_string(&params.actions).map_err(|e| e.to_string())?;
 
-    conn.execute(
+        conn.execute(
         "UPDATE rules SET priority = ?1, match_field = ?2, match_pattern = ?3, action_field = ?4, action_value = ?5, logic = ?6, conditions = ?7, actions = ?8 WHERE id = ?9",
         params![
             params.priority,
@@ -232,36 +240,41 @@ pub fn update_rule_db(db_path: &PathBuf, params: UpdateRuleDbParams) -> Result<(
     )
     .map_err(|e| e.to_string())?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 pub fn delete_rule_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    conn.execute("DELETE FROM rules WHERE id = ?1", params![id])
-        .map_err(|e| e.to_string())?;
+        conn.execute("DELETE FROM rules WHERE id = ?1", params![id])
+            .map_err(|e| e.to_string())?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 pub fn update_rules_order_db(db_path: &PathBuf, rule_ids: Vec<i32>) -> Result<(), String> {
-    let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    let total = rule_ids.len() as i32;
-    for (idx, id) in rule_ids.iter().enumerate() {
-        // Priority: Top of list (index 0) gets highest priority value
-        let priority = total - (idx as i32);
-        tx.execute(
-            "UPDATE rules SET priority = ?1 WHERE id = ?2",
-            params![priority, id],
-        )
-        .map_err(|e| e.to_string())?;
-    }
+        let total = rule_ids.len() as i32;
+        for (idx, id) in rule_ids.iter().enumerate() {
+            // Priority: Top of list (index 0) gets highest priority value
+            let priority = total - (idx as i32);
+            tx.execute(
+                "UPDATE rules SET priority = ?1 WHERE id = ?2",
+                params![priority, id],
+            )
+            .map_err(|e| e.to_string())?;
+        }
 
-    tx.commit().map_err(|e| e.to_string())?;
+        tx.commit().map_err(|e| e.to_string())?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[tauri::command]

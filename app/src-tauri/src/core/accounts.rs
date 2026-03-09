@@ -19,6 +19,7 @@ pub fn create_account_db(
     currency: Option<String>,
     initial_transaction: Option<InitialTransactionDetails>,
 ) -> Result<Account, String> {
+    crate::db_init::with_db_lock(db_path, || {
     let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
     // Trim name and validate non-empty
@@ -89,9 +90,11 @@ pub fn create_account_db(
         currency,
         exchange_rate: 1.0,
     })
+    })
 }
 
 pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result<Account, String> {
+    crate::db_init::with_db_lock(db_path, || {
     let new_trim = new_name.trim().to_string();
     if new_trim.is_empty() {
         return Err("Account name cannot be empty or whitespace-only".to_string());
@@ -138,6 +141,7 @@ pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result
         .map_err(|e| e.to_string())?;
 
     Ok(account)
+    })
 }
 
 pub fn update_account_db(
@@ -146,6 +150,7 @@ pub fn update_account_db(
     name: String,
     currency: Option<String>,
 ) -> Result<Account, String> {
+    crate::db_init::with_db_lock(db_path, || {
     let name_trimmed = name.trim().to_string();
     if name_trimmed.is_empty() {
         return Err("Account name cannot be empty or whitespace-only".to_string());
@@ -192,9 +197,11 @@ pub fn update_account_db(
         .map_err(|e| e.to_string())?;
 
     Ok(account)
+    })
 }
 
 pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
+    crate::db_init::with_db_lock(db_path, || {
     let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
     let tx = conn.transaction().map_err(|e| e.to_string())?;
@@ -213,9 +220,11 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     tx.commit().map_err(|e| e.to_string())?;
 
     Ok(())
+    })
 }
 
 pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
+    crate::db_init::with_db_lock(db_path, || {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
     let mut stmt = conn
@@ -239,9 +248,11 @@ pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
     }
 
     Ok(accounts)
+    })
 }
 
 pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<AccountsSummary, String> {
+    crate::db_init::with_db_lock(db_path, || {
     let accounts = get_accounts_db(db_path)?;
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
@@ -270,6 +281,7 @@ pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<Accoun
     }
 
     Ok(AccountsSummary { accounts, raw_data })
+    })
 }
 
 #[tauri::command]

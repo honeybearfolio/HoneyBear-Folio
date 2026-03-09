@@ -4,22 +4,24 @@ use std::collections::HashMap;
 use tauri::AppHandle;
 
 pub fn get_custom_rates_map(db_path: &std::path::PathBuf) -> Result<HashMap<String, f64>, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let mut map = HashMap::new();
-    let mut stmt = conn
-        .prepare("SELECT currency, rate FROM custom_exchange_rates")
-        .map_err(|e| e.to_string())?;
-    let rows = stmt
-        .query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
-        })
-        .map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut map = HashMap::new();
+        let mut stmt = conn
+            .prepare("SELECT currency, rate FROM custom_exchange_rates")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+            })
+            .map_err(|e| e.to_string())?;
 
-    for r in rows {
-        let (c, rate) = r.map_err(|e| e.to_string())?;
-        map.insert(c, rate);
-    }
-    Ok(map)
+        for r in rows {
+            let (c, rate) = r.map_err(|e| e.to_string())?;
+            map.insert(c, rate);
+        }
+        Ok(map)
+    })
 }
 
 pub fn calculate_account_balances(
@@ -109,33 +111,37 @@ pub fn set_custom_exchange_rate_db(
     currency: String,
     rate: f64,
 ) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    conn.execute(
-        "INSERT OR REPLACE INTO custom_exchange_rates (currency, rate) VALUES (?1, ?2)",
-        params![currency, rate],
-    )
-    .map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT OR REPLACE INTO custom_exchange_rates (currency, rate) VALUES (?1, ?2)",
+            params![currency, rate],
+        )
+        .map_err(|e| e.to_string())?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 pub fn get_custom_exchange_rate_db(
     db_path: &PathBuf,
     currency: String,
 ) -> Result<Option<f64>, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    let mut stmt = conn
-        .prepare("SELECT rate FROM custom_exchange_rates WHERE currency = ?1")
-        .map_err(|e| e.to_string())?;
-    let mut rows = stmt.query(params![currency]).map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare("SELECT rate FROM custom_exchange_rates WHERE currency = ?1")
+            .map_err(|e| e.to_string())?;
+        let mut rows = stmt.query(params![currency]).map_err(|e| e.to_string())?;
 
-    if let Some(row) = rows.next().map_err(|e| e.to_string())? {
-        let rate: f64 = row.get(0).map_err(|e| e.to_string())?;
-        Ok(Some(rate))
-    } else {
-        Ok(None)
-    }
+        if let Some(row) = rows.next().map_err(|e| e.to_string())? {
+            let rate: f64 = row.get(0).map_err(|e| e.to_string())?;
+            Ok(Some(rate))
+        } else {
+            Ok(None)
+        }
+    })
 }
 
 // System theme detection moved here
@@ -361,30 +367,34 @@ pub fn get_all_exchange_rates(
 
 /// Get all unique currencies used across accounts
 fn get_account_currencies(db_path: &PathBuf) -> Result<Vec<String>, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let mut stmt = conn
-        .prepare("SELECT DISTINCT currency FROM accounts WHERE currency IS NOT NULL")
-        .map_err(|e| e.to_string())?;
-    let rows = stmt
-        .query_map([], |row| row.get::<_, String>(0))
-        .map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare("SELECT DISTINCT currency FROM accounts WHERE currency IS NOT NULL")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| e.to_string())?;
 
-    let mut currencies = Vec::new();
-    for r in rows {
-        currencies.push(r.map_err(|e| e.to_string())?);
-    }
-    Ok(currencies)
+        let mut currencies = Vec::new();
+        for r in rows {
+            currencies.push(r.map_err(|e| e.to_string())?);
+        }
+        Ok(currencies)
+    })
 }
 
 /// Delete a custom exchange rate from the database
 pub fn delete_custom_exchange_rate_db(db_path: &PathBuf, currency: String) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    conn.execute(
-        "DELETE FROM custom_exchange_rates WHERE currency = ?1",
-        params![currency],
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(())
+    crate::db_init::with_db_lock(db_path, || {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        conn.execute(
+            "DELETE FROM custom_exchange_rates WHERE currency = ?1",
+            params![currency],
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(())
+    })
 }
 
 #[tauri::command]

@@ -157,17 +157,20 @@ pub async fn get_stock_quotes_with_client(
 
     // Update DB with new quotes
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(&db_path, || {
+        let mut conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    {
-        let mut stmt = tx.prepare("INSERT OR REPLACE INTO stock_prices (ticker, price, last_updated) VALUES (?1, ?2, datetime('now'))").map_err(|e| e.to_string())?;
-        for quote in &quotes {
-            stmt.execute(params![quote.symbol, quote.price])
-                .map_err(|e| e.to_string())?;
+        {
+            let mut stmt = tx.prepare("INSERT OR REPLACE INTO stock_prices (ticker, price, last_updated) VALUES (?1, ?2, datetime('now'))").map_err(|e| e.to_string())?;
+            for quote in &quotes {
+                stmt.execute(params![quote.symbol, quote.price])
+                    .map_err(|e| e.to_string())?;
+            }
         }
-    }
-    tx.commit().map_err(|e| e.to_string())?;
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(())
+    })?;
 
     // If we missed some tickers, try to fetch from DB
     let found_symbols: Vec<String> = quotes.iter().map(|q| q.symbol.clone()).collect();
@@ -177,26 +180,29 @@ pub async fn get_stock_quotes_with_client(
         .collect();
 
     if !missing_tickers.is_empty() {
-        let conn = Connection::open(crate::db_init::get_db_path(&app_handle)?)
-            .map_err(|e| e.to_string())?;
-        let mut stmt = conn
-            .prepare("SELECT ticker, price FROM stock_prices WHERE ticker = ?1 COLLATE NOCASE")
-            .map_err(|e| e.to_string())?;
+        crate::db_init::with_db_lock(&db_path, || {
+            let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+            let mut stmt = conn
+                .prepare("SELECT ticker, price FROM stock_prices WHERE ticker = ?1 COLLATE NOCASE")
+                .map_err(|e| e.to_string())?;
 
-        for ticker in missing_tickers {
-            let res: Result<(String, f64), _> =
-                stmt.query_row(params![ticker], |row| Ok((row.get(0)?, row.get(1)?)));
+            for ticker in &missing_tickers {
+                let res: Result<(String, f64), _> =
+                    stmt.query_row(params![ticker], |row| Ok((row.get(0)?, row.get(1)?)));
 
-            if let Ok((symbol, price)) = res {
-                quotes.push(YahooQuote {
-                    symbol,
-                    price,
-                    change_percent: 0.0,
-                    currency: None,
-                    quote_type: None,
-                });
+                if let Ok((symbol, price)) = res {
+                    quotes.push(YahooQuote {
+                        symbol,
+                        price,
+                        change_percent: 0.0,
+                        currency: None,
+                        quote_type: None,
+                    });
+                }
             }
-        }
+
+            Ok(())
+        })?;
     }
 
     Ok(quotes)
@@ -282,17 +288,20 @@ pub async fn get_stock_quotes_with_client_and_db(
     }
 
     // Update DB with new quotes
-    let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    crate::db_init::with_db_lock(db_path, || {
+        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    {
-        let mut stmt = tx.prepare("INSERT OR REPLACE INTO stock_prices (ticker, price, last_updated) VALUES (?1, ?2, datetime('now'))").map_err(|e| e.to_string())?;
-        for quote in &quotes {
-            stmt.execute(params![quote.symbol, quote.price])
-                .map_err(|e| e.to_string())?;
+        {
+            let mut stmt = tx.prepare("INSERT OR REPLACE INTO stock_prices (ticker, price, last_updated) VALUES (?1, ?2, datetime('now'))").map_err(|e| e.to_string())?;
+            for quote in &quotes {
+                stmt.execute(params![quote.symbol, quote.price])
+                    .map_err(|e| e.to_string())?;
+            }
         }
-    }
-    tx.commit().map_err(|e| e.to_string())?;
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(())
+    })?;
 
     // If we missed some tickers, try to fetch from DB
     let found_symbols: Vec<String> = quotes.iter().map(|q| q.symbol.clone()).collect();
@@ -302,25 +311,29 @@ pub async fn get_stock_quotes_with_client_and_db(
         .collect();
 
     if !missing_tickers.is_empty() {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-        let mut stmt = conn
-            .prepare("SELECT ticker, price FROM stock_prices WHERE ticker = ?1 COLLATE NOCASE")
-            .map_err(|e| e.to_string())?;
+        crate::db_init::with_db_lock(db_path, || {
+            let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+            let mut stmt = conn
+                .prepare("SELECT ticker, price FROM stock_prices WHERE ticker = ?1 COLLATE NOCASE")
+                .map_err(|e| e.to_string())?;
 
-        for ticker in missing_tickers {
-            let res: Result<(String, f64), _> =
-                stmt.query_row(params![ticker], |row| Ok((row.get(0)?, row.get(1)?)));
+            for ticker in &missing_tickers {
+                let res: Result<(String, f64), _> =
+                    stmt.query_row(params![ticker], |row| Ok((row.get(0)?, row.get(1)?)));
 
-            if let Ok((symbol, price)) = res {
-                quotes.push(YahooQuote {
-                    symbol,
-                    price,
-                    change_percent: 0.0,
-                    currency: None,
-                    quote_type: None,
-                });
+                if let Ok((symbol, price)) = res {
+                    quotes.push(YahooQuote {
+                        symbol,
+                        price,
+                        change_percent: 0.0,
+                        currency: None,
+                        quote_type: None,
+                    });
+                }
             }
-        }
+
+            Ok(())
+        })?;
     }
 
     Ok(quotes)
@@ -338,17 +351,18 @@ pub async fn update_daily_stock_prices_with_client_and_base(
 
     for ticker in tickers {
         // 1. Get last date from DB
-        let last_date_str: Option<String> = {
+        let last_date_str: Option<String> = crate::db_init::with_db_lock(db_path, || {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-            conn.query_row(
+            let result = conn.query_row(
                 "SELECT MAX(date) FROM daily_stock_prices WHERE ticker = ?1",
                 params![ticker],
                 |row| row.get(0),
             )
             .optional()
             .map_err(|e| e.to_string())?
-            .flatten()
-        };
+            .flatten();
+            Ok(result)
+        })?;
 
         let start_timestamp = if let Some(date_str) = last_date_str {
             // Parse date and add 1 day
@@ -397,28 +411,31 @@ pub async fn update_daily_stock_prices_with_client_and_base(
                     if let Some(quotes) = &indicators.quote {
                         if let Some(quote) = quotes.first() {
                             if let Some(closes) = &quote.close {
-                                let mut conn =
-                                    Connection::open(db_path).map_err(|e| e.to_string())?;
-                                let tx = conn.transaction().map_err(|e| e.to_string())?;
-                                {
-                                    let mut stmt = tx.prepare(
-                                        "INSERT OR REPLACE INTO daily_stock_prices (ticker, date, price) VALUES (?1, ?2, ?3)"
-                                    )
-                                    .map_err(|e: rusqlite::Error| e.to_string())?;
+                                crate::db_init::with_db_lock(db_path, || {
+                                    let mut conn =
+                                        Connection::open(db_path).map_err(|e| e.to_string())?;
+                                    let tx = conn.transaction().map_err(|e| e.to_string())?;
+                                    {
+                                        let mut stmt = tx.prepare(
+                                            "INSERT OR REPLACE INTO daily_stock_prices (ticker, date, price) VALUES (?1, ?2, ?3)"
+                                        )
+                                        .map_err(|e: rusqlite::Error| e.to_string())?;
 
-                                    for (i, ts) in timestamps.iter().enumerate() {
-                                        if let Some(price) = closes.get(i).and_then(|p| *p) {
-                                            let date_str = Utc
-                                                .timestamp_opt(*ts, 0)
-                                                .unwrap()
-                                                .format("%Y-%m-%d")
-                                                .to_string();
-                                            stmt.execute(params![ticker, date_str, price])
-                                                .map_err(|e| e.to_string())?;
+                                        for (i, ts) in timestamps.iter().enumerate() {
+                                            if let Some(price) = closes.get(i).and_then(|p| *p) {
+                                                let date_str = Utc
+                                                    .timestamp_opt(*ts, 0)
+                                                    .unwrap()
+                                                    .format("%Y-%m-%d")
+                                                    .to_string();
+                                                stmt.execute(params![ticker, date_str, price])
+                                                    .map_err(|e| e.to_string())?;
+                                            }
                                         }
                                     }
-                                }
-                                tx.commit().map_err(|e: rusqlite::Error| e.to_string())?;
+                                    tx.commit().map_err(|e: rusqlite::Error| e.to_string())?;
+                                    Ok(())
+                                })?;
                             }
                         }
                     }
@@ -457,6 +474,7 @@ pub fn get_daily_stock_prices_from_path(
     db_path: &std::path::Path,
     ticker: String,
 ) -> Result<Vec<DailyPrice>, String> {
+    crate::db_init::with_db_lock(db_path, || {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
     let mut stmt = conn
@@ -475,6 +493,7 @@ pub fn get_daily_stock_prices_from_path(
         .map_err(|e| e.to_string())?;
 
     Ok(prices)
+    })
 }
 
 #[tauri::command]
