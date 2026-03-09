@@ -92,4 +92,4 @@ jobs:
     - name: Lint Backend (Clippy)
       if: steps.changed.outputs.rust == 'true'
       working-directory: ./app/src-tauri
-      run: cargo clippy --all-targets -- -D warnings
+      run: cargo clippy --workspace --all-targets --all-features -- -D warnings

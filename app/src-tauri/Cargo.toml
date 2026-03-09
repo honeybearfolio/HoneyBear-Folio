@@ -10,7 +10,7 @@ repository = "https://github.com/HoneyBearFolio/HoneyBear-Folio"
 readme = "../README.md"
 keywords = ["tauri", "finance", "personal-finance", "portfolio"]
 categories = ["utilities", "finance"]
-documentation = "https://github.com/HoneyBearFolio/HoneyBear-Folio#readme"
+documentation = "https://honeybearfolio.github.io/docs/"
 
 [package.metadata.deb]
 maintainer = "HoneyBearFolio"
@@ -50,7 +50,7 @@ serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1"
 rusqlite = { version = "0.38.0", features = ["bundled"] }
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "cookies"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "cookies", "rustls"] }
 tokio = { version = "1", features = ["full"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
@@ -58,14 +58,14 @@ tauri-plugin-process = "2"
 tauri-plugin-shell = "2"
 calamine = "0.34.0"
 rust_xlsxwriter = "0.94.0"
-printpdf = { version = "0.7", features = ["embedded_images"] }
-image = "0.24.9"
+printpdf = { version = "0.9", features = ["images", "png"] }
+image = "0.25.9"
 
 [dev-dependencies]
 tempfile = "3"
 rand = "0.10"
 httpmock = "0.8"
-proptest = "1.0"
+proptest = "1.10"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

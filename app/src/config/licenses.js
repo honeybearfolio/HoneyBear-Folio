@@ -89,6 +89,26 @@ const THIRD_PARTY_LICENSES = [
     license: "MIT / Apache-2.0",
     url: "https://github.com/chronotope/chrono",
   },
+  {
+    name: "calamine",
+    license: "MIT / Apache-2.0",
+    url: "https://github.com/tafia/calamine",
+  },
+  {
+    name: "rust_xlsxwriter",
+    license: "MIT",
+    url: "https://github.com/informationsea/rust_xlsxwriter",
+  },
+  {
+    name: "printpdf",
+    license: "MIT",
+    url: "https://github.com/fschutt/printpdf",
+  },
+  {
+    name: "image",
+    license: "MIT / Apache-2.0",
+    url: "https://github.com/image-rs/image",
+  },
 ];
 
 export default THIRD_PARTY_LICENSES;
