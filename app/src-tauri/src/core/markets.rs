@@ -353,14 +353,15 @@ pub async fn update_daily_stock_prices_with_client_and_base(
         // 1. Get last date from DB
         let last_date_str: Option<String> = crate::db_init::with_db_lock(db_path, || {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-            let result = conn.query_row(
-                "SELECT MAX(date) FROM daily_stock_prices WHERE ticker = ?1",
-                params![ticker],
-                |row| row.get(0),
-            )
-            .optional()
-            .map_err(|e| e.to_string())?
-            .flatten();
+            let result = conn
+                .query_row(
+                    "SELECT MAX(date) FROM daily_stock_prices WHERE ticker = ?1",
+                    params![ticker],
+                    |row| row.get(0),
+                )
+                .optional()
+                .map_err(|e| e.to_string())?
+                .flatten();
             Ok(result)
         })?;
 
@@ -475,24 +476,26 @@ pub fn get_daily_stock_prices_from_path(
     ticker: String,
 ) -> Result<Vec<DailyPrice>, String> {
     crate::db_init::with_db_lock(db_path, || {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-    let mut stmt = conn
-        .prepare("SELECT date, price FROM daily_stock_prices WHERE ticker = ?1 ORDER BY date ASC")
-        .map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT date, price FROM daily_stock_prices WHERE ticker = ?1 ORDER BY date ASC",
+            )
+            .map_err(|e| e.to_string())?;
 
-    let prices = stmt
-        .query_map(params![ticker], |row| {
-            Ok(DailyPrice {
-                date: row.get(0)?,
-                price: row.get(1)?,
+        let prices = stmt
+            .query_map(params![ticker], |row| {
+                Ok(DailyPrice {
+                    date: row.get(0)?,
+                    price: row.get(1)?,
+                })
             })
-        })
-        .map_err(|e| e.to_string())?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())?;
 
-    Ok(prices)
+        Ok(prices)
     })
 }
 
