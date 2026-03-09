@@ -4,7 +4,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import { createPortal } from "react-dom";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import {
   Search,
   Plus,
@@ -298,10 +298,10 @@ export default function AccountDetails({ account, onUpdate }) {
     try {
       const [payees, accountsList, categories, fetchedRules] =
         await Promise.all([
-          invoke("get_payees"),
-          invoke("get_accounts"),
-          invoke("get_categories"),
-          invoke("get_rules"),
+          rust.get_payees(),
+          rust.get_accounts(),
+          rust.get_categories(),
+          rust.get_rules(),
         ]);
       setRules(fetchedRules);
 
@@ -366,8 +366,8 @@ export default function AccountDetails({ account, onUpdate }) {
       let txs;
       if (account.id === "all") {
         const [transactionsList, accounts] = await Promise.all([
-          invoke("get_all_transactions"),
-          invoke("get_accounts"),
+          rust.get_all_transactions(),
+          rust.get_accounts(),
         ]);
         // Attach account_name for display in the consolidated view
         txs = transactionsList.map((tx) => {
@@ -378,7 +378,7 @@ export default function AccountDetails({ account, onUpdate }) {
           };
         });
       } else {
-        txs = await invoke("get_transactions", { accountId: account.id });
+        txs = await rust.get_transactions({ accountId: account.id });
       }
       setTransactions(txs);
     } catch (e) {
@@ -389,7 +389,7 @@ export default function AccountDetails({ account, onUpdate }) {
   async function fetchPendingOccurrences() {
     try {
       const accountId = account.id === "all" ? null : account.id;
-      const occs = await invoke("get_pending_occurrences", { accountId });
+      const occs = await rust.get_pending_occurrences({ accountId });
       setPendingOccurrences(occs);
     } catch (e) {
       console.error("Failed to fetch pending occurrences:", e);
@@ -402,7 +402,7 @@ export default function AccountDetails({ account, onUpdate }) {
       const applyDate = useToday
         ? new Date().toISOString().split("T")[0]
         : occ.date;
-      await invoke("apply_scheduled_occurrence", {
+      await rust.apply_scheduled_occurrence({
         scheduledTxId: occ.scheduled_tx_id,
         applyDate,
       });
@@ -415,7 +415,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
   async function handleSkipOccurrence(occ) {
     try {
-      await invoke("skip_scheduled_occurrence", {
+      await rust.skip_scheduled_occurrence({
         scheduledTxId: occ.scheduled_tx_id,
         skipDate: occ.date,
       });
@@ -494,7 +494,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
     tickerTimeoutRef.current = setTimeout(async () => {
       try {
-        const suggestions = await invoke("search_ticker", { query });
+        const suggestions = await rust.search_ticker({ query });
         setTickerSuggestions(suggestions);
         setShowTickerSuggestions(true);
       } catch (error) {
@@ -516,7 +516,7 @@ export default function AccountDetails({ account, onUpdate }) {
     e.preventDefault();
     if (!renameValue.trim()) return;
     try {
-      await invoke("rename_account", { id: account.id, newName: renameValue });
+      await rust.rename_account({ id: account.id, newName: renameValue });
       setIsRenamingAccount(false);
       setAccountMenuOpen(false);
       if (onUpdate) onUpdate();
@@ -539,7 +539,7 @@ export default function AccountDetails({ account, onUpdate }) {
     if (!confirmed) return;
 
     try {
-      await invoke("delete_account", { id: account.id });
+      await rust.delete_account({ id: account.id });
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to delete account:", e);
@@ -561,7 +561,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
       if (transactionType === "investment") {
         const sharesNum = parseNumber(shares);
-        await invoke("create_investment_transaction", {
+        await rust.create_investment_transaction({
           args: {
             accountId: target.id,
             date,
@@ -591,7 +591,7 @@ export default function AccountDetails({ account, onUpdate }) {
         setFee("");
         setSelectedCurrency(localStorage.getItem("hb_currency") || "USD");
       } else {
-        await invoke("create_transaction", {
+        await rust.create_transaction({
           args: {
             accountId: target.id,
             date,
@@ -657,7 +657,7 @@ export default function AccountDetails({ account, onUpdate }) {
           if (!confirmed) return;
         }
 
-        await invoke("update_investment_transaction", {
+        await rust.update_investment_transaction({
           args: {
             id: editForm.id,
             accountId: editForm.account_id,
@@ -672,7 +672,7 @@ export default function AccountDetails({ account, onUpdate }) {
           },
         });
       } else {
-        await invoke("update_transaction", {
+        await rust.update_transaction({
           args: {
             id: editForm.id,
             accountId: editForm.account_id,
@@ -703,7 +703,7 @@ export default function AccountDetails({ account, onUpdate }) {
     });
     if (!confirmed) return;
     try {
-      await invoke("delete_transaction", { id });
+      await rust.delete_transaction({ id });
       setMenuOpenId(null);
       fetchTransactions();
       if (onUpdate) onUpdate();
@@ -714,7 +714,7 @@ export default function AccountDetails({ account, onUpdate }) {
 
   async function duplicateTransaction(tx) {
     try {
-      await invoke("create_transaction", {
+      await rust.create_transaction({
         args: {
           accountId: tx.account_id,
           date: tx.date,

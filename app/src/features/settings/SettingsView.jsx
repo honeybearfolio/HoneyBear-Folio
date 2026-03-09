@@ -18,7 +18,7 @@ import CustomSelect from "../../components/ui/CustomSelect";
 import Switch from "../../components/ui/Switch";
 import ErrorBoundary from "../../components/layout/ErrorBoundary";
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import { save } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
 import { t, AVAILABLE_LANGUAGES } from "../../i18n/i18n";
@@ -42,11 +42,13 @@ import {
   getColorClasses,
   getColorDot,
 } from "../../config/tag-colors";
-
-const GITHUB_REPO = "https://github.com/HoneyBearFolio/HoneyBear-Folio";
-const WEBSITE_URL = "https://honeybearfolio.github.io";
-const DOCS_URL = `${WEBSITE_URL}/docs`;
-const LICENSE_URL = `${GITHUB_REPO}/blob/main/LICENSE`;
+import {
+  APP_DEFAULTS,
+  DEFAULT_SIDEBAR_VISIBILITY,
+  EXTERNAL_URLS,
+  RESETTABLE_STORAGE_KEYS,
+  STORAGE_KEYS,
+} from "../../constants/app";
 
 export default function SettingsView({
   activeSection,
@@ -74,10 +76,10 @@ export default function SettingsView({
   const [categories, setCategories] = useState([]);
   const [fontSize, setFontSize] = useState(() => {
     try {
-      const v = localStorage.getItem("hb_font_size");
-      return v ? parseFloat(v) : 0.9;
+      const v = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
+      return v ? parseFloat(v) : APP_DEFAULTS.FONT_SIZE;
     } catch {
-      return 0.9;
+      return APP_DEFAULTS.FONT_SIZE;
     }
   });
 
@@ -87,7 +89,7 @@ export default function SettingsView({
         "--hb-font-size",
         `${fontSize}`,
       );
-      localStorage.setItem("hb_font_size", String(fontSize));
+      localStorage.setItem(STORAGE_KEYS.FONT_SIZE, String(fontSize));
     } catch (e) {
       console.error("Failed to apply font size:", e);
     }
@@ -95,14 +97,14 @@ export default function SettingsView({
 
   const example = formatNumberWithLocale(1234.56, locale, {
     style: "currency",
-    currency: currency || "USD",
+    currency: currency || APP_DEFAULTS.CURRENCY,
   });
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const p = await invoke("get_db_path_command");
+        const p = await rust.get_db_path_command();
         if (mounted) setDbPath(p);
       } catch (e) {
         console.error("Failed to fetch DB path:", e);
@@ -146,8 +148,8 @@ export default function SettingsView({
         filters: [{ name: "SQLite", extensions: ["db", "sqlite"] }],
       });
       if (path) {
-        await invoke("set_db_path", { path });
-        const p = await invoke("get_db_path_command");
+        await rust.set_db_path({ path });
+        const p = await rust.get_db_path_command();
         setDbPath(p);
       }
     } catch (e) {
@@ -163,38 +165,24 @@ export default function SettingsView({
       if (!confirmed) return;
 
       try {
-        localStorage.removeItem("hb_number_format");
-        localStorage.removeItem("hb_currency");
-        localStorage.removeItem("hb_theme");
-        localStorage.removeItem("hb_font_size");
-        localStorage.removeItem("hb_date_format");
-        localStorage.removeItem("hb_first_day_of_week");
-        localStorage.removeItem("hb_ui_language");
-        localStorage.removeItem("hb_sidebar_visibility");
+        RESETTABLE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
       } catch {
         /* ignore */
       }
 
-      setLocale("en-US");
-      setCurrency("USD");
-      setTheme("system");
-      setFontSize(0.9);
-      setDateFormat("YYYY-MM-DD");
-      setFirstDayOfWeek(1);
-      setUiLanguage("en");
+      setLocale(APP_DEFAULTS.LOCALE);
+      setCurrency(APP_DEFAULTS.CURRENCY);
+      setTheme(APP_DEFAULTS.THEME);
+      setFontSize(APP_DEFAULTS.FONT_SIZE);
+      setDateFormat(APP_DEFAULTS.DATE_FORMAT);
+      setFirstDayOfWeek(APP_DEFAULTS.FIRST_DAY_OF_WEEK);
+      setUiLanguage(APP_DEFAULTS.UI_LANGUAGE);
       resetTagColors();
-      onChangeSidebarVisibility({
-        dashboard: true,
-        investments: true,
-        fire: true,
-        rules: true,
-        scheduled: true,
-        all: true,
-      });
+      onChangeSidebarVisibility({ ...DEFAULT_SIDEBAR_VISIBILITY });
 
       try {
-        await invoke("reset_db_path");
-        const p = await invoke("get_db_path_command");
+        await rust.reset_db_path();
+        const p = await rust.get_db_path_command();
         setDbPath(p);
       } catch (e) {
         console.error("Failed to reset DB path:", e);
@@ -208,7 +196,7 @@ export default function SettingsView({
     if (activeSection === "customization") {
       (async () => {
         try {
-          const cats = await invoke("get_categories");
+          const cats = await rust.get_categories();
           const all = cats.includes("Transfer") ? cats : ["Transfer", ...cats];
           setCategories(all.sort((a, b) => a.localeCompare(b)));
         } catch (e) {
@@ -769,12 +757,12 @@ export default function SettingsView({
                   <span>{t("about.version")}:</span>
                   {IS_RELEASE && APP_VERSION ? (
                     <a
-                      href={`${GITHUB_REPO}/releases/tag/v${APP_VERSION}`}
+                      href={`${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`}
                       className="about-version-link"
                       onClick={(e) => {
                         e.preventDefault();
                         openExternal(
-                          `${GITHUB_REPO}/releases/tag/v${APP_VERSION}`,
+                          `${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`,
                         );
                       }}
                     >
@@ -791,12 +779,14 @@ export default function SettingsView({
                   >
                     <span>{t("about.commit")}:</span>
                     <a
-                      href={`${GITHUB_REPO}/commit/${APP_COMMIT}`}
+                      href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
                       className="about-version-link"
                       style={{ fontFamily: "monospace" }}
                       onClick={(e) => {
                         e.preventDefault();
-                        openExternal(`${GITHUB_REPO}/commit/${APP_COMMIT}`);
+                        openExternal(
+                          `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
+                        );
                       }}
                     >
                       {APP_COMMIT.substring(0, 7)}
@@ -814,11 +804,11 @@ export default function SettingsView({
                 <h4 className="about-section-title">{t("about.license")}</h4>
                 <p className="about-license-text">{t("about.license_text")}</p>
                 <a
-                  href={LICENSE_URL}
+                  href={EXTERNAL_URLS.LICENSE}
                   className="about-link"
                   onClick={(e) => {
                     e.preventDefault();
-                    openExternal(LICENSE_URL);
+                    openExternal(EXTERNAL_URLS.LICENSE);
                   }}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -919,34 +909,34 @@ export default function SettingsView({
               <div className="about-section">
                 <div className="about-links">
                   <a
-                    href={WEBSITE_URL}
+                    href={EXTERNAL_URLS.WEBSITE}
                     className="about-link"
                     onClick={(e) => {
                       e.preventDefault();
-                      openExternal(WEBSITE_URL);
+                      openExternal(EXTERNAL_URLS.WEBSITE);
                     }}
                   >
                     <Globe className="w-3.5 h-3.5" />
                     {t("about.website")}
                   </a>
                   <a
-                    href={GITHUB_REPO}
+                    href={EXTERNAL_URLS.GITHUB_REPO}
                     className="about-link"
                     onClick={(e) => {
                       e.preventDefault();
-                      openExternal(GITHUB_REPO);
+                      openExternal(EXTERNAL_URLS.GITHUB_REPO);
                     }}
                   >
                     <Github className="w-3.5 h-3.5" />
                     {t("about.github")}
                   </a>
                   <a
-                    href={`${GITHUB_REPO}/issues/new?template=feature_request.md`}
+                    href={`${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=feature_request.md`}
                     className="about-link"
                     onClick={(e) => {
                       e.preventDefault();
                       openExternal(
-                        `${GITHUB_REPO}/issues/new?template=feature_request.md`,
+                        `${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=feature_request.md`,
                       );
                     }}
                   >
@@ -954,12 +944,12 @@ export default function SettingsView({
                     {t("about.features")}
                   </a>
                   <a
-                    href={`${GITHUB_REPO}/issues/new?template=bug_report.md`}
+                    href={`${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=bug_report.md`}
                     className="about-link"
                     onClick={(e) => {
                       e.preventDefault();
                       openExternal(
-                        `${GITHUB_REPO}/issues/new?template=bug_report.md`,
+                        `${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=bug_report.md`,
                       );
                     }}
                   >
@@ -967,11 +957,11 @@ export default function SettingsView({
                     {t("about.issues")}
                   </a>
                   <a
-                    href={`${DOCS_URL}`}
+                    href={`${EXTERNAL_URLS.DOCS}`}
                     className="about-link"
                     onClick={(e) => {
                       e.preventDefault();
-                      openExternal(`${DOCS_URL}`);
+                      openExternal(`${EXTERNAL_URLS.DOCS}`);
                     }}
                   >
                     <BookOpen className="w-3.5 h-3.5" />

@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { useState } from "react";
 import { Check, Wallet, Globe } from "lucide-react";
 import "../../styles/Modal.css";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import {
   Modal,
   ModalHeader,
@@ -44,7 +44,7 @@ export default function AccountModal({
 
     try {
       if (isEditing) {
-        await invoke("update_account", {
+        await rust.update_account({
           id: account.id,
           name: nameTrimmed,
           currency: currency || null,
@@ -54,7 +54,7 @@ export default function AccountModal({
         });
       } else {
         const balance = parseNumber(balanceStr) || 0.0;
-        await invoke("create_account", {
+        await rust.create_account({
           name: nameTrimmed,
           balance,
           currency: currency || null,

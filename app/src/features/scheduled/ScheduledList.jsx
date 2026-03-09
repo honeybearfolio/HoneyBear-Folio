@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
@@ -25,42 +25,13 @@ import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
 import "../../styles/Dashboard.css";
-
-const WEEKDAY_KEYS = [
-  "weekday.sunday",
-  "weekday.monday",
-  "weekday.tuesday",
-  "weekday.wednesday",
-  "weekday.thursday",
-  "weekday.friday",
-  "weekday.saturday",
-];
-
-const DEFAULT_FORM = {
-  id: null,
-  accountId: null,
-  transactionType: "regular",
-  payee: "",
-  amount: "",
-  category: "",
-  notes: "",
-  currency: "",
-  recurrenceType: "every_n",
-  intervalValue: 1,
-  intervalUnit: "month",
-  daysOfWeek: [],
-  ordinal: 1,
-  weekday: 1,
-  startDate: new Date().toISOString().split("T")[0],
-  endDate: "",
-  maxOccurrences: "",
-  enabled: true,
-  ticker: "",
-  shares: "",
-  pricePerShare: "",
-  fee: "",
-  isBuy: true,
-};
+import {
+  createDefaultScheduledForm,
+  getAccountName,
+  getRecurrenceSummary,
+  toScheduledPayload,
+  WEEKDAY_KEYS,
+} from "./scheduled-helpers";
 
 const currencyOptions = [
   { value: "", label: "—" },
@@ -74,7 +45,9 @@ export default function ScheduledList() {
   const [schedules, setSchedules] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [formState, setFormState] = useState({ ...DEFAULT_FORM });
+  const [formState, setFormState] = useState(() =>
+    createDefaultScheduledForm(),
+  );
   const [showForm, setShowForm] = useState(false);
   const [tickerSuggestions, setTickerSuggestions] = useState([]);
   const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
@@ -91,8 +64,8 @@ export default function ScheduledList() {
     (async () => {
       try {
         const [scheds, accs] = await Promise.all([
-          invoke("get_scheduled_transactions"),
-          invoke("get_accounts"),
+          rust.get_scheduled_transactions(),
+          rust.get_accounts(),
         ]);
         if (mounted) {
           setSchedules(scheds);
@@ -109,7 +82,7 @@ export default function ScheduledList() {
 
   async function fetchSchedules() {
     try {
-      const r = await invoke("get_scheduled_transactions");
+      const r = await rust.get_scheduled_transactions();
       setSchedules(r);
     } catch (e) {
       console.error("Failed to fetch scheduled transactions:", e);
@@ -117,7 +90,7 @@ export default function ScheduledList() {
   }
 
   function resetForm() {
-    setFormState({ ...DEFAULT_FORM });
+    setFormState(createDefaultScheduledForm());
     setTickerSuggestions([]);
     setShowTickerSuggestions(false);
     setIsEditing(false);
@@ -134,7 +107,7 @@ export default function ScheduledList() {
 
     tickerTimeoutRef.current = setTimeout(async () => {
       try {
-        const suggestions = await invoke("search_ticker", { query });
+        const suggestions = await rust.search_ticker({ query });
         setTickerSuggestions(suggestions);
         setShowTickerSuggestions(true);
       } catch (error) {
@@ -181,7 +154,7 @@ export default function ScheduledList() {
   async function handleDelete(id) {
     if (await confirm(t("scheduled.delete_confirm"), { kind: "warning" })) {
       try {
-        await invoke("delete_scheduled_transaction", { id });
+        await rust.delete_scheduled_transaction({ id });
         setSchedules((cur) => cur.filter((s) => s.id !== id));
         if (formState.id === id) resetForm();
         showToast(t("scheduled.deleted_success"), "success");
@@ -195,7 +168,7 @@ export default function ScheduledList() {
 
   async function handleToggleEnabled(sched) {
     try {
-      await invoke("update_scheduled_transaction", {
+      await rust.update_scheduled_transaction({
         args: {
           id: sched.id,
           accountId: sched.account_id,
@@ -255,72 +228,10 @@ export default function ScheduledList() {
     }
 
     try {
-      const isInvestment = formState.transactionType === "investment";
-
-      // Compute amount for investment transactions
-      let amount = Number(formState.amount) || 0;
-      if (isInvestment) {
-        const sharesNum = Number(formState.shares) || 0;
-        const priceNum = Number(formState.pricePerShare) || 0;
-        const feeNum = Number(formState.fee) || 0;
-        amount = formState.isBuy
-          ? -(sharesNum * priceNum + feeNum)
-          : sharesNum * priceNum - feeNum;
-      }
-
-      const payload = {
-        accountId: formState.accountId,
-        payee: isInvestment
-          ? formState.payee.trim() ||
-            (formState.isBuy
-              ? t("scheduled.field.buy")
-              : t("scheduled.field.sell"))
-          : formState.payee.trim(),
-        amount,
-        category: isInvestment
-          ? formState.category.trim() ||
-            t("scheduled.field.investment_category")
-          : formState.category.trim() || null,
-        notes: formState.notes.trim() || null,
-        currency: formState.currency || null,
-        recurrenceType: formState.recurrenceType,
-        intervalValue:
-          formState.recurrenceType === "every_n"
-            ? Number(formState.intervalValue) || 1
-            : null,
-        intervalUnit:
-          formState.recurrenceType === "every_n"
-            ? formState.intervalUnit
-            : null,
-        daysOfWeek:
-          formState.recurrenceType === "day_of_week"
-            ? formState.daysOfWeek
-            : null,
-        ordinal:
-          formState.recurrenceType === "ordinal_weekday"
-            ? Number(formState.ordinal)
-            : null,
-        weekday:
-          formState.recurrenceType === "ordinal_weekday"
-            ? Number(formState.weekday)
-            : null,
-        startDate: formState.startDate,
-        endDate: formState.endDate || null,
-        maxOccurrences: formState.maxOccurrences
-          ? Number(formState.maxOccurrences)
-          : null,
-        transactionType: formState.transactionType,
-        ticker: isInvestment ? formState.ticker.trim() : null,
-        shares: isInvestment ? Number(formState.shares) || null : null,
-        pricePerShare: isInvestment
-          ? Number(formState.pricePerShare) || null
-          : null,
-        fee: isInvestment ? Number(formState.fee) || 0 : null,
-        isBuy: isInvestment ? formState.isBuy : null,
-      };
+      const payload = toScheduledPayload(formState, t);
 
       if (formState.id) {
-        await invoke("update_scheduled_transaction", {
+        await rust.update_scheduled_transaction({
           args: {
             ...payload,
             id: formState.id,
@@ -329,7 +240,7 @@ export default function ScheduledList() {
         });
         showToast(t("scheduled.updated_success"), "success");
       } else {
-        await invoke("create_scheduled_transaction", { args: payload });
+        await rust.create_scheduled_transaction({ args: payload });
         showToast(t("scheduled.created_success"), "success");
       }
       resetForm();
@@ -347,31 +258,6 @@ export default function ScheduledList() {
         : [...prev.daysOfWeek, day].sort((a, b) => a - b);
       return { ...prev, daysOfWeek: days };
     });
-  }
-
-  function getRecurrenceSummary(sched) {
-    if (sched.recurrence_type === "every_n") {
-      const n = sched.interval_value || 1;
-      const unit = t(`scheduled.unit.${sched.interval_unit || "month"}`);
-      return t("scheduled.summary.every_n", { n, unit });
-    }
-    if (sched.recurrence_type === "day_of_week") {
-      const days = (sched.days_of_week || [])
-        .map((d) => t(WEEKDAY_KEYS[d]))
-        .join(", ");
-      return t("scheduled.summary.days_of_week", { days });
-    }
-    if (sched.recurrence_type === "ordinal_weekday") {
-      const ordinal = t(`scheduled.ordinal.${sched.ordinal}`);
-      const weekday = t(WEEKDAY_KEYS[sched.weekday ?? 0]);
-      return t("scheduled.summary.ordinal_weekday", { ordinal, weekday });
-    }
-    return "";
-  }
-
-  function getAccountName(accountId) {
-    const acc = accounts.find((a) => a.id === accountId);
-    return acc ? acc.name : String(accountId);
   }
 
   const accountOptions = accounts.map((a) => ({
@@ -421,7 +307,7 @@ export default function ScheduledList() {
             onClick={() => {
               setShowForm(true);
               setIsEditing(false);
-              setFormState({ ...DEFAULT_FORM });
+              setFormState(createDefaultScheduledForm());
             }}
             className="btn-primary"
           >
@@ -1025,7 +911,7 @@ export default function ScheduledList() {
                   }`}
                 >
                   <td className="px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300">
-                    {getAccountName(sched.account_id)}
+                    {getAccountName(accounts, sched.account_id)}
                   </td>
                   <td className="px-4 py-2.5 text-sm font-medium text-slate-800 dark:text-slate-200">
                     <div className="flex items-center gap-1.5">
@@ -1056,7 +942,7 @@ export default function ScheduledList() {
                   </td>
                   <td className="px-4 py-2.5 text-sm text-slate-600 dark:text-slate-400">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">
-                      {getRecurrenceSummary(sched)}
+                      {getRecurrenceSummary(sched, t)}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400 tabular-nums">

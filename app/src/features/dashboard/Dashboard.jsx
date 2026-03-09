@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
@@ -86,14 +86,14 @@ export default function Dashboard({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const txs = await invoke("get_all_transactions");
+        const txs = await rust.get_all_transactions();
         setTransactions(txs);
 
         // If parent passed accounts, use them; otherwise fetch from backend
         if (propAccounts && propAccounts.length > 0) {
           setAccounts(propAccounts);
         } else {
-          const accs = await invoke("get_accounts");
+          const accs = await rust.get_accounts();
           setAccounts(accs);
         }
       } catch (e) {
@@ -114,7 +114,7 @@ export default function Dashboard({
       const tickers = currentHoldings.map((h) => h.ticker);
       const uniqueTickers = [...new Set(tickers)];
       try {
-        const qs = await invoke("get_stock_quotes", { tickers: uniqueTickers });
+        const qs = await rust.get_stock_quotes({ tickers: uniqueTickers });
         setQuotes(qs);
       } catch (e) {
         console.error("Failed to fetch quotes:", e);
@@ -158,14 +158,14 @@ export default function Dashboard({
 
       try {
         // Trigger update first
-        await invoke("update_daily_stock_prices", {
+        await rust.update_daily_stock_prices({
           tickers: Array.from(tickers),
         });
 
         // Then fetch
         const pricesMap = {};
         for (const ticker of tickers) {
-          const prices = await invoke("get_daily_stock_prices", { ticker });
+          const prices = await rust.get_daily_stock_prices({ ticker });
           // Sort prices by date ascending to ensure getPrice binary search/linear scan works
           prices.sort((a, b) => (a.date > b.date ? 1 : -1));
 

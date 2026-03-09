@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import { Line } from "react-chartjs-2";
 import {
   TrendingUp,
@@ -125,8 +125,8 @@ export default function FireCalculator() {
   async function fetchData() {
     setLoading(true);
     try {
-      const accounts = await invoke("get_accounts");
-      const transactions = await invoke("get_all_transactions");
+      const accounts = await rust.get_accounts();
+      const transactions = await rust.get_all_transactions();
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =
@@ -136,7 +136,7 @@ export default function FireCalculator() {
       const tickers = currentHoldings.map((h) => h.ticker);
       let quotes = [];
       if (tickers.length > 0) {
-        quotes = await invoke("get_stock_quotes", { tickers });
+        quotes = await rust.get_stock_quotes({ tickers });
       }
 
       // Compute portfolio totals

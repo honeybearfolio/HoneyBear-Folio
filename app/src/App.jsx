@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "./api/tauri-client";
 import Sidebar from "./components/layout/Sidebar";
 import { computeNetWorth } from "./utils/networth";
 import AccountDetails from "./features/accounts/AccountDetails";
@@ -22,13 +22,15 @@ import UpdateNotification from "./components/shared/UpdateNotification";
 import WelcomeWindow from "./components/shared/WelcomeWindow";
 import DevTools from "./components/shared/DevTools";
 import { t } from "./i18n/i18n";
-
-const MIN_SIDEBAR_WIDTH = 240;
-const MAX_SIDEBAR_WIDTH = 600;
-const DEFAULT_SIDEBAR_WIDTH = 320;
+import {
+  APP_DEFAULTS,
+  DEFAULT_SIDEBAR_VISIBILITY,
+  STORAGE_KEYS,
+} from "./constants/app";
+import { fetchMarketValuesForAccounts } from "./utils/market-values";
 
 function App() {
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [sidebarWidth, setSidebarWidth] = useState(APP_DEFAULTS.SIDEBAR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -38,34 +40,20 @@ function App() {
   const [settingsSection, setSettingsSection] = useState("general");
   const [sidebarVisibility, setSidebarVisibility] = useState(() => {
     try {
-      const stored = localStorage.getItem("hb_sidebar_visibility");
-      const defaults = {
-        dashboard: true,
-        investments: true,
-        fire: true,
-        rules: true,
-        scheduled: true,
-        all: true,
-      };
+      const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_VISIBILITY);
+      const defaults = DEFAULT_SIDEBAR_VISIBILITY;
       if (stored) {
         return { ...defaults, ...JSON.parse(stored) };
       }
       return defaults;
     } catch {
-      return {
-        dashboard: true,
-        investments: true,
-        fire: true,
-        rules: true,
-        scheduled: true,
-        all: true,
-      };
+      return DEFAULT_SIDEBAR_VISIBILITY;
     }
   });
 
   useEffect(() => {
     localStorage.setItem(
-      "hb_sidebar_visibility",
+      STORAGE_KEYS.SIDEBAR_VISIBILITY,
       JSON.stringify(sidebarVisibility),
     );
   }, [sidebarVisibility]);
@@ -82,7 +70,10 @@ function App() {
     (mouseMoveEvent) => {
       if (isResizing) {
         const newWidth = mouseMoveEvent.clientX;
-        if (newWidth >= MIN_SIDEBAR_WIDTH && newWidth <= MAX_SIDEBAR_WIDTH) {
+        if (
+          newWidth >= APP_DEFAULTS.SIDEBAR_MIN_WIDTH &&
+          newWidth <= APP_DEFAULTS.SIDEBAR_MAX_WIDTH
+        ) {
           setSidebarWidth(newWidth);
         }
       }
@@ -115,8 +106,9 @@ function App() {
 
   async function fetchAccounts() {
     try {
-      const currency = localStorage.getItem("hb_currency") || "USD";
-      const accs = await invoke("get_accounts", { targetCurrency: currency });
+      const currency =
+        localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
+      const accs = await rust.get_accounts({ targetCurrency: currency });
       accs.sort((a, b) => b.balance - a.balance);
       setAccounts(accs);
       return accs;
@@ -128,103 +120,13 @@ function App() {
 
   async function fetchMarketValues(currentAccounts = []) {
     try {
-      const transactions = await invoke("get_all_transactions");
-      const appCurrency = localStorage.getItem("hb_currency") || "USD";
-
-      const accountCcyMap = {};
-      if (currentAccounts && currentAccounts.length) {
-        currentAccounts.forEach((acc) => {
-          if (acc.currency) accountCcyMap[acc.id] = acc.currency;
-        });
-      }
-
-      // Group holdings by account
-      const accountHoldings = {};
-      const allTickers = new Set();
-
-      transactions.forEach((tx) => {
-        if (tx.ticker && tx.shares) {
-          if (!accountHoldings[tx.account_id]) {
-            accountHoldings[tx.account_id] = {};
-          }
-          if (!accountHoldings[tx.account_id][tx.ticker]) {
-            accountHoldings[tx.account_id][tx.ticker] = 0;
-          }
-          accountHoldings[tx.account_id][tx.ticker] += tx.shares;
-          allTickers.add(tx.ticker);
-        }
-      });
-
-      if (allTickers.size === 0) {
-        setMarketValues({});
-        return;
-      }
-
-      const quotes = await invoke("get_stock_quotes", {
-        tickers: Array.from(allTickers),
-      });
-
-      const quoteMap = {};
-      quotes.forEach((q) => {
-        quoteMap[q.symbol] = q;
-      });
-
-      // Determine required exchange rates
-      const ratesToFetch = new Set();
-      const quoteKeys = Object.keys(quoteMap);
-      for (const [accountId, holdings] of Object.entries(accountHoldings)) {
-        const targetCcy = accountCcyMap[Number(accountId)] || appCurrency;
-        for (const ticker of Object.keys(holdings)) {
-          const matchingTicker = quoteKeys.find(
-            (t) => t.toLowerCase() === ticker.toLowerCase(),
-          );
-          const q = quoteMap[matchingTicker];
-          if (q && q.currency && q.currency !== targetCcy) {
-            ratesToFetch.add(`${q.currency}${targetCcy}=X`);
-          }
-        }
-      }
-
-      // Fetch rates
-      const exchangeRates = {};
-      if (ratesToFetch.size > 0) {
-        const rateTickers = Array.from(ratesToFetch);
-        const rateQuotes = await invoke("get_stock_quotes", {
-          tickers: rateTickers,
-        });
-        rateQuotes.forEach((q) => {
-          exchangeRates[q.symbol] = q.regularMarketPrice;
-        });
-      }
-
-      const newMarketValues = {};
-      for (const [accountId, holdings] of Object.entries(accountHoldings)) {
-        let totalValue = 0;
-        const targetCcy = accountCcyMap[Number(accountId)] || appCurrency;
-
-        for (const [ticker, shares] of Object.entries(holdings)) {
-          if (shares > 0.0001) {
-            const tickers = Object.keys(quoteMap);
-            const matchingTicker = tickers.find(
-              (t) => t.toLowerCase() === ticker.toLowerCase(),
-            );
-            const q = quoteMap[matchingTicker];
-
-            if (q) {
-              let price = q.regularMarketPrice || 0;
-              if (q.currency && q.currency !== targetCcy) {
-                const pair = `${q.currency}${targetCcy}=X`;
-                if (exchangeRates[pair]) {
-                  price = price * exchangeRates[pair];
-                }
-              }
-              totalValue += shares * price;
-            }
-          }
-        }
-        newMarketValues[accountId] = totalValue;
-      }
-      setMarketValues(newMarketValues);
+      const appCurrency =
+        localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
+      const values = await fetchMarketValuesForAccounts(
+        currentAccounts,
+        appCurrency,
+      );
+      setMarketValues(values);
     } catch (e) {
       console.error("Failed to fetch market values:", e);
     }
@@ -253,8 +155,8 @@ function App() {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("hb_font_size");
-      const fontSize = stored ? parseFloat(stored) : 0.9;
+      const stored = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
+      const fontSize = stored ? parseFloat(stored) : APP_DEFAULTS.FONT_SIZE;
       document.documentElement.style.setProperty(
         "--hb-font-size",
         String(fontSize),

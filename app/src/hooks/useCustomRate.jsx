@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../api/tauri-client";
 import CustomRateDialog from "../components/shared/CustomRateDialog";
 
 export function useCustomRate() {
@@ -28,12 +28,12 @@ export function useCustomRate() {
       try {
         // Check availability
         isAvailable = await Promise.race([
-          invoke("check_currency_availability", { currency }),
+          rust.check_currency_availability({ currency }),
           timeoutPromise,
         ]);
 
         // Check if we already have a custom rate
-        existingRate = await invoke("get_custom_exchange_rate", {
+        existingRate = await rust.get_custom_exchange_rate({
           currency,
         });
       } catch (e) {
@@ -61,7 +61,7 @@ export function useCustomRate() {
   const handleConfirm = async (rate) => {
     const { currency, resolve } = dialogState;
     try {
-      await invoke("set_custom_exchange_rate", { currency, rate });
+      await rust.set_custom_exchange_rate({ currency, rate });
       if (resolve) resolve(true);
     } catch (e) {
       console.error(e);

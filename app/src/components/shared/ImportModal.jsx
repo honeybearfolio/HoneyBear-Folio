@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../../api/tauri-client";
 import { listen } from "@tauri-apps/api/event";
 import {
   Download,
@@ -176,7 +176,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
             // Send file bytes to Rust/calamine
             const arrayBuffer = e.target.result;
             const bytes = Array.from(new Uint8Array(arrayBuffer));
-            const result = await invoke("read_xlsx", { data: bytes });
+            const result = await rust.read_xlsx({ data: bytes });
             const json = result.data; // Array of arrays
 
             if (json.length > 0) {
@@ -245,7 +245,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
 
   useEffect(() => {
     // Fetch accounts on mount
-    invoke("get_accounts").then(setAccounts).catch(console.error);
+    rust.get_accounts().then(setAccounts).catch(console.error);
 
     // Prevent background from scrolling while modal is open
     const prevOverflow = document.body.style.overflow;
@@ -401,7 +401,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
         try {
           const arrayBuffer = e.target.result;
           const bytes = Array.from(new Uint8Array(arrayBuffer));
-          const result = await invoke("read_xlsx", { data: bytes });
+          const result = await rust.read_xlsx({ data: bytes });
           const json = result.data; // Array of arrays
 
           if (json.length > 0) {
@@ -545,7 +545,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
 
             const kind = isBrokerage ? "brokerage" : "cash";
             try {
-              const created = await invoke("create_account", {
+              const created = await rust.create_account({
                 name,
                 balance: 0.0,
                 kind,
@@ -657,7 +657,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
           if (isNaN(fee)) fee = null;
           if (!ticker) ticker = null;
 
-          await invoke("create_transaction", {
+          await rust.create_transaction({
             args: {
               accountId,
               date,

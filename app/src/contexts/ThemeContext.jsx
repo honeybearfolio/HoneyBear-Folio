@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { ThemeContext } from "./theme-core";
-import { invoke } from "@tauri-apps/api/core";
+import { rust } from "../api/tauri-client";
 import { listen } from "@tauri-apps/api/event";
 
 export function ThemeProvider({ children }) {
@@ -61,7 +61,7 @@ export function ThemeProvider({ children }) {
       // Also ask the backend for the system theme (Linux/older webviews may report wrong prefers-color-scheme)
       (async () => {
         try {
-          const sys = await invoke("get_system_theme");
+          const sys = await rust.get_system_theme();
           if (sys === "dark" || sys === "light") {
             applyTheme(sys);
           }
