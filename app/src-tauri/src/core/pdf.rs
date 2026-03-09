@@ -1,9 +1,8 @@
 use crate::models::ReportData;
 use printpdf::{
-    Color, FontId, LinePoint, Mm, Op, PdfDocument, PdfFontHandle, PdfPage, PdfSaveOptions,
-    PdfWarnMsg, Point, PaintMode, Polygon, PolygonRing, Pt, RawImage, RawImageData,
+    Color, FontId, Line, LinePoint, Mm, Op, PaintMode, PdfDocument, PdfFontHandle, PdfPage,
+    PdfSaveOptions, PdfWarnMsg, Point, Polygon, PolygonRing, Pt, RawImage, RawImageData,
     RawImageFormat, Rgb, TextItem, WindingOrder, XObjectId, XObjectTransform,
-    Line,
 };
 use std::fs::File;
 use std::io::BufWriter;
@@ -76,14 +75,38 @@ fn truncate(s: &str, max_chars: usize) -> String {
 
 // ── Text drawing ────────────────────────────────────────────────────
 
-fn write_text(ops: &mut Vec<Op>, fonts: &PdfFonts, text: &str, x: f32, from_top: f32, size: f32, bold: bool) {
-    let font_id = if bold { fonts.bold.clone() } else { fonts.regular.clone() };
+fn write_text(
+    ops: &mut Vec<Op>,
+    fonts: &PdfFonts,
+    text: &str,
+    x: f32,
+    from_top: f32,
+    size: f32,
+    bold: bool,
+) {
+    let font_id = if bold {
+        fonts.bold.clone()
+    } else {
+        fonts.regular.clone()
+    };
     // Always set explicit dark color to prevent color inheritance from previous draw calls
-    ops.push(Op::SetFillColor { col: Color::Rgb(Rgb::new(0.15, 0.15, 0.15, None)) });
+    ops.push(Op::SetFillColor {
+        col: Color::Rgb(Rgb::new(0.15, 0.15, 0.15, None)),
+    });
     ops.push(Op::StartTextSection);
-    ops.push(Op::SetFont { font: PdfFontHandle::External(font_id), size: Pt(size) });
-    ops.push(Op::SetTextCursor { pos: Point { x: x_pt(x), y: y_pt(from_top) } });
-    ops.push(Op::ShowText { items: vec![TextItem::Text(text.to_string())] });
+    ops.push(Op::SetFont {
+        font: PdfFontHandle::External(font_id),
+        size: Pt(size),
+    });
+    ops.push(Op::SetTextCursor {
+        pos: Point {
+            x: x_pt(x),
+            y: y_pt(from_top),
+        },
+    });
+    ops.push(Op::ShowText {
+        items: vec![TextItem::Text(text.to_string())],
+    });
     ops.push(Op::EndTextSection);
 }
 
@@ -98,15 +121,31 @@ fn write_text_color(
     bold: bool,
     color: Color,
 ) {
-    let font_id = if bold { fonts.bold.clone() } else { fonts.regular.clone() };
+    let font_id = if bold {
+        fonts.bold.clone()
+    } else {
+        fonts.regular.clone()
+    };
     ops.push(Op::SetFillColor { col: color });
     ops.push(Op::StartTextSection);
-    ops.push(Op::SetFont { font: PdfFontHandle::External(font_id), size: Pt(size) });
-    ops.push(Op::SetTextCursor { pos: Point { x: x_pt(x), y: y_pt(from_top) } });
-    ops.push(Op::ShowText { items: vec![TextItem::Text(text.to_string())] });
+    ops.push(Op::SetFont {
+        font: PdfFontHandle::External(font_id),
+        size: Pt(size),
+    });
+    ops.push(Op::SetTextCursor {
+        pos: Point {
+            x: x_pt(x),
+            y: y_pt(from_top),
+        },
+    });
+    ops.push(Op::ShowText {
+        items: vec![TextItem::Text(text.to_string())],
+    });
     ops.push(Op::EndTextSection);
     // Reset to dark text color to prevent color bleeding into subsequent draws
-    ops.push(Op::SetFillColor { col: Color::Rgb(Rgb::new(0.15, 0.15, 0.15, None)) });
+    ops.push(Op::SetFillColor {
+        col: Color::Rgb(Rgb::new(0.15, 0.15, 0.15, None)),
+    });
 }
 
 /// Approximate text width in mm for Liberation Sans at a given pt size.
@@ -116,7 +155,15 @@ fn text_width(text: &str, size_pt: f32) -> f32 {
     text.chars().count() as f32 * avg_char_mm
 }
 
-fn write_text_right(ops: &mut Vec<Op>, fonts: &PdfFonts, text: &str, right_x: f32, from_top: f32, size: f32, bold: bool) {
+fn write_text_right(
+    ops: &mut Vec<Op>,
+    fonts: &PdfFonts,
+    text: &str,
+    right_x: f32,
+    from_top: f32,
+    size: f32,
+    bold: bool,
+) {
     let w = text_width(text, size);
     write_text(ops, fonts, text, right_x - w, from_top, size, bold);
 }
@@ -146,10 +193,34 @@ fn draw_rect(ops: &mut Vec<Op>, x: f32, from_top: f32, w: f32, h: f32, color: Co
         polygon: Polygon {
             rings: vec![PolygonRing {
                 points: vec![
-                    LinePoint { p: Point { x: x_pt(x),     y: y_pt(from_top + h) }, bezier: false },
-                    LinePoint { p: Point { x: x_pt(x + w), y: y_pt(from_top + h) }, bezier: false },
-                    LinePoint { p: Point { x: x_pt(x + w), y: y_pt(from_top)     }, bezier: false },
-                    LinePoint { p: Point { x: x_pt(x),     y: y_pt(from_top)     }, bezier: false },
+                    LinePoint {
+                        p: Point {
+                            x: x_pt(x),
+                            y: y_pt(from_top + h),
+                        },
+                        bezier: false,
+                    },
+                    LinePoint {
+                        p: Point {
+                            x: x_pt(x + w),
+                            y: y_pt(from_top + h),
+                        },
+                        bezier: false,
+                    },
+                    LinePoint {
+                        p: Point {
+                            x: x_pt(x + w),
+                            y: y_pt(from_top),
+                        },
+                        bezier: false,
+                    },
+                    LinePoint {
+                        p: Point {
+                            x: x_pt(x),
+                            y: y_pt(from_top),
+                        },
+                        bezier: false,
+                    },
                 ],
             }],
             mode: PaintMode::Fill,
@@ -172,8 +243,20 @@ fn draw_line(
     ops.push(Op::DrawLine {
         line: Line {
             points: vec![
-                LinePoint { p: Point { x: x_pt(x1), y: y_pt(y1_top) }, bezier: false },
-                LinePoint { p: Point { x: x_pt(x2), y: y_pt(y2_top) }, bezier: false },
+                LinePoint {
+                    p: Point {
+                        x: x_pt(x1),
+                        y: y_pt(y1_top),
+                    },
+                    bezier: false,
+                },
+                LinePoint {
+                    p: Point {
+                        x: x_pt(x2),
+                        y: y_pt(y2_top),
+                    },
+                    bezier: false,
+                },
             ],
             is_closed: false,
         },
@@ -198,7 +281,8 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
     // Header: Icon
     if let Some((ref icon_id, icon_size_mm, _dpi)) = fonts.icon {
         let icon_target_size_mm = icon_size_mm;
-        let translate_y = Mm(PAGE_H - HEADER_HEIGHT + (HEADER_HEIGHT - icon_target_size_mm) / 2.0).into_pt();
+        let translate_y =
+            Mm(PAGE_H - HEADER_HEIGHT + (HEADER_HEIGHT - icon_target_size_mm) / 2.0).into_pt();
         ops.push(Op::UseXobject {
             id: icon_id.clone(),
             transform: XObjectTransform {
@@ -294,7 +378,12 @@ struct TableColumn {
     align_right: bool,
 }
 
-fn draw_table_header(ops: &mut Vec<Op>, fonts: &PdfFonts, cols: &[TableColumn], from_top: f32) -> f32 {
+fn draw_table_header(
+    ops: &mut Vec<Op>,
+    fonts: &PdfFonts,
+    cols: &[TableColumn],
+    from_top: f32,
+) -> f32 {
     // Header background — warm light amber tint
     draw_rect(
         ops,
@@ -1048,7 +1137,15 @@ fn draw_cash_flow_page(
 
     // Expense categories breakdown
     if !cf.expense_categories.is_empty() {
-        write_text(&mut ops, fonts, &labels.expenses, MARGIN_LEFT, top, 9.0, true);
+        write_text(
+            &mut ops,
+            fonts,
+            &labels.expenses,
+            MARGIN_LEFT,
+            top,
+            9.0,
+            true,
+        );
         top += 6.0;
 
         for (i, cat) in cf.expense_categories.iter().enumerate() {
@@ -1120,7 +1217,15 @@ fn draw_holdings_page(
     );
     top += 8.0;
 
-    write_text(&mut ops, fonts, &labels.cost_basis, MARGIN_LEFT, top + 4.0, 8.0, false);
+    write_text(
+        &mut ops,
+        fonts,
+        &labels.cost_basis,
+        MARGIN_LEFT,
+        top + 4.0,
+        8.0,
+        false,
+    );
     write_text_right(
         &mut ops,
         fonts,
