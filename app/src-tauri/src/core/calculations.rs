@@ -140,7 +140,10 @@ fn to_numeric(value: &Value) -> Option<f64> {
     }
 }
 
-pub fn compute_net_worth_logic(accounts: &[Account], market_values: &HashMap<String, Value>) -> f64 {
+pub fn compute_net_worth_logic(
+    accounts: &[Account],
+    market_values: &HashMap<String, Value>,
+) -> f64 {
     accounts
         .iter()
         .map(|acc| {
@@ -207,7 +210,10 @@ pub fn build_holdings_from_transactions_logic(transactions: &[Transaction]) -> H
     }
 }
 
-pub fn merge_holdings_with_quotes_logic(holdings: &[Holding], quotes: &[YahooQuote]) -> Vec<HoldingWithQuote> {
+pub fn merge_holdings_with_quotes_logic(
+    holdings: &[Holding],
+    quotes: &[YahooQuote],
+) -> Vec<HoldingWithQuote> {
     let mut merged = holdings
         .iter()
         .map(|h| {
@@ -302,7 +308,8 @@ fn random_normal(mean: f64, std_dev: f64) -> f64 {
 pub fn calculate_deterministic_projection_logic(
     input: &DeterministicProjectionInput,
 ) -> DeterministicProjectionOutput {
-    let real_withdrawal_rate = (1.0 + input.withdrawal_rate / 100.0) / (1.0 + input.inflation / 100.0) - 1.0;
+    let real_withdrawal_rate =
+        (1.0 + input.withdrawal_rate / 100.0) / (1.0 + input.inflation / 100.0) - 1.0;
     let fire_number = if real_withdrawal_rate <= 0.0 {
         f64::INFINITY
     } else {
@@ -447,7 +454,13 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         .collect::<Vec<_>>();
 
     let market_values = compute_net_worth_market_values_logic(&input.transactions, &input.quotes);
-    let net_worth = compute_net_worth_logic(&input.accounts, &market_values.iter().map(|(k, v)| (k.clone(), json!(v))).collect());
+    let net_worth = compute_net_worth_logic(
+        &input.accounts,
+        &market_values
+            .iter()
+            .map(|(k, v)| (k.clone(), json!(v)))
+            .collect(),
+    );
 
     let to_app_currency = |amount: f64, account_id: i32, date: &str| -> f64 {
         let acc_currency = account_map
@@ -484,7 +497,8 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
     };
 
     let holdings = build_holdings_from_transactions_logic(&input.transactions);
-    let final_holdings = merge_holdings_with_quotes_logic(&holdings.current_holdings, &input.quotes);
+    let final_holdings =
+        merge_holdings_with_quotes_logic(&holdings.current_holdings, &input.quotes);
     let totals = compute_portfolio_totals_logic(&final_holdings);
 
     let portfolio = if final_holdings.is_empty() {
@@ -514,7 +528,10 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         .accounts
         .iter()
         .map(|acc| {
-            let market = market_values.get(&acc.id.to_string()).copied().unwrap_or(0.0);
+            let market = market_values
+                .get(&acc.id.to_string())
+                .copied()
+                .unwrap_or(0.0);
             json!({
                 "name": acc.name,
                 "currency": acc.currency.clone().unwrap_or_else(|| input.app_currency.clone()),
@@ -525,8 +542,17 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             })
         })
         .filter(|v| {
-            (v.get("cash_balance").and_then(|x| x.as_f64()).unwrap_or(0.0)).abs() > 0.0
-                || (v.get("market_value").and_then(|x| x.as_f64()).unwrap_or(0.0)).abs() > 0.0
+            (v.get("cash_balance")
+                .and_then(|x| x.as_f64())
+                .unwrap_or(0.0))
+            .abs()
+                > 0.0
+                || (v
+                    .get("market_value")
+                    .and_then(|x| x.as_f64())
+                    .unwrap_or(0.0))
+                .abs()
+                    > 0.0
         })
         .collect::<Vec<_>>();
 
@@ -592,7 +618,10 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             continue;
         }
         let converted = to_app_currency(t.amount, t.account_id, &t.date);
-        let cat = t.category.clone().unwrap_or_else(|| "Uncategorized".to_string());
+        let cat = t
+            .category
+            .clone()
+            .unwrap_or_else(|| "Uncategorized".to_string());
         if converted < 0.0 {
             *category_totals_expense.entry(cat).or_insert(0.0) += converted.abs();
         } else if converted > 0.0 {
@@ -639,7 +668,10 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             .unwrap_or(Ordering::Equal)
     });
 
-    let net_worth_points = vec![json!({"label": input.start_date, "value": net_worth}), json!({"label": input.end_date, "value": net_worth})];
+    let net_worth_points = vec![
+        json!({"label": input.start_date, "value": net_worth}),
+        json!({"label": input.end_date, "value": net_worth}),
+    ];
 
     let mut investment_categories: HashMap<String, f64> = HashMap::new();
     let mut expense_non_investment: HashMap<String, f64> = HashMap::new();
@@ -654,11 +686,17 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         if converted >= 0.0 {
             continue;
         }
-        let cat = t.category.clone().unwrap_or_else(|| "Uncategorized".to_string());
+        let cat = t
+            .category
+            .clone()
+            .unwrap_or_else(|| "Uncategorized".to_string());
         let abs = converted.abs();
         total_expense_abs += abs;
         let lc = cat.to_lowercase();
-        let is_invest = lc.contains("invest") || lc.contains("savings") || lc.contains("brokerage") || lc.contains("deposit");
+        let is_invest = lc.contains("invest")
+            || lc.contains("savings")
+            || lc.contains("brokerage")
+            || lc.contains("deposit");
         if is_invest {
             *investment_categories.entry(cat).or_insert(0.0) += abs;
             total_investments += abs;
@@ -709,32 +747,50 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
 }
 
 #[tauri::command]
-pub fn compute_net_worth(accounts: Vec<Account>, market_values: HashMap<String, Value>) -> Result<f64, String> {
+pub fn compute_net_worth(
+    accounts: Vec<Account>,
+    market_values: HashMap<String, Value>,
+) -> Result<f64, String> {
     Ok(compute_net_worth_logic(&accounts, &market_values))
 }
 
 #[tauri::command]
-pub fn build_holdings_from_transactions(transactions: Vec<Transaction>) -> Result<HoldingsResult, String> {
+pub fn build_holdings_from_transactions(
+    transactions: Vec<Transaction>,
+) -> Result<HoldingsResult, String> {
     Ok(build_holdings_from_transactions_logic(&transactions))
 }
 
 #[tauri::command]
-pub fn merge_holdings_with_quotes(holdings: Vec<Holding>, quotes: Vec<YahooQuote>) -> Result<Vec<HoldingWithQuote>, String> {
+pub fn merge_holdings_with_quotes(
+    holdings: Vec<Holding>,
+    quotes: Vec<YahooQuote>,
+) -> Result<Vec<HoldingWithQuote>, String> {
     Ok(merge_holdings_with_quotes_logic(&holdings, &quotes))
 }
 
 #[tauri::command]
-pub fn compute_portfolio_totals(holdings: Vec<HoldingWithQuote>) -> Result<PortfolioTotals, String> {
+pub fn compute_portfolio_totals(
+    holdings: Vec<HoldingWithQuote>,
+) -> Result<PortfolioTotals, String> {
     Ok(compute_portfolio_totals_logic(&holdings))
 }
 
 #[tauri::command]
-pub fn compute_net_worth_market_values(transactions: Vec<Transaction>, quotes: Vec<YahooQuote>) -> Result<HashMap<String, f64>, String> {
-    Ok(compute_net_worth_market_values_logic(&transactions, &quotes))
+pub fn compute_net_worth_market_values(
+    transactions: Vec<Transaction>,
+    quotes: Vec<YahooQuote>,
+) -> Result<HashMap<String, f64>, String> {
+    Ok(compute_net_worth_market_values_logic(
+        &transactions,
+        &quotes,
+    ))
 }
 
 #[tauri::command]
-pub fn calculate_deterministic_projection(input: DeterministicProjectionInput) -> Result<DeterministicProjectionOutput, String> {
+pub fn calculate_deterministic_projection(
+    input: DeterministicProjectionInput,
+) -> Result<DeterministicProjectionOutput, String> {
     Ok(calculate_deterministic_projection_logic(&input))
 }
 
