@@ -338,14 +338,24 @@ export default function FireCalculator() {
     };
   }, []);
 
-  // Deterministic projection (inflation-adjusted)
+  const [deterministicProjection, setDeterministicProjection] = useState({
+    fireNumber: 0,
+    yearsToFire: null,
+    projectionData: [],
+    neverReached: false,
+  });
+
   const { fireNumber, yearsToFire, projectionData, neverReached } =
-    useMemo(() => {
-      // Ensure deterministic projection covers the full chart horizon
+    deterministicProjection;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDeterministicProjection = async () => {
       const yearsToRetirement = Math.max(0, retirementAge - currentAge);
       const totalYears = yearsToRetirement + retirementDuration;
 
-      return calculateDeterministicProjection({
+      const result = await calculateDeterministicProjection({
         currentNetWorth,
         annualSavings,
         annualExpenses,
@@ -354,23 +364,36 @@ export default function FireCalculator() {
         withdrawalRate,
         maxYears: totalYears,
       });
-    }, [
-      currentNetWorth,
-      annualSavings,
-      annualExpenses,
-      expectedReturn,
-      inflation,
-      withdrawalRate,
-      currentAge,
-      retirementAge,
-      retirementDuration,
-    ]);
+
+      if (!cancelled) {
+        setDeterministicProjection(result);
+      }
+    };
+
+    loadDeterministicProjection().catch((e) => {
+      console.error("Failed to calculate deterministic projection:", e);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentNetWorth,
+    annualSavings,
+    annualExpenses,
+    expectedReturn,
+    inflation,
+    withdrawalRate,
+    currentAge,
+    retirementAge,
+    retirementDuration,
+  ]);
 
   // Monte Carlo simulation (debounced to avoid excessive recalculation)
   const [monteCarloResult, setMonteCarloResult] = useState(null);
 
-  const runSimulation = useCallback(() => {
-    const result = runMonteCarloSimulation({
+  const runSimulation = useCallback(async () => {
+    const result = await runMonteCarloSimulation({
       currentNetWorth,
       annualSavings,
       annualExpenses,
@@ -399,7 +422,9 @@ export default function FireCalculator() {
   // Debounce Monte Carlo calculation
   useEffect(() => {
     const timer = setTimeout(() => {
-      runSimulation();
+      runSimulation().catch((e) => {
+        console.error("Failed to run Monte Carlo simulation:", e);
+      });
     }, 300);
     return () => clearTimeout(timer);
   }, [runSimulation]);

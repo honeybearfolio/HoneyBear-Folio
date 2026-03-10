@@ -14,3 +14,5 @@ pub mod rules;
 pub mod scheduled;
 pub mod stock;
 pub mod transactions;
+
+pub mod calculations;
