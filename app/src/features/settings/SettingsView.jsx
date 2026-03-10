@@ -766,21 +766,23 @@ export default function SettingsView({
                       </a>
                       {APP_COMMIT && (
                         <>
-                          <p>(
-                          <a
-                            href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
-                            className="about-version-link"
-                            style={{ fontFamily: "monospace" }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              openExternal(
-                                `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
-                              );
-                            }}
-                          >
-                            {APP_COMMIT.substring(0, 7)}
-                          </a>
-                          )</p>
+                          <p>
+                            (
+                            <a
+                              href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
+                              className="about-version-link"
+                              style={{ fontFamily: "monospace" }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                openExternal(
+                                  `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
+                                );
+                              }}
+                            >
+                              {APP_COMMIT.substring(0, 7)}
+                            </a>
+                            )
+                          </p>
                         </>
                       )}
                     </>
