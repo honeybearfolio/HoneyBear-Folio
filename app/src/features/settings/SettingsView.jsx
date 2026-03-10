@@ -766,7 +766,7 @@ export default function SettingsView({
                       </a>
                       {APP_COMMIT && (
                         <>
-                          <span>(</span>
+                          <p>(
                           <a
                             href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
                             className="about-version-link"
@@ -780,7 +780,7 @@ export default function SettingsView({
                           >
                             {APP_COMMIT.substring(0, 7)}
                           </a>
-                          <span>)</span>
+                          )</p>
                         </>
                       )}
                     </>
