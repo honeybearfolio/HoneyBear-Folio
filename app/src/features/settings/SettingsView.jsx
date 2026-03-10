@@ -788,8 +788,9 @@ export default function SettingsView({
                     <>
                       <span>dev</span>
                       {APP_COMMIT && (
-                          <p>
-                          (<a
+                        <p>
+                          (
+                          <a
                             href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
                             className="about-version-link"
                             style={{ fontFamily: "monospace" }}
@@ -801,8 +802,9 @@ export default function SettingsView({
                             }}
                           >
                             {APP_COMMIT.substring(0, 7)}
-                          </a>)
-                          </p>
+                          </a>
+                          )
+                        </p>
                       )}
                     </>
                   )}
