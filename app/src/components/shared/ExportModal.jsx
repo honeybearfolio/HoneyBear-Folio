@@ -371,7 +371,7 @@ export default function ExportModal({ onClose }) {
           overall_roi: t("report.overall_roi"),
         };
 
-        const reportData = computeReportData({
+        const reportData = await computeReportData({
           accounts,
           transactions,
           startDate: pdfDateRange.start,

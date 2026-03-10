@@ -70,6 +70,13 @@ describe("ExportModal", () => {
           { account_id: 1, date: "2024-01-15", amount: 100, payee: "Store" },
         ]);
       }
+      if (cmd === "compute_report_data") {
+        return Promise.resolve({
+          date_range_start: "2024-01-01",
+          date_range_end: "2024-12-31",
+          summary: {},
+        });
+      }
       return Promise.resolve(null);
     });
     mockSave.mockResolvedValue("/path/to/export.json");
@@ -213,6 +220,15 @@ describe("ExportModal", () => {
     fireEvent.click(screen.getByText("Export"));
 
     await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith(
+        "compute_report_data",
+        expect.objectContaining({
+          input: expect.objectContaining({
+            startDate: expect.any(String),
+            endDate: expect.any(String),
+          }),
+        }),
+      );
       expect(mockInvoke).toHaveBeenCalledWith(
         "generate_pdf_report",
         expect.objectContaining({

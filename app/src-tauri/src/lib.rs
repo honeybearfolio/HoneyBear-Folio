@@ -1,6 +1,6 @@
 mod core;
 pub use crate::core::{
-    accounts, db_init, io, markets, models, pdf, rules, scheduled, transactions, utils,
+    accounts, calculations, db_init, io, markets, models, pdf, rules, scheduled, transactions, utils,
 };
 
 pub use crate::models::{
@@ -139,6 +139,14 @@ pub fn run() {
             scheduled::get_pending_occurrences,
             scheduled::apply_scheduled_occurrence,
             scheduled::skip_scheduled_occurrence,
+            calculations::compute_net_worth,
+            calculations::build_holdings_from_transactions,
+            calculations::merge_holdings_with_quotes,
+            calculations::compute_portfolio_totals,
+            calculations::compute_net_worth_market_values,
+            calculations::calculate_deterministic_projection,
+            calculations::run_monte_carlo_simulation,
+            calculations::compute_report_data,
             pdf::generate_pdf_report,
         ])
         .run(tauri::generate_context!())

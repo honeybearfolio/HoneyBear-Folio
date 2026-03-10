@@ -12,6 +12,21 @@ export const rust = {
     callRust("apply_scheduled_occurrence", args),
   check_currency_availability: (args) =>
     callRust("check_currency_availability", args),
+
+  compute_net_worth: (args) => callRust("compute_net_worth", args),
+  build_holdings_from_transactions: (args) =>
+    callRust("build_holdings_from_transactions", args),
+  merge_holdings_with_quotes: (args) =>
+    callRust("merge_holdings_with_quotes", args),
+  compute_portfolio_totals: (args) =>
+    callRust("compute_portfolio_totals", args),
+  compute_net_worth_market_values: (args) =>
+    callRust("compute_net_worth_market_values", args),
+  calculate_deterministic_projection: (args) =>
+    callRust("calculate_deterministic_projection", args),
+  run_monte_carlo_simulation: (args) =>
+    callRust("run_monte_carlo_simulation", args),
+  compute_report_data: (args) => callRust("compute_report_data", args),
   create_account: (args) => callRust("create_account", args),
   create_investment_transaction: (args) =>
     callRust("create_investment_transaction", args),
