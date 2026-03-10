@@ -23,12 +23,7 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
 import { t, AVAILABLE_LANGUAGES } from "../../i18n/i18n";
 import { formatDateForUI } from "../../utils/format";
-import {
-  getDisplayVersion,
-  IS_RELEASE,
-  APP_VERSION,
-  APP_COMMIT,
-} from "../../utils/version";
+import { IS_RELEASE, APP_VERSION, APP_COMMIT } from "../../utils/version";
 
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { useConfirm } from "../../contexts/confirm";
@@ -756,43 +751,66 @@ export default function SettingsView({
                 <div className="about-version-badge">
                   <span>{t("about.version")}:</span>
                   {IS_RELEASE && APP_VERSION ? (
-                    <a
-                      href={`${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`}
-                      className="about-version-link"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        openExternal(
-                          `${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`,
-                        );
-                      }}
-                    >
-                      v{getDisplayVersion()}
-                    </a>
+                    <>
+                      <a
+                        href={`${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`}
+                        className="about-version-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openExternal(
+                            `${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`,
+                          );
+                        }}
+                      >
+                        v{APP_VERSION}
+                      </a>
+                      {APP_COMMIT && (
+                        <>
+                          <p>
+                            (
+                            <a
+                              href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
+                              className="about-version-link"
+                              style={{ fontFamily: "monospace" }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                openExternal(
+                                  `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
+                                );
+                              }}
+                            >
+                              {APP_COMMIT.substring(0, 7)}
+                            </a>
+                            )
+                          </p>
+                        </>
+                      )}
+                    </>
                   ) : (
-                    <span>{getDisplayVersion()}</span>
+                    <>
+                      <span>dev</span>
+                      {APP_COMMIT && (
+                        <p>
+                          (
+                          <a
+                            href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
+                            className="about-version-link"
+                            style={{ fontFamily: "monospace" }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              openExternal(
+                                `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
+                              );
+                            }}
+                          >
+                            {APP_COMMIT.substring(0, 7)}
+                          </a>
+                          )
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
-                {APP_COMMIT && (
-                  <div
-                    className="about-version-badge"
-                    style={{ marginTop: "0.25rem" }}
-                  >
-                    <span>{t("about.commit")}:</span>
-                    <a
-                      href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
-                      className="about-version-link"
-                      style={{ fontFamily: "monospace" }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        openExternal(
-                          `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
-                        );
-                      }}
-                    >
-                      {APP_COMMIT.substring(0, 7)}
-                    </a>
-                  </div>
-                )}
               </div>
 
               <div className="about-section">
