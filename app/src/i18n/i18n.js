@@ -26,7 +26,7 @@ export async function setLanguage(langCode) {
   // Use Vite's import.meta.glob so the bundler can analyze available locale files
   // and avoid the `vite:dynamic-import-vars` warning. This is tree-shakeable
   // and only includes files present in this directory (./*.json).
-  const loaders = import.meta.glob("./*.json");
+  const loaders = import.meta.glob(["./*.json", "!./en.json"]);
   const loader = loaders[`./${langCode}.json`];
 
   if (!loader) {
