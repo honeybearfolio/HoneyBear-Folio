@@ -138,7 +138,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Install runtime/sdk
-          flatpak install -y --user flathub org.gnome.Platform//49 org.gnome.Sdk//49
+          flatpak install -y --user flathub org.gnome.Platform//50 org.gnome.Sdk//50
           
           # Extract target from args
           ARGS="${{ matrix.args }}"
