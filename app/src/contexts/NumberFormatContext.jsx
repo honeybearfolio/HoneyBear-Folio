@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { NumberFormatContext } from "./number-format";
 import useLocalStorageState from "../hooks/useLocalStorageState";
+import { setLanguage } from "../i18n/i18n";
 
 const parseFirstDayOfWeek = (value) => {
   const parsed = parseInt(value, 10);
@@ -33,14 +34,10 @@ export function NumberFormatProvider({ children }) {
   const [translationVersion, setTranslationVersion] = useState(0);
 
   useEffect(() => {
-    // apply the UI language to the i18n runtime (lazy-loads when needed)
-    // imported dynamically here to avoid circular import in some test setups
+    // apply the UI language to the i18n runtime (lazy-loads locale JSON when needed)
     (async () => {
       try {
-        const i18n = await import("../i18n/i18n");
-        if (i18n && typeof i18n.setLanguage === "function") {
-          await i18n.setLanguage(uiLanguage);
-        }
+        await setLanguage(uiLanguage);
       } catch (e) {
         // don't block UI on language load failures
 
