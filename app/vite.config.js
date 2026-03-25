@@ -57,23 +57,32 @@ export default defineConfig(async () => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Split React into its own chunk
-          "react-vendor": ["react", "react-dom"],
-          // Split Chart.js into its own chunk
-          "chart-vendor": ["chart.js", "react-chartjs-2"],
-          // Split file handling libraries into their own chunk
-          "file-vendor": ["papaparse"],
-          // Split Tauri APIs into their own chunk
-          "tauri-vendor": [
-            "@tauri-apps/api",
-            "@tauri-apps/plugin-dialog",
-            "@tauri-apps/plugin-fs",
-            "@tauri-apps/plugin-process",
-            "@tauri-apps/plugin-updater",
-          ],
-          // Split UI icons and components into their own chunk
-          "ui-vendor": ["lucide-react", "react-datepicker", "react-markdown"],
+        manualChunks: (id) => {
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/react-dom")
+          ) {
+            return "react-vendor";
+          }
+          if (
+            id.includes("node_modules/chart.js") ||
+            id.includes("node_modules/react-chartjs-2")
+          ) {
+            return "chart-vendor";
+          }
+          if (id.includes("node_modules/papaparse")) {
+            return "file-vendor";
+          }
+          if (id.includes("node_modules/@tauri-apps")) {
+            return "tauri-vendor";
+          }
+          if (
+            id.includes("node_modules/lucide-react") ||
+            id.includes("node_modules/react-datepicker") ||
+            id.includes("node_modules/react-markdown")
+          ) {
+            return "ui-vendor";
+          }
         },
       },
     },
