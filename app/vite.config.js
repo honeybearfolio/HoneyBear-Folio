@@ -58,10 +58,16 @@ export default defineConfig(async () => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/react-dom")
+          ) {
             return "react-vendor";
           }
-          if (id.includes("node_modules/chart.js") || id.includes("node_modules/react-chartjs-2")) {
+          if (
+            id.includes("node_modules/chart.js") ||
+            id.includes("node_modules/react-chartjs-2")
+          ) {
             return "chart-vendor";
           }
           if (id.includes("node_modules/papaparse")) {
