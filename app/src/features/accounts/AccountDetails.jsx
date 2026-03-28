@@ -1506,6 +1506,12 @@ export default function AccountDetails({ account, onUpdate }) {
                     <tr
                       key={`sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`}
                       className="scheduled-ghost-row group"
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        const occId = `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`;
+                        setMenuCoords({ x: e.clientX, y: e.clientY });
+                        setMenuOpenId(occId);
+                      }}
                     >
                       <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
@@ -1630,11 +1636,17 @@ export default function AccountDetails({ account, onUpdate }) {
                             <div
                               className="fixed z-50 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in action-menu-portal"
                               style={{
-                                top: `${menuCoords.top + menuCoords.height + 8}px`,
-                                left: `${Math.min(
-                                  Math.max(menuCoords.right - 224, 8),
-                                  window.innerWidth - 224 - 8,
-                                )}px`,
+                                top:
+                                  menuCoords.x !== undefined
+                                    ? `${menuCoords.y}px`
+                                    : `${menuCoords.top + menuCoords.height + 8}px`,
+                                left:
+                                  menuCoords.x !== undefined
+                                    ? `${Math.min(menuCoords.x, window.innerWidth - 224 - 8)}px`
+                                    : `${Math.min(
+                                        Math.max(menuCoords.right - 224, 8),
+                                        window.innerWidth - 224 - 8,
+                                      )}px`,
                               }}
                             >
                               <button
@@ -1728,6 +1740,13 @@ export default function AccountDetails({ account, onUpdate }) {
                   <tr
                     key={tx.id}
                     className="hover:bg-gradient-to-r hover:from-slate-50 hover:to-transparent dark:hover:from-slate-700/50 group transition-all duration-200"
+                    onContextMenu={(e) => {
+                      if (editingId !== tx.id) {
+                        e.preventDefault();
+                        setMenuCoords({ x: e.clientX, y: e.clientY });
+                        setMenuOpenId(tx.id);
+                      }
+                    }}
                   >
                     {editingId === tx.id ? (
                       <>
@@ -2293,8 +2312,14 @@ export default function AccountDetails({ account, onUpdate }) {
                               <div
                                 className="fixed z-50 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in action-menu-portal"
                                 style={{
-                                  top: `${menuCoords.top + menuCoords.height + 8}px`,
-                                  left: `${Math.min(Math.max(menuCoords.right - 176, 8), window.innerWidth - 176 - 8)}px`,
+                                  top:
+                                    menuCoords.x !== undefined
+                                      ? `${menuCoords.y}px`
+                                      : `${menuCoords.top + menuCoords.height + 8}px`,
+                                  left:
+                                    menuCoords.x !== undefined
+                                      ? `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`
+                                      : `${Math.min(Math.max(menuCoords.right - 176, 8), window.innerWidth - 176 - 8)}px`,
                                 }}
                               >
                                 <button

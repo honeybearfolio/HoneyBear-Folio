@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { rust } from "../../api/tauri-client";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -51,6 +52,8 @@ export default function ScheduledList() {
   const [showForm, setShowForm] = useState(false);
   const [tickerSuggestions, setTickerSuggestions] = useState([]);
   const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [menuCoords, setMenuCoords] = useState(null);
 
   const confirm = useConfirm();
   const { showToast } = useToast();
@@ -79,6 +82,36 @@ export default function ScheduledList() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        menuOpenId &&
+        !event.target.closest(".sched-action-menu-container") &&
+        !event.target.closest(".sched-action-menu-portal")
+      ) {
+        setMenuOpenId(null);
+        setMenuCoords(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpenId]);
+
+  useEffect(() => {
+    function handleScrollOrResize() {
+      if (menuOpenId) {
+        setMenuOpenId(null);
+        setMenuCoords(null);
+      }
+    }
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [menuOpenId]);
 
   async function fetchSchedules() {
     try {
@@ -909,6 +942,12 @@ export default function ScheduledList() {
                   className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
                     !sched.enabled ? "opacity-50" : ""
                   }`}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setMenuCoords({ x: e.clientX, y: e.clientY });
+                    setMenuOpenId(sched.id);
+                  }}
                 >
                   <td className="px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300">
                     {getAccountName(accounts, sched.account_id)}
@@ -948,7 +987,7 @@ export default function ScheduledList() {
                   <td className="px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400 tabular-nums">
                     {sched.occurrences_count}
                   </td>
-                  <td className="px-4 py-2.5 text-right">
+                  <td className="px-4 py-2.5 text-right sched-action-menu-container">
                     <div className="flex items-center justify-end gap-0.5">
                       <button
                         onClick={() => handleToggleEnabled(sched)}
@@ -975,11 +1014,72 @@ export default function ScheduledList() {
                       <button
                         onClick={() => handleDelete(sched.id)}
                         className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors text-slate-400 hover:text-rose-500 cursor-pointer"
-                        title={t("scheduled.delete_confirm")}
+                        title={t("scheduled.delete")}
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
+                    {menuOpenId === sched.id &&
+                      menuCoords &&
+                      createPortal(
+                        <div
+                          className="fixed z-50 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in sched-action-menu-portal"
+                          style={{
+                            top: `${menuCoords.y}px`,
+                            left: `${Math.min(menuCoords.x, window.innerWidth - 192 - 8)}px`,
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              handleToggleEnabled(sched);
+                              setMenuOpenId(null);
+                              setMenuCoords(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
+                          >
+                            {sched.enabled ? (
+                              <ToggleRight
+                                size={16}
+                                className="text-brand-500"
+                              />
+                            ) : (
+                              <ToggleLeft
+                                size={16}
+                                className="text-slate-400"
+                              />
+                            )}
+                            {sched.enabled
+                              ? t("scheduled.enabled")
+                              : t("scheduled.disabled")}
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleEdit(sched);
+                              setMenuOpenId(null);
+                              setMenuCoords(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
+                          >
+                            <Edit
+                              size={16}
+                              className="text-slate-400 dark:text-slate-500"
+                            />
+                            {t("scheduled.update")}
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDelete(sched.id);
+                              setMenuOpenId(null);
+                              setMenuCoords(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center gap-3 font-medium transition-colors"
+                          >
+                            <Trash2 size={16} />
+                            {t("scheduled.delete")}
+                          </button>
+                        </div>,
+                        document.body,
+                      )}
                   </td>
                 </tr>
               ))}

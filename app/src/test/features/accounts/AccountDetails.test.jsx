@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import AccountDetails from "../../../features/accounts/AccountDetails";
 import { invoke } from "@tauri-apps/api/core";
 import * as formatInteractions from "../../../utils/format";
@@ -145,4 +145,32 @@ describe("AccountDetails", () => {
   });
 
   // More interactive tests can be added: Adding a transaction, Deleting, etc.
+
+  it("right-clicking a transaction row shows the context menu", async () => {
+    render(<AccountDetails account={account} onUpdate={vi.fn()} />);
+
+    const row = await screen.findByText("Grocery Store");
+    fireEvent.contextMenu(row.closest("tr"));
+
+    expect(
+      await screen.findByRole("button", { name: "Duplicate" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+  });
+
+  it("context menu is dismissed when clicking outside", async () => {
+    render(<AccountDetails account={account} onUpdate={vi.fn()} />);
+
+    const row = await screen.findByText("Grocery Store");
+    fireEvent.contextMenu(row.closest("tr"));
+    await screen.findByRole("button", { name: "Duplicate" });
+
+    fireEvent.mouseDown(document.body);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Duplicate" }),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

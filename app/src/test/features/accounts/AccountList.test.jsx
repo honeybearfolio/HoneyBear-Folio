@@ -1,12 +1,16 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import AccountList from "../../../features/accounts/AccountList";
 import { NumberFormatContext } from "../../../contexts/number-format";
+
+vi.mock("../../../i18n/i18n", () => ({ t: (k) => k }));
 
 // Mock dependencies
 vi.mock("lucide-react", () => ({
   GripVertical: () => <span data-testid="grip-icon">::</span>,
   Banknote: () => <span data-testid="banknote-icon">$</span>,
+  Edit: () => <span>Edit</span>,
+  Trash2: () => <span>Delete</span>,
 }));
 
 // We can simply render with the context provider instead of mocking the hook
@@ -98,5 +102,134 @@ describe("AccountList", () => {
 
     fireEvent.click(screen.getByText("Account A"));
     expect(onSelectAccount).toHaveBeenCalledWith("1");
+  });
+
+  it("right-clicking an account shows Rename and Delete in a context menu", async () => {
+    const onRenameAccount = vi.fn();
+    const onDeleteAccount = vi.fn();
+    renderWithContext(
+      <AccountList
+        accounts={mockAccounts}
+        onSelectAccount={vi.fn()}
+        Icon={() => <span>Icon</span>}
+        onRenameAccount={onRenameAccount}
+        onDeleteAccount={onDeleteAccount}
+      />,
+    );
+
+    const accountItem = screen
+      .getByText("Account A")
+      .closest(".account-list-menu-container");
+    fireEvent.contextMenu(accountItem);
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".account-list-menu-portal"),
+      ).not.toBeNull();
+    });
+    const portal = document.querySelector(".account-list-menu-portal");
+    expect(portal.textContent).toContain("account.action.rename");
+    expect(portal.textContent).toContain("account.action.delete");
+  });
+
+  it("clicking Rename in context menu shows an inline input", async () => {
+    const onRenameAccount = vi.fn();
+    renderWithContext(
+      <AccountList
+        accounts={mockAccounts}
+        onSelectAccount={vi.fn()}
+        Icon={() => <span>Icon</span>}
+        onRenameAccount={onRenameAccount}
+        onDeleteAccount={vi.fn()}
+      />,
+    );
+
+    const accountItem = screen
+      .getByText("Account A")
+      .closest(".account-list-menu-container");
+    fireEvent.contextMenu(accountItem);
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".account-list-menu-portal"),
+      ).not.toBeNull();
+    });
+
+    const renameBtn = Array.from(
+      document
+        .querySelector(".account-list-menu-portal")
+        .querySelectorAll("button"),
+    ).find((b) => b.textContent.includes("account.action.rename"));
+    fireEvent.click(renameBtn);
+
+    const input = await screen.findByRole("textbox");
+    expect(input.value).toBe("Account A");
+
+    fireEvent.change(input, { target: { value: "New Name" } });
+    fireEvent.submit(input.closest("form"));
+
+    expect(onRenameAccount).toHaveBeenCalledWith("1", "New Name");
+  });
+
+  it("clicking Delete in context menu calls onDeleteAccount", async () => {
+    const onDeleteAccount = vi.fn();
+    renderWithContext(
+      <AccountList
+        accounts={mockAccounts}
+        onSelectAccount={vi.fn()}
+        Icon={() => <span>Icon</span>}
+        onRenameAccount={vi.fn()}
+        onDeleteAccount={onDeleteAccount}
+      />,
+    );
+
+    const accountItem = screen
+      .getByText("Account A")
+      .closest(".account-list-menu-container");
+    fireEvent.contextMenu(accountItem);
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".account-list-menu-portal"),
+      ).not.toBeNull();
+    });
+
+    const deleteBtn = Array.from(
+      document
+        .querySelector(".account-list-menu-portal")
+        .querySelectorAll("button"),
+    ).find((b) => b.textContent.includes("account.action.delete"));
+    fireEvent.click(deleteBtn);
+
+    expect(onDeleteAccount).toHaveBeenCalledWith("1");
+  });
+
+  it("context menu closes when clicking outside", async () => {
+    renderWithContext(
+      <AccountList
+        accounts={mockAccounts}
+        onSelectAccount={vi.fn()}
+        Icon={() => <span>Icon</span>}
+        onRenameAccount={vi.fn()}
+        onDeleteAccount={vi.fn()}
+      />,
+    );
+
+    const accountItem = screen
+      .getByText("Account A")
+      .closest(".account-list-menu-container");
+    fireEvent.contextMenu(accountItem);
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".account-list-menu-portal"),
+      ).not.toBeNull();
+    });
+
+    fireEvent.mouseDown(document.body);
+
+    await waitFor(() => {
+      expect(document.querySelector(".account-list-menu-portal")).toBeNull();
+    });
   });
 });

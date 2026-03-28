@@ -33,6 +33,8 @@ import "../../styles/Sidebar.css";
 import { useFormatNumber } from "../../utils/format";
 import { usePrivacy } from "../../contexts/privacy";
 import MaskedNumber from "../ui/MaskedNumber";
+import { rust } from "../../api/tauri-client";
+import { useConfirm } from "../../contexts/confirm";
 
 export default function Sidebar({
   accounts,
@@ -147,6 +149,37 @@ export default function Sidebar({
   const handleSelect = (id) => {
     onSelectAccount(id);
   };
+
+  const confirm = useConfirm();
+
+  async function handleRenameAccount(id, newName) {
+    try {
+      await rust.rename_account({ id, newName });
+      if (onUpdate) onUpdate();
+    } catch (e) {
+      console.error("Failed to rename account:", e);
+    }
+  }
+
+  async function handleDeleteAccount(id) {
+    const account = accounts.find((a) => a.id === id);
+    const confirmed = await confirm(
+      t("confirm.delete_account", { name: account?.name ?? id }),
+      {
+        title: t("confirm.delete_title"),
+        kind: "warning",
+        okLabel: t("confirm.delete"),
+        cancelLabel: t("account.cancel"),
+      },
+    );
+    if (!confirmed) return;
+    try {
+      await rust.delete_account({ id });
+      if (onUpdate) onUpdate();
+    } catch (e) {
+      console.error("Failed to delete account:", e);
+    }
+  }
 
   return (
     <div className="sidebar-container">
@@ -493,6 +526,8 @@ export default function Sidebar({
                 Icon={CreditCard}
                 onReorder={handleReorder}
                 isDraggable={sortConfig.field === "manual"}
+                onRenameAccount={handleRenameAccount}
+                onDeleteAccount={handleDeleteAccount}
               />
             </div>
           </>

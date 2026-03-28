@@ -15,6 +15,15 @@ vi.mock("../../../utils/networth", () => ({
 vi.mock("../../../contexts/privacy", () => ({
   usePrivacy: vi.fn(),
 }));
+vi.mock("../../../contexts/confirm", () => ({
+  useConfirm: () => vi.fn().mockResolvedValue(true),
+}));
+vi.mock("../../../api/tauri-client", () => ({
+  rust: {
+    rename_account: vi.fn().mockResolvedValue(undefined),
+    delete_account: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 // Mock lucide icons
 vi.mock("lucide-react", () => ({

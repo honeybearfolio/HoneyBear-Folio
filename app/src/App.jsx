@@ -241,7 +241,10 @@ function App() {
               <ErrorBoundary>
                 <ChartNumberFormatSync />
                 <UpdateNotification />
-                <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans overflow-hidden">
+                <div
+                  className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans overflow-hidden"
+                  onContextMenu={(e) => e.preventDefault()}
+                >
                   <div
                     style={{ width: isSidebarOpen ? sidebarWidth : 0 }}
                     className={`${
