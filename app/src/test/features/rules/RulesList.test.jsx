@@ -669,4 +669,78 @@ describe("RulesList", () => {
     const operatorSelect = within(conditionGroup).getAllByTestId("select")[1];
     expect(operatorSelect.value).toBe("matches_regex");
   });
+
+  it("right-clicking a rule row opens a context menu with Edit and Delete", async () => {
+    const rule = {
+      id: 1,
+      priority: 1,
+      match_field: "payee",
+      match_pattern: "Coffee",
+      action_field: "category",
+      action_value: "Drinks",
+      logic: "and",
+      conditions: [{ field: "payee", operator: "contains", value: "Coffee" }],
+      actions: [{ field: "category", value: "Drinks" }],
+    };
+    invoke.mockResolvedValueOnce([rule]);
+    render(<RulesList />);
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // The condition badge renders: "rules.field.payee rules.operator.contains "Coffee""
+    const conditionBadge = await screen.findByText(
+      'rules.field.payee rules.operator.contains "Coffee"',
+    );
+    const ruleRow = conditionBadge.closest("tr");
+    fireEvent.contextMenu(ruleRow);
+
+    // The portal menu should appear with Edit and Delete actions
+    await waitFor(() => {
+      expect(document.querySelector(".rule-action-menu-portal")).not.toBeNull();
+    });
+    const portal = document.querySelector(".rule-action-menu-portal");
+    expect(
+      within(portal).getByRole("button", { name: /rules\.edit/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(portal).getByRole("button", { name: /rules\.delete/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("rule context menu closes when clicking outside", async () => {
+    const rule = {
+      id: 2,
+      priority: 1,
+      match_field: "payee",
+      match_pattern: "Test",
+      action_field: "category",
+      action_value: "Other",
+      logic: "and",
+      conditions: [{ field: "payee", operator: "equals", value: "Test" }],
+      actions: [{ field: "category", value: "Other" }],
+    };
+    invoke.mockResolvedValueOnce([rule]);
+    render(<RulesList />);
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+
+    // The condition badge renders: "rules.field.payee rules.operator.equals "Test""
+    const conditionBadge = await screen.findByText(
+      'rules.field.payee rules.operator.equals "Test"',
+    );
+    const ruleRow = conditionBadge.closest("tr");
+    fireEvent.contextMenu(ruleRow);
+
+    // Context menu portal should be open
+    await waitFor(() => {
+      expect(document.querySelector(".rule-action-menu-portal")).not.toBeNull();
+    });
+
+    // Click outside to close
+    fireEvent.mouseDown(document.body);
+
+    await waitFor(() => {
+      expect(document.querySelector(".rule-action-menu-portal")).toBeNull();
+    });
+  });
 });

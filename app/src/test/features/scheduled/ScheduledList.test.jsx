@@ -267,4 +267,34 @@ describe("ScheduledList", () => {
       "success",
     );
   });
+
+  it("shows context menu with toggle/edit/delete on right-click", async () => {
+    renderWithContext(<ScheduledList />);
+    await waitFor(() => screen.getByText("Netflix"));
+
+    const rows = document.querySelectorAll("tbody tr");
+    fireEvent.contextMenu(rows[0]);
+
+    const portal = document.querySelector(".sched-action-menu-portal");
+    expect(portal).toBeInTheDocument();
+    expect(portal).toHaveTextContent("scheduled.update");
+    expect(portal).toHaveTextContent("scheduled.delete");
+  });
+
+  it("dismisses context menu on outside click", async () => {
+    renderWithContext(<ScheduledList />);
+    await waitFor(() => screen.getByText("Netflix"));
+
+    const rows = document.querySelectorAll("tbody tr");
+    fireEvent.contextMenu(rows[0]);
+
+    expect(
+      document.querySelector(".sched-action-menu-portal"),
+    ).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(
+      document.querySelector(".sched-action-menu-portal"),
+    ).not.toBeInTheDocument();
+  });
 });
