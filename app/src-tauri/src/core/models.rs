@@ -220,6 +220,8 @@ pub struct ReportAccountBalance {
     pub cash_balance: f64,
     pub market_value: f64,
     pub total: f64,
+    #[serde(default = "default_exchange_rate")]
+    pub exchange_rate: f64,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -288,6 +290,8 @@ pub struct ReportAccountTransactions {
     pub account_name: String,
     pub currency: String,
     pub currency_symbol: String,
+    #[serde(default = "default_exchange_rate")]
+    pub exchange_rate: f64,
     pub transactions: Vec<ReportTransaction>,
 }
 

@@ -532,13 +532,18 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
                 .get(&acc.id.to_string())
                 .copied()
                 .unwrap_or(0.0);
+            let acc_currency = acc
+                .currency
+                .clone()
+                .unwrap_or_else(|| input.app_currency.clone());
             json!({
                 "name": acc.name,
-                "currency": acc.currency.clone().unwrap_or_else(|| input.app_currency.clone()),
-                "currency_symbol": input.app_currency,
+                "currency": acc_currency,
+                "currency_symbol": acc_currency,
                 "cash_balance": acc.balance,
                 "market_value": market,
-                "total": acc.balance + market
+                "total": acc.balance + market,
+                "exchange_rate": acc.exchange_rate
             })
         })
         .filter(|v| {
@@ -568,10 +573,15 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             continue;
         }
 
+        let acc_currency = acc
+            .currency
+            .clone()
+            .unwrap_or_else(|| input.app_currency.clone());
         accounts_transactions.push(json!({
             "account_name": acc.name,
-            "currency": acc.currency.clone().unwrap_or_else(|| input.app_currency.clone()),
-            "currency_symbol": input.app_currency,
+            "currency": acc_currency,
+            "currency_symbol": acc_currency,
+            "exchange_rate": acc.exchange_rate,
             "transactions": txs.iter().map(|t| json!({
                 "date": t.date,
                 "payee": t.payee,
