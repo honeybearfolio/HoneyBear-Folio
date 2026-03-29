@@ -497,7 +497,14 @@ fn draw_table_header(
     from_top: f32,
 ) -> f32 {
     // Header background — neutral light gray
-    draw_rect(ops, MARGIN_LEFT, from_top, CONTENT_W, 7.0, color_table_header_bg());
+    draw_rect(
+        ops,
+        MARGIN_LEFT,
+        from_top,
+        CONTENT_W,
+        7.0,
+        color_table_header_bg(),
+    );
     // Bottom border under header
     draw_line(
         ops,
@@ -548,7 +555,14 @@ fn draw_table_row(
     zebra: bool,
 ) -> f32 {
     if zebra {
-        draw_rect(ops, MARGIN_LEFT, from_top, CONTENT_W, ROW_HEIGHT, color_zebra_bg());
+        draw_rect(
+            ops,
+            MARGIN_LEFT,
+            from_top,
+            CONTENT_W,
+            ROW_HEIGHT,
+            color_zebra_bg(),
+        );
     }
     let mut x = MARGIN_LEFT + 1.5;
     for (i, col) in cols.iter().enumerate() {
@@ -636,7 +650,14 @@ fn draw_summary_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData)
 
     // ── Hero Net Worth card (full width) ────────────────────────────
     let hero_h = 24.0;
-    draw_rect(&mut ops, MARGIN_LEFT, top, CONTENT_W, hero_h, color_card_bg());
+    draw_rect(
+        &mut ops,
+        MARGIN_LEFT,
+        top,
+        CONTENT_W,
+        hero_h,
+        color_card_bg(),
+    );
     // Thin left accent
     draw_rect(&mut ops, MARGIN_LEFT, top, 1.5, hero_h, brand_color());
 
@@ -670,7 +691,11 @@ fn draw_summary_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData)
         let spark_h = 14.0;
         let min_v = nw_points.iter().map(|p| p.value).fold(f64::MAX, f64::min);
         let max_v = nw_points.iter().map(|p| p.value).fold(f64::MIN, f64::max);
-        let range = if (max_v - min_v).abs() < 0.01 { 1.0 } else { max_v - min_v };
+        let range = if (max_v - min_v).abs() < 0.01 {
+            1.0
+        } else {
+            max_v - min_v
+        };
         let n = nw_points.len();
         for i in 0..n - 1 {
             let x1 = spark_x + (i as f32 / (n - 1) as f32) * spark_w;
@@ -688,7 +713,10 @@ fn draw_summary_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData)
     // ── Secondary metrics row (5 cards) ─────────────────────────────
     let secondary = [
         (&labels.total_income, format_currency(s.total_income, sym)),
-        (&labels.total_expenses, format_currency(s.total_expenses, sym)),
+        (
+            &labels.total_expenses,
+            format_currency(s.total_expenses, sym),
+        ),
         (&labels.net_savings, format_currency(s.net_savings, sym)),
         (&labels.savings_rate, format_percent(s.savings_rate)),
         (&labels.accounts, s.account_count.to_string()),
@@ -703,9 +731,25 @@ fn draw_summary_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData)
         // White card with subtle border
         draw_rect(&mut ops, cx, top, card_w, card_h, color_white());
         draw_line(&mut ops, cx, top, cx + card_w, top, 0.2, color_border());
-        draw_line(&mut ops, cx, top + card_h, cx + card_w, top + card_h, 0.2, color_border());
+        draw_line(
+            &mut ops,
+            cx,
+            top + card_h,
+            cx + card_w,
+            top + card_h,
+            0.2,
+            color_border(),
+        );
         draw_line(&mut ops, cx, top, cx, top + card_h, 0.2, color_border());
-        draw_line(&mut ops, cx + card_w, top, cx + card_w, top + card_h, 0.2, color_border());
+        draw_line(
+            &mut ops,
+            cx + card_w,
+            top,
+            cx + card_w,
+            top + card_h,
+            0.2,
+            color_border(),
+        );
         // Small amber dot indicator
         draw_rect(&mut ops, cx + 3.5, top + 4.5, 2.0, 2.0, brand_color());
 
@@ -737,11 +781,31 @@ fn draw_summary_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData)
     top = draw_section_title(&mut ops, fonts, &labels.accounts, top);
 
     let cols = vec![
-        TableColumn { header: labels.account.clone(), width: 44.0, align_right: false },
-        TableColumn { header: labels.currency.clone(), width: 18.0, align_right: false },
-        TableColumn { header: labels.cash_balance.clone(), width: 34.0, align_right: true },
-        TableColumn { header: labels.market_value.clone(), width: 34.0, align_right: true },
-        TableColumn { header: labels.total.clone(), width: 34.0, align_right: true },
+        TableColumn {
+            header: labels.account.clone(),
+            width: 44.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.currency.clone(),
+            width: 18.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.cash_balance.clone(),
+            width: 34.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.market_value.clone(),
+            width: 34.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.total.clone(),
+            width: 34.0,
+            align_right: true,
+        },
     ];
 
     top = draw_table_header(&mut ops, fonts, &cols, top);
@@ -800,8 +864,14 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
     let points = &data.net_worth_points;
     if points.is_empty() {
         write_text_color(
-            &mut ops, fonts, &data.labels.no_transactions,
-            MARGIN_LEFT, top + 10.0, 10.0, false, text_secondary(),
+            &mut ops,
+            fonts,
+            &data.labels.no_transactions,
+            MARGIN_LEFT,
+            top + 10.0,
+            10.0,
+            false,
+            text_secondary(),
         );
         finish_page(doc, ops);
         return;
@@ -821,8 +891,21 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
         format_currency(abs_change, sym),
         format_percent(pct_change),
     );
-    let change_color = if abs_change >= 0.0 { color_income() } else { color_expense() };
-    write_text_weight(&mut ops, fonts, &change_text, MARGIN_LEFT, top + 4.0, 8.0, Weight::Semibold, change_color);
+    let change_color = if abs_change >= 0.0 {
+        color_income()
+    } else {
+        color_expense()
+    };
+    write_text_weight(
+        &mut ops,
+        fonts,
+        &change_text,
+        MARGIN_LEFT,
+        top + 4.0,
+        8.0,
+        Weight::Semibold,
+        change_color,
+    );
     top += 10.0;
 
     // Chart area
@@ -833,7 +916,11 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
 
     let min_val = points.iter().map(|p| p.value).fold(f64::MAX, f64::min);
     let max_val = points.iter().map(|p| p.value).fold(f64::MIN, f64::max);
-    let range = if (max_val - min_val).abs() < 0.01 { 1.0 } else { max_val - min_val };
+    let range = if (max_val - min_val).abs() < 0.01 {
+        1.0
+    } else {
+        max_val - min_val
+    };
 
     // Y-axis labels (5 ticks)
     for i in 0..=4 {
@@ -841,12 +928,24 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
         let val = min_val + frac * range;
         let yy = chart_top + chart_h - (frac as f32 * chart_h);
         write_text_right_weight(
-            &mut ops, fonts,
+            &mut ops,
+            fonts,
             &format_currency(val, sym),
-            chart_x - 2.0, yy + 1.5, 6.0,
-            Weight::Regular, text_secondary(),
+            chart_x - 2.0,
+            yy + 1.5,
+            6.0,
+            Weight::Regular,
+            text_secondary(),
         );
-        draw_line(&mut ops, chart_x, yy, chart_x + chart_w, yy, 0.15, color_border());
+        draw_line(
+            &mut ops,
+            chart_x,
+            yy,
+            chart_x + chart_w,
+            yy,
+            0.15,
+            color_border(),
+        );
     }
 
     // Area fill under line (light brand tint)
@@ -862,7 +961,10 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
         let mut area_points = Vec::new();
         // Bottom-left
         area_points.push(LinePoint {
-            p: Point { x: x_pt(chart_x), y: y_pt(chart_top + chart_h) },
+            p: Point {
+                x: x_pt(chart_x),
+                y: y_pt(chart_top + chart_h),
+            },
             bezier: false,
         });
         // All data points
@@ -871,20 +973,28 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
             let frac = (pt.value - min_val) / range;
             let py = chart_top + chart_h - (frac as f32 * chart_h);
             area_points.push(LinePoint {
-                p: Point { x: x_pt(px), y: y_pt(py) },
+                p: Point {
+                    x: x_pt(px),
+                    y: y_pt(py),
+                },
                 bezier: false,
             });
         }
         // Bottom-right
         area_points.push(LinePoint {
-            p: Point { x: x_pt(chart_x + chart_w), y: y_pt(chart_top + chart_h) },
+            p: Point {
+                x: x_pt(chart_x + chart_w),
+                y: y_pt(chart_top + chart_h),
+            },
             bezier: false,
         });
 
         ops.push(Op::SetFillColor { col: area_color });
         ops.push(Op::DrawPolygon {
             polygon: Polygon {
-                rings: vec![PolygonRing { points: area_points }],
+                rings: vec![PolygonRing {
+                    points: area_points,
+                }],
                 mode: PaintMode::Fill,
                 winding_order: WindingOrder::NonZero,
             },
@@ -914,27 +1024,49 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
         let first_y_frac = (points[0].value - min_val) / range;
         let first_py = chart_top + chart_h - (first_y_frac as f32 * chart_h);
         write_text_weight(
-            &mut ops, fonts, &format_currency(points[0].value, sym),
-            chart_x + 1.0, first_py - 2.5, 6.0, Weight::Semibold, text_primary(),
+            &mut ops,
+            fonts,
+            &format_currency(points[0].value, sym),
+            chart_x + 1.0,
+            first_py - 2.5,
+            6.0,
+            Weight::Semibold,
+            text_primary(),
         );
         let last_y_frac = (points[n - 1].value - min_val) / range;
         let last_py = chart_top + chart_h - (last_y_frac as f32 * chart_h);
         let last_label = format_currency(points[n - 1].value, sym);
         let last_tw = text_width(&last_label, 6.0);
         write_text_weight(
-            &mut ops, fonts, &last_label,
-            chart_x + chart_w - last_tw - 1.0, last_py - 2.5, 6.0, Weight::Semibold, text_primary(),
+            &mut ops,
+            fonts,
+            &last_label,
+            chart_x + chart_w - last_tw - 1.0,
+            last_py - 2.5,
+            6.0,
+            Weight::Semibold,
+            text_primary(),
         );
     }
 
     // X-axis labels (show ~6 evenly spaced)
     let label_count = 6.min(n);
     for i in 0..label_count {
-        let idx = if label_count > 1 { i * (n - 1) / (label_count - 1) } else { 0 };
+        let idx = if label_count > 1 {
+            i * (n - 1) / (label_count - 1)
+        } else {
+            0
+        };
         let x = chart_x + (idx as f32 / (n - 1).max(1) as f32) * chart_w;
         write_text_weight(
-            &mut ops, fonts, &truncate(&points[idx].label, 10),
-            x, chart_top + chart_h + 4.0, 6.0, Weight::Regular, text_secondary(),
+            &mut ops,
+            fonts,
+            &truncate(&points[idx].label, 10),
+            x,
+            chart_top + chart_h + 4.0,
+            6.0,
+            Weight::Regular,
+            text_secondary(),
         );
     }
     finish_page(doc, ops);
@@ -953,14 +1085,55 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
     top = draw_section_title(&mut ops, fonts, &labels.income_vs_expenses, top);
     let legend_y = top - 6.5;
     let legend_right = MARGIN_LEFT + CONTENT_W;
-    draw_rect(&mut ops, legend_right - 60.0, legend_y - 2.0, 3.5, 3.0, color_income());
-    write_text_weight(&mut ops, fonts, &labels.income, legend_right - 55.5, legend_y + 0.5, 7.0, Weight::Regular, text_secondary());
-    draw_rect(&mut ops, legend_right - 30.0, legend_y - 2.0, 3.5, 3.0, color_expense());
-    write_text_weight(&mut ops, fonts, &labels.expenses, legend_right - 25.5, legend_y + 0.5, 7.0, Weight::Regular, text_secondary());
+    draw_rect(
+        &mut ops,
+        legend_right - 60.0,
+        legend_y - 2.0,
+        3.5,
+        3.0,
+        color_income(),
+    );
+    write_text_weight(
+        &mut ops,
+        fonts,
+        &labels.income,
+        legend_right - 55.5,
+        legend_y + 0.5,
+        7.0,
+        Weight::Regular,
+        text_secondary(),
+    );
+    draw_rect(
+        &mut ops,
+        legend_right - 30.0,
+        legend_y - 2.0,
+        3.5,
+        3.0,
+        color_expense(),
+    );
+    write_text_weight(
+        &mut ops,
+        fonts,
+        &labels.expenses,
+        legend_right - 25.5,
+        legend_y + 0.5,
+        7.0,
+        Weight::Regular,
+        text_secondary(),
+    );
 
     let months = &data.monthly_income_expenses;
     if months.is_empty() {
-        write_text_color(&mut ops, fonts, &labels.no_transactions, MARGIN_LEFT, top + 10.0, 10.0, false, text_secondary());
+        write_text_color(
+            &mut ops,
+            fonts,
+            &labels.no_transactions,
+            MARGIN_LEFT,
+            top + 10.0,
+            10.0,
+            false,
+            text_secondary(),
+        );
         finish_page(doc, ops);
         return;
     }
@@ -971,7 +1144,10 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
     let chart_w = CONTENT_W - 22.0;
     let chart_h = 75.0;
 
-    let max_val = months.iter().map(|m| m.income.max(m.expenses)).fold(0.0_f64, f64::max);
+    let max_val = months
+        .iter()
+        .map(|m| m.income.max(m.expenses))
+        .fold(0.0_f64, f64::max);
     let ceiling = if max_val < 0.01 { 1.0 } else { max_val };
 
     // Y-axis
@@ -979,8 +1155,25 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
         let frac = i as f64 / 4.0;
         let val = frac * ceiling;
         let yy = chart_top + chart_h - (frac as f32 * chart_h);
-        write_text_right_weight(&mut ops, fonts, &format_currency(val, sym), chart_x - 2.0, yy + 1.5, 6.0, Weight::Regular, text_secondary());
-        draw_line(&mut ops, chart_x, yy, chart_x + chart_w, yy, 0.15, color_border());
+        write_text_right_weight(
+            &mut ops,
+            fonts,
+            &format_currency(val, sym),
+            chart_x - 2.0,
+            yy + 1.5,
+            6.0,
+            Weight::Regular,
+            text_secondary(),
+        );
+        draw_line(
+            &mut ops,
+            chart_x,
+            yy,
+            chart_x + chart_w,
+            yy,
+            0.15,
+            color_border(),
+        );
     }
 
     let n = months.len();
@@ -994,15 +1187,27 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
         // Income bar
         let ih = (m.income / ceiling) as f32 * chart_h;
         if ih > 0.1 {
-            draw_rect(&mut ops, center - bar_w - 0.5, chart_top + chart_h - ih, bar_w, ih, color_income());
+            draw_rect(
+                &mut ops,
+                center - bar_w - 0.5,
+                chart_top + chart_h - ih,
+                bar_w,
+                ih,
+                color_income(),
+            );
             // Value label on top of bar
             if group_w > 10.0 {
                 let val_text = format_currency(m.income, sym);
                 let tw = text_width(&val_text, 5.0);
                 write_text_weight(
-                    &mut ops, fonts, &val_text,
+                    &mut ops,
+                    fonts,
+                    &val_text,
                     center - bar_w - 0.5 + (bar_w - tw) / 2.0,
-                    chart_top + chart_h - ih - 2.5, 5.0, Weight::Regular, text_secondary(),
+                    chart_top + chart_h - ih - 2.5,
+                    5.0,
+                    Weight::Regular,
+                    text_secondary(),
                 );
             }
         }
@@ -1010,22 +1215,40 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
         // Expense bar
         let eh = (m.expenses / ceiling) as f32 * chart_h;
         if eh > 0.1 {
-            draw_rect(&mut ops, center + 0.5, chart_top + chart_h - eh, bar_w, eh, color_expense());
+            draw_rect(
+                &mut ops,
+                center + 0.5,
+                chart_top + chart_h - eh,
+                bar_w,
+                eh,
+                color_expense(),
+            );
             if group_w > 10.0 {
                 let val_text = format_currency(m.expenses, sym);
                 let tw = text_width(&val_text, 5.0);
                 write_text_weight(
-                    &mut ops, fonts, &val_text,
+                    &mut ops,
+                    fonts,
+                    &val_text,
                     center + 0.5 + (bar_w - tw) / 2.0,
-                    chart_top + chart_h - eh - 2.5, 5.0, Weight::Regular, text_secondary(),
+                    chart_top + chart_h - eh - 2.5,
+                    5.0,
+                    Weight::Regular,
+                    text_secondary(),
                 );
             }
         }
 
         // Month label
         write_text_weight(
-            &mut ops, fonts, &truncate(&m.label, 6),
-            center - 4.0, chart_top + chart_h + 4.0, 6.0, Weight::Regular, text_secondary(),
+            &mut ops,
+            fonts,
+            &truncate(&m.label, 6),
+            center - 4.0,
+            chart_top + chart_h + 4.0,
+            6.0,
+            Weight::Regular,
+            text_secondary(),
         );
     }
 
@@ -1034,7 +1257,10 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
         for i in 0..n - 1 {
             let net1 = months[i].income - months[i].expenses;
             let net2 = months[i + 1].income - months[i + 1].expenses;
-            let net_max = months.iter().map(|m| (m.income - m.expenses).abs()).fold(0.0_f64, f64::max);
+            let net_max = months
+                .iter()
+                .map(|m| (m.income - m.expenses).abs())
+                .fold(0.0_f64, f64::max);
             let net_ceil = if net_max < 0.01 { ceiling } else { ceiling };
             let y1_frac = (net1 / net_ceil).min(1.0).max(-1.0);
             let y2_frac = (net2 / net_ceil).min(1.0).max(-1.0);
@@ -1051,30 +1277,63 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
     let table_top = chart_top + chart_h + 14.0;
     let col_w = CONTENT_W / 4.0;
     let cols = vec![
-        TableColumn { header: labels.month.clone(), width: col_w, align_right: false },
-        TableColumn { header: labels.income.clone(), width: col_w, align_right: true },
-        TableColumn { header: labels.expenses.clone(), width: col_w, align_right: true },
-        TableColumn { header: labels.net.clone(), width: col_w, align_right: true },
+        TableColumn {
+            header: labels.month.clone(),
+            width: col_w,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.income.clone(),
+            width: col_w,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.expenses.clone(),
+            width: col_w,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.net.clone(),
+            width: col_w,
+            align_right: true,
+        },
     ];
 
     let mut tt = draw_table_header(&mut ops, fonts, &cols, table_top);
     let mut sum_income = 0.0_f64;
     let mut sum_expenses = 0.0_f64;
     for (i, m) in months.iter().enumerate() {
-        if needs_new_page(tt) { break; }
+        if needs_new_page(tt) {
+            break;
+        }
         sum_income += m.income;
         sum_expenses += m.expenses;
         tt = draw_table_row(
-            &mut ops, fonts, &cols,
-            &[m.label.clone(), format_currency(m.income, sym), format_currency(m.expenses, sym), format_currency(m.income - m.expenses, sym)],
-            tt, i % 2 == 1,
+            &mut ops,
+            fonts,
+            &cols,
+            &[
+                m.label.clone(),
+                format_currency(m.income, sym),
+                format_currency(m.expenses, sym),
+                format_currency(m.income - m.expenses, sym),
+            ],
+            tt,
+            i % 2 == 1,
         );
     }
     // Totals row
     if !months.is_empty() && !needs_new_page(tt) {
         draw_table_totals_row(
-            &mut ops, fonts, &cols,
-            &[labels.total.clone(), format_currency(sum_income, sym), format_currency(sum_expenses, sym), format_currency(sum_income - sum_expenses, sym)],
+            &mut ops,
+            fonts,
+            &cols,
+            &[
+                labels.total.clone(),
+                format_currency(sum_income, sym),
+                format_currency(sum_expenses, sym),
+                format_currency(sum_income - sum_expenses, sym),
+            ],
             tt,
         );
     }
@@ -1100,7 +1359,16 @@ fn draw_category_breakdown_page(
     top = draw_section_title(&mut ops, fonts, title, top);
 
     if categories.is_empty() {
-        write_text_color(&mut ops, fonts, &labels.no_transactions, MARGIN_LEFT, top + 10.0, 10.0, false, text_secondary());
+        write_text_color(
+            &mut ops,
+            fonts,
+            &labels.no_transactions,
+            MARGIN_LEFT,
+            top + 10.0,
+            10.0,
+            false,
+            text_secondary(),
+        );
         finish_page(doc, ops);
         return;
     }
@@ -1116,20 +1384,49 @@ fn draw_category_breakdown_page(
         let cy = top + i as f32 * 8.5;
         let label = truncate(&cat.category, 20);
         write_text(&mut ops, fonts, &label, MARGIN_LEFT, cy + 4.0, 7.0, false);
-        let bw = if max_amount > 0.0 { (cat.amount / max_amount) as f32 * bar_max_w } else { 0.0 };
+        let bw = if max_amount > 0.0 {
+            (cat.amount / max_amount) as f32 * bar_max_w
+        } else {
+            0.0
+        };
         let bar_color = chart_palette(i);
         draw_rect(&mut ops, chart_x, cy + 0.5, bw.max(1.0), bar_h, bar_color);
         // Amount + percentage label after bar
-        let after_text = format!("{} ({})", format_currency(cat.amount, sym), format_percent(cat.percentage));
-        write_text_weight(&mut ops, fonts, &after_text, chart_x + bw + 2.0, cy + 4.0, 6.0, Weight::Regular, text_secondary());
+        let after_text = format!(
+            "{} ({})",
+            format_currency(cat.amount, sym),
+            format_percent(cat.percentage)
+        );
+        write_text_weight(
+            &mut ops,
+            fonts,
+            &after_text,
+            chart_x + bw + 2.0,
+            cy + 4.0,
+            6.0,
+            Weight::Regular,
+            text_secondary(),
+        );
     }
 
     // Table below
     let table_top = top + (shown.len() as f32 * 8.5) + 12.0;
     let cols = vec![
-        TableColumn { header: labels.category.clone(), width: 60.0, align_right: false },
-        TableColumn { header: labels.amount.clone(), width: 48.0, align_right: true },
-        TableColumn { header: labels.percentage.clone(), width: 28.0, align_right: true },
+        TableColumn {
+            header: labels.category.clone(),
+            width: 60.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.amount.clone(),
+            width: 48.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.percentage.clone(),
+            width: 28.0,
+            align_right: true,
+        },
     ];
 
     let mut tt = draw_table_header(&mut ops, fonts, &cols, table_top);
@@ -1143,9 +1440,16 @@ fn draw_category_breakdown_page(
             tt = draw_table_header(&mut ops, fonts, &cols, tt);
         }
         tt = draw_table_row(
-            &mut ops, fonts, &cols,
-            &[cat.category.clone(), format_currency(cat.amount, sym), format_percent(cat.percentage)],
-            tt, i % 2 == 1,
+            &mut ops,
+            fonts,
+            &cols,
+            &[
+                cat.category.clone(),
+                format_currency(cat.amount, sym),
+                format_percent(cat.percentage),
+            ],
+            tt,
+            i % 2 == 1,
         );
     }
     finish_page(doc, ops);
@@ -1158,7 +1462,10 @@ fn draw_expense_breakdown_page(
     page_num: usize,
 ) {
     draw_category_breakdown_page(
-        doc, fonts, data, page_num,
+        doc,
+        fonts,
+        data,
+        page_num,
         &data.labels.expense_breakdown.clone(),
         &data.expense_categories,
         true,
@@ -1174,7 +1481,10 @@ fn draw_income_breakdown_page(
     page_num: usize,
 ) {
     draw_category_breakdown_page(
-        doc, fonts, data, page_num,
+        doc,
+        fonts,
+        data,
+        page_num,
         &data.labels.income_breakdown.clone(),
         &data.income_categories,
         false,
@@ -1203,13 +1513,24 @@ fn draw_cash_flow_page(
         (&labels.total_expenses, cf.total_expenses, color_expense()),
         (&labels.investments, cf.total_investments, chart_palette(0)),
         (
-            if cf.surplus_or_deficit >= 0.0 { &labels.surplus } else { &labels.deficit },
+            if cf.surplus_or_deficit >= 0.0 {
+                &labels.surplus
+            } else {
+                &labels.deficit
+            },
             cf.surplus_or_deficit,
-            if cf.surplus_or_deficit >= 0.0 { color_income() } else { color_expense() },
+            if cf.surplus_or_deficit >= 0.0 {
+                color_income()
+            } else {
+                color_expense()
+            },
         ),
     ];
 
-    let max_abs = flow_items.iter().map(|(_, v, _)| v.abs()).fold(0.0_f64, f64::max);
+    let max_abs = flow_items
+        .iter()
+        .map(|(_, v, _)| v.abs())
+        .fold(0.0_f64, f64::max);
     let bar_max_w = CONTENT_W - 70.0;
     let bar_x = MARGIN_LEFT + 55.0;
 
@@ -1217,20 +1538,49 @@ fn draw_cash_flow_page(
         let cy = top + i as f32 * 16.0;
 
         // Label
-        write_text_weight_val(&mut ops, fonts, label, MARGIN_LEFT, cy + 5.0, 9.0, Weight::Semibold);
+        write_text_weight_val(
+            &mut ops,
+            fonts,
+            label,
+            MARGIN_LEFT,
+            cy + 5.0,
+            9.0,
+            Weight::Semibold,
+        );
 
         // Bar proportional to max
-        let bw = if max_abs > 0.0 { (value.abs() / max_abs) as f32 * bar_max_w } else { 0.0 };
+        let bw = if max_abs > 0.0 {
+            (value.abs() / max_abs) as f32 * bar_max_w
+        } else {
+            0.0
+        };
         draw_rect(&mut ops, bar_x, cy + 1.0, bw.max(2.0), 8.0, color.clone());
 
         // Value after bar
         let val_text = format_currency(*value, sym);
-        write_text_weight(&mut ops, fonts, &val_text, bar_x + bw + 3.0, cy + 6.0, 9.0, Weight::Semibold, text_primary());
+        write_text_weight(
+            &mut ops,
+            fonts,
+            &val_text,
+            bar_x + bw + 3.0,
+            cy + 6.0,
+            9.0,
+            Weight::Semibold,
+            text_primary(),
+        );
 
         // Connector line between rows (except last)
         if i < flow_items.len() - 1 {
             let arrow_y = cy + 12.0;
-            draw_line(&mut ops, MARGIN_LEFT + 10.0, arrow_y, MARGIN_LEFT + 10.0, arrow_y + 4.0, 0.3, color_border());
+            draw_line(
+                &mut ops,
+                MARGIN_LEFT + 10.0,
+                arrow_y,
+                MARGIN_LEFT + 10.0,
+                arrow_y + 4.0,
+                0.3,
+                color_border(),
+            );
         }
     }
 
@@ -1239,24 +1589,61 @@ fn draw_cash_flow_page(
     // ── Top 5 expense categories (compact) ──────────────────────────
     if !cf.expense_categories.is_empty() {
         // Hairline separator
-        draw_line(&mut ops, MARGIN_LEFT, top - 4.0, MARGIN_LEFT + CONTENT_W, top - 4.0, 0.2, color_border());
+        draw_line(
+            &mut ops,
+            MARGIN_LEFT,
+            top - 4.0,
+            MARGIN_LEFT + CONTENT_W,
+            top - 4.0,
+            0.2,
+            color_border(),
+        );
 
-        write_text_weight_val(&mut ops, fonts, &labels.expenses, MARGIN_LEFT, top + 4.0, 9.0, Weight::Semibold);
+        write_text_weight_val(
+            &mut ops,
+            fonts,
+            &labels.expenses,
+            MARGIN_LEFT,
+            top + 4.0,
+            9.0,
+            Weight::Semibold,
+        );
         top += 10.0;
 
         let cols = vec![
-            TableColumn { header: labels.category.clone(), width: 60.0, align_right: false },
-            TableColumn { header: labels.amount.clone(), width: 48.0, align_right: true },
-            TableColumn { header: labels.percentage.clone(), width: 28.0, align_right: true },
+            TableColumn {
+                header: labels.category.clone(),
+                width: 60.0,
+                align_right: false,
+            },
+            TableColumn {
+                header: labels.amount.clone(),
+                width: 48.0,
+                align_right: true,
+            },
+            TableColumn {
+                header: labels.percentage.clone(),
+                width: 28.0,
+                align_right: true,
+            },
         ];
         top = draw_table_header(&mut ops, fonts, &cols, top);
 
         for (i, cat) in cf.expense_categories.iter().take(5).enumerate() {
-            if needs_new_page(top) { break; }
+            if needs_new_page(top) {
+                break;
+            }
             top = draw_table_row(
-                &mut ops, fonts, &cols,
-                &[truncate(&cat.category, 35), format_currency(cat.amount, sym), format_percent(cat.percentage)],
-                top, i % 2 == 1,
+                &mut ops,
+                fonts,
+                &cols,
+                &[
+                    truncate(&cat.category, 35),
+                    format_currency(cat.amount, sym),
+                    format_percent(cat.percentage),
+                ],
+                top,
+                i % 2 == 1,
             );
         }
     }
@@ -1286,13 +1673,22 @@ fn draw_holdings_page(
     // ── Portfolio summary cards (3 across) ──────────────────────────
     let gain_loss = portfolio.total_value - portfolio.total_cost_basis;
     let cards = [
-        (&labels.portfolio_total, format_currency(portfolio.total_value, sym)),
-        (&labels.cost_basis, format_currency(portfolio.total_cost_basis, sym)),
-        (&labels.overall_roi, format!(
-            "{} ({})",
-            format_currency(gain_loss, sym),
-            format_percent(portfolio.overall_roi),
-        )),
+        (
+            &labels.portfolio_total,
+            format_currency(portfolio.total_value, sym),
+        ),
+        (
+            &labels.cost_basis,
+            format_currency(portfolio.total_cost_basis, sym),
+        ),
+        (
+            &labels.overall_roi,
+            format!(
+                "{} ({})",
+                format_currency(gain_loss, sym),
+                format_percent(portfolio.overall_roi),
+            ),
+        ),
     ];
     let gap = 3.0;
     let card_w = (CONTENT_W - gap * 2.0) / 3.0;
@@ -1301,15 +1697,49 @@ fn draw_holdings_page(
         let cx = MARGIN_LEFT + i as f32 * (card_w + gap);
         draw_rect(&mut ops, cx, top, card_w, card_h, color_card_bg());
         draw_rect(&mut ops, cx, top, 1.5, card_h, brand_color());
-        write_text_weight(&mut ops, fonts, label, cx + 5.0, top + 6.5, 7.0, Weight::Regular, text_secondary());
-        let val_color = if i == 2 { if gain_loss >= 0.0 { color_income() } else { color_expense() } } else { text_primary() };
-        write_text_weight(&mut ops, fonts, value, cx + 5.0, top + 14.0, 9.0, Weight::Semibold, val_color);
+        write_text_weight(
+            &mut ops,
+            fonts,
+            label,
+            cx + 5.0,
+            top + 6.5,
+            7.0,
+            Weight::Regular,
+            text_secondary(),
+        );
+        let val_color = if i == 2 {
+            if gain_loss >= 0.0 {
+                color_income()
+            } else {
+                color_expense()
+            }
+        } else {
+            text_primary()
+        };
+        write_text_weight(
+            &mut ops,
+            fonts,
+            value,
+            cx + 5.0,
+            top + 14.0,
+            9.0,
+            Weight::Semibold,
+            val_color,
+        );
     }
     top += card_h + 6.0;
 
     // ── Allocation bar (horizontal stacked) ─────────────────────────
     if portfolio.total_value > 0.0 {
-        write_text_weight_val(&mut ops, fonts, "Allocation", MARGIN_LEFT, top + 4.0, 8.0, Weight::Semibold);
+        write_text_weight_val(
+            &mut ops,
+            fonts,
+            "Allocation",
+            MARGIN_LEFT,
+            top + 4.0,
+            8.0,
+            Weight::Semibold,
+        );
         top += 7.0;
         let bar_y = top;
         let bar_h = 6.0;
@@ -1327,7 +1757,9 @@ fn draw_holdings_page(
         let mut lx = MARGIN_LEFT;
         for (i, h) in portfolio.holdings.iter().enumerate() {
             let pct = (h.current_value / portfolio.total_value) * 100.0;
-            if pct < 1.0 { continue; }
+            if pct < 1.0 {
+                continue;
+            }
             let legend_text = format!("{} {:.0}%", h.ticker, pct);
             let tw = text_width(&legend_text, 6.0) + 5.0;
             if lx + tw > MARGIN_LEFT + CONTENT_W {
@@ -1335,7 +1767,16 @@ fn draw_holdings_page(
                 top += 5.0;
             }
             draw_rect(&mut ops, lx, top, 2.5, 2.5, chart_palette(i));
-            write_text_weight(&mut ops, fonts, &legend_text, lx + 3.5, top + 2.5, 6.0, Weight::Regular, text_secondary());
+            write_text_weight(
+                &mut ops,
+                fonts,
+                &legend_text,
+                lx + 3.5,
+                top + 2.5,
+                6.0,
+                Weight::Regular,
+                text_secondary(),
+            );
             lx += tw;
         }
         top += 8.0;
@@ -1343,12 +1784,36 @@ fn draw_holdings_page(
 
     // ── Holdings table ──────────────────────────────────────────────
     let cols = vec![
-        TableColumn { header: labels.ticker.clone(), width: 24.0, align_right: false },
-        TableColumn { header: labels.shares.clone(), width: 24.0, align_right: true },
-        TableColumn { header: labels.price.clone(), width: 24.0, align_right: true },
-        TableColumn { header: labels.value.clone(), width: 28.0, align_right: true },
-        TableColumn { header: labels.cost_basis.clone(), width: 28.0, align_right: true },
-        TableColumn { header: labels.roi.clone(), width: 24.0, align_right: true },
+        TableColumn {
+            header: labels.ticker.clone(),
+            width: 24.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.shares.clone(),
+            width: 24.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.price.clone(),
+            width: 24.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.value.clone(),
+            width: 28.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.cost_basis.clone(),
+            width: 28.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.roi.clone(),
+            width: 24.0,
+            align_right: true,
+        },
     ];
 
     top = draw_table_header(&mut ops, fonts, &cols, top);
@@ -1372,7 +1837,14 @@ fn draw_holdings_page(
         ];
         // Draw row with color-coded ROI column
         if i % 2 == 1 {
-            draw_rect(&mut ops, MARGIN_LEFT, top, CONTENT_W, ROW_HEIGHT, color_zebra_bg());
+            draw_rect(
+                &mut ops,
+                MARGIN_LEFT,
+                top,
+                CONTENT_W,
+                ROW_HEIGHT,
+                color_zebra_bg(),
+            );
         }
         let mut x = MARGIN_LEFT + 1.5;
         for (j, col) in cols.iter().enumerate() {
@@ -1380,14 +1852,36 @@ fn draw_holdings_page(
             let display = truncate(val, (col.width / 1.4) as usize);
             // Use green/red for the ROI column
             let col_color = if j == 5 {
-                if h.roi >= 0.0 { color_income() } else { color_expense() }
+                if h.roi >= 0.0 {
+                    color_income()
+                } else {
+                    color_expense()
+                }
             } else {
                 text_primary()
             };
             if col.align_right {
-                write_text_right_weight(&mut ops, fonts, &display, x + col.width - 1.5, top + 4.5, 8.0, Weight::Regular, col_color);
+                write_text_right_weight(
+                    &mut ops,
+                    fonts,
+                    &display,
+                    x + col.width - 1.5,
+                    top + 4.5,
+                    8.0,
+                    Weight::Regular,
+                    col_color,
+                );
             } else {
-                write_text_weight(&mut ops, fonts, &display, x, top + 4.5, 8.0, Weight::Regular, col_color);
+                write_text_weight(
+                    &mut ops,
+                    fonts,
+                    &display,
+                    x,
+                    top + 4.5,
+                    8.0,
+                    Weight::Regular,
+                    col_color,
+                );
             }
             x += col.width;
         }
@@ -1409,20 +1903,64 @@ fn draw_transactions_pages(
     let labels = &data.labels;
 
     let cash_cols = vec![
-        TableColumn { header: labels.date.clone(), width: 22.0, align_right: false },
-        TableColumn { header: labels.payee.clone(), width: 40.0, align_right: false },
-        TableColumn { header: labels.category.clone(), width: 28.0, align_right: false },
-        TableColumn { header: labels.notes.clone(), width: 40.0, align_right: false },
-        TableColumn { header: labels.amount.clone(), width: 32.0, align_right: true },
+        TableColumn {
+            header: labels.date.clone(),
+            width: 22.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.payee.clone(),
+            width: 40.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.category.clone(),
+            width: 28.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.notes.clone(),
+            width: 40.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.amount.clone(),
+            width: 32.0,
+            align_right: true,
+        },
     ];
 
     let inv_cols = vec![
-        TableColumn { header: labels.date.clone(), width: 22.0, align_right: false },
-        TableColumn { header: labels.ticker.clone(), width: 22.0, align_right: false },
-        TableColumn { header: labels.shares.clone(), width: 22.0, align_right: true },
-        TableColumn { header: labels.price.clone(), width: 28.0, align_right: true },
-        TableColumn { header: labels.fee.clone(), width: 22.0, align_right: true },
-        TableColumn { header: labels.amount.clone(), width: 28.0, align_right: true },
+        TableColumn {
+            header: labels.date.clone(),
+            width: 22.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.ticker.clone(),
+            width: 22.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.shares.clone(),
+            width: 22.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.price.clone(),
+            width: 28.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.fee.clone(),
+            width: 22.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.amount.clone(),
+            width: 28.0,
+            align_right: true,
+        },
     ];
 
     for account_txs in &data.accounts_transactions {
@@ -1431,24 +1969,52 @@ fn draw_transactions_pages(
 
         let mut top = MARGIN_TOP + HEADER_HEIGHT;
         top = draw_section_title(
-            &mut ops, fonts,
+            &mut ops,
+            fonts,
             &format!("{} — {}", &account_txs.account_name, &account_txs.currency),
             top,
         );
 
         if account_txs.transactions.is_empty() {
-            write_text_color(&mut ops, fonts, &labels.no_transactions, MARGIN_LEFT, top + 10.0, 10.0, false, text_secondary());
+            write_text_color(
+                &mut ops,
+                fonts,
+                &labels.no_transactions,
+                MARGIN_LEFT,
+                top + 10.0,
+                10.0,
+                false,
+                text_secondary(),
+            );
             finish_page(doc, ops);
             continue;
         }
 
         // Separate cash and investment transactions
-        let cash_txs: Vec<_> = account_txs.transactions.iter().filter(|t| t.ticker.is_empty()).collect();
-        let inv_txs: Vec<_> = account_txs.transactions.iter().filter(|t| !t.ticker.is_empty()).collect();
+        let cash_txs: Vec<_> = account_txs
+            .transactions
+            .iter()
+            .filter(|t| t.ticker.is_empty())
+            .collect();
+        let inv_txs: Vec<_> = account_txs
+            .transactions
+            .iter()
+            .filter(|t| !t.ticker.is_empty())
+            .collect();
 
         // Per-account summary line
-        let total_in: f64 = account_txs.transactions.iter().filter(|t| t.amount > 0.0).map(|t| t.amount).sum();
-        let total_out: f64 = account_txs.transactions.iter().filter(|t| t.amount < 0.0).map(|t| t.amount).sum();
+        let total_in: f64 = account_txs
+            .transactions
+            .iter()
+            .filter(|t| t.amount > 0.0)
+            .map(|t| t.amount)
+            .sum();
+        let total_out: f64 = account_txs
+            .transactions
+            .iter()
+            .filter(|t| t.amount < 0.0)
+            .map(|t| t.amount)
+            .sum();
         let net = total_in + total_out;
         let summary_text = format!(
             "In: {}  ·  Out: {}  ·  Net: {}",
@@ -1456,12 +2022,29 @@ fn draw_transactions_pages(
             format_currency(total_out, &account_txs.currency_symbol),
             format_currency(net, &account_txs.currency_symbol),
         );
-        write_text_weight(&mut ops, fonts, &summary_text, MARGIN_LEFT, top + 4.0, 7.5, Weight::Regular, text_secondary());
+        write_text_weight(
+            &mut ops,
+            fonts,
+            &summary_text,
+            MARGIN_LEFT,
+            top + 4.0,
+            7.5,
+            Weight::Regular,
+            text_secondary(),
+        );
         top += 10.0;
 
         // Cash transactions
         if !cash_txs.is_empty() {
-            write_text_weight_val(&mut ops, fonts, &labels.transactions_title, MARGIN_LEFT, top, 9.0, Weight::Semibold);
+            write_text_weight_val(
+                &mut ops,
+                fonts,
+                &labels.transactions_title,
+                MARGIN_LEFT,
+                top,
+                9.0,
+                Weight::Semibold,
+            );
             top += 7.0;
             top = draw_table_header(&mut ops, fonts, &cash_cols, top);
 
@@ -1474,7 +2057,9 @@ fn draw_transactions_pages(
                     top = draw_table_header(&mut ops, fonts, &cash_cols, top);
                 }
                 top = draw_table_row(
-                    &mut ops, fonts, &cash_cols,
+                    &mut ops,
+                    fonts,
+                    &cash_cols,
                     &[
                         tx.date.clone(),
                         truncate(&tx.payee, 30),
@@ -1482,7 +2067,8 @@ fn draw_transactions_pages(
                         truncate(&tx.notes, 30),
                         format_currency(tx.amount, &account_txs.currency_symbol),
                     ],
-                    top, i % 2 == 1,
+                    top,
+                    i % 2 == 1,
                 );
             }
             top += 8.0;
@@ -1497,7 +2083,15 @@ fn draw_transactions_pages(
                 top = MARGIN_TOP + HEADER_HEIGHT;
             }
 
-            write_text_weight_val(&mut ops, fonts, &labels.investment_holdings, MARGIN_LEFT, top, 9.0, Weight::Semibold);
+            write_text_weight_val(
+                &mut ops,
+                fonts,
+                &labels.investment_holdings,
+                MARGIN_LEFT,
+                top,
+                9.0,
+                Weight::Semibold,
+            );
             top += 7.0;
             top = draw_table_header(&mut ops, fonts, &inv_cols, top);
 
@@ -1510,7 +2104,9 @@ fn draw_transactions_pages(
                     top = draw_table_header(&mut ops, fonts, &inv_cols, top);
                 }
                 top = draw_table_row(
-                    &mut ops, fonts, &inv_cols,
+                    &mut ops,
+                    fonts,
+                    &inv_cols,
                     &[
                         tx.date.clone(),
                         tx.ticker.clone(),
@@ -1519,7 +2115,8 @@ fn draw_transactions_pages(
                         format_currency(tx.fee, &account_txs.currency_symbol),
                         format_currency(tx.amount, &account_txs.currency_symbol),
                     ],
-                    top, i % 2 == 1,
+                    top,
+                    i % 2 == 1,
                 );
             }
         }

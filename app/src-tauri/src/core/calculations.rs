@@ -532,7 +532,10 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
                 .get(&acc.id.to_string())
                 .copied()
                 .unwrap_or(0.0);
-            let acc_currency = acc.currency.clone().unwrap_or_else(|| input.app_currency.clone());
+            let acc_currency = acc
+                .currency
+                .clone()
+                .unwrap_or_else(|| input.app_currency.clone());
             json!({
                 "name": acc.name,
                 "currency": acc_currency,
@@ -570,7 +573,10 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             continue;
         }
 
-        let acc_currency = acc.currency.clone().unwrap_or_else(|| input.app_currency.clone());
+        let acc_currency = acc
+            .currency
+            .clone()
+            .unwrap_or_else(|| input.app_currency.clone());
         accounts_transactions.push(json!({
             "account_name": acc.name,
             "currency": acc_currency,
