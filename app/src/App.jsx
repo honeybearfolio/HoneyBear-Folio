@@ -9,6 +9,7 @@ import FireCalculator from "./features/fire/FireCalculator";
 import RulesList from "./features/rules/RulesList";
 import ScheduledList from "./features/scheduled/ScheduledList";
 import SettingsView from "./features/settings/SettingsView";
+import SessionPicker from "./features/session/SessionPicker";
 import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
 import { ToastProvider } from "./components/ui/Toast";
@@ -30,6 +31,61 @@ import {
 import { fetchMarketValuesForAccounts } from "./utils/market-values";
 
 function App() {
+  // Session management — "picking" shows the session picker, "active" shows the main app
+  const [sessionState, setSessionState] = useState("loading");
+  const [activeSession, setActiveSession] = useState(null);
+
+  useEffect(() => {
+    rust
+      .get_active_session()
+      .then((session) => {
+        if (session && session.file_exists) {
+          setActiveSession(session);
+          setSessionState("active");
+        } else {
+          setSessionState("picking");
+        }
+      })
+      .catch(() => {
+        setSessionState("picking");
+      });
+  }, []);
+
+  function handleSessionReady(session) {
+    setActiveSession(session);
+    setSessionState("active");
+  }
+
+  function handleSwitchSession() {
+    setSessionState("picking");
+  }
+
+  if (sessionState === "loading") {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900" />
+    );
+  }
+
+  if (sessionState === "picking") {
+    return (
+      <NumberFormatProvider>
+        <ThemeProvider>
+          <SessionPicker onSessionReady={handleSessionReady} />
+        </ThemeProvider>
+      </NumberFormatProvider>
+    );
+  }
+
+  return (
+    <MainApp
+      key={activeSession?.path || "default"}
+      activeSession={activeSession}
+      onSwitchSession={handleSwitchSession}
+    />
+  );
+}
+
+function MainApp({ activeSession, onSwitchSession }) {
   const [sidebarWidth, setSidebarWidth] = useState(APP_DEFAULTS.SIDEBAR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("dashboard");
@@ -269,6 +325,8 @@ function App() {
                           onChangeSidebarVisibility={setSidebarVisibility}
                           settingsSection={settingsSection}
                           onChangeSettingsSection={setSettingsSection}
+                          activeSession={activeSession}
+                          onSwitchSession={onSwitchSession}
                         />
                       </div>
                       <div

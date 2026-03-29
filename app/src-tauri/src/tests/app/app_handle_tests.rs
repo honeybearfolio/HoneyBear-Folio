@@ -20,6 +20,7 @@ fn test_app_handle_db_path_set_and_reset() {
         &dir_path,
         &crate::AppSettings {
             db_path: Some(nested_str.clone()),
+            recent_dbs: vec![],
         },
     )
     .unwrap();

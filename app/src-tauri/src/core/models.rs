@@ -140,9 +140,22 @@ pub struct AccountsSummary {
     pub raw_data: Vec<(i32, String, f64)>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct AppSettings {
     pub db_path: Option<String>,
+    #[serde(default)]
+    pub recent_dbs: Vec<RecentDb>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RecentDb {
+    pub path: String,
+    pub name: String,
+    pub last_opened: String,
+    #[serde(default)]
+    pub file_exists: bool,
+    #[serde(default)]
+    pub file_size: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

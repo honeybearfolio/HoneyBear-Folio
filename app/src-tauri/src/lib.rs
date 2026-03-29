@@ -1,12 +1,12 @@
 mod core;
 pub use crate::core::{
-    accounts, calculations, db_init, io, markets, models, pdf, rules, scheduled, transactions,
-    utils,
+    accounts, calculations, db_init, io, markets, models, pdf, rules, scheduled, session,
+    transactions, utils,
 };
 
 pub use crate::models::{
-    Account, AppSettings, DailyPrice, Rule, ScheduledOccurrence, ScheduledTransaction, Transaction,
-    YahooChartResponse, YahooQuote, YahooSearchQuote, YahooSearchResponse,
+    Account, AppSettings, DailyPrice, RecentDb, Rule, ScheduledOccurrence, ScheduledTransaction,
+    Transaction, YahooChartResponse, YahooQuote, YahooSearchQuote, YahooSearchResponse,
 };
 
 // Re-export utility helpers used by tests
@@ -74,7 +74,26 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            db_init::init_db(app.handle())?;
+            // Migrate: if there's an active db_path but it's not in recent_dbs yet,
+            // add it so existing users see their session in the picker.
+            if let Ok(mut settings) = db_init::read_settings(app.handle()) {
+                if let Some(ref path) = settings.db_path.clone() {
+                    if !settings.recent_dbs.iter().any(|r| r.path == *path) {
+                        session::upsert_recent_public(&mut settings, path, None);
+                        let _ = db_init::write_settings(app.handle(), &settings);
+                    }
+                }
+            }
+
+            // Only initialize the DB if an active session is configured.
+            // If no db_path is set (fresh install), the frontend will show the
+            // session picker and call create_session / open_session which runs init_db.
+            let has_session = db_init::read_settings(app.handle())
+                .map(|s| s.db_path.is_some())
+                .unwrap_or(false);
+            if has_session {
+                db_init::init_db(app.handle())?;
+            }
 
             #[cfg(target_os = "linux")]
             {
@@ -149,6 +168,12 @@ pub fn run() {
             calculations::run_monte_carlo_simulation,
             calculations::compute_report_data,
             pdf::generate_pdf_report,
+            session::get_recent_sessions,
+            session::get_active_session,
+            session::create_session,
+            session::open_session,
+            session::remove_recent_session,
+            session::rename_session,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

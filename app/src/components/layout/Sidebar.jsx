@@ -26,6 +26,7 @@ import {
   BookOpenCheck,
   CalendarClock,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
 import { computeNetWorth } from "../../utils/networth";
 import { t } from "../../i18n/i18n";
@@ -46,6 +47,8 @@ export default function Sidebar({
   sidebarVisibility,
   settingsSection,
   onChangeSettingsSection,
+  activeSession,
+  onSwitchSession,
 }) {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -536,6 +539,16 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="sidebar-footer">
+        {activeSession && onSwitchSession && (
+          <button
+            onClick={onSwitchSession}
+            className="w-full flex items-center gap-2 px-3 py-1.5 mb-1 text-xs text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
+            title={t("session.switch_session")}
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span className="truncate">{activeSession.name}</span>
+          </button>
+        )}
         <div className="sidebar-footer-buttons">
           <button
             onClick={() => setShowImportModal(true)}
@@ -605,4 +618,9 @@ Sidebar.propTypes = {
   onChangeSidebarVisibility: PropTypes.func.isRequired,
   settingsSection: PropTypes.string,
   onChangeSettingsSection: PropTypes.func,
+  activeSession: PropTypes.shape({
+    path: PropTypes.string,
+    name: PropTypes.string,
+  }),
+  onSwitchSession: PropTypes.func,
 };

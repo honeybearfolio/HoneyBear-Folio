@@ -28,6 +28,7 @@ export const rust = {
     callRust("run_monte_carlo_simulation", args),
   compute_report_data: (args) => callRust("compute_report_data", args),
   create_account: (args) => callRust("create_account", args),
+  create_session: (args) => callRust("create_session", args),
   create_investment_transaction: (args) =>
     callRust("create_investment_transaction", args),
   create_rule: (args) => callRust("create_rule", args),
@@ -42,7 +43,11 @@ export const rust = {
     callRust("delete_scheduled_transaction", args),
   delete_transaction: (args) => callRust("delete_transaction", args),
   generate_pdf_report: (args) => callRust("generate_pdf_report", args),
+  open_session: (args) => callRust("open_session", args),
+  remove_recent_session: (args) => callRust("remove_recent_session", args),
+  rename_session: (args) => callRust("rename_session", args),
   get_accounts: (args) => callRust("get_accounts", args),
+  get_active_session: () => callRust("get_active_session"),
   get_all_exchange_rates: (args) => callRust("get_all_exchange_rates", args),
   get_all_transactions: (args) => callRust("get_all_transactions", args),
   get_categories: (args) => callRust("get_categories", args),
@@ -52,6 +57,7 @@ export const rust = {
   get_db_path_command: (args) => callRust("get_db_path_command", args),
   get_payees: (args) => callRust("get_payees", args),
   get_pending_occurrences: (args) => callRust("get_pending_occurrences", args),
+  get_recent_sessions: () => callRust("get_recent_sessions"),
   get_rules: (args) => callRust("get_rules", args),
   get_scheduled_transactions: (args) =>
     callRust("get_scheduled_transactions", args),

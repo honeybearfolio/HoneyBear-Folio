@@ -8,6 +8,7 @@ pub mod pdf;
 pub mod rules;
 pub mod scheduled;
 pub mod transactions;
+pub mod session;
 pub mod utils;
 
 #[cfg(test)]
