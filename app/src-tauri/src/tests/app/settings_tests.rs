@@ -7,6 +7,7 @@ fn test_write_and_read_settings() {
 
     let s = crate::AppSettings {
         db_path: Some(dir_path.join("db.sqlite").to_string_lossy().to_string()),
+        recent_dbs: vec![],
     };
     crate::write_settings_to_dir(&dir_path, &s).unwrap();
 
@@ -20,6 +21,7 @@ fn test_get_db_path_override_creates_parent_dir() {
     let nested = dir.path().join("nested").join("db.sqlite");
     let s = crate::AppSettings {
         db_path: Some(nested.to_string_lossy().to_string()),
+        recent_dbs: vec![],
     };
     crate::write_settings_to_dir(dir.path(), &s).unwrap();
 

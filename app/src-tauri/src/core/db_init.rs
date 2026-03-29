@@ -381,6 +381,10 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
 pub fn set_db_path(app_handle: AppHandle, path: String) -> Result<(), String> {
     let mut settings = read_settings(&app_handle)?;
     settings.db_path = Some(path.clone());
+
+    // Also track in recent_dbs
+    crate::session::upsert_recent_public(&mut settings, &path, None);
+
     write_settings(&app_handle, &settings)?;
 
     // Ensure any parent dir exists and initialize DB at new path
