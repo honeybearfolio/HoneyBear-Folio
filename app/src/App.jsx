@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import PropTypes from "prop-types";
 import { rust } from "./api/tauri-client";
 import Sidebar from "./components/layout/Sidebar";
 import { computeNetWorth } from "./utils/networth";
@@ -436,5 +437,13 @@ function MainApp({ activeSession, onSwitchSession }) {
     </NumberFormatProvider>
   );
 }
+
+MainApp.propTypes = {
+  activeSession: PropTypes.shape({
+    path: PropTypes.string,
+    name: PropTypes.string,
+  }),
+  onSwitchSession: PropTypes.func.isRequired,
+};
 
 export default App;
