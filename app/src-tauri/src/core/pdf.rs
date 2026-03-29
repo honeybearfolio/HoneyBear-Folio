@@ -750,9 +750,10 @@ fn draw_summary_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData)
     let mut total_market = 0.0_f64;
     let mut total_all = 0.0_f64;
     for (i, ab) in data.account_balances.iter().enumerate() {
-        total_cash += ab.cash_balance;
-        total_market += ab.market_value;
-        total_all += ab.total;
+        // Convert to app currency for totals
+        total_cash += ab.cash_balance * ab.exchange_rate;
+        total_market += ab.market_value * ab.exchange_rate;
+        total_all += ab.total * ab.exchange_rate;
         top = draw_table_row(
             &mut ops,
             fonts,
