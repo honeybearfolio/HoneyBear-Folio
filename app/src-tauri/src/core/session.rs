@@ -116,9 +116,7 @@ pub fn create_session(app_handle: AppHandle, path: String) -> Result<RecentDb, S
     // Initialize schema at the new path
     init_db(&app_handle)?;
 
-    Ok(enrich_recent_db(
-        settings.recent_dbs.first().unwrap(),
-    ))
+    Ok(enrich_recent_db(settings.recent_dbs.first().unwrap()))
 }
 
 #[tauri::command]
@@ -145,19 +143,13 @@ pub fn open_session(app_handle: AppHandle, path: String) -> Result<RecentDb, Str
         .map(|r| r.name.clone());
 
     settings.db_path = Some(path.clone());
-    upsert_recent(
-        &mut settings,
-        &path,
-        existing_name.as_deref(),
-    );
+    upsert_recent(&mut settings, &path, existing_name.as_deref());
     write_settings(&app_handle, &settings)?;
 
     // Ensure schema is up-to-date (runs CREATE IF NOT EXISTS + migrations)
     init_db(&app_handle)?;
 
-    Ok(enrich_recent_db(
-        settings.recent_dbs.first().unwrap(),
-    ))
+    Ok(enrich_recent_db(settings.recent_dbs.first().unwrap()))
 }
 
 #[tauri::command]
@@ -169,11 +161,7 @@ pub fn remove_recent_session(app_handle: AppHandle, path: String) -> Result<(), 
 }
 
 #[tauri::command]
-pub fn rename_session(
-    app_handle: AppHandle,
-    path: String,
-    new_name: String,
-) -> Result<(), String> {
+pub fn rename_session(app_handle: AppHandle, path: String, new_name: String) -> Result<(), String> {
     let mut settings = read_settings(&app_handle)?;
     if let Some(entry) = settings.recent_dbs.iter_mut().find(|r| r.path == path) {
         entry.name = new_name;
@@ -220,10 +208,8 @@ mod tests {
 
     #[test]
     fn upsert_moves_existing_entry_to_front() {
-        let mut settings = make_settings(
-            None,
-            vec![("/first.db", "First"), ("/second.db", "Second")],
-        );
+        let mut settings =
+            make_settings(None, vec![("/first.db", "First"), ("/second.db", "Second")]);
         upsert_recent(&mut settings, "/second.db", Some("Second"));
 
         assert_eq!(settings.recent_dbs.len(), 2);

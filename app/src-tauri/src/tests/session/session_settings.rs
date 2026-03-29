@@ -96,8 +96,14 @@ fn test_multiple_sessions_share_no_data() {
     crate::init_db_at_path(&session_b).unwrap();
 
     // Create an account in session A
-    crate::create_account_db(&session_a, "Session A Account".to_string(), 100.0, None, None)
-        .unwrap();
+    crate::create_account_db(
+        &session_a,
+        "Session A Account".to_string(),
+        100.0,
+        None,
+        None,
+    )
+    .unwrap();
 
     // Session B should have no accounts
     let accounts_b = crate::get_accounts_db(&session_b).unwrap();

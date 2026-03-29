@@ -183,9 +183,7 @@ export default function SessionPicker({ onSessionReady }) {
                 <div
                   key={session.path}
                   onClick={() =>
-                    session.file_exists
-                      ? handleOpenSession(session.path)
-                      : null
+                    session.file_exists ? handleOpenSession(session.path) : null
                   }
                   role="button"
                   tabIndex={session.file_exists ? 0 : -1}
