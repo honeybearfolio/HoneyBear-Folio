@@ -197,6 +197,7 @@ fn write_text_weight_val(
     write_text_weight(ops, fonts, text, x, from_top, size, weight, text_primary());
 }
 
+#[allow(clippy::too_many_arguments)]
 fn write_text_weight(
     ops: &mut Vec<Op>,
     fonts: &PdfFonts,
@@ -1257,13 +1258,8 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
         for i in 0..n - 1 {
             let net1 = months[i].income - months[i].expenses;
             let net2 = months[i + 1].income - months[i + 1].expenses;
-            let net_max = months
-                .iter()
-                .map(|m| (m.income - m.expenses).abs())
-                .fold(0.0_f64, f64::max);
-            let net_ceil = if net_max < 0.01 { ceiling } else { ceiling };
-            let y1_frac = (net1 / net_ceil).min(1.0).max(-1.0);
-            let y2_frac = (net2 / net_ceil).min(1.0).max(-1.0);
+            let y1_frac = (net1 / ceiling).clamp(-1.0, 1.0);
+            let y2_frac = (net2 / ceiling).clamp(-1.0, 1.0);
             let baseline = chart_top + chart_h;
             let y1 = baseline - (y1_frac as f32 * chart_h);
             let y2 = baseline - (y2_frac as f32 * chart_h);
@@ -1827,7 +1823,7 @@ fn draw_holdings_page(
         }
         // Color-code ROI
         let roi_text = format_percent(h.roi);
-        let row_values = vec![
+        let row_values = [
             h.ticker.clone(),
             format!("{:.4}", h.shares),
             format_currency(h.price, sym),
