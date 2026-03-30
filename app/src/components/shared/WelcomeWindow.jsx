@@ -92,6 +92,7 @@ export default function WelcomeWindow() {
             options={[
               { value: "light", label: t("settings.theme.light") },
               { value: "dark", label: t("settings.theme.dark") },
+              { value: "ink-light", label: t("settings.theme.ink_light") },
               { value: "system", label: t("settings.theme.system") },
             ]}
             placeholder={t("settings.select_theme_placeholder")}

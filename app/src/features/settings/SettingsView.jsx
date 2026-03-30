@@ -385,6 +385,14 @@ export default function SettingsView({
                         value: "high-contrast-dark",
                         label: t("settings.theme.high_contrast_dark"),
                       },
+                      {
+                        value: "ink-light",
+                        label: t("settings.theme.ink_light"),
+                      },
+                      {
+                        value: "ink-dark",
+                        label: t("settings.theme.ink_dark"),
+                      },
                       { value: "system", label: t("settings.theme.system") },
                     ]}
                     placeholder={t("settings.select_theme_placeholder")}
