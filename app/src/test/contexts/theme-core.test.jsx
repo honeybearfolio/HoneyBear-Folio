@@ -109,5 +109,29 @@ describe("ThemeContext", () => {
         "high-contrast-light",
       );
     });
+
+    it("works with ink-light theme value", () => {
+      const contextValue = { theme: "ink-light", setTheme: vi.fn() };
+
+      render(
+        <ThemeContext.Provider value={contextValue}>
+          <TestComponent />
+        </ThemeContext.Provider>,
+      );
+
+      expect(screen.getByTestId("theme")).toHaveTextContent("ink-light");
+    });
+
+    it("works with ink-dark theme value", () => {
+      const contextValue = { theme: "ink-dark", setTheme: vi.fn() };
+
+      render(
+        <ThemeContext.Provider value={contextValue}>
+          <TestComponent />
+        </ThemeContext.Provider>,
+      );
+
+      expect(screen.getByTestId("theme")).toHaveTextContent("ink-dark");
+    });
   });
 });

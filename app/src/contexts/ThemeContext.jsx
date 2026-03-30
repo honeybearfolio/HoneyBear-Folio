@@ -19,6 +19,7 @@ export function ThemeProvider({ children }) {
       root.classList.remove("dark");
       root.classList.remove("light");
       root.classList.remove("high-contrast");
+      root.classList.remove("ink");
     };
 
     const applyTheme = (themeToApply) => {
@@ -31,6 +32,12 @@ export function ThemeProvider({ children }) {
       } else if (themeToApply === "high-contrast-light") {
         root.classList.add("light");
         root.classList.add("high-contrast");
+      } else if (themeToApply === "ink-light") {
+        root.classList.add("light");
+        root.classList.add("ink");
+      } else if (themeToApply === "ink-dark") {
+        root.classList.add("dark");
+        root.classList.add("ink");
       } else if (themeToApply === "light") {
         root.classList.add("light"); // Optional, usually default
       }
