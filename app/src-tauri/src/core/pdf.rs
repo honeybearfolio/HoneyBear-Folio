@@ -21,8 +21,9 @@ const MARGIN_RIGHT: f32 = 22.0;
 const MARGIN_TOP: f32 = 22.0;
 const MARGIN_BOTTOM: f32 = 20.0;
 const CONTENT_W: f32 = PAGE_W - MARGIN_LEFT - MARGIN_RIGHT;
-const HEADER_HEIGHT: f32 = 9.0;
+const HEADER_HEIGHT: f32 = 14.0;
 const FOOTER_HEIGHT: f32 = 10.0;
+const ACCENT_STRIPE_H: f32 = 2.0;
 
 // ── Colour palette ──────────────────────────────────────────────────
 
@@ -362,13 +363,14 @@ fn draw_line(
 fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data: &ReportData) {
     let labels = &data.labels;
 
-    // Header: slim brand bar
-    draw_rect(ops, 0.0, 0.0, PAGE_W, HEADER_HEIGHT, brand_color());
+    // Header: thin brand accent stripe at the very top
+    draw_rect(ops, 0.0, 0.0, PAGE_W, ACCENT_STRIPE_H, brand_color());
 
-    // Header: Icon
+    // Header: clean white area below accent stripe
+    // Icon
     if let Some((ref icon_id, icon_size_mm, _dpi)) = fonts.icon {
         let translate_y =
-            Mm(PAGE_H - HEADER_HEIGHT + (HEADER_HEIGHT - icon_size_mm) / 2.0).into_pt();
+            Mm(PAGE_H - ACCENT_STRIPE_H - (HEADER_HEIGHT - ACCENT_STRIPE_H - icon_size_mm) / 2.0 - icon_size_mm).into_pt();
         ops.push(Op::UseXobject {
             id: icon_id.clone(),
             transform: XObjectTransform {
@@ -385,10 +387,10 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
         fonts,
         "HoneyBear Folio",
         MARGIN_LEFT + 10.0,
-        6.5,
-        8.0,
-        Weight::Bold,
-        color_white(),
+        ACCENT_STRIPE_H + 8.0,
+        9.0,
+        Weight::Semibold,
+        text_primary(),
     );
 
     // Date range on the right
@@ -401,20 +403,20 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
         fonts,
         &right_text,
         PAGE_W - MARGIN_RIGHT,
-        6.5,
-        7.0,
+        ACCENT_STRIPE_H + 8.0,
+        7.5,
         Weight::Regular,
-        color_white(),
+        text_secondary(),
     );
 
     // Subtle bottom border on header
     draw_line(
         ops,
-        0.0,
+        MARGIN_LEFT,
         HEADER_HEIGHT,
-        PAGE_W,
+        MARGIN_LEFT + CONTENT_W,
         HEADER_HEIGHT,
-        0.3,
+        0.2,
         color_border(),
     );
 
@@ -426,7 +428,7 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
         footer_line_y,
         MARGIN_LEFT + CONTENT_W,
         footer_line_y,
-        0.2,
+        0.15,
         color_border(),
     );
 
@@ -438,7 +440,7 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
         &data.generation_date,
         MARGIN_LEFT,
         footer_text_y,
-        7.0,
+        6.5,
         Weight::Regular,
         text_secondary(),
     );
@@ -450,7 +452,7 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
         &page_text,
         PAGE_W - MARGIN_RIGHT,
         footer_text_y,
-        7.0,
+        6.5,
         Weight::Regular,
         text_secondary(),
     );
