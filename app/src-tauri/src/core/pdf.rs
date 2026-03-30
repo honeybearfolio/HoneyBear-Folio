@@ -369,8 +369,11 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
     // Header: clean white area below accent stripe
     // Icon
     if let Some((ref icon_id, icon_size_mm, _dpi)) = fonts.icon {
-        let translate_y =
-            Mm(PAGE_H - ACCENT_STRIPE_H - (HEADER_HEIGHT - ACCENT_STRIPE_H - icon_size_mm) / 2.0 - icon_size_mm).into_pt();
+        let translate_y = Mm(PAGE_H
+            - ACCENT_STRIPE_H
+            - (HEADER_HEIGHT - ACCENT_STRIPE_H - icon_size_mm) / 2.0
+            - icon_size_mm)
+        .into_pt();
         ops.push(Op::UseXobject {
             id: icon_id.clone(),
             transform: XObjectTransform {
