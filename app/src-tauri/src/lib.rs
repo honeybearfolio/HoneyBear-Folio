@@ -1,6 +1,6 @@
 mod core;
 pub use crate::core::{
-    accounts, calculations, db_init, io, markets, models, pdf, rules, scheduled, session,
+    accounts, calculations, db_init, io, llm, markets, models, pdf, rules, scheduled, session,
     transactions, utils,
 };
 
@@ -174,6 +174,18 @@ pub fn run() {
             session::open_session,
             session::remove_recent_session,
             session::rename_session,
+            llm::get_llm_settings,
+            llm::set_llm_settings,
+            llm::list_ollama_models,
+            llm::check_ollama_connection,
+            llm::get_conversations,
+            llm::get_conversation_messages,
+            llm::create_conversation,
+            llm::delete_conversation,
+            llm::rename_conversation,
+            llm::delete_all_conversations,
+            llm::llm_chat,
+            llm::cancel_llm_chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

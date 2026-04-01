@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   DATE_FORMAT: "hb_date_format",
   FIRST_DAY_OF_WEEK: "hb_first_day_of_week",
   UI_LANGUAGE: "hb_ui_language",
+  CHAT_THINK: "hb_chat_think",
 };
 
 export const APP_DEFAULTS = {
@@ -29,6 +30,7 @@ export const DEFAULT_SIDEBAR_VISIBILITY = {
   rules: true,
   scheduled: true,
   all: true,
+  chat: true,
 };
 
 export const RESETTABLE_STORAGE_KEYS = [

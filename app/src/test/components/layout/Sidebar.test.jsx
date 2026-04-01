@@ -48,6 +48,8 @@ vi.mock("lucide-react", () => ({
   Globe: () => <span>Globe</span>,
   Info: () => <span>Info</span>,
   ArrowLeft: () => <span>ArrowLeft</span>,
+  Bot: () => <span>Bot</span>,
+  RefreshCw: () => <span>RefreshCw</span>,
 }));
 
 // Mock child components that might use contexts or API

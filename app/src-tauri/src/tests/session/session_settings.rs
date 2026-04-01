@@ -23,6 +23,7 @@ fn test_settings_with_recent_dbs_roundtrip() {
                 file_size: 0,
             },
         ],
+        ..Default::default()
     };
     crate::write_settings_to_dir(&dir_path, &s).unwrap();
 
@@ -55,6 +56,7 @@ fn test_settings_with_empty_recent_dbs() {
     let s = crate::AppSettings {
         db_path: None,
         recent_dbs: vec![],
+        ..Default::default()
     };
     crate::write_settings_to_dir(&dir_path, &s).unwrap();
 

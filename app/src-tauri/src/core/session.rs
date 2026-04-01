@@ -192,6 +192,7 @@ mod tests {
                     file_size: 0,
                 })
                 .collect(),
+            ..Default::default()
         }
     }
 

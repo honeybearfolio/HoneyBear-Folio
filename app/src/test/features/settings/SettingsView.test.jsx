@@ -199,6 +199,7 @@ describe("SettingsView", () => {
         rules: true,
         scheduled: true,
         all: true,
+        chat: true,
       });
       expect(invoke).toHaveBeenCalledWith("reset_db_path");
     });

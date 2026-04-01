@@ -145,6 +145,10 @@ pub struct AppSettings {
     pub db_path: Option<String>,
     #[serde(default)]
     pub recent_dbs: Vec<RecentDb>,
+    #[serde(default)]
+    pub ollama_url: Option<String>,
+    #[serde(default)]
+    pub ollama_model: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

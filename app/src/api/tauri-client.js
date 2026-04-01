@@ -84,4 +84,19 @@ export const rust = {
     callRust("update_scheduled_transaction", args),
   update_transaction: (args) => callRust("update_transaction", args),
   write_xlsx: (args) => callRust("write_xlsx", args),
+
+  // LLM / Chat
+  llm_chat: (args) => callRust("llm_chat", args),
+  cancel_llm_chat: (args) => callRust("cancel_llm_chat", args),
+  get_llm_settings: () => callRust("get_llm_settings"),
+  set_llm_settings: (args) => callRust("set_llm_settings", args),
+  list_ollama_models: () => callRust("list_ollama_models"),
+  check_ollama_connection: () => callRust("check_ollama_connection"),
+  get_conversations: () => callRust("get_conversations"),
+  get_conversation_messages: (args) =>
+    callRust("get_conversation_messages", args),
+  create_conversation: (args) => callRust("create_conversation", args),
+  delete_conversation: (args) => callRust("delete_conversation", args),
+  rename_conversation: (args) => callRust("rename_conversation", args),
+  delete_all_conversations: () => callRust("delete_all_conversations"),
 };
