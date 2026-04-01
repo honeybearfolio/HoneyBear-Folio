@@ -63,7 +63,6 @@ function StepIndicator({ steps, current }) {
 export default function ChatSetup({ onComplete }) {
   const [step, setStep] = useState("connect");
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false);
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
@@ -82,7 +81,6 @@ export default function ChatSetup({ onComplete }) {
       if (settings.ollama_url) setOllamaUrl(settings.ollama_url);
 
       const ok = await rust.check_ollama_connection();
-      setConnected(ok);
       if (ok) {
         const list = await rust.list_ollama_models();
         setModels(list);
@@ -90,7 +88,7 @@ export default function ChatSetup({ onComplete }) {
         setStep("model");
       }
     } catch {
-      setConnected(false);
+      // Connection check failed; leave models and step as-is.
     } finally {
       setLoading(false);
     }
