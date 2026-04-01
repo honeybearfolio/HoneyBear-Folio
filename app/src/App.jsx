@@ -9,6 +9,7 @@ import InvestmentDashboard from "./features/investments/InvestmentDashboard";
 import FireCalculator from "./features/fire/FireCalculator";
 import RulesList from "./features/rules/RulesList";
 import ScheduledList from "./features/scheduled/ScheduledList";
+import ChatView from "./features/chat/ChatView";
 import SettingsView from "./features/settings/SettingsView";
 import SessionPicker from "./features/session/SessionPicker";
 import { Wallet, PanelLeftOpen } from "lucide-react";
@@ -244,6 +245,8 @@ function MainApp({ activeSession, onSwitchSession }) {
     };
   } else if (selectedAccountId === "fire-calculator") {
     selectedAccount = { id: "fire-calculator", name: t("nav.fire_calculator") };
+  } else if (selectedAccountId === "chat") {
+    selectedAccount = { id: "chat", name: t("nav.ai_assistant") };
   } else if (selectedAccountId === "all") {
     selectedAccount = {
       id: "all",
@@ -374,6 +377,8 @@ function MainApp({ activeSession, onSwitchSession }) {
                         <RulesList />
                       ) : selectedAccountId === "scheduled" ? (
                         <ScheduledList />
+                      ) : selectedAccountId === "chat" ? (
+                        <ChatView />
                       ) : selectedAccount ? (
                         <AccountDetails
                           key={selectedAccount.id}

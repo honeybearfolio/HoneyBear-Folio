@@ -2,6 +2,7 @@ pub mod accounts;
 pub mod calculations;
 pub mod db_init;
 pub mod io;
+pub mod llm;
 pub mod markets;
 pub mod models;
 pub mod pdf;

@@ -350,6 +350,32 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS chat_conversations (
+            id INTEGER PRIMARY KEY,
+            title TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY,
+            conversation_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT,
+            tool_calls TEXT,
+            tool_call_id TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         // Migration: Add investment columns to existing scheduled_transactions table
         let _ = conn.execute(
         "ALTER TABLE scheduled_transactions ADD COLUMN transaction_type TEXT NOT NULL DEFAULT 'regular'",

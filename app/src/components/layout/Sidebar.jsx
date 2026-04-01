@@ -27,6 +27,7 @@ import {
   CalendarClock,
   ArrowLeft,
   RefreshCw,
+  Bot,
 } from "lucide-react";
 import { computeNetWorth } from "../../utils/networth";
 import { t } from "../../i18n/i18n";
@@ -377,6 +378,24 @@ export default function Sidebar({
                     />
                     <span className="font-medium">
                       {t("nav.fire_calculator")}
+                    </span>
+                  </button>
+                )}
+
+                {sidebarVisibility.chat !== false && (
+                  <button
+                    onClick={() => handleSelect("chat")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "chat"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <Bot
+                      className={`sidebar-nav-icon ${selectedId === "chat" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">
+                      {t("nav.ai_assistant")}
                     </span>
                   </button>
                 )}

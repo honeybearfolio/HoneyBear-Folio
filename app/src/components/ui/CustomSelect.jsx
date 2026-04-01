@@ -10,6 +10,7 @@ export default function CustomSelect({
   options,
   placeholder,
   fullWidth = true,
+  openUpward = false,
   className = "",
   // allow tests/parents to set a custom test id which will be forwarded to the trigger
   "data-testid": dataTestId,
@@ -214,7 +215,9 @@ export default function CustomSelect({
             tabIndex={-1}
             className="custom-select-portal fixed bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-56 overflow-auto p-2 animate-fade-in"
             style={{
-              top: `${menuCoords.top + menuCoords.height + 8}px`,
+              ...(openUpward
+                ? { bottom: `${window.innerHeight - menuCoords.top + 8}px` }
+                : { top: `${menuCoords.top + menuCoords.height + 8}px` }),
               left: `${Math.min(
                 Math.max(menuCoords.left, 8),
                 window.innerWidth - menuCoords.width - 8,
@@ -287,6 +290,7 @@ CustomSelect.propTypes = {
   ).isRequired,
   placeholder: PropTypes.node,
   fullWidth: PropTypes.bool,
+  openUpward: PropTypes.bool,
   className: PropTypes.string,
   "data-testid": PropTypes.string,
 };

@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "calamine",
  "chrono",
+ "futures-core",
  "httpmock",
  "image",
  "printpdf",

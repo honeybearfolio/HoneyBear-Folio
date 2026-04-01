@@ -15,6 +15,7 @@ fn test_write_settings_to_readonly_dir_errors() {
     let s = crate::AppSettings {
         db_path: Some("/tmp/some/path.db".to_string()),
         recent_dbs: vec![],
+        ..Default::default()
     };
     let res = crate::write_settings_to_dir(&dir_path, &s);
 
@@ -50,6 +51,7 @@ fn test_set_db_path_parent_creation_permission_error() {
         &crate::AppSettings {
             db_path: Some(target.to_string_lossy().to_string()),
             recent_dbs: vec![],
+            ..Default::default()
         },
     )
     .unwrap();
