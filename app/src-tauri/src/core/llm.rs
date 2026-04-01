@@ -720,6 +720,7 @@ pub async fn llm_chat(
     result
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_chat_loop(
     app_handle: &AppHandle,
     base_url: &str,
