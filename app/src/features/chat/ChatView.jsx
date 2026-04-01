@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import PropTypes from "prop-types";
 import { listen } from "@tauri-apps/api/event";
 import { rust } from "../../api/tauri-client";
 import { t } from "../../i18n/i18n";
@@ -42,6 +43,10 @@ function ToolCallBadge({ toolName }) {
     </span>
   );
 }
+
+ToolCallBadge.propTypes = {
+  toolName: PropTypes.string.isRequired,
+};
 
 function MessageBubble({ message, toolCalls }) {
   const isUser = message.role === "user";
@@ -117,6 +122,15 @@ function MessageBubble({ message, toolCalls }) {
     </div>
   );
 }
+
+MessageBubble.propTypes = {
+  message: PropTypes.shape({
+    role: PropTypes.string.isRequired,
+    content: PropTypes.string,
+    tool_call_id: PropTypes.string,
+  }).isRequired,
+  toolCalls: PropTypes.arrayOf(PropTypes.string),
+};
 
 export default function ChatView() {
   const [configured, setConfigured] = useState(null); // null = loading

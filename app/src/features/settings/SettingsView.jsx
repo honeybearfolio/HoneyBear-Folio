@@ -217,6 +217,11 @@ function LlmSettingsSection({ showTooltip, hideTooltip }) {
   );
 }
 
+LlmSettingsSection.propTypes = {
+  showTooltip: PropTypes.func.isRequired,
+  hideTooltip: PropTypes.func.isRequired,
+};
+
 export default function SettingsView({
   activeSection,
   sidebarVisibility,

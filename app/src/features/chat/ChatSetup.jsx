@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { rust } from "../../api/tauri-client";
 import { t } from "../../i18n/i18n";
 import {
@@ -60,6 +61,11 @@ function StepIndicator({ steps, current }) {
   );
 }
 
+StepIndicator.propTypes = {
+  steps: PropTypes.arrayOf(PropTypes.string).isRequired,
+  current: PropTypes.string.isRequired,
+};
+
 export default function ChatSetup({ onComplete }) {
   const [step, setStep] = useState("connect");
   const [loading, setLoading] = useState(true);
@@ -103,7 +109,6 @@ export default function ChatSetup({ onComplete }) {
         ollamaModel: selectedModel || "",
       });
       const ok = await rust.check_ollama_connection();
-      setConnected(ok);
       if (ok) {
         const list = await rust.list_ollama_models();
         setModels(list);
@@ -113,7 +118,6 @@ export default function ChatSetup({ onComplete }) {
         setError(t("chat.connection_error"));
       }
     } catch {
-      setConnected(false);
       setError(t("chat.connection_error"));
     } finally {
       setLoading(false);
@@ -272,7 +276,6 @@ export default function ChatSetup({ onComplete }) {
             <button
               onClick={() => {
                 setStep("connect");
-                setConnected(false);
               }}
               className="chat-setup-btn-ghost"
             >
@@ -335,3 +338,7 @@ export default function ChatSetup({ onComplete }) {
     </div>
   );
 }
+
+ChatSetup.propTypes = {
+  onComplete: PropTypes.func.isRequired,
+};
