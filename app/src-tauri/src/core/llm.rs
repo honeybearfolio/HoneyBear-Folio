@@ -91,9 +91,7 @@ fn default_ollama_url() -> String {
 pub fn get_llm_settings(app_handle: AppHandle) -> Result<LlmSettings, String> {
     let settings = db_init::read_settings(&app_handle)?;
     Ok(LlmSettings {
-        ollama_url: settings
-            .ollama_url
-            .unwrap_or_else(default_ollama_url),
+        ollama_url: settings.ollama_url.unwrap_or_else(default_ollama_url),
         ollama_model: settings.ollama_model.unwrap_or_default(),
     })
 }
@@ -114,9 +112,7 @@ pub fn set_llm_settings(
 #[tauri::command]
 pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel>, String> {
     let settings = db_init::read_settings(&app_handle)?;
-    let base_url = settings
-        .ollama_url
-        .unwrap_or_else(default_ollama_url);
+    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
     let url = format!("{}/api/tags", base_url.trim_end_matches('/'));
 
     let resp = reqwest::get(&url)
@@ -145,9 +141,7 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
 #[tauri::command]
 pub async fn check_ollama_connection(app_handle: AppHandle) -> Result<bool, String> {
     let settings = db_init::read_settings(&app_handle)?;
-    let base_url = settings
-        .ollama_url
-        .unwrap_or_else(default_ollama_url);
+    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
     let url = format!("{}/api/tags", base_url.trim_end_matches('/'));
 
     match reqwest::get(&url).await {
@@ -649,9 +643,7 @@ pub async fn llm_chat(
     #[allow(unused_variables)] think: Option<bool>,
 ) -> Result<(), String> {
     let settings = db_init::read_settings(&app_handle)?;
-    let base_url = settings
-        .ollama_url
-        .unwrap_or_else(default_ollama_url);
+    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
     let model = settings
         .ollama_model
         .filter(|m| !m.is_empty())
@@ -663,7 +655,14 @@ pub async fn llm_chat(
     clear_cancelled(conversation_id);
 
     // Save user message
-    save_message_db(&db_path, conversation_id, "user", Some(&user_message), None, None)?;
+    save_message_db(
+        &db_path,
+        conversation_id,
+        "user",
+        Some(&user_message),
+        None,
+        None,
+    )?;
 
     // Load conversation history
     let history = get_conversation_messages_db(&db_path, conversation_id)?;
@@ -739,18 +738,28 @@ async fn run_chat_loop(
         // Check cancellation before starting a round
         if is_cancelled(conversation_id) {
             clear_cancelled(conversation_id);
-            let _ = app_handle.emit("llm-done", LlmDoneEvent {
-                conversation_id,
-                full_content: String::new(),
-            });
+            let _ = app_handle.emit(
+                "llm-done",
+                LlmDoneEvent {
+                    conversation_id,
+                    full_content: String::new(),
+                },
+            );
             return Ok(());
         }
 
         // Emit status: thinking when starting a new round
-        let _ = app_handle.emit("llm-status", LlmStatusEvent {
-            conversation_id,
-            status: if round == 0 { "thinking".to_string() } else { "thinking_tools".to_string() },
-        });
+        let _ = app_handle.emit(
+            "llm-status",
+            LlmStatusEvent {
+                conversation_id,
+                status: if round == 0 {
+                    "thinking".to_string()
+                } else {
+                    "thinking_tools".to_string()
+                },
+            },
+        );
 
         let body = json!({
             "model": model,
@@ -796,10 +805,13 @@ async fn run_chat_loop(
                         None,
                     );
                 }
-                let _ = app_handle.emit("llm-done", LlmDoneEvent {
-                    conversation_id,
-                    full_content,
-                });
+                let _ = app_handle.emit(
+                    "llm-done",
+                    LlmDoneEvent {
+                        conversation_id,
+                        full_content,
+                    },
+                );
                 return Ok(());
             }
 
@@ -821,10 +833,13 @@ async fn run_chat_loop(
                             if !content.is_empty() {
                                 if first_token {
                                     first_token = false;
-                                    let _ = app_handle.emit("llm-status", LlmStatusEvent {
-                                        conversation_id,
-                                        status: "generating".to_string(),
-                                    });
+                                    let _ = app_handle.emit(
+                                        "llm-status",
+                                        LlmStatusEvent {
+                                            conversation_id,
+                                            status: "generating".to_string(),
+                                        },
+                                    );
                                 }
                                 full_content.push_str(content);
                                 let _ = app_handle.emit(
@@ -848,10 +863,13 @@ async fn run_chat_loop(
 
         // If there are tool calls, execute them and continue the loop
         if !tool_calls.is_empty() {
-            let _ = app_handle.emit("llm-status", LlmStatusEvent {
-                conversation_id,
-                status: "querying_tools".to_string(),
-            });
+            let _ = app_handle.emit(
+                "llm-status",
+                LlmStatusEvent {
+                    conversation_id,
+                    status: "querying_tools".to_string(),
+                },
+            );
             // Save assistant message with tool calls
             let tc_json = serde_json::to_string(&tool_calls).unwrap_or_default();
             save_message_db(

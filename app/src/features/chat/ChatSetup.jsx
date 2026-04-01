@@ -27,9 +27,7 @@ function StepIndicator({ steps, current }) {
             {i > 0 && (
               <div
                 className={`w-8 h-0.5 rounded-full transition-colors duration-300 ${
-                  done
-                    ? "bg-brand-500"
-                    : "bg-slate-200 dark:bg-slate-700"
+                  done ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-700"
                 }`}
               />
             )}
@@ -237,7 +235,9 @@ export default function ChatSetup({ onComplete }) {
                       key={m.name}
                       onClick={() => setSelectedModel(m.name)}
                       className={`chat-setup-model-item ${
-                        selectedModel === m.name ? "chat-setup-model-selected" : ""
+                        selectedModel === m.name
+                          ? "chat-setup-model-selected"
+                          : ""
                       }`}
                     >
                       <Cpu className="w-4 h-4 shrink-0" />
@@ -272,7 +272,10 @@ export default function ChatSetup({ onComplete }) {
             </button>
 
             <button
-              onClick={() => { setStep("connect"); setConnected(false); }}
+              onClick={() => {
+                setStep("connect");
+                setConnected(false);
+              }}
               className="chat-setup-btn-ghost"
             >
               ← {t("chat.test_connection")}
@@ -286,12 +289,16 @@ export default function ChatSetup({ onComplete }) {
             <div className="chat-setup-ready-summary">
               <div className="chat-setup-ready-row">
                 <Wifi className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm text-slate-600 dark:text-slate-300">{ollamaUrl}</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">
+                  {ollamaUrl}
+                </span>
                 <Check className="w-4 h-4 text-emerald-500 ml-auto" />
               </div>
               <div className="chat-setup-ready-row">
                 <Cpu className="w-4 h-4 text-brand-500" />
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{selectedModel}</span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  {selectedModel}
+                </span>
                 <Check className="w-4 h-4 text-emerald-500 ml-auto" />
               </div>
             </div>

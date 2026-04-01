@@ -394,9 +394,7 @@ export default function Sidebar({
                     <Bot
                       className={`sidebar-nav-icon ${selectedId === "chat" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                     />
-                    <span className="font-medium">
-                      {t("nav.ai_assistant")}
-                    </span>
+                    <span className="font-medium">{t("nav.ai_assistant")}</span>
                   </button>
                 )}
 
