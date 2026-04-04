@@ -108,6 +108,7 @@
   "chat.setup.install_hint": "¿No tienes Ollama? Visita ollama.com para instalarlo.",
   "chat.think": "Pensamiento",
   "chat.think_tooltip": "Activa el pensamiento extendido para respuestas más detalladas",
+  "chat.reasoning": "Razonamiento",
   "chat.tool_call": "Consultó {tool}",
   "chat.welcome": "Pregúntame lo que quieras sobre tus finanzas. Puedo consultar cuentas, transacciones, categorías y más.",
 

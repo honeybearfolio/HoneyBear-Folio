@@ -44,6 +44,7 @@ pub struct ChatMessage {
     pub tool_calls: Option<String>,
     pub tool_call_id: Option<String>,
     pub created_at: String,
+    pub thinking: Option<String>,
 }
 
 /// Payload emitted to the frontend for each streamed token.
@@ -72,6 +73,13 @@ struct LlmDoneEvent {
 struct LlmErrorEvent {
     conversation_id: i64,
     error: String,
+}
+
+/// Payload emitted for each streamed thinking token.
+#[derive(Serialize, Clone)]
+struct LlmThinkingEvent {
+    conversation_id: i64,
+    token: String,
 }
 
 /// Payload emitted to report status changes (thinking, querying tools, etc.).
@@ -258,7 +266,7 @@ pub fn get_conversation_messages_db(
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
             .prepare(
-                "SELECT id, conversation_id, role, content, tool_calls, tool_call_id, created_at
+                "SELECT id, conversation_id, role, content, tool_calls, tool_call_id, created_at, thinking
                  FROM chat_messages WHERE conversation_id = ?1 ORDER BY id ASC",
             )
             .map_err(|e| e.to_string())?;
@@ -272,6 +280,7 @@ pub fn get_conversation_messages_db(
                     tool_calls: row.get(4)?,
                     tool_call_id: row.get(5)?,
                     created_at: row.get(6)?,
+                    thinking: row.get(7)?,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -287,14 +296,15 @@ fn save_message_db(
     content: Option<&str>,
     tool_calls: Option<&str>,
     tool_call_id: Option<&str>,
+    thinking: Option<&str>,
 ) -> Result<i64, String> {
     db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
         conn.execute(
-            "INSERT INTO chat_messages (conversation_id, role, content, tool_calls, tool_call_id, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![conversation_id, role, content, tool_calls, tool_call_id, now],
+            "INSERT INTO chat_messages (conversation_id, role, content, tool_calls, tool_call_id, thinking, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![conversation_id, role, content, tool_calls, tool_call_id, thinking, now],
         )
         .map_err(|e| e.to_string())?;
         let id = conn.last_insert_rowid();
@@ -599,6 +609,8 @@ struct OllamaMessage {
     #[serde(skip_serializing_if = "Option::is_none")]
     content: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    thinking: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     tool_calls: Option<Vec<OllamaToolCall>>,
 }
 
@@ -660,6 +672,7 @@ pub async fn llm_chat(
         conversation_id,
         "user",
         Some(&user_message),
+        None,
         None,
         None,
     )?;
@@ -785,6 +798,7 @@ async fn run_chat_loop(
 
         // Stream the response
         let mut full_content = String::new();
+        let mut full_thinking = String::new();
         let mut tool_calls: Vec<OllamaToolCall> = Vec::new();
         let mut buffer = String::new();
 
@@ -796,14 +810,15 @@ async fn run_chat_loop(
             if is_cancelled(conversation_id) {
                 clear_cancelled(conversation_id);
                 // Save whatever content we have so far
-                if !full_content.is_empty() {
+                if !full_content.is_empty() || !full_thinking.is_empty() {
                     let _ = save_message_db(
                         db_path,
                         conversation_id,
                         "assistant",
-                        Some(&full_content),
+                        if full_content.is_empty() { None } else { Some(&full_content) },
                         None,
                         None,
+                        if full_thinking.is_empty() { None } else { Some(&full_thinking) },
                     );
                 }
                 let _ = app_handle.emit(
@@ -829,6 +844,20 @@ async fn run_chat_loop(
 
                 if let Ok(chunk_data) = serde_json::from_str::<OllamaChatChunk>(&line) {
                     if let Some(ref msg) = chunk_data.message {
+                        // Accumulate thinking tokens
+                        if let Some(ref thinking) = msg.thinking {
+                            if !thinking.is_empty() {
+                                full_thinking.push_str(thinking);
+                                let _ = app_handle.emit(
+                                    "llm-thinking",
+                                    LlmThinkingEvent {
+                                        conversation_id,
+                                        token: thinking.clone(),
+                                    },
+                                );
+                            }
+                        }
+
                         // Accumulate content tokens
                         if let Some(ref content) = msg.content {
                             if !content.is_empty() {
@@ -884,6 +913,7 @@ async fn run_chat_loop(
                 },
                 Some(&tc_json),
                 None,
+                if full_thinking.is_empty() { None } else { Some(&full_thinking) },
             )?;
 
             // Add assistant message with tool calls to messages
@@ -919,6 +949,7 @@ async fn run_chat_loop(
                     Some(&result),
                     None,
                     Some(tool_name),
+                    None,
                 )?;
 
                 messages.push(json!({
@@ -929,19 +960,21 @@ async fn run_chat_loop(
 
             // Reset for next iteration
             full_content = String::new();
+            full_thinking = String::new();
             tool_calls = Vec::new();
             continue;
         }
 
         // No tool calls — save the final assistant message and emit done
-        if !full_content.is_empty() {
+        if !full_content.is_empty() || !full_thinking.is_empty() {
             save_message_db(
                 db_path,
                 conversation_id,
                 "assistant",
-                Some(&full_content),
+                if full_content.is_empty() { None } else { Some(&full_content) },
                 None,
                 None,
+                if full_thinking.is_empty() { None } else { Some(&full_thinking) },
             )?;
         }
 

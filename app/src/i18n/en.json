@@ -108,6 +108,7 @@
   "chat.setup.install_hint": "Don't have Ollama? Visit ollama.com to install it.",
   "chat.think": "Thinking",
   "chat.think_tooltip": "Enable extended thinking for more thorough responses",
+  "chat.reasoning": "Reasoning",
   "chat.tool_call": "Queried {tool}",
   "chat.welcome": "Ask me anything about your finances. I can look up accounts, transactions, categories, and more.",
 

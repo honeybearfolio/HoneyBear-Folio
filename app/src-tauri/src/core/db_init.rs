@@ -399,6 +399,9 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
             [],
         );
 
+        // Migration: Add thinking column to chat_messages
+        let _ = conn.execute("ALTER TABLE chat_messages ADD COLUMN thinking TEXT", []);
+
         Ok(())
     })
 }
