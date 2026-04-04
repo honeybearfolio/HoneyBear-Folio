@@ -815,10 +815,18 @@ async fn run_chat_loop(
                         db_path,
                         conversation_id,
                         "assistant",
-                        if full_content.is_empty() { None } else { Some(&full_content) },
+                        if full_content.is_empty() {
+                            None
+                        } else {
+                            Some(&full_content)
+                        },
                         None,
                         None,
-                        if full_thinking.is_empty() { None } else { Some(&full_thinking) },
+                        if full_thinking.is_empty() {
+                            None
+                        } else {
+                            Some(&full_thinking)
+                        },
                     );
                 }
                 let _ = app_handle.emit(
@@ -913,7 +921,11 @@ async fn run_chat_loop(
                 },
                 Some(&tc_json),
                 None,
-                if full_thinking.is_empty() { None } else { Some(&full_thinking) },
+                if full_thinking.is_empty() {
+                    None
+                } else {
+                    Some(&full_thinking)
+                },
             )?;
 
             // Add assistant message with tool calls to messages
@@ -971,10 +983,18 @@ async fn run_chat_loop(
                 db_path,
                 conversation_id,
                 "assistant",
-                if full_content.is_empty() { None } else { Some(&full_content) },
+                if full_content.is_empty() {
+                    None
+                } else {
+                    Some(&full_content)
+                },
                 None,
                 None,
-                if full_thinking.is_empty() { None } else { Some(&full_thinking) },
+                if full_thinking.is_empty() {
+                    None
+                } else {
+                    Some(&full_thinking)
+                },
             )?;
         }
 

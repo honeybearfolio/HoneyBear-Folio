@@ -53,9 +53,7 @@ function ReasoningBlock({ thinking, defaultExpanded = false }) {
           <ChevronRight className="w-3.5 h-3.5" />
         )}
       </button>
-      {expanded && (
-        <div className="chat-reasoning-content">{thinking}</div>
-      )}
+      {expanded && <div className="chat-reasoning-content">{thinking}</div>}
     </div>
   );
 }
@@ -250,7 +248,10 @@ export default function ChatView() {
         const last = segments[segments.length - 1];
         segments = [
           ...segments.slice(0, -1),
-          { ...last, toolCalls: [...(last.toolCalls || []), event.payload.tool_name] },
+          {
+            ...last,
+            toolCalls: [...(last.toolCalls || []), event.payload.tool_name],
+          },
         ];
         setStreamingSegments([...segments]);
       }
@@ -261,7 +262,10 @@ export default function ChatView() {
         const status = event.payload.status;
         // A new reasoning round starts → push a fresh segment
         if (status === "thinking_tools") {
-          segments = [...segments, { thinking: "", content: "", toolCalls: [] }];
+          segments = [
+            ...segments,
+            { thinking: "", content: "", toolCalls: [] },
+          ];
           setStreamingSegments([...segments]);
         }
         setStreamingStatus(status);
@@ -623,9 +627,15 @@ export default function ChatView() {
                   {streamingSegments.map((seg, i) => {
                     const isLast = i === streamingSegments.length - 1;
                     return (
-                      <div key={i} className={`chat-segment${i > 0 ? " chat-segment-next" : ""}`}>
+                      <div
+                        key={i}
+                        className={`chat-segment${i > 0 ? " chat-segment-next" : ""}`}
+                      >
                         {seg.thinking && (
-                          <ReasoningBlock thinking={seg.thinking} defaultExpanded={isLast} />
+                          <ReasoningBlock
+                            thinking={seg.thinking}
+                            defaultExpanded={isLast}
+                          />
                         )}
                         {seg.content ? (
                           <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
@@ -641,7 +651,8 @@ export default function ChatView() {
                               <span />
                             </div>
                             <span className="text-sm">
-                              {t(`chat.${streamingStatus}`) || t("chat.thinking")}
+                              {t(`chat.${streamingStatus}`) ||
+                                t("chat.thinking")}
                             </span>
                           </div>
                         ) : null}
