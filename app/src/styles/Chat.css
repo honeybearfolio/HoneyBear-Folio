@@ -493,7 +493,9 @@
 }
 
 .chat-send-btn {
-  padding: 0.625rem;
+  flex-shrink: 0;
+  width: calc(1.25rem + 1.3125rem + 2px);
+  height: calc(1.25rem + 1.3125rem + 2px);
   border-radius: 0.75rem;
   background: var(--color-brand-600, #2563eb);
   color: white;
@@ -516,7 +518,9 @@
 /* ── Stop Button ──────────────────────────────────────────────── */
 
 .chat-stop-btn {
-  padding: 0.625rem;
+  flex-shrink: 0;
+  width: calc(1.25rem + 1.3125rem + 2px);
+  height: calc(1.25rem + 1.3125rem + 2px);
   border-radius: 0.75rem;
   background: var(--color-red-600, #dc2626);
   color: white;
