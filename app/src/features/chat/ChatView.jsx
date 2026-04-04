@@ -175,7 +175,7 @@ export default function ChatView() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamingSegments, setStreamingSegments] = useState([]);
-  const [activeToolCalls, setActiveToolCalls] = useState([]);
+
   const [streamingStatus, setStreamingStatus] = useState("thinking");
   const [editingTitle, setEditingTitle] = useState(null);
   const [editTitleValue, setEditTitleValue] = useState("");
@@ -276,7 +276,7 @@ export default function ChatView() {
       segments = [{ thinking: "", content: "", toolCalls: [] }];
       setStreaming(false);
       setStreamingSegments([]);
-      setActiveToolCalls([]);
+
       setStreamingStatus("thinking");
     };
 
@@ -428,7 +428,6 @@ export default function ChatView() {
 
     setStreaming(true);
     setStreamingSegments([{ thinking: "", content: "", toolCalls: [] }]);
-    setActiveToolCalls([]);
 
     try {
       await rust.llm_chat({
@@ -455,7 +454,6 @@ export default function ChatView() {
     if (!activeConvo) return;
     setStreaming(false);
     setStreamingSegments([]);
-    setActiveToolCalls([]);
     setStreamingStatus("thinking");
     try {
       await rust.cancel_llm_chat({ conversationId: activeConvo.id });
