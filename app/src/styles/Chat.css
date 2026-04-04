@@ -286,6 +286,44 @@
   background: rgba(0, 0, 0, 0.3);
 }
 
+.chat-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 0.8125rem;
+  overflow-x: auto;
+  display: block;
+}
+
+.chat-content th,
+.chat-content td {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+}
+
+.chat-content th {
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
+}
+
+.chat-content tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+.dark .chat-content th,
+.dark .chat-content td {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark .chat-content th {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .chat-content tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
 /* ── Tool Call Results ────────────────────────────────────────── */
 
 .chat-tool-result {

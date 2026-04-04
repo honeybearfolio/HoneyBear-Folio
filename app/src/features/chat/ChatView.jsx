@@ -7,6 +7,7 @@ import { STORAGE_KEYS } from "../../constants/app";
 import ChatSetup from "./ChatSetup";
 import CustomSelect from "../../components/ui/CustomSelect";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Plus,
   Send,
@@ -115,7 +116,7 @@ function MessageBubble({ message, toolCalls }) {
         )}
         {message.content ? (
           <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>{message.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
           </div>
         ) : null}
       </div>
@@ -565,7 +566,7 @@ export default function ChatView() {
                   )}
                   {streamingContent ? (
                     <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown>{streamingContent}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
                     </div>
                   ) : (
                     <div className="chat-thinking-indicator">
