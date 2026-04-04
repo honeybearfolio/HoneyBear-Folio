@@ -29,6 +29,7 @@
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@tauri-apps/plugin-updater": "^2.10.0",
+    "@testing-library/dom": "^10.4.1",
     "chart.js": "^4.5.1",
     "chartjs-chart-sankey": "^0.14.0",
     "lucide-react": "^1.7.0",
@@ -76,6 +77,6 @@
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.1",
     "vite": "^8.0.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.2"
   }
 }

@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Square,
   Brain,
+  Lightbulb,
 } from "lucide-react";
 import "../../styles/Chat.css";
 
@@ -33,6 +34,33 @@ const TOOL_DISPLAY_NAMES = {
   get_scheduled_transactions: "scheduled transactions",
   get_rules: "rules",
   get_exchange_rates: "exchange rates",
+};
+
+function ReasoningBlock({ thinking, defaultExpanded = false }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  if (!thinking) return null;
+  return (
+    <div className="chat-reasoning">
+      <button
+        className="chat-reasoning-toggle"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <Lightbulb className="w-3.5 h-3.5" />
+        <span>{t("chat.reasoning")}</span>
+        {expanded ? (
+          <ChevronDown className="w-3.5 h-3.5" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5" />
+        )}
+      </button>
+      {expanded && <div className="chat-reasoning-content">{thinking}</div>}
+    </div>
+  );
+}
+
+ReasoningBlock.propTypes = {
+  thinking: PropTypes.string,
+  defaultExpanded: PropTypes.bool,
 };
 
 function ToolCallBadge({ toolName }) {
@@ -114,6 +142,9 @@ function MessageBubble({ message, toolCalls }) {
             ))}
           </div>
         )}
+        {!isUser && message.thinking && (
+          <ReasoningBlock thinking={message.thinking} />
+        )}
         {message.content ? (
           <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -131,6 +162,7 @@ MessageBubble.propTypes = {
     role: PropTypes.string.isRequired,
     content: PropTypes.string,
     tool_call_id: PropTypes.string,
+    thinking: PropTypes.string,
   }).isRequired,
   toolCalls: PropTypes.arrayOf(PropTypes.string),
 };
@@ -142,8 +174,8 @@ export default function ChatView() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [activeToolCalls, setActiveToolCalls] = useState([]);
+  const [streamingSegments, setStreamingSegments] = useState([]);
+
   const [streamingStatus, setStreamingStatus] = useState("thinking");
   const [editingTitle, setEditingTitle] = useState(null);
   const [editTitleValue, setEditTitleValue] = useState("");
@@ -186,34 +218,71 @@ export default function ChatView() {
     if (!configured) return;
 
     const unlisteners = [];
-    let tokenBuffer = "";
+    // Each segment represents one model round: { thinking: string, content: string }
+    let segments = [{ thinking: "", content: "" }];
 
     listen("llm-token", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        tokenBuffer += event.payload.token;
-        setStreamingContent(tokenBuffer);
+        const last = segments[segments.length - 1];
+        segments = [
+          ...segments.slice(0, -1),
+          { ...last, content: last.content + event.payload.token },
+        ];
+        setStreamingSegments([...segments]);
+      }
+    }).then((u) => unlisteners.push(u));
+
+    listen("llm-thinking", (event) => {
+      if (activeConvo && event.payload.conversation_id === activeConvo.id) {
+        const last = segments[segments.length - 1];
+        segments = [
+          ...segments.slice(0, -1),
+          { ...last, thinking: last.thinking + event.payload.token },
+        ];
+        setStreamingSegments([...segments]);
       }
     }).then((u) => unlisteners.push(u));
 
     listen("llm-tool-call", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        setActiveToolCalls((prev) => [...prev, event.payload.tool_name]);
+        const last = segments[segments.length - 1];
+        segments = [
+          ...segments.slice(0, -1),
+          {
+            ...last,
+            toolCalls: [...(last.toolCalls || []), event.payload.tool_name],
+          },
+        ];
+        setStreamingSegments([...segments]);
       }
     }).then((u) => unlisteners.push(u));
 
     listen("llm-status", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        setStreamingStatus(event.payload.status);
+        const status = event.payload.status;
+        // A new reasoning round starts → push a fresh segment
+        if (status === "thinking_tools") {
+          segments = [
+            ...segments,
+            { thinking: "", content: "", toolCalls: [] },
+          ];
+          setStreamingSegments([...segments]);
+        }
+        setStreamingStatus(status);
       }
     }).then((u) => unlisteners.push(u));
 
+    const resetStreaming = () => {
+      segments = [{ thinking: "", content: "", toolCalls: [] }];
+      setStreaming(false);
+      setStreamingSegments([]);
+
+      setStreamingStatus("thinking");
+    };
+
     listen("llm-done", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        tokenBuffer = "";
-        setStreaming(false);
-        setStreamingContent("");
-        setActiveToolCalls([]);
-        setStreamingStatus("thinking");
+        resetStreaming();
         loadMessages(activeConvo.id);
         loadConversations();
       }
@@ -221,11 +290,7 @@ export default function ChatView() {
 
     listen("llm-error", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        tokenBuffer = "";
-        setStreaming(false);
-        setStreamingContent("");
-        setActiveToolCalls([]);
-        setStreamingStatus("thinking");
+        resetStreaming();
         // Add error as a local pseudo-message
         setMessages((prev) => [
           ...prev,
@@ -248,7 +313,7 @@ export default function ChatView() {
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingContent]);
+  }, [messages, streamingSegments]);
 
   async function loadConversations() {
     try {
@@ -362,8 +427,7 @@ export default function ChatView() {
     ]);
 
     setStreaming(true);
-    setStreamingContent("");
-    setActiveToolCalls([]);
+    setStreamingSegments([{ thinking: "", content: "", toolCalls: [] }]);
 
     try {
       await rust.llm_chat({
@@ -389,8 +453,7 @@ export default function ChatView() {
   const handleStop = useCallback(async () => {
     if (!activeConvo) return;
     setStreaming(false);
-    setStreamingContent("");
-    setActiveToolCalls([]);
+    setStreamingSegments([]);
     setStreamingStatus("thinking");
     try {
       await rust.cancel_llm_chat({ conversationId: activeConvo.id });
@@ -559,31 +622,48 @@ export default function ChatView() {
                   <Bot className="w-4 h-4" />
                 </div>
                 <div className="chat-bubble chat-bubble-assistant">
-                  {activeToolCalls.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {activeToolCalls.map((tc, i) => (
-                        <ToolCallBadge key={i} toolName={tc} />
-                      ))}
-                    </div>
-                  )}
-                  {streamingContent ? (
-                    <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {streamingContent}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="chat-thinking-indicator">
-                      <div className="chat-thinking-dots">
-                        <span />
-                        <span />
-                        <span />
+                  {streamingSegments.map((seg, i) => {
+                    const isLast = i === streamingSegments.length - 1;
+                    return (
+                      <div
+                        key={i}
+                        className={`chat-segment${i > 0 ? " chat-segment-next" : ""}`}
+                      >
+                        {seg.thinking && (
+                          <ReasoningBlock
+                            thinking={seg.thinking}
+                            defaultExpanded={isLast}
+                          />
+                        )}
+                        {seg.content ? (
+                          <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {seg.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : isLast ? (
+                          <div className="chat-thinking-indicator">
+                            <div className="chat-thinking-dots">
+                              <span />
+                              <span />
+                              <span />
+                            </div>
+                            <span className="text-sm">
+                              {t(`chat.${streamingStatus}`) ||
+                                t("chat.thinking")}
+                            </span>
+                          </div>
+                        ) : null}
+                        {seg.toolCalls && seg.toolCalls.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {seg.toolCalls.map((tc, j) => (
+                              <ToolCallBadge key={j} toolName={tc} />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-sm">
-                        {t(`chat.${streamingStatus}`) || t("chat.thinking")}
-                      </span>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
             )}
