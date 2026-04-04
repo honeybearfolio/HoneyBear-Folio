@@ -116,7 +116,9 @@ function MessageBubble({ message, toolCalls }) {
         )}
         {message.content ? (
           <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.content}
+            </ReactMarkdown>
           </div>
         ) : null}
       </div>
@@ -566,7 +568,9 @@ export default function ChatView() {
                   )}
                   {streamingContent ? (
                     <div className="chat-content prose prose-sm dark:prose-invert max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {streamingContent}
+                      </ReactMarkdown>
                     </div>
                   ) : (
                     <div className="chat-thinking-indicator">
