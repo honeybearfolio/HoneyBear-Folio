@@ -8,7 +8,6 @@ import {
 } from "chart.js";
 import { SankeyController, Flow } from "chartjs-chart-sankey";
 import { Chart } from "react-chartjs-2";
-import PropTypes from "prop-types";
 import { useFormatNumber } from "../../utils/format";
 import { t } from "../../i18n/i18n";
 import useIsDark from "../../hooks/useIsDark";
@@ -17,15 +16,28 @@ import useChartColors from "../../hooks/useChartColors";
 // Register the controller and elements
 ChartJS.register(SankeyController, Flow, Tooltip, Legend, Title, LinearScale);
 
-export default function SankeyDiagram({
-  transactions,
-  timeRange,
-  customStartDate,
-  customEndDate,
-  accountMap,
-  getPrice,
-  appCurrency,
-}) {
+interface Transaction {
+  amount: number;
+  category?: string;
+  account_id: string | number;
+  date: string;
+}
+
+interface AccountMapEntry {
+  currency?: string;
+}
+
+interface SankeyDiagramProps {
+  transactions: Transaction[];
+  timeRange: string;
+  customStartDate?: Date;
+  customEndDate?: Date;
+  accountMap: Record<string | number, AccountMapEntry>;
+  getPrice: (ticker: string, date: string) => number | undefined;
+  appCurrency?: string;
+}
+
+export default function SankeyDiagram({ transactions, timeRange, customStartDate, customEndDate, accountMap, getPrice, appCurrency }: SankeyDiagramProps) {
   const isDark = useIsDark();
   const chartColors = useChartColors();
   const formatNumber = useFormatNumber();
@@ -52,8 +64,8 @@ export default function SankeyDiagram({
       startDate = new Date(now);
       startDate.setFullYear(now.getFullYear() - 1);
     } else if (timeRange === "CUSTOM") {
-      startDate = new Date(customStartDate);
-      endDate = new Date(customEndDate);
+      startDate = new Date(customStartDate!);
+      endDate = new Date(customEndDate!);
     }
 
     startDate.setHours(0, 0, 0, 0);
@@ -70,14 +82,14 @@ export default function SankeyDiagram({
 
     if (relevantTransactions.length === 0) return { empty: true };
 
-    const incomeCategories = {};
-    const expenseCategories = {};
-    const investmentCategories = {};
+    const incomeCategories: Record<string, number> = {};
+    const expenseCategories: Record<string, number> = {};
+    const investmentCategories: Record<string, number> = {};
     let totalIncome = 0;
     let totalExpense = 0;
 
     // Helper to detect investment-like categories
-    const isInvestment = (cat) => {
+    const isInvestment = (cat: string) => {
       const lower = cat.toLowerCase();
       return (
         lower.includes("invest") ||
@@ -116,9 +128,9 @@ export default function SankeyDiagram({
 
     if (totalIncome === 0 && totalExpense === 0) return { empty: true };
 
-    const flows = [];
-    const labels = {};
-    const priorityMap = {};
+    const flows: { from: string; to: string; flow: number }[] = [];
+    const labels: Record<string, string> = {};
+    const priorityMap: Record<string, number> = {};
 
     // System Node IDs
     const ID_BUDGET = "sys:budget";
@@ -143,7 +155,7 @@ export default function SankeyDiagram({
 
     // 1. Income -> Budget
     Object.entries(incomeCategories)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .forEach(([cat, value]) => {
         const id = `inc:${cat}`;
         flows.push({ from: id, to: ID_BUDGET, flow: value });
@@ -153,10 +165,10 @@ export default function SankeyDiagram({
 
     // 2. Budget -> Intermediate Nodes
     let expensesTotal = 0;
-    Object.values(expenseCategories).forEach((v) => (expensesTotal += v));
+    Object.values(expenseCategories).forEach((v) => (expensesTotal += v as number));
 
     let investmentsTotal = 0;
-    Object.values(investmentCategories).forEach((v) => (investmentsTotal += v));
+    Object.values(investmentCategories).forEach((v) => (investmentsTotal += v as number));
 
     let surplus = 0;
     let deficit = 0;
@@ -206,7 +218,7 @@ export default function SankeyDiagram({
     }
 
     Object.entries(investmentCategories)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .forEach(([cat, value]) => {
         const id = `inv:${cat}`;
         flows.push({ from: ID_INVESTMENTS_GROUP, to: id, flow: value });
@@ -215,7 +227,7 @@ export default function SankeyDiagram({
       });
 
     Object.entries(expenseCategories)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .forEach(([cat, value]) => {
         const id = `exp:${cat}`;
         flows.push({ from: ID_EXPENSES_GROUP, to: id, flow: value });
@@ -224,7 +236,7 @@ export default function SankeyDiagram({
       });
 
     // Node colors
-    const getColor = (key) => {
+    const getColor = (key: string) => {
       if (key === ID_BUDGET) return chartColors.secondary;
       if (key === ID_INVESTMENTS_GROUP) return chartColors.success;
       if (key === ID_EXPENSES_GROUP) return chartColors.loss;
@@ -249,8 +261,8 @@ export default function SankeyDiagram({
         {
           label: t("dashboard.cash_flow"),
           data: flows,
-          colorFrom: (c) => getColor(c.dataset.data[c.dataIndex].from),
-          colorTo: (c) => getColor(c.dataset.data[c.dataIndex].to),
+          colorFrom: (c: any) => getColor(c.dataset.data[c.dataIndex].from),
+          colorTo: (c: any) => getColor(c.dataset.data[c.dataIndex].to),
           colorMode: "gradient",
           labels: labels,
           priority: priorityMap,
@@ -301,7 +313,7 @@ export default function SankeyDiagram({
           size: 12,
         },
         callbacks: {
-          label: function (context) {
+          label: function (context: any) {
             const item = context.raw;
             const labels = context.chart.data.datasets[0].labels;
             const fromLabel = labels[item.from] || item.from;
@@ -334,18 +346,8 @@ export default function SankeyDiagram({
     <Chart
       key={isDark ? "dark" : "light"}
       type="sankey"
-      data={data}
-      options={options}
+      data={data as any}
+      options={options as any}
     />
   );
 }
-
-SankeyDiagram.propTypes = {
-  transactions: PropTypes.array.isRequired,
-  timeRange: PropTypes.string.isRequired,
-  customStartDate: PropTypes.instanceOf(Date),
-  customEndDate: PropTypes.instanceOf(Date),
-  accountMap: PropTypes.object.isRequired,
-  getPrice: PropTypes.func.isRequired,
-  appCurrency: PropTypes.string,
-};

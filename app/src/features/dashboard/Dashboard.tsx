@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { rust } from "../../api/tauri-client";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import type { Day } from "date-fns";
 import "../../styles/datepicker.css";
 import { Calendar, Filter, ChevronDown } from "lucide-react";
 import {
@@ -19,7 +20,6 @@ import {
 } from "chart.js";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
 import "../../styles/Dashboard.css";
-import PropTypes from "prop-types";
 import { computeNetWorth } from "../../utils/networth";
 import {
   useFormatNumber,
@@ -49,14 +49,57 @@ import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
 import SankeyDiagram from "./SankeyDiagram";
 
-export default function Dashboard({
-  accounts: propAccounts = [],
-  marketValues = {},
-}) {
-  const [accounts, setAccounts] = useState(propAccounts);
-  const [transactions, setTransactions] = useState([]);
-  const [dailyPrices, setDailyPrices] = useState({});
-  const [quotes, setQuotes] = useState([]);
+interface Account {
+  id: string | number;
+  name: string;
+  balance: number;
+  currency?: string;
+  kind?: string;
+  exchange_rate?: number;
+}
+
+interface Transaction {
+  id?: string | number;
+  amount: number;
+  category?: string;
+  account_id: string | number;
+  date: string;
+  payee?: string;
+  notes?: string;
+  tags?: string;
+  ticker?: string;
+  shares?: number;
+  currency?: string;
+}
+
+interface Quote {
+  ticker: string;
+  price: number;
+  symbol: string;
+  regularMarketPrice: number;
+  quoteType?: string | null;
+}
+
+interface DailyPriceEntry {
+  date: string;
+  price: number;
+}
+
+interface DailyPriceData {
+  list: DailyPriceEntry[];
+  map: Record<string, number>;
+}
+
+interface DashboardProps {
+  accounts?: Account[];
+  marketValues?: Record<string, number>;
+}
+
+export default function Dashboard({ accounts: propAccounts = [], marketValues = {} }: DashboardProps) {
+  const [accounts, setAccounts] = useState<Account[]>(propAccounts);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dailyPrices, setDailyPrices] = useState<Record<string, DailyPriceData>>({});
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [timeRange, setTimeRange] = useState("1Y"); // 1M, 3M, 6M, YTD, 1Y, ALL, CUSTOM
   const [customStartDate, setCustomStartDate] = useState(
     new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
@@ -76,7 +119,7 @@ export default function Dashboard({
   } = useNumberFormat();
 
   const accountMap = useMemo(() => {
-    const map = {};
+    const map: Record<string | number, Account> = {};
     accounts.forEach((acc) => {
       map[acc.id] = acc;
     });
@@ -86,14 +129,14 @@ export default function Dashboard({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const txs = await rust.get_all_transactions();
+        const txs = await rust.get_all_transactions() as Transaction[];
         setTransactions(txs);
 
         // If parent passed accounts, use them; otherwise fetch from backend
         if (propAccounts && propAccounts.length > 0) {
           setAccounts(propAccounts);
         } else {
-          const accs = await rust.get_accounts();
+          const accs = await rust.get_accounts({}) as Account[];
           setAccounts(accs);
         }
       } catch (e) {
@@ -106,7 +149,7 @@ export default function Dashboard({
   useEffect(() => {
     const fetchQuotes = async () => {
       if (transactions.length === 0) return;
-      const { currentHoldings } = buildHoldingsFromTransactions(transactions);
+      const { currentHoldings } = buildHoldingsFromTransactions(transactions as any);
       if (currentHoldings.length === 0) {
         setQuotes([]);
         return;
@@ -114,7 +157,7 @@ export default function Dashboard({
       const tickers = currentHoldings.map((h) => h.ticker);
       const uniqueTickers = [...new Set(tickers)];
       try {
-        const qs = await rust.get_stock_quotes({ tickers: uniqueTickers });
+        const qs = await rust.get_stock_quotes({ tickers: uniqueTickers }) as Quote[];
         setQuotes(qs);
       } catch (e) {
         console.error("Failed to fetch quotes:", e);
@@ -134,7 +177,7 @@ export default function Dashboard({
       });
 
       // Also include currency pairs for multi-currency support
-      const accountMap = {};
+      const accountMap: Record<string | number, Account> = {};
       accounts.forEach((a) => (accountMap[a.id] = a));
 
       transactions.forEach((t) => {
@@ -163,18 +206,18 @@ export default function Dashboard({
         });
 
         // Then fetch
-        const pricesMap = {};
+        const pricesMap: Record<string, DailyPriceData> = {};
         for (const ticker of tickers) {
-          const prices = await rust.get_daily_stock_prices({ ticker });
+          const prices = await rust.get_daily_stock_prices({ ticker }) as DailyPriceEntry[];
           // Sort prices by date ascending to ensure getPrice binary search/linear scan works
-          prices.sort((a, b) => (a.date > b.date ? 1 : -1));
+          prices.sort((a: DailyPriceEntry, b: DailyPriceEntry) => (a.date > b.date ? 1 : -1));
 
           // Convert to map for faster lookup: date -> price
-          const priceByDate = {};
-          prices.forEach((p) => {
+          const priceByDate: Record<string, number> = {};
+          prices.forEach((p: DailyPriceEntry) => {
             priceByDate[p.date] = p.price;
           });
-          pricesMap[ticker] = { list: prices, map: priceByDate };
+          pricesMap[ticker as string] = { list: prices, map: priceByDate };
         }
         setDailyPrices(pricesMap);
       } catch (e) {
@@ -189,7 +232,7 @@ export default function Dashboard({
 
   // Helper to get price
   const getPrice = useCallback(
-    (ticker, date) => {
+    (ticker: string, date: string) => {
       if (!dailyPrices[ticker]) return 0;
       const { list, map } = dailyPrices[ticker];
       if (map[date]) return map[date];
@@ -206,8 +249,8 @@ export default function Dashboard({
 
   // Track user toggles for account visibility (dashboard-wide filter).
   // Default: all accounts selected so the full picture is shown on load.
-  const [toggledAccounts, setToggledAccounts] = useState(() => {
-    const map = {};
+  const [toggledAccounts, setToggledAccounts] = useState<Record<string | number, boolean>>(() => {
+    const map: Record<string | number, boolean> = {};
     propAccounts.forEach((a) => (map[a.id] = true));
     return map;
   });
@@ -240,12 +283,12 @@ export default function Dashboard({
     return set;
   }, [accounts, toggledAccounts]);
 
-  const toggleAccountVisibility = (accountId) => {
+  const toggleAccountVisibility = (accountId: string | number) => {
     setToggledAccounts((prev) => ({ ...prev, [accountId]: !prev[accountId] }));
   };
 
-  const setAllAccountsVisibility = (visible) => {
-    const map = {};
+  const setAllAccountsVisibility = (visible: boolean) => {
+    const map: Record<string | number, boolean> = {};
     accounts.forEach((a) => (map[a.id] = visible));
     setToggledAccounts(map);
   };
@@ -263,7 +306,7 @@ export default function Dashboard({
   );
 
   const filteredMarketValues = useMemo(() => {
-    const mv = {};
+    const mv: Record<string, number> = {};
     for (const [id, val] of Object.entries(marketValues)) {
       if (selectedAccountIds.has(Number(id))) mv[id] = val;
     }
@@ -272,12 +315,12 @@ export default function Dashboard({
 
   // Popover state for account filter
   const [showAccountFilter, setShowAccountFilter] = useState(false);
-  const filterRef = useRef(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   // Close popover on outside click
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (filterRef.current && !filterRef.current.contains(e.target)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
         setShowAccountFilter(false);
       }
     };
@@ -295,7 +338,7 @@ export default function Dashboard({
     // 1. Calculate initial balances for each account
     // current_balance = initial_balance + sum(transactions)
     // initial_balance = current_balance - sum(transactions)
-    const accountInitialBalances = {};
+    const accountInitialBalances: Record<string | number, number> = {};
     filteredAccounts.forEach((acc) => {
       const accTxs = filteredTransactions.filter(
         (t) => t.account_id === acc.id,
@@ -353,7 +396,7 @@ export default function Dashboard({
         cutoffDate = new Date(firstTxDate);
     }
 
-    const sortedDates = [];
+    const sortedDates: string[] = [];
     let d = new Date(cutoffDate);
     d.setHours(0, 0, 0, 0);
 
@@ -369,7 +412,7 @@ export default function Dashboard({
     }
 
     // Index ticker currencies from transactions
-    const tickerCurrencies = {};
+    const tickerCurrencies: Record<string, string> = {};
     filteredTransactions.forEach((t) => {
       if (t.ticker && t.currency) {
         tickerCurrencies[t.ticker] = t.currency;
@@ -409,7 +452,7 @@ export default function Dashboard({
         const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
         const cashBalance = initial + cashChange;
 
-        const holdings = {};
+        const holdings: Record<string, number> = {};
         accTxs.forEach((t) => {
           if (t.ticker && t.shares) {
             holdings[t.ticker] = (holdings[t.ticker] || 0) + t.shares;
@@ -418,14 +461,14 @@ export default function Dashboard({
 
         let stockValue = 0;
         for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares) > 0.0001) {
+          if (Math.abs(shares as number) > 0.0001) {
             const price = getPrice(ticker, date);
             const tickerCurr = tickerCurrencies[ticker] || accCurrency;
             const rateToAcc =
               tickerCurr === accCurrency
                 ? 1.0
                 : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += shares * price * rateToAcc;
+            stockValue += (shares as number) * price * rateToAcc;
           }
         }
 
@@ -441,8 +484,8 @@ export default function Dashboard({
     // Ensure current (last) data point uses current market values (same as Sidebar/Investments)
     if (totalData.length > 0) {
       const currentTotal = computeNetWorth(
-        filteredAccounts,
-        filteredMarketValues,
+        filteredAccounts as unknown as Parameters<typeof computeNetWorth>[0],
+        filteredMarketValues as unknown as Parameters<typeof computeNetWorth>[1],
       );
       totalData[totalData.length - 1] = currentTotal;
     }
@@ -451,7 +494,7 @@ export default function Dashboard({
       label: t("dashboard.datasets.total_net_worth"),
       data: totalData,
       borderColor: chartColors.line,
-      backgroundColor: (context) => {
+      backgroundColor: (context: { chart: { ctx: CanvasRenderingContext2D } }) => {
         const ctx = context.chart.ctx;
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
         gradient.addColorStop(0, chartColors.line + "33"); // 20% opacity
@@ -473,8 +516,8 @@ export default function Dashboard({
       const accCurrency = acc.currency || appCurrency;
 
       // Build both the native (account currency) and converted (app currency) series
-      const accDataNative = [];
-      const accDataConverted = [];
+      const accDataNative: number[] = [];
+      const accDataConverted: number[] = [];
 
       sortedDates.forEach((date) => {
         const initial = accountInitialBalances[acc.id];
@@ -485,7 +528,7 @@ export default function Dashboard({
         const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
         const cashBalance = initial + cashChange;
 
-        const holdings = {};
+        const holdings: Record<string, number> = {};
         accTxs.forEach((t) => {
           if (t.ticker && t.shares) {
             holdings[t.ticker] = (holdings[t.ticker] || 0) + t.shares;
@@ -494,14 +537,14 @@ export default function Dashboard({
 
         let stockValue = 0;
         for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares) > 0.0001) {
+          if (Math.abs(shares as number) > 0.0001) {
             const price = getPrice(ticker, date);
             const tickerCurr = tickerCurrencies[ticker] || accCurrency;
             const rateToAcc =
               tickerCurr === accCurrency
                 ? 1.0
                 : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += shares * price * rateToAcc;
+            stockValue += (shares as number) * price * rateToAcc;
           }
         }
 
@@ -557,10 +600,10 @@ export default function Dashboard({
   const doughnutData = useMemo(() => {
     if (filteredAccounts.length === 0) return null;
 
-    const assetTypes = {};
+    const assetTypes: Record<string, number> = {};
 
     // Helper to determine asset type
-    const getAssetType = (ticker) => {
+    const getAssetType = (ticker: string) => {
       const q = quotes.find(
         (q) => q.symbol.toLowerCase() === ticker.toLowerCase(),
       );
@@ -587,7 +630,7 @@ export default function Dashboard({
       const accTxs = filteredTransactions.filter(
         (t) => t.account_id === acc.id,
       );
-      const { currentHoldings } = buildHoldingsFromTransactions(accTxs);
+      const { currentHoldings } = buildHoldingsFromTransactions(accTxs as any);
 
       if (currentHoldings.length > 0) {
         accKindLower = "brokerage";
@@ -653,7 +696,7 @@ export default function Dashboard({
 
     const labels = Object.keys(assetTypes);
     const rawData = Object.values(assetTypes);
-    const data = rawData.map((v) => Math.abs(v));
+    const data = rawData.map((v) => Math.abs(v as number));
 
     const colors =
       chartColors.palette.length > 0
@@ -675,14 +718,14 @@ export default function Dashboard({
         {
           data: data,
           originalData: rawData,
-          backgroundColor: rawData.map((v, i) => {
+          backgroundColor: rawData.map((v: number, i: number) => {
             if (v < 0) return "transparent";
             return colors[i % colors.length];
           }),
           borderColor: isDark ? "#474240" : "#ffffff",
           borderWidth: 4,
-          borderDash: (ctx) => {
-            const val = rawData[ctx.dataIndex];
+          borderDash: (ctx: { dataIndex: number }) => {
+            const val = rawData[ctx.dataIndex] as number;
             return val < 0 ? [5, 5] : [];
           },
           hoverOffset: 4,
@@ -743,7 +786,7 @@ export default function Dashboard({
     // can show a friendly message instead of a blank chart
     if (expenses.length === 0) return { empty: true };
 
-    const categoryTotals = {};
+    const categoryTotals: Record<string, number> = {};
 
     expenses.forEach((f) => {
       const cat = f.category || t("general.uncategorized");
@@ -758,7 +801,7 @@ export default function Dashboard({
     });
 
     const sortedCategories = Object.entries(categoryTotals).sort(
-      ([, a], [, b]) => b - a,
+      ([, a], [, b]) => (b as number) - (a as number),
     );
 
     const colors =
@@ -805,13 +848,13 @@ export default function Dashboard({
     if (filteredTransactions.length === 0) return null;
 
     const now = new Date();
-    const keys = []; // keys for matching (YYYY-MM-DD for days or YYYY-MM for months)
+    const keys: string[] = []; // keys for matching (YYYY-MM-DD for days or YYYY-MM for months)
     const labels = [];
 
     const isDayBucket =
       timeRange === "1M" ||
       (timeRange === "CUSTOM" &&
-        (customEndDate - customStartDate) / (1000 * 60 * 60 * 24) <= 31);
+        (customEndDate.getTime() - customStartDate.getTime()) / (1000 * 60 * 60 * 24) <= 31);
 
     if (isDayBucket) {
       // Last 30 days or custom range <= 31 days
@@ -856,7 +899,7 @@ export default function Dashboard({
           "0",
         )}`;
         keys.push(key);
-        const opts = { month: "short" };
+        const opts: Intl.DateTimeFormatOptions = { month: "short" };
         // If the range spans more than a year, show the year
         const monthsDiff =
           (end.getFullYear() - start.getFullYear()) * 12 +
@@ -931,7 +974,7 @@ export default function Dashboard({
       borderRadius: 4,
       plugins: {
         legend: {
-          position: "right",
+          position: "right" as const,
           labels: {
             usePointStyle: true,
             boxWidth: 8,
@@ -955,7 +998,7 @@ export default function Dashboard({
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context) {
+            label: function (context: any) {
               const value = context.dataset.originalData
                 ? context.dataset.originalData[context.dataIndex]
                 : context.raw;
@@ -972,7 +1015,7 @@ export default function Dashboard({
               }
               return label;
             },
-            labelColor: function (context) {
+            labelColor: function (context: any) {
               const dataset = context.dataset;
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
@@ -1014,7 +1057,7 @@ export default function Dashboard({
       borderRadius: 4,
       plugins: {
         legend: {
-          position: "right",
+          position: "right" as const,
           labels: {
             usePointStyle: true,
             boxWidth: 8,
@@ -1038,7 +1081,7 @@ export default function Dashboard({
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context) {
+            label: function (context: any) {
               const value = context.raw ?? context.parsed ?? 0;
 
               let label = context.label || "";
@@ -1049,7 +1092,7 @@ export default function Dashboard({
               });
               return label;
             },
-            labelColor: function (context) {
+            labelColor: function (context: any) {
               const dataset = context.dataset;
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
@@ -1085,8 +1128,8 @@ export default function Dashboard({
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: "top",
-          align: "end",
+          position: "top" as const,
+          align: "end" as const,
           labels: {
             usePointStyle: true,
             boxWidth: 8,
@@ -1115,7 +1158,7 @@ export default function Dashboard({
             size: 12,
           },
           callbacks: {
-            label: function (context) {
+            label: function (context: any) {
               let label = context.dataset.label || "";
               if (label) {
                 label += ": ";
@@ -1149,7 +1192,7 @@ export default function Dashboard({
             },
             color: chartColors.text,
             padding: 10,
-            callback: function (value) {
+            callback: function (value: string | number) {
               const num = Number(value);
               if (Number.isNaN(num)) return value;
               return formatNumber(num, {
@@ -1187,7 +1230,7 @@ export default function Dashboard({
           display: false,
         },
         tooltip: {
-          mode: "index",
+          mode: "index" as const,
           intersect: false,
           backgroundColor: chartColors.tooltipBg,
           titleColor: chartColors.tooltipText,
@@ -1204,7 +1247,7 @@ export default function Dashboard({
           },
           displayColors: false,
           callbacks: {
-            label: function (context) {
+            label: function (context: any) {
               let label = context.dataset.label || "";
               if (label) {
                 label += ": ";
@@ -1258,7 +1301,7 @@ export default function Dashboard({
             },
             color: chartColors.text,
             padding: 10,
-            callback: function (value) {
+            callback: function (value: string | number) {
               const num = Number(value);
               if (Number.isNaN(num)) return value;
               return formatNumber(num, {
@@ -1321,8 +1364,8 @@ export default function Dashboard({
                 <Calendar className="w-4 h-4 text-slate-400" />
                 <DatePicker
                   selected={customStartDate}
-                  onChange={(date) => {
-                    setCustomStartDate(date);
+                  onChange={(date: Date | null) => {
+                    setCustomStartDate(date!);
                     if (date && customEndDate && date > customEndDate) {
                       setCustomEndDate(date);
                     }
@@ -1335,7 +1378,7 @@ export default function Dashboard({
                   portalId="datepicker-portal"
                   popperPlacement="bottom-start"
                   dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek}
+                  calendarStartDay={firstDayOfWeek as Day}
                   className="w-24 bg-transparent text-xs font-medium focus:outline-none text-slate-700 dark:text-slate-200"
                 />
               </div>
@@ -1343,7 +1386,7 @@ export default function Dashboard({
               <div className="flex items-center gap-2 px-2">
                 <DatePicker
                   selected={customEndDate}
-                  onChange={(date) => setCustomEndDate(date)}
+                  onChange={(date: Date | null) => setCustomEndDate(date!)}
                   selectsEnd
                   startDate={customStartDate}
                   endDate={customEndDate}
@@ -1353,7 +1396,7 @@ export default function Dashboard({
                   portalId="datepicker-portal"
                   popperPlacement="bottom-start"
                   dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek}
+                  calendarStartDay={firstDayOfWeek as Day}
                   className="w-24 bg-transparent text-xs font-medium focus:outline-none text-slate-700 dark:text-slate-200"
                 />
               </div>
@@ -1412,8 +1455,8 @@ export default function Dashboard({
                 </div>
                 <div className="account-filter-list">
                   {accounts.map((acc) => {
-                    const ds = chartData?.datasets.find(
-                      (d) => d.accountId === acc.id,
+                    const ds = (chartData?.datasets as any[])?.find(
+                      (d: any) => d.accountId === acc.id,
                     );
                     const color = ds?._color || "rgb(148, 163, 184)";
                     return (
@@ -1424,7 +1467,7 @@ export default function Dashboard({
                           checked={!!toggledAccounts[acc.id]}
                           onChange={() => toggleAccountVisibility(acc.id)}
                           aria-label={acc.name}
-                          style={{ ["--hb-account-color"]: color }}
+                          style={{ ["--hb-account-color" as string]: color } as React.CSSProperties}
                         />
                         <span
                           className="account-dot w-3 h-3 rounded-full flex-shrink-0"
@@ -1464,7 +1507,7 @@ export default function Dashboard({
           </h3>
           <p className="summary-card-value">
             <MaskedNumber
-              value={computeNetWorth(filteredAccounts, filteredMarketValues)}
+              value={computeNetWorth(filteredAccounts as unknown as Parameters<typeof computeNetWorth>[0], filteredMarketValues as unknown as Parameters<typeof computeNetWorth>[1])}
               options={{ style: "currency" }}
             />
           </p>
@@ -1494,7 +1537,7 @@ export default function Dashboard({
           <div className="chart-wrapper">
             <div className="chart-body">
               {chartData ? (
-                <Line options={options} data={chartData} />
+                <Line options={options as any} data={chartData!} />
               ) : (
                 <div className="loading-container">
                   <div className="loading-content">
@@ -1549,7 +1592,7 @@ export default function Dashboard({
               </div>
               <div className="chart-body">
                 {incomeVsExpensesData ? (
-                  <Bar options={barOptions} data={incomeVsExpensesData} />
+                  <Bar options={barOptions as any} data={incomeVsExpensesData} />
                 ) : (
                   <div className="loading-container">
                     <div className="loading-content">
@@ -1599,7 +1642,7 @@ export default function Dashboard({
               </div>
               <div className="chart-body">
                 {doughnutData ? (
-                  <Doughnut options={doughnutOptions} data={doughnutData} />
+                  <Doughnut options={doughnutOptions as any} data={doughnutData!} />
                 ) : (
                   <div className="loading-container">
                     <div className="loading-content">
@@ -1659,8 +1702,8 @@ export default function Dashboard({
                   </div>
                 ) : (
                   <Doughnut
-                    options={expensesOptions}
-                    data={expensesByCategoryData}
+                    options={expensesOptions as any}
+                    data={expensesByCategoryData as any}
                   />
                 )}
               </div>
@@ -1671,8 +1714,3 @@ export default function Dashboard({
     </div>
   );
 }
-
-Dashboard.propTypes = {
-  accounts: PropTypes.array,
-  marketValues: PropTypes.object,
-};
