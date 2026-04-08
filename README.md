@@ -108,6 +108,9 @@ Contributions are welcome.
 
 - Please read `CONTRIBUTING.md` for setup, coding conventions, and the PR checklist.
 - If you’re proposing a larger feature, open an issue first so we can align on scope.
+- You can also contribute to this project financially by buying me a coffee.
+  
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/BernatBC)
 
 ## License
 
