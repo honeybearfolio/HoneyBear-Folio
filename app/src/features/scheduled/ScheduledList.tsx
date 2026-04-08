@@ -4,6 +4,7 @@ import { rust } from "../../api/tauri-client";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
+import type { Day } from "date-fns";
 import {
   Plus,
   Trash2,
@@ -42,37 +43,80 @@ const currencyOptions = [
   })),
 ];
 
+interface ScheduleRecord {
+  id: number;
+  account_id: number;
+  transaction_type?: string;
+  payee: string;
+  amount: number;
+  category?: string;
+  notes?: string;
+  currency?: string;
+  recurrence_type: string;
+  interval_value?: number;
+  interval_unit?: string;
+  days_of_week?: number[];
+  ordinal?: number;
+  weekday?: number;
+  start_date: string;
+  end_date?: string;
+  max_occurrences?: number;
+  enabled: boolean;
+  ticker?: string;
+  shares?: number;
+  price_per_share?: number;
+  fee?: number;
+  is_buy?: boolean;
+  occurrences_count?: number;
+  [key: string]: unknown;
+}
+
+interface AccountRecord {
+  id: number;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface TickerSuggestion {
+  symbol: string;
+  currency?: string;
+  shortname?: string;
+  longname?: string;
+  exchange?: string;
+  typeDisp?: string;
+}
+
 export default function ScheduledList() {
-  const [schedules, setSchedules] = useState([]);
-  const [accounts, setAccounts] = useState([]);
+  const [schedules, setSchedules] = useState<ScheduleRecord[]>([]);
+  const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState(() =>
     createDefaultScheduledForm(),
   );
   const [showForm, setShowForm] = useState(false);
-  const [tickerSuggestions, setTickerSuggestions] = useState([]);
+  const [tickerSuggestions, setTickerSuggestions] = useState<TickerSuggestion[]>([]);
   const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
-  const [menuOpenId, setMenuOpenId] = useState(null);
-  const [menuCoords, setMenuCoords] = useState(null);
+  const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(null);
 
   const confirm = useConfirm();
   const { showToast } = useToast();
   const formatNumber = useFormatNumber();
   const { dateFormat, firstDayOfWeek } = useNumberFormat();
-  const formRef = useRef(null);
-  const tickerTimeoutRef = useRef(null);
+  const formRef = useRef<HTMLDivElement>(null);
+  const tickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const [scheds, accs] = await Promise.all([
-          rust.get_scheduled_transactions(),
-          rust.get_accounts(),
+          rust.get_scheduled_transactions({}),
+          rust.get_accounts({}),
         ]);
         if (mounted) {
-          setSchedules(scheds);
-          setAccounts(accs);
+          setSchedules(scheds as ScheduleRecord[]);
+          setAccounts(accs as AccountRecord[]);
         }
       } catch (e) {
         console.error("Failed to fetch scheduled transactions:", e);
@@ -84,11 +128,11 @@ export default function ScheduledList() {
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutside(event: MouseEvent) {
       if (
         menuOpenId &&
-        !event.target.closest(".sched-action-menu-container") &&
-        !event.target.closest(".sched-action-menu-portal")
+        !(event.target as HTMLElement).closest(".sched-action-menu-container") &&
+        !(event.target as HTMLElement).closest(".sched-action-menu-portal")
       ) {
         setMenuOpenId(null);
         setMenuCoords(null);
@@ -115,7 +159,7 @@ export default function ScheduledList() {
 
   async function fetchSchedules() {
     try {
-      const r = await rust.get_scheduled_transactions();
+      const r = await rust.get_scheduled_transactions({}) as ScheduleRecord[];
       setSchedules(r);
     } catch (e) {
       console.error("Failed to fetch scheduled transactions:", e);
@@ -130,7 +174,7 @@ export default function ScheduledList() {
     setShowForm(false);
   }
 
-  function handleTickerChange(query) {
+  function handleTickerChange(query: string) {
     if (tickerTimeoutRef.current) clearTimeout(tickerTimeoutRef.current);
 
     if (!query || query.length < 2) {
@@ -140,7 +184,7 @@ export default function ScheduledList() {
 
     tickerTimeoutRef.current = setTimeout(async () => {
       try {
-        const suggestions = await rust.search_ticker({ query });
+        const suggestions = await rust.search_ticker({ query }) as TickerSuggestion[];
         setTickerSuggestions(suggestions);
         setShowTickerSuggestions(true);
       } catch (error) {
@@ -149,7 +193,7 @@ export default function ScheduledList() {
     }, 300);
   }
 
-  function handleEdit(sched) {
+  function handleEdit(sched: ScheduleRecord) {
     setFormState({
       id: sched.id,
       accountId: sched.account_id,
@@ -184,22 +228,22 @@ export default function ScheduledList() {
     );
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id: number) {
     if (await confirm(t("scheduled.delete_confirm"), { kind: "warning" })) {
       try {
         await rust.delete_scheduled_transaction({ id });
         setSchedules((cur) => cur.filter((s) => s.id !== id));
         if (formState.id === id) resetForm();
-        showToast(t("scheduled.deleted_success"), "success");
+        showToast(t("scheduled.deleted_success"), { type: "success" });
       } catch (e) {
         console.error("Failed to delete scheduled transaction:", e);
-        showToast(t("scheduled.error_generic"), "error");
+        showToast(t("scheduled.error_generic"), { type: "error" });
         fetchSchedules();
       }
     }
   }
 
-  async function handleToggleEnabled(sched) {
+  async function handleToggleEnabled(sched: ScheduleRecord) {
     try {
       await rust.update_scheduled_transaction({
         args: {
@@ -231,32 +275,32 @@ export default function ScheduledList() {
       fetchSchedules();
     } catch (e) {
       console.error("Failed to toggle scheduled transaction:", e);
-      showToast(t("scheduled.error_generic"), "error");
+      showToast(t("scheduled.error_generic"), { type: "error" });
     }
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!formState.accountId) {
-      showToast(t("scheduled.validation.account_required"), "error");
+      showToast(t("scheduled.validation.account_required"), { type: "error" });
       return;
     }
     if (formState.transactionType === "regular" && !formState.payee.trim()) {
-      showToast(t("scheduled.validation.payee_required"), "error");
+      showToast(t("scheduled.validation.payee_required"), { type: "error" });
       return;
     }
     if (
       formState.transactionType === "investment" &&
       !formState.ticker.trim()
     ) {
-      showToast(t("scheduled.validation.ticker_required"), "error");
+      showToast(t("scheduled.validation.ticker_required"), { type: "error" });
       return;
     }
     if (
       formState.recurrenceType === "day_of_week" &&
       formState.daysOfWeek.length === 0
     ) {
-      showToast(t("scheduled.validation.days_required"), "error");
+      showToast(t("scheduled.validation.days_required"), { type: "error" });
       return;
     }
 
@@ -271,20 +315,20 @@ export default function ScheduledList() {
             enabled: formState.enabled,
           },
         });
-        showToast(t("scheduled.updated_success"), "success");
+        showToast(t("scheduled.updated_success"), { type: "success" });
       } else {
         await rust.create_scheduled_transaction({ args: payload });
-        showToast(t("scheduled.created_success"), "success");
+        showToast(t("scheduled.created_success"), { type: "success" });
       }
       resetForm();
       fetchSchedules();
     } catch (e) {
       console.error("Failed to save scheduled transaction:", e);
-      showToast(t("scheduled.error_generic"), "error");
+      showToast(t("scheduled.error_generic"), { type: "error" });
     }
   }
 
-  function toggleDayOfWeek(day) {
+  function toggleDayOfWeek(day: number) {
     setFormState((prev) => {
       const days = prev.daysOfWeek.includes(day)
         ? prev.daysOfWeek.filter((d) => d !== day)
@@ -422,9 +466,9 @@ export default function ScheduledList() {
                       {t("scheduled.field.account")} *
                     </label>
                     <CustomSelect
-                      value={formState.accountId}
+                      value={formState.accountId ?? undefined}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, accountId: val }))
+                        setFormState((prev) => ({ ...prev, accountId: Number(val) }))
                       }
                       options={accountOptions}
                       placeholder={t("scheduled.field.account")}
@@ -468,7 +512,7 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.currency}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, currency: val }))
+                        setFormState((prev) => ({ ...prev, currency: String(val) }))
                       }
                       options={currencyOptions}
                       placeholder={t("scheduled.field.currency")}
@@ -524,9 +568,9 @@ export default function ScheduledList() {
                       {t("scheduled.field.account")} *
                     </label>
                     <CustomSelect
-                      value={formState.accountId}
+                      value={formState.accountId ?? undefined}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, accountId: val }))
+                        setFormState((prev) => ({ ...prev, accountId: Number(val) }))
                       }
                       options={accountOptions}
                       placeholder={t("scheduled.field.account")}
@@ -682,7 +726,7 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.currency}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, currency: val }))
+                        setFormState((prev) => ({ ...prev, currency: String(val) }))
                       }
                       options={currencyOptions}
                       placeholder={t("scheduled.field.currency")}
@@ -720,7 +764,7 @@ export default function ScheduledList() {
                 <CustomSelect
                   value={formState.recurrenceType}
                   onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, recurrenceType: val }))
+                    setFormState((prev) => ({ ...prev, recurrenceType: String(val) }))
                   }
                   options={recurrenceTypeOptions}
                   className="w-52"
@@ -738,7 +782,7 @@ export default function ScheduledList() {
                       onChange={(e) =>
                         setFormState((prev) => ({
                           ...prev,
-                          intervalValue: e.target.value,
+                          intervalValue: Number(e.target.value) || 1,
                         }))
                       }
                       className="form-input !w-16 text-center"
@@ -746,7 +790,7 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.intervalUnit}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, intervalUnit: val }))
+                        setFormState((prev) => ({ ...prev, intervalUnit: String(val) }))
                       }
                       options={intervalUnitOptions}
                       className="w-32"
@@ -814,7 +858,7 @@ export default function ScheduledList() {
                       ? new Date(formState.startDate + "T00:00:00")
                       : null
                   }
-                  onChange={(date) =>
+                  onChange={(date: Date | null) =>
                     setFormState((prev) => {
                       if (!date) return { ...prev, startDate: prev.startDate };
                       const year = date.getFullYear();
@@ -827,7 +871,7 @@ export default function ScheduledList() {
                     })
                   }
                   dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek}
+                  calendarStartDay={firstDayOfWeek as Day}
                   portalId="datepicker-portal"
                   className="form-input"
                 />
@@ -842,7 +886,7 @@ export default function ScheduledList() {
                       ? new Date(formState.endDate + "T00:00:00")
                       : null
                   }
-                  onChange={(date) =>
+                  onChange={(date: Date | null) =>
                     setFormState((prev) => {
                       if (!date) return { ...prev, endDate: "" };
                       const year = date.getFullYear();
@@ -855,7 +899,7 @@ export default function ScheduledList() {
                     })
                   }
                   dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek}
+                  calendarStartDay={firstDayOfWeek as Day}
                   isClearable
                   portalId="datepicker-portal"
                   className="form-input"

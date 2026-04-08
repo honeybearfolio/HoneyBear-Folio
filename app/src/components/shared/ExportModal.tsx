@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import PropTypes from "prop-types";
 import { rust } from "../../api/tauri-client";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
+import type { Day } from "date-fns";
 import {
   Upload,
   FileJson,
@@ -23,7 +23,53 @@ import { useToast } from "../../contexts/toast";
 import { computeReportData } from "../../utils/report";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
 
-export default function ExportModal({ onClose }) {
+interface Transaction {
+  id?: number;
+  date: string;
+  payee: string;
+  amount: number;
+  category?: string;
+  notes?: string;
+  account_id: number;
+  ticker?: string;
+  shares?: number;
+  price_per_share?: number;
+  fee?: number;
+  currency?: string;
+  [key: string]: unknown;
+}
+
+interface Account {
+  id: number;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface DailyPrice {
+  date: string;
+  price: number;
+}
+
+interface ExchangeRateEntry {
+  currency?: string;
+  rate: number;
+}
+
+interface InvestmentTransaction {
+  date: string;
+  ticker?: string;
+  shares?: number;
+  price_per_share?: number;
+  fee?: number;
+  account_id: number;
+  [key: string]: unknown;
+}
+
+interface ExportModalProps {
+  onClose: () => void;
+}
+
+export default function ExportModal({ onClose }: ExportModalProps) {
   const [format, setFormat] = useState("json");
   const [exporting, setExporting] = useState(false);
   // Toast API (safe noop provided by useToast when provider missing)
@@ -44,12 +90,12 @@ export default function ExportModal({ onClose }) {
   const [customEndDate, setCustomEndDate] = useState(new Date());
 
   // Fetch transaction dates on mount to derive available years/months
-  const [transactionDates, setTransactionDates] = useState([]);
+  const [transactionDates, setTransactionDates] = useState<string[]>([]);
   useEffect(() => {
     rust
       .get_all_transactions()
       .then((txs) => {
-        const dates = txs.map((tx) => tx.date).filter(Boolean);
+        const dates = (txs as Transaction[]).map((tx: Transaction) => tx.date).filter(Boolean);
         setTransactionDates(dates);
       })
       .catch(() => {});
@@ -61,7 +107,7 @@ export default function ExportModal({ onClose }) {
   // Compute the effective date range for the PDF export
   const pdfDateRange = useMemo(() => {
     const now = new Date();
-    let start, end;
+    let start: Date, end: Date;
 
     if (rangeType === "annual") {
       start = new Date(selectedYear, 0, 1);
@@ -81,7 +127,7 @@ export default function ExportModal({ onClose }) {
       end = customEndDate;
     }
 
-    const fmt = (d) => d.toISOString().slice(0, 10);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
     return { start: fmt(start), end: fmt(end) };
   }, [
     rangeType,
@@ -139,18 +185,18 @@ export default function ExportModal({ onClose }) {
       setExporting(true);
 
       // 1. Fetch Data
-      const accounts = await rust.get_accounts();
-      const transactions = await rust.get_all_transactions();
+      const accounts = await rust.get_accounts({}) as Account[];
+      const transactions = await rust.get_all_transactions() as Transaction[];
 
       // 2. Prepare Data based on format
-      let content;
+      let content: string | undefined;
       let defaultPath = `honeybear_export_${new Date().toISOString().split("T")[0]}`;
-      let filters = [];
+      let filters: { name: string; extensions: string[] }[] = [];
 
       if (format === "json") {
         // Replace transaction account IDs with account names for easier interoperability
-        const transactionsWithAccountNames = transactions.map((tx) => {
-          const acc = accounts.find((a) => a.id === tx.account_id);
+        const transactionsWithAccountNames = transactions.map((tx: Transaction) => {
+          const acc = accounts.find((a: Account) => a.id === tx.account_id);
           const { account_id, ...rest } = tx;
           return {
             ...rest,
@@ -181,8 +227,8 @@ export default function ExportModal({ onClose }) {
           t("import.field.fee"),
           t("import.field.currency"),
         ];
-        const rows = transactions.map((t) => {
-          const acc = accounts.find((a) => a.id === t.account_id);
+        const rows = transactions.map((t: Transaction) => {
+          const acc = accounts.find((a: Account) => a.id === t.account_id);
           const values = [
             t.date,
             acc ? acc.name : t.account_id,
@@ -230,7 +276,7 @@ export default function ExportModal({ onClose }) {
       // 4. Write File
       if (format === "xlsx") {
         // Prepare data structure for Rust backend
-        const coerceNumber = (v) => {
+        const coerceNumber = (v: unknown) => {
           if (v === null || v === undefined || v === "") return null;
           if (typeof v === "number") return v;
           const s = formatNumberForExport(v);
@@ -238,8 +284,8 @@ export default function ExportModal({ onClose }) {
           return Number.isNaN(n) ? v : n;
         };
 
-        const txData = transactions.map((tx) => {
-          const acc = accounts.find((a) => a.id === tx.account_id);
+        const txData = transactions.map((tx: Transaction) => {
+          const acc = accounts.find((a: Account) => a.id === tx.account_id);
           return {
             [t("import.field.date")]: tx.date,
             [t("import.field.account")]: acc ? acc.name : tx.account_id,
@@ -255,15 +301,15 @@ export default function ExportModal({ onClose }) {
           };
         });
 
-        const sheets = [
+        const sheets: { name: string; data: Record<string, unknown>[] }[] = [
           { name: "Transactions", data: txData },
-          { name: "Accounts", data: accounts },
+          { name: "Accounts", data: accounts as Record<string, unknown>[] },
         ];
 
         await rust.write_xlsx({ filePath, sheets });
       } else if (format === "pdf") {
         // Fetch exchange rates
-        const exchangeRates = {};
+        const exchangeRates: Record<string, { map: Record<string, number>; list: DailyPrice[] }> = {};
         const appCurrency = localStorage.getItem("hb_currency") || "USD";
 
         try {
@@ -271,22 +317,22 @@ export default function ExportModal({ onClose }) {
             appCurrency,
           });
           if (Array.isArray(allRates)) {
-            for (const entry of allRates) {
+            for (const entry of allRates as ExchangeRateEntry[]) {
               if (!entry.currency || entry.currency === appCurrency) continue;
               const pair = `${entry.currency}${appCurrency}=X`;
               // Try to fetch historical daily prices for this currency pair
-              let dailyPrices = [];
+              let dailyPrices: DailyPrice[] = [];
               try {
                 dailyPrices = await rust.get_daily_stock_prices({
                   ticker: pair,
-                });
+                }) as DailyPrice[];
               } catch {
                 // Historical prices may not be available
               }
-              const map = {};
-              const list = [];
+              const map: Record<string, number> = {};
+              const list: DailyPrice[] = [];
               if (Array.isArray(dailyPrices) && dailyPrices.length > 0) {
-                dailyPrices.forEach((dp) => {
+                dailyPrices.forEach((dp: DailyPrice) => {
                   map[dp.date] = dp.price;
                   list.push({ date: dp.date, price: dp.price });
                 });
@@ -297,7 +343,7 @@ export default function ExportModal({ onClose }) {
                 map[today] = entry.rate;
                 list.push({ date: today, price: entry.rate });
                 // Also add an early date so historical lookups always have a fallback
-                if (!list.some((p) => p.date <= pdfDateRange.start)) {
+                if (!list.some((p: DailyPrice) => p.date <= pdfDateRange.start)) {
                   map["1970-01-01"] = entry.rate;
                   list.unshift({ date: "1970-01-01", price: entry.rate });
                 }
@@ -312,13 +358,13 @@ export default function ExportModal({ onClose }) {
         }
 
         // Fetch stock quotes if user has investments
-        let quotes = [];
+        let quotes: unknown[] = [];
         try {
           const { currentHoldings } =
-            buildHoldingsFromTransactions(transactions);
+            buildHoldingsFromTransactions(transactions as InvestmentTransaction[]);
           if (currentHoldings.length > 0) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
-            quotes = await rust.get_stock_quotes({ tickers });
+            quotes = await rust.get_stock_quotes({ tickers }) as unknown[];
           }
         } catch {
           // Quotes are optional
@@ -372,14 +418,14 @@ export default function ExportModal({ onClose }) {
         };
 
         const reportData = await computeReportData({
-          accounts,
-          transactions,
+          accounts: accounts as unknown[],
+          transactions: transactions as unknown[],
           startDate: pdfDateRange.start,
           endDate: pdfDateRange.end,
           appCurrency,
           exchangeRates,
           quotes,
-          labels: reportLabels,
+          labels: reportLabels as unknown as unknown[],
         });
 
         await rust.generate_pdf_report({
@@ -387,7 +433,7 @@ export default function ExportModal({ onClose }) {
           data: reportData,
         });
       } else {
-        await writeTextFile(filePath, content);
+        await writeTextFile(filePath, content!);
       }
 
       // Show success toast and close modal
@@ -501,7 +547,7 @@ export default function ExportModal({ onClose }) {
             {/* Range type dropdown */}
             <CustomSelect
               value={rangeType}
-              onChange={(v) => setRangeType(v)}
+              onChange={(v) => setRangeType(String(v))}
               options={[
                 { value: "ytd", label: t("export.pdf.ytd") },
                 { value: "annual", label: t("export.pdf.annual") },
@@ -574,9 +620,11 @@ export default function ExportModal({ onClose }) {
                 </label>
                 <DatePicker
                   selected={customStartDate}
-                  onChange={(date) => {
-                    setCustomStartDate(date);
-                    if (date > customEndDate) setCustomEndDate(date);
+                  onChange={(date: Date | null) => {
+                    if (date) {
+                      setCustomStartDate(date);
+                      if (date > customEndDate) setCustomEndDate(date);
+                    }
                   }}
                   selectsStart
                   startDate={customStartDate}
@@ -586,7 +634,7 @@ export default function ExportModal({ onClose }) {
                   portalId="datepicker-portal"
                   popperPlacement="bottom-start"
                   dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek}
+                  calendarStartDay={firstDayOfWeek as Day}
                   className="pdf-date-input"
                 />
                 <label className="pdf-sub-label mt-2">
@@ -594,7 +642,7 @@ export default function ExportModal({ onClose }) {
                 </label>
                 <DatePicker
                   selected={customEndDate}
-                  onChange={(date) => setCustomEndDate(date)}
+                  onChange={(date: Date | null) => { if (date) setCustomEndDate(date); }}
                   selectsEnd
                   startDate={customStartDate}
                   endDate={customEndDate}
@@ -604,7 +652,7 @@ export default function ExportModal({ onClose }) {
                   portalId="datepicker-portal"
                   popperPlacement="bottom-start"
                   dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek}
+                  calendarStartDay={firstDayOfWeek as Day}
                   className="pdf-date-input"
                 />
               </div>
@@ -643,6 +691,5 @@ export default function ExportModal({ onClose }) {
   );
 }
 
-ExportModal.propTypes = {
-  onClose: PropTypes.func.isRequired,
-};
+
+

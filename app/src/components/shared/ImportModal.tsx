@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
 import { rust } from "../../api/tauri-client";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -13,27 +12,66 @@ import "../../styles/Modal.css";
 import "../../styles/Settings.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import CustomSelect from "../ui/CustomSelect";
+// @ts-expect-error papaparse has no type declarations
 import Papa from "papaparse";
 import { parseNumberWithLocale } from "../../utils/format";
 import { t } from "../../i18n/i18n";
 import { useToast } from "../../contexts/toast";
 
 // Get MIME type based on file extension
-const getMimeType = (fileName) => {
+const getMimeType = (fileName: string): string => {
   const ext = fileName.toLowerCase().split(".").pop();
-  const mimeTypes = {
+  const mimeTypes: Record<string, string> = {
     csv: "text/csv",
     json: "application/json",
     xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     xls: "application/vnd.ms-excel",
   };
-  return mimeTypes[ext] || "application/octet-stream";
+  return mimeTypes[ext ?? ""] || "application/octet-stream";
 };
 
-export default function ImportModal({ onClose, onImportComplete }) {
-  const [file, setFile] = useState(null);
-  const [columns, setColumns] = useState([]);
-  const [mapping, setMapping] = useState({
+interface ImportModalProps {
+  onClose: () => void;
+  onImportComplete: () => void;
+}
+
+interface FieldMapping {
+  date: string;
+  payee: string;
+  amount: string;
+  category: string;
+  notes: string;
+  account: string;
+  ticker: string;
+  shares: string;
+  price: string;
+  fee: string;
+  currency: string;
+}
+
+interface ImportProgress {
+  current: number;
+  total: number;
+  success: number;
+  failed: number;
+}
+
+interface ImportError {
+  row: number;
+  error: string;
+}
+
+interface Account {
+  id: number;
+  name: string;
+  balance: number;
+  kind: string;
+}
+
+export default function ImportModal({ onClose, onImportComplete }: ImportModalProps) {
+  const [file, setFile] = useState<File | null>(null);
+  const [columns, setColumns] = useState<string[]>([]);
+  const [mapping, setMapping] = useState<FieldMapping>({
     date: "",
     payee: "",
     amount: "",
@@ -50,26 +88,26 @@ export default function ImportModal({ onClose, onImportComplete }) {
   /* Modal JSX moved to end of function to avoid referencing refs/state before initialization */
 
   const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState({
+  const [progress, setProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
     success: 0,
     failed: 0,
   });
-  const [accounts, setAccounts] = useState([]);
-  const [previewRows, setPreviewRows] = useState([]);
-  const [parseError, setParseError] = useState(null);
-  const fileInputRef = useRef(null);
-  const dropZoneRef = useRef(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [previewRows, setPreviewRows] = useState<Record<string, unknown>[]>([]);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [step, setStep] = useState(0); // 0 = select file, 1 = map/review
   const { showToast } = useToast();
 
   // Import result details for user review
-  const [importErrorsState, setImportErrorsState] = useState([]);
+  const [importErrorsState, setImportErrorsState] = useState<ImportError[]>([]);
   const [showImportSummary, setShowImportSummary] = useState(false);
 
-  const autoMapColumns = useCallback((cols) => {
+  const autoMapColumns = useCallback((cols: string[]) => {
     setMapping((prevMapping) => {
       const newMapping = { ...prevMapping };
       cols.forEach((col) => {
@@ -107,20 +145,20 @@ export default function ImportModal({ onClose, onImportComplete }) {
   }, []);
 
   const parseFile = useCallback(
-    (file) => {
+    (file: File) => {
       // Reset previous parse state
       setParseError(null);
       setPreviewRows([]);
 
       const reader = new FileReader();
       reader.onload = async (e) => {
-        const data = e.target.result;
+        const data = e.target!.result;
 
         if (file.name.endsWith(".csv")) {
-          Papa.parse(data, {
+          Papa.parse(data as string, {
             header: true,
             skipEmptyLines: true,
-            complete: (results) => {
+            complete: (results: { meta: { fields?: string[] }; data: Record<string, unknown>[] }) => {
               setColumns(results.meta.fields || []);
               setPreviewRows((results.data || []).slice(0, 5));
               autoMapColumns(results.meta.fields || []);
@@ -128,7 +166,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
           });
         } else if (file.name.endsWith(".json")) {
           try {
-            const parsed = JSON.parse(data);
+            const parsed = JSON.parse(data as string);
             let rows = [];
 
             if (Array.isArray(parsed)) {
@@ -150,22 +188,22 @@ export default function ImportModal({ onClose, onImportComplete }) {
             }
 
             // Collect union of keys as columns
-            const cols = Array.from(
-              rows.reduce((acc, row) => {
-                Object.keys(row || {}).forEach((k) => acc.add(k));
+            const cols: string[] = Array.from(
+              rows.reduce((acc: Set<string>, row: Record<string, unknown>) => {
+                Object.keys(row || {}).forEach((k: string) => acc.add(k));
                 return acc;
-              }, new Set()),
+              }, new Set<string>()),
             );
 
             setColumns(cols);
-            setPreviewRows(rows.slice(0, 5));
+            setPreviewRows(rows.slice(0, 5) as Record<string, unknown>[]);
             setParseError(null);
             autoMapColumns(cols);
-          } catch (e) {
+          } catch (e: unknown) {
             console.error("Failed to parse JSON import file:", e);
             setParseError(
               t("import.error.failed_parse_json", {
-                error: e.message || String(e),
+                error: e instanceof Error ? e.message : String(e),
               }),
             );
             setColumns([]);
@@ -174,16 +212,16 @@ export default function ImportModal({ onClose, onImportComplete }) {
         } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
           try {
             // Send file bytes to Rust/calamine
-            const arrayBuffer = e.target.result;
+            const arrayBuffer = e.target!.result as ArrayBuffer;
             const bytes = Array.from(new Uint8Array(arrayBuffer));
-            const result = await rust.read_xlsx({ data: bytes });
+            const result = await rust.read_xlsx({ data: bytes }) as { data: unknown[][] };
             const json = result.data; // Array of arrays
 
             if (json.length > 0) {
-              const headers = json[0];
-              const rows = json.slice(1).map((row) => {
-                const obj = {};
-                headers.forEach((header, index) => {
+              const headers = json[0] as string[];
+              const rows = json.slice(1).map((row: unknown[]) => {
+                const obj: Record<string, unknown> = {};
+                headers.forEach((header: string, index: number) => {
                   obj[header] = row[index] !== undefined ? row[index] : "";
                 });
                 return obj;
@@ -194,9 +232,9 @@ export default function ImportModal({ onClose, onImportComplete }) {
               setPreviewRows(rows.slice(0, 5));
               autoMapColumns(strHeaders);
             }
-          } catch (err) {
+          } catch (err: unknown) {
             console.error("Failed to parse XLSX:", err);
-            setParseError("Failed to parse Excel file: " + err);
+            setParseError("Failed to parse Excel file: " + String(err));
           }
         }
       };
@@ -212,7 +250,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
 
   // Handle file dropped via Tauri's native drag-drop (receives file path)
   const handleFileFromPath = useCallback(
-    async (filePath) => {
+    async (filePath: string) => {
       try {
         // Import Tauri's file system API
         const { readFile } = await import("@tauri-apps/plugin-fs");
@@ -221,7 +259,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
         const contents = await readFile(filePath);
 
         // Extract file name from path
-        const fileName = filePath.split(/[\\/]/).pop();
+        const fileName = filePath.split(/[\\/]/).pop() ?? "file";
 
         // Create a File object from the contents
         const blob = new Blob([contents]);
@@ -231,11 +269,11 @@ export default function ImportModal({ onClose, onImportComplete }) {
 
         setFile(fileObj);
         parseFile(fileObj);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to read dropped file:", err);
         setParseError(
           t("import.error.failed_read_dropped", {
-            error: err.message || String(err),
+            error: err instanceof Error ? err.message : String(err),
           }),
         );
       }
@@ -245,21 +283,22 @@ export default function ImportModal({ onClose, onImportComplete }) {
 
   useEffect(() => {
     // Fetch accounts on mount
-    rust.get_accounts().then(setAccounts).catch(console.error);
+    rust.get_accounts({}).then((data) => setAccounts(data as Account[])).catch(console.error);
 
     // Prevent background from scrolling while modal is open
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     // Listen for Tauri's native file drop events (works reliably on Linux)
-    let unlistenDrop = null;
-    let unlistenHover = null;
-    let unlistenLeave = null;
+    let unlistenDrop: (() => void) | null = null;
+    let unlistenHover: (() => void) | null = null;
+    let unlistenLeave: (() => void) | null = null;
 
     const setupListeners = async () => {
       // Listen for file drop
       unlistenDrop = await listen("tauri://drag-drop", (event) => {
-        const paths = event.payload?.paths;
+        const payload = event.payload as { paths?: string[] };
+        const paths = payload?.paths;
         if (paths && paths.length > 0) {
           const filePath = paths[0];
           // Check if it's a supported file type
@@ -299,13 +338,13 @@ export default function ImportModal({ onClose, onImportComplete }) {
   }, [handleFileFromPath]);
 
   // Browser-based drag event handlers (works on Linux GNOME)
-  const handleDragEnter = (e) => {
+  const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     // Ensure the drop effect is shown
@@ -313,18 +352,18 @@ export default function ImportModal({ onClose, onImportComplete }) {
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     // Only set isDragging to false if we're leaving the drop zone entirely
     // Check if we're leaving to a child element
-    if (e.currentTarget.contains(e.relatedTarget)) {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) {
       return;
     }
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -345,8 +384,8 @@ export default function ImportModal({ onClose, onImportComplete }) {
     }
   };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
     setFile(selectedFile);
     parseFile(selectedFile);
@@ -365,21 +404,21 @@ export default function ImportModal({ onClose, onImportComplete }) {
     // Re-parse full file to get all data
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const data = e.target.result;
-      let allRows = [];
+      const data = e.target!.result;
+      let allRows: Record<string, unknown>[] = [];
 
-      if (file.name.endsWith(".csv")) {
-        Papa.parse(data, {
+      if (file!.name.endsWith(".csv")) {
+        Papa.parse(data as string, {
           header: true,
           skipEmptyLines: true,
-          complete: (results) => {
+          complete: (results: { data: Record<string, unknown>[] }) => {
             allRows = results.data;
             processRows(allRows);
           },
         });
-      } else if (file.name.endsWith(".json")) {
+      } else if (file!.name.endsWith(".json")) {
         try {
-          const parsed = JSON.parse(data);
+          const parsed = JSON.parse(data as string);
           if (Array.isArray(parsed)) {
             allRows = parsed;
           } else if (
@@ -397,18 +436,18 @@ export default function ImportModal({ onClose, onImportComplete }) {
           allRows = [];
         }
         processRows(allRows);
-      } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+      } else if (file!.name.endsWith(".xlsx") || file!.name.endsWith(".xls")) {
         try {
-          const arrayBuffer = e.target.result;
+          const arrayBuffer = e.target!.result as ArrayBuffer;
           const bytes = Array.from(new Uint8Array(arrayBuffer));
-          const result = await rust.read_xlsx({ data: bytes });
+          const result = await rust.read_xlsx({ data: bytes }) as { data: unknown[][] };
           const json = result.data; // Array of arrays
 
           if (json.length > 0) {
-            const headers = json[0];
-            allRows = json.slice(1).map((row) => {
-              const obj = {};
-              headers.forEach((header, index) => {
+            const headers = json[0] as string[];
+            allRows = json.slice(1).map((row: unknown[]) => {
+              const obj: Record<string, unknown> = {};
+              headers.forEach((header: string, index: number) => {
                 obj[header] = row[index] !== undefined ? row[index] : "";
               });
               return obj;
@@ -422,27 +461,27 @@ export default function ImportModal({ onClose, onImportComplete }) {
       }
     };
 
-    if (file.name.endsWith(".csv") || file.name.endsWith(".json")) {
-      reader.readAsText(file);
+    if (file!.name.endsWith(".csv") || file!.name.endsWith(".json")) {
+      reader.readAsText(file!);
     } else {
-      reader.readAsArrayBuffer(file);
+      reader.readAsArrayBuffer(file!);
     }
   };
 
-  const processRows = async (rows) => {
+  const processRows = async (rows: Record<string, unknown>[]) => {
     let successCount = 0;
     let failCount = 0;
-    const importErrors = [];
+    const importErrors: ImportError[] = [];
 
     setProgress({ current: 0, total: rows.length, success: 0, failed: 0 });
 
     // Keep a single mutable copy of accounts for the whole import so we don't
     // repeatedly create duplicates due to async React state updates.
-    let localAccounts = [...accounts];
+    let localAccounts: Account[] = [...accounts];
 
     // Group rows by account identifier to determine account type before creation
-    const rowsByAccount = new Map();
-    const rowIndices = new Map();
+    const rowsByAccount = new Map<string, { identifier: unknown; rows: Record<string, unknown>[] }>();
+    const rowIndices = new Map<Record<string, unknown>, number>();
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -465,7 +504,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
         if (!rowsByAccount.has(key)) {
           rowsByAccount.set(key, { identifier: accountField, rows: [] });
         }
-        rowsByAccount.get(key).rows.push(row);
+        rowsByAccount.get(key)!.rows.push(row);
         if (!rowIndices.has(row)) rowIndices.set(row, i);
       } else {
         // Rows without account info
@@ -473,7 +512,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
         if (!rowsByAccount.has(key)) {
           rowsByAccount.set(key, { identifier: null, rows: [] });
         }
-        rowsByAccount.get(key).rows.push(row);
+        rowsByAccount.get(key)!.rows.push(row);
         if (!rowIndices.has(row)) rowIndices.set(row, i);
       }
     }
@@ -482,13 +521,13 @@ export default function ImportModal({ onClose, onImportComplete }) {
 
     for (const [, group] of rowsByAccount) {
       const { identifier, rows: groupRows } = group;
-      let accountId = null;
+      let accountId: number | null = null;
 
       if (identifier !== null) {
         if (typeof identifier === "number") {
           accountId = identifier;
-        } else if (!isNaN(parseInt(identifier))) {
-          accountId = parseInt(identifier);
+        } else if (!isNaN(parseInt(String(identifier)))) {
+          accountId = parseInt(String(identifier));
         } else if (typeof identifier === "string") {
           const name = identifier.trim();
           // Do a case-insensitive, trimmed comparison to avoid duplicates
@@ -551,13 +590,13 @@ export default function ImportModal({ onClose, onImportComplete }) {
                 kind,
               });
               // push to local cache (we'll update React state after the import completes)
-              localAccounts.push(created);
-              match = created;
+              localAccounts.push(created as Account);
+              match = created as Account;
             } catch (e) {
               console.error("Failed to create account for import:", e);
               // Fail all rows for this account
               for (const row of groupRows) {
-                const idx = rowIndices.get(row);
+                const idx = rowIndices.get(row) ?? 0;
                 importErrors.push({
                   row: idx,
                   error: `Failed to create account '${name}': ${String(e)}`,
@@ -573,7 +612,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
       }
 
       for (const row of groupRows) {
-        const i = rowIndices.get(row);
+        const i = rowIndices.get(row) ?? 0;
         try {
           if (!accountId) throw new Error(t("import.error.no_account_for_row"));
 
@@ -619,20 +658,20 @@ export default function ImportModal({ onClose, onImportComplete }) {
           if (isNaN(amount)) amount = 0;
 
           // Brokerage fields
-          let ticker = mapping.ticker
+          let ticker: unknown = mapping.ticker
             ? row[mapping.ticker]
             : row.ticker || row.symbol || row.Ticker || row.Symbol;
-          let shares = mapping.shares
+          let shares: unknown = mapping.shares
             ? row[mapping.shares]
             : row.shares ||
               row.quantity ||
               row.qty ||
               row.Shares ||
               row.Quantity;
-          let price = mapping.price
+          let price: unknown = mapping.price
             ? row[mapping.price]
             : row.price || row.price_per_share || row.Price;
-          let fee = mapping.fee
+          let fee: unknown = mapping.fee
             ? row[mapping.fee]
             : row.fee || row.commission || row.Fee;
 
@@ -652,9 +691,9 @@ export default function ImportModal({ onClose, onImportComplete }) {
           if (typeof fee === "string")
             fee = parseNumberWithLocale(fee, "en-US");
 
-          if (isNaN(shares)) shares = null;
-          if (isNaN(price)) price = null;
-          if (isNaN(fee)) fee = null;
+          if (typeof shares === "number" && isNaN(shares)) shares = null;
+          if (typeof price === "number" && isNaN(price)) price = null;
+          if (typeof fee === "number" && isNaN(fee)) fee = null;
           if (!ticker) ticker = null;
 
           await rust.create_transaction({
@@ -764,7 +803,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
               </>
             ) : (
               <>
-                {file?.name?.endsWith(".json") ? (
+                {(file as File | null)?.name?.endsWith(".json") ? (
                   <FileJson className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
                 ) : (
                   <FileSpreadsheet className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
@@ -823,7 +862,7 @@ export default function ImportModal({ onClose, onImportComplete }) {
                     </label>
                     <div className="relative">
                       <CustomSelect
-                        value={mapping[field]}
+                        value={mapping[field as keyof FieldMapping]}
                         onChange={(v) => setMapping({ ...mapping, [field]: v })}
                         options={[
                           { value: "", label: t("import.skip") },
@@ -1024,7 +1063,5 @@ export default function ImportModal({ onClose, onImportComplete }) {
   );
 }
 
-ImportModal.propTypes = {
-  onClose: PropTypes.func.isRequired,
-  onImportComplete: PropTypes.func.isRequired,
-};
+
+

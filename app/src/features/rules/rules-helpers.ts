@@ -2,6 +2,9 @@ import {
   DEFAULT_RULE_ACTION,
   DEFAULT_RULE_CONDITION,
   createDefaultRuleFormState,
+  type RuleCondition,
+  type RuleAction,
+  type RuleFormState,
 } from "../../constants/app";
 
 export {
@@ -9,24 +12,40 @@ export {
   DEFAULT_RULE_CONDITION,
   DEFAULT_RULE_ACTION,
 };
+export type { RuleCondition, RuleAction, RuleFormState };
 
-export function toRuleFormState(rule) {
-  const conditions =
-    rule.conditions?.length > 0
-      ? rule.conditions
+type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
+
+interface RuleRecord {
+  id: number;
+  priority: number;
+  logic?: string;
+  conditions?: RuleCondition[];
+  actions?: RuleAction[];
+  match_field?: string;
+  match_pattern?: string;
+  action_field?: string;
+  action_value?: string;
+  [key: string]: unknown;
+}
+
+export function toRuleFormState(rule: RuleRecord): RuleFormState {
+  const conditions: RuleCondition[] =
+    (rule.conditions?.length ?? 0) > 0
+      ? rule.conditions!
       : [
           {
-            field: rule.match_field,
+            field: rule.match_field ?? "",
             operator: "equals",
-            value: rule.match_pattern,
+            value: rule.match_pattern ?? "",
             negated: false,
           },
         ];
 
-  const actions =
-    rule.actions?.length > 0
-      ? rule.actions
-      : [{ field: rule.action_field, value: rule.action_value }];
+  const actions: RuleAction[] =
+    (rule.actions?.length ?? 0) > 0
+      ? rule.actions!
+      : [{ field: rule.action_field ?? "", value: rule.action_value ?? "" }];
 
   return {
     id: rule.id,
@@ -37,7 +56,10 @@ export function toRuleFormState(rule) {
   };
 }
 
-export function toRulePayload(formState, rules) {
+export function toRulePayload(
+  formState: RuleFormState,
+  rules: RuleRecord[],
+): { payload: Record<string, unknown>; maxPriority: number } {
   const firstCondition = formState.conditions[0] || DEFAULT_RULE_CONDITION;
   const firstAction = formState.actions[0] || DEFAULT_RULE_ACTION;
 
@@ -57,7 +79,11 @@ export function toRulePayload(formState, rules) {
   return { payload, maxPriority };
 }
 
-export function reorderRules(rules, dragRuleId, targetIndex) {
+export function reorderRules(
+  rules: RuleRecord[],
+  dragRuleId: number,
+  targetIndex: number,
+): (RuleRecord & { priority: number })[] {
   const dragIndex = rules.findIndex((r) => r.id === dragRuleId);
   if (dragIndex === -1 || dragIndex === targetIndex) {
     return rules;
@@ -72,15 +98,15 @@ export function reorderRules(rules, dragRuleId, targetIndex) {
   return newItems.map((rule, idx) => ({ ...rule, priority: total - idx }));
 }
 
-export function isValuelessOperator(operator) {
+export function isValuelessOperator(operator: string): boolean {
   return operator === "is_empty" || operator === "is_not_empty";
 }
 
-export function isRegexOperator(operator) {
+export function isRegexOperator(operator: string): boolean {
   return operator === "matches_regex" || operator === "not_matches_regex";
 }
 
-export function isValidRegex(pattern) {
+export function isValidRegex(pattern: string): boolean {
   if (!pattern) return true;
   try {
     new RegExp(pattern);
@@ -90,7 +116,10 @@ export function isValidRegex(pattern) {
   }
 }
 
-export function formatCondition(condition, translate) {
+export function formatCondition(
+  condition: RuleCondition,
+  translate: TranslateFn,
+): string {
   const fieldLabel =
     translate(`rules.field.${condition.field}`) || condition.field;
   const operatorLabel =
@@ -104,7 +133,10 @@ export function formatCondition(condition, translate) {
   return `${fieldLabel} ${operatorLabel} "${condition.value}"`;
 }
 
-export function formatAction(action, translate) {
+export function formatAction(
+  action: RuleAction,
+  translate: TranslateFn,
+): string {
   const fieldLabel = translate(`rules.field.${action.field}`) || action.field;
   return `${fieldLabel} = "${action.value}"`;
 }

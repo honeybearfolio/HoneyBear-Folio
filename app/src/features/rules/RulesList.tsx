@@ -15,19 +15,34 @@ import {
   reorderRules,
   toRuleFormState,
   toRulePayload,
+  type RuleCondition,
+  type RuleAction,
 } from "./rules-helpers";
 
+interface RuleRecord {
+  id: number;
+  priority: number;
+  logic?: string;
+  conditions?: RuleCondition[];
+  actions?: RuleAction[];
+  match_field?: string;
+  match_pattern?: string;
+  action_field?: string;
+  action_value?: string;
+  [key: string]: unknown;
+}
+
 export default function RulesList() {
-  const [rules, setRules] = useState([]);
+  const [rules, setRules] = useState<RuleRecord[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formState, setFormState] = useState(() =>
     createDefaultRuleFormState(),
   );
-  const [draggingId, setDraggingId] = useState(null);
-  const [menuOpenId, setMenuOpenId] = useState(null);
-  const [menuCoords, setMenuCoords] = useState(null);
-  const formRef = useRef(null);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   useNumberFormat();
 
@@ -35,7 +50,7 @@ export default function RulesList() {
 
   async function fetchRules() {
     try {
-      const r = await rust.get_rules();
+      const r = await rust.get_rules({}) as RuleRecord[];
       setRules(r);
     } catch (e) {
       console.error("Failed to fetch rules:", e);
@@ -46,7 +61,7 @@ export default function RulesList() {
     let mounted = true;
     (async () => {
       try {
-        const r = await rust.get_rules();
+        const r = await rust.get_rules({}) as RuleRecord[];
         if (mounted) setRules(r);
       } catch (e) {
         console.error("Failed to fetch rules:", e);
@@ -58,11 +73,11 @@ export default function RulesList() {
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutside(event: MouseEvent) {
       if (
         menuOpenId &&
-        !event.target.closest(".rule-action-menu-container") &&
-        !event.target.closest(".rule-action-menu-portal")
+        !(event.target as HTMLElement).closest(".rule-action-menu-container") &&
+        !(event.target as HTMLElement).closest(".rule-action-menu-portal")
       ) {
         setMenuOpenId(null);
         setMenuCoords(null);
@@ -93,7 +108,7 @@ export default function RulesList() {
     setShowForm(false);
   }
 
-  function handleEdit(rule) {
+  function handleEdit(rule: RuleRecord) {
     setFormState(toRuleFormState(rule));
     setShowForm(true);
     setTimeout(
@@ -104,11 +119,11 @@ export default function RulesList() {
     setIsEditing(true);
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id: number) {
     if (await confirm(t("rules.delete_confirm"), { kind: "warning" })) {
       try {
         await rust.delete_rule({ id });
-        setRules((current) => current.filter((r) => r.id !== id));
+        setRules((current) => current.filter((r: RuleRecord) => r.id !== id));
         if (formState.id === id) resetForm();
       } catch (e) {
         console.error("Failed to delete rule:", e);
@@ -117,7 +132,7 @@ export default function RulesList() {
     }
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
       const { payload, maxPriority } = toRulePayload(formState, rules);
@@ -153,7 +168,7 @@ export default function RulesList() {
     }));
   }
 
-  function updateCondition(index, updates) {
+  function updateCondition(index: number, updates: Partial<RuleCondition>) {
     setFormState((prev) => ({
       ...prev,
       conditions: prev.conditions.map((c, i) =>
@@ -162,7 +177,7 @@ export default function RulesList() {
     }));
   }
 
-  function removeCondition(index) {
+  function removeCondition(index: number) {
     if (formState.conditions.length <= 1) return;
     setFormState((prev) => ({
       ...prev,
@@ -178,7 +193,7 @@ export default function RulesList() {
     }));
   }
 
-  function updateAction(index, updates) {
+  function updateAction(index: number, updates: Partial<RuleAction>) {
     setFormState((prev) => ({
       ...prev,
       actions: prev.actions.map((a, i) =>
@@ -187,7 +202,7 @@ export default function RulesList() {
     }));
   }
 
-  function removeAction(index) {
+  function removeAction(index: number) {
     if (formState.actions.length <= 1) return;
     setFormState((prev) => ({
       ...prev,
@@ -197,9 +212,9 @@ export default function RulesList() {
 
   // DnD Handlers
   const lastReorder = useRef(0);
-  const draggingIdRef = useRef(null);
+  const draggingIdRef = useRef<number | null>(null);
 
-  const handleDragStart = (e, id) => {
+  const handleDragStart = (e: React.DragEvent, id: number) => {
     setDraggingId(id);
     draggingIdRef.current = id;
     e.dataTransfer.effectAllowed = "move";
@@ -207,13 +222,13 @@ export default function RulesList() {
     e.dataTransfer.setData("application/x-rule-id", String(id));
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDragEnter = (e, targetIndex) => {
+  const handleDragEnter = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
@@ -230,7 +245,7 @@ export default function RulesList() {
     );
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
@@ -239,7 +254,7 @@ export default function RulesList() {
     setDraggingId(null);
     draggingIdRef.current = null;
     try {
-      await rust.update_rules_order({ ruleIds: rules.map((r) => r.id) });
+      await rust.update_rules_order({ ruleIds: rules.map((r: RuleRecord) => r.id) });
     } catch (err) {
       console.error("Failed to reorder rules:", err);
       fetchRules();
@@ -291,25 +306,25 @@ export default function RulesList() {
     { value: "or", label: t("rules.logic.or") },
   ];
 
-  function getOperatorsForField(fieldValue) {
+  function getOperatorsForField(fieldValue: string) {
     const field = availableFields.find((f) => f.value === fieldValue);
     return field?.type === "number" ? numberOperators : textOperators;
   }
 
-  function getFieldType(fieldValue) {
+  function getFieldType(fieldValue: string) {
     const field = availableFields.find((f) => f.value === fieldValue);
     return field?.type || "text";
   }
 
-  function isValuelessOperator(operator) {
+  function isValuelessOperator(operator: string) {
     return operator === "is_empty" || operator === "is_not_empty";
   }
 
-  function isRegexOperator(operator) {
+  function isRegexOperator(operator: string) {
     return operator === "matches_regex" || operator === "not_matches_regex";
   }
 
-  function isValidRegex(pattern) {
+  function isValidRegex(pattern: string) {
     if (!pattern) return true; // empty is ok (won't match anything)
     try {
       new RegExp(pattern);
@@ -325,7 +340,7 @@ export default function RulesList() {
   );
 
   // Format condition for display
-  function formatCondition(condition) {
+  function formatCondition(condition: RuleCondition) {
     const fieldLabel = t(`rules.field.${condition.field}`) || condition.field;
     const operatorLabel =
       t(`rules.operator.${condition.operator}`) || condition.operator;
@@ -339,7 +354,7 @@ export default function RulesList() {
   }
 
   // Format action for display
-  function formatAction(action) {
+  function formatAction(action: RuleAction) {
     const fieldLabel = t(`rules.field.${action.field}`) || action.field;
     return `${fieldLabel} = "${action.value}"`;
   }
@@ -407,7 +422,7 @@ export default function RulesList() {
                       <CustomSelect
                         value={formState.logic}
                         onChange={(val) =>
-                          setFormState((prev) => ({ ...prev, logic: val }))
+                          setFormState((prev) => ({ ...prev, logic: String(val) }))
                         }
                         options={logicOptions}
                         className="w-24 h-9"
@@ -436,7 +451,7 @@ export default function RulesList() {
                       value={condition.field}
                       onChange={(val) =>
                         updateCondition(index, {
-                          field: val,
+                          field: String(val),
                           operator: "equals",
                           value: "",
                         })
@@ -448,7 +463,7 @@ export default function RulesList() {
                     <CustomSelect
                       value={condition.operator}
                       onChange={(val) =>
-                        updateCondition(index, { operator: val })
+                        updateCondition(index, { operator: String(val) })
                       }
                       options={getOperatorsForField(condition.field)}
                       className="w-40"
@@ -459,7 +474,7 @@ export default function RulesList() {
                         <NumberInput
                           value={condition.value}
                           onChange={(val) =>
-                            updateCondition(index, { value: val })
+                            updateCondition(index, { value: String(val) })
                           }
                           className="form-input w-32"
                           placeholder="0.00"
@@ -551,7 +566,7 @@ export default function RulesList() {
                       <CustomSelect
                         value={action.field}
                         onChange={(val) =>
-                          updateAction(index, { field: val, value: "" })
+                          updateAction(index, { field: String(val), value: "" })
                         }
                         options={availableFields}
                         className="w-32"
@@ -565,7 +580,7 @@ export default function RulesList() {
                         <NumberInput
                           value={action.value}
                           onChange={(val) =>
-                            updateAction(index, { value: val })
+                            updateAction(index, { value: String(val) })
                           }
                           className="form-input w-40"
                           placeholder="0.00"
@@ -654,20 +669,20 @@ export default function RulesList() {
             {rules.map((rule, index) => {
               const isDragging = draggingId === rule.id;
               // Handle both legacy and new format
-              const conditions =
-                rule.conditions?.length > 0
-                  ? rule.conditions
+              const conditions: RuleCondition[] =
+                (rule.conditions?.length ?? 0) > 0
+                  ? rule.conditions!
                   : [
                       {
-                        field: rule.match_field,
+                        field: rule.match_field ?? "",
                         operator: "equals",
-                        value: rule.match_pattern,
+                        value: rule.match_pattern ?? "",
                       },
                     ];
-              const actions =
-                rule.actions?.length > 0
-                  ? rule.actions
-                  : [{ field: rule.action_field, value: rule.action_value }];
+              const actions: RuleAction[] =
+                (rule.actions?.length ?? 0) > 0
+                  ? rule.actions!
+                  : [{ field: rule.action_field ?? "", value: rule.action_value ?? "" }];
               const logic = rule.logic || "and";
 
               return (
@@ -792,7 +807,7 @@ export default function RulesList() {
             {rules.length === 0 && (
               <tr>
                 <td
-                  colSpan="4"
+                  colSpan={4}
                   className="px-6 py-12 text-center text-slate-400"
                 >
                   {t("rules.empty")}
