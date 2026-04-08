@@ -16,7 +16,7 @@ describe("computeReportData wrapper", () => {
       appCurrency: "USD",
       exchangeRates: {},
       quotes: [],
-      labels: { title: "Report" },
+      labels: [{ title: "Report" }],
     };
 
     const expected = {

@@ -12,7 +12,12 @@ import { invoke } from "@tauri-apps/api/core";
 // Mock dependencies — dialog mock now exposes confirm/cancel so the hook's
 // promise-based flow can be tested end-to-end.
 vi.mock("../../components/shared/CustomRateDialog", () => ({
-  default: ({ isOpen, currency, onConfirm, onCancel }) =>
+  default: ({ isOpen, currency, onConfirm, onCancel }: {
+    isOpen: boolean;
+    currency: string;
+    onConfirm: (rate: number) => void;
+    onCancel: () => void;
+  }) =>
     isOpen ? (
       <div data-testid="custom-rate-dialog">
         <div data-testid="custom-rate-currency">{currency}</div>
@@ -69,7 +74,7 @@ describe("useCustomRate", () => {
     });
 
     // Render a component that uses the hook so the dialog is mounted
-    let resolvedValue = undefined;
+    let resolvedValue: boolean | undefined = undefined;
     function TestComponent() {
       const { checkAndPrompt, dialog } = useCustomRate();
       return (

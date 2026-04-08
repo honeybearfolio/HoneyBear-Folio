@@ -1,10 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import PropTypes from "prop-types";
 import { ConfirmContext, useConfirm } from "../../contexts/confirm";
 
+interface TestComponentProps {
+  onResult: (result: boolean) => void;
+}
+
 // Test component to consume context
-function TestComponent({ onResult }) {
+function TestComponent({ onResult }: TestComponentProps) {
   const confirm = useConfirm();
   const handleClick = async () => {
     const result = await confirm();
@@ -12,7 +15,6 @@ function TestComponent({ onResult }) {
   };
   return <button onClick={handleClick}>Confirm</button>;
 }
-TestComponent.propTypes = { onResult: PropTypes.func };
 
 describe("ConfirmContext", () => {
   describe("useConfirm", () => {

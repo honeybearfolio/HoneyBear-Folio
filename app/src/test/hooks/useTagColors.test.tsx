@@ -64,10 +64,10 @@ describe("useTagColors", () => {
 
   it("getTagClasses returns default for null/undefined category", () => {
     const { result } = renderHook(() => useTagColors());
-    expect(result.current.getTagClasses(null)).toBe(
+    expect(result.current.getTagClasses(null as any)).toBe(
       getColorClasses(DEFAULT_COLOR),
     );
-    expect(result.current.getTagClasses(undefined)).toBe(
+    expect(result.current.getTagClasses(undefined as any)).toBe(
       getColorClasses(DEFAULT_COLOR),
     );
   });
@@ -81,7 +81,7 @@ describe("useTagColors", () => {
 
     expect(result.current.tagColors).toEqual({ Food: "red" });
     expect(result.current.getTagClasses("Food")).toBe(getColorClasses("red"));
-    expect(JSON.parse(localStorage.getItem("hb_tag_colors"))).toEqual({
+    expect(JSON.parse(localStorage.getItem("hb_tag_colors")!)).toEqual({
       Food: "red",
     });
   });

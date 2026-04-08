@@ -21,10 +21,10 @@ describe("formatNumberWithLocale", () => {
   });
 
   it("handles empty or invalid inputs", () => {
-    expect(formatNumberWithLocale(null)).toBe("");
-    expect(formatNumberWithLocale(undefined)).toBe("");
-    expect(formatNumberWithLocale(NaN)).toBe("");
-    expect(formatNumberWithLocale("invalid")).toBe("");
+    expect(formatNumberWithLocale(null, undefined)).toBe("");
+    expect(formatNumberWithLocale(undefined, undefined)).toBe("");
+    expect(formatNumberWithLocale(NaN, undefined)).toBe("");
+    expect(formatNumberWithLocale("invalid", undefined)).toBe("");
   });
 
   it("formats currency with correct position (left)", () => {
@@ -97,8 +97,8 @@ describe("parseNumberWithLocale", () => {
   });
 
   it("returns NaN for invalid inputs", () => {
-    expect(parseNumberWithLocale(null)).toBe(NaN);
-    expect(parseNumberWithLocale("abc")).toBe(NaN);
-    expect(parseNumberWithLocale("")).toBe(NaN);
+    expect(parseNumberWithLocale(null, undefined)).toBe(NaN);
+    expect(parseNumberWithLocale("abc", undefined)).toBe(NaN);
+    expect(parseNumberWithLocale("", undefined)).toBe(NaN);
   });
 });

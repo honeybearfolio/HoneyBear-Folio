@@ -19,12 +19,12 @@ describe("CURRENCIES", () => {
   it("should contain common currencies like USD and EUR", () => {
     const usd = CURRENCIES.find((c) => c.code === "USD");
     expect(usd).toBeDefined();
-    expect(usd.symbol).toBe("$");
-    expect(usd.position).toBe("left");
+    expect(usd!.symbol).toBe("$");
+    expect(usd!.position).toBe("left");
 
     const eur = CURRENCIES.find((c) => c.code === "EUR");
     expect(eur).toBeDefined();
-    expect(eur.symbol).toBe("€");
-    expect(eur.position).toBe("right");
+    expect(eur!.symbol).toBe("€");
+    expect(eur!.position).toBe("right");
   });
 });

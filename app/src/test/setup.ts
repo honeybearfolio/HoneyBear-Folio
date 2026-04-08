@@ -32,11 +32,11 @@ vi.mock("@tauri-apps/api/event", () => ({
 }));
 
 // Mock ResizeObserver for Chart.js components if needed
-global.ResizeObserver = class ResizeObserver {
+globalThis.ResizeObserver = class {
   observe() {}
   unobserve() {}
   disconnect() {}
-};
+} as unknown as typeof ResizeObserver;
 
 // Mock scrollIntoView for CustomSelect
 Element.prototype.scrollIntoView = vi.fn();
@@ -44,7 +44,7 @@ Element.prototype.scrollIntoView = vi.fn();
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,

@@ -7,7 +7,8 @@ import {
 
 // Test component to consume context
 function TestComponent() {
-  const { locale, currency, formatNumber } = useNumberFormat();
+  const ctx = useNumberFormat() as any;
+  const { locale, currency, formatNumber } = ctx;
   return (
     <div>
       <span data-testid="locale">{locale}</span>
@@ -41,7 +42,7 @@ describe("NumberFormatContext", () => {
       };
 
       render(
-        <NumberFormatContext.Provider value={contextValue}>
+        <NumberFormatContext.Provider value={contextValue as any}>
           <TestComponent />
         </NumberFormatContext.Provider>,
       );
@@ -56,11 +57,11 @@ describe("NumberFormatContext", () => {
       const contextValue = {
         locale: "de-DE",
         currency: "EUR",
-        formatNumber: (n) => n.toLocaleString("de-DE"),
+        formatNumber: (n: number) => n.toLocaleString("de-DE"),
       };
 
       render(
-        <NumberFormatContext.Provider value={contextValue}>
+        <NumberFormatContext.Provider value={contextValue as any}>
           <TestComponent />
         </NumberFormatContext.Provider>,
       );

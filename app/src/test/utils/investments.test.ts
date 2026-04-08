@@ -13,6 +13,7 @@ describe("Investment Utils", () => {
       shares: 10,
       price_per_share: 150,
       fee: 5,
+      account_id: 1,
     },
     {
       date: "2023-02-01",
@@ -20,6 +21,7 @@ describe("Investment Utils", () => {
       shares: 5,
       price_per_share: 2000,
       fee: 10,
+      account_id: 1,
     },
     {
       date: "2023-03-01",
@@ -27,12 +29,14 @@ describe("Investment Utils", () => {
       shares: 5,
       price_per_share: 160,
       fee: 5,
+      account_id: 1,
     },
     {
       date: "2023-04-01",
       ticker: "AAPL",
       shares: -2,
       price_per_share: 170, // Selling price doesn't affect cost basis logic directly in simple average cost usually, but let's test result
+      account_id: 1,
     },
   ];
 
@@ -41,7 +45,7 @@ describe("Investment Utils", () => {
       const { currentHoldings, firstTradeDate } =
         buildHoldingsFromTransactions(mockTransactions);
 
-      expect(new Date(firstTradeDate).toISOString().slice(0, 10)).toBe(
+      expect(new Date(firstTradeDate!).toISOString().slice(0, 10)).toBe(
         "2023-01-01",
       );
 
@@ -52,17 +56,17 @@ describe("Investment Utils", () => {
       // Sell 2: Cost removal = 2 * 154 = 308
       // Remaining Cost: 2310 - 308 = 2002
       // Remaining Shares: 13
-      const aapl = currentHoldings.find((h) => h.ticker === "AAPL");
+      const aapl = currentHoldings.find((h: any) => h.ticker === "AAPL");
       expect(aapl).toBeDefined();
-      expect(aapl.shares).toBe(13);
-      expect(aapl.costBasis).toBeCloseTo(2002);
+      expect(aapl!.shares).toBe(13);
+      expect(aapl!.costBasis).toBeCloseTo(2002);
 
       // GOOGL:
       // Buy 5 @ 2000 + 10 fee = 10010
-      const googl = currentHoldings.find((h) => h.ticker === "GOOGL");
+      const googl = currentHoldings.find((h: any) => h.ticker === "GOOGL");
       expect(googl).toBeDefined();
-      expect(googl.shares).toBe(5);
-      expect(googl.costBasis).toBe(10010);
+      expect(googl!.shares).toBe(5);
+      expect(googl!.costBasis).toBe(10010);
     });
   });
 
@@ -87,17 +91,17 @@ describe("Investment Utils", () => {
       // AAPL
       // Value: 10 * 200 = 2000
       // ROI: (2000 - 1500) / 1500 = 0.333... -> 33.33%
-      const aapl = merged.find((h) => h.ticker === "AAPL");
-      expect(aapl.price).toBe(200);
-      expect(aapl.currentValue).toBe(2000);
-      expect(aapl.roi).toBeCloseTo(33.33);
+      const aapl = merged.find((h: any) => h.ticker === "AAPL");
+      expect(aapl!.price).toBe(200);
+      expect(aapl!.currentValue).toBe(2000);
+      expect(aapl!.roi).toBeCloseTo(33.33);
 
       // GOOGL (missing quote)
       // Price 0
-      const googl = merged.find((h) => h.ticker === "GOOGL");
-      expect(googl.price).toBe(0);
-      expect(googl.currentValue).toBe(0);
-      expect(googl.roi).toBe(-100);
+      const googl = merged.find((h: any) => h.ticker === "GOOGL");
+      expect(googl!.price).toBe(0);
+      expect(googl!.currentValue).toBe(0);
+      expect(googl!.roi).toBe(-100);
     });
   });
 
@@ -107,7 +111,7 @@ describe("Investment Utils", () => {
         { currentValue: 2000, costBasis: 1500 },
         { currentValue: 0, costBasis: 5000 },
       ];
-      const totals = computePortfolioTotals(holdings);
+      const totals = computePortfolioTotals(holdings as any);
       expect(totals.totalValue).toBe(2000);
       expect(totals.totalCostBasis).toBe(6500);
     });
