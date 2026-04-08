@@ -10,7 +10,7 @@ interface TestComponentProps {
 function TestComponent({ onResult }: TestComponentProps) {
   const confirm = useConfirm();
   const handleClick = async () => {
-    const result = await confirm();
+    const result = await (confirm as any)();
     onResult(result);
   };
   return <button onClick={handleClick}>Confirm</button>;

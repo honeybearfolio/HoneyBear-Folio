@@ -30,7 +30,7 @@ vi.mock("../../../hooks/useCustomRate", () => ({
 // Mock react-datepicker
 vi.mock("react-datepicker", () => {
   return {
-    default: (props) => (
+    default: (props: any) => (
       <input
         onChange={(e) => props.onChange(new Date(e.target.value))}
         value={
@@ -52,9 +52,9 @@ describe("AccountDetails", () => {
     currency: "USD",
   };
 
-  const mockFormatNumber = vi.fn((val) => `fmt(${val})`);
-  const mockParseNumber = vi.fn((str) => Number(str));
-  const mockFormatDate = vi.fn((d) =>
+  const mockFormatNumber = vi.fn((val: number) => `fmt(${val})`);
+  const mockParseNumber = vi.fn((str: string) => Number(str));
+  const mockFormatDate = vi.fn((d: string) =>
     d ? new Date(d).toISOString().split("T")[0] : "",
   );
   const mockConfirm = vi.fn();
@@ -64,12 +64,12 @@ describe("AccountDetails", () => {
     vi.resetAllMocks();
 
     vi.mocked(formatInteractions.useFormatNumber).mockReturnValue(
-      mockFormatNumber,
+      mockFormatNumber as any,
     );
     vi.mocked(formatInteractions.useParseNumber).mockReturnValue(
-      mockParseNumber,
+      mockParseNumber as any,
     );
-    vi.mocked(formatInteractions.useFormatDate).mockReturnValue(mockFormatDate);
+    vi.mocked(formatInteractions.useFormatDate).mockReturnValue(mockFormatDate as any);
 
     vi.mocked(confirmHook.useConfirm).mockReturnValue(mockConfirm);
 
@@ -77,15 +77,15 @@ describe("AccountDetails", () => {
       dateFormat: "yyyy-MM-dd",
       firstDayOfWeek: 1,
       currency: "USD",
-    });
+    } as never);
 
     vi.mocked(customRateHook.useCustomRate).mockReturnValue({
       checkAndPrompt: vi.fn().mockResolvedValue(true),
       dialog: null,
-    });
+    } as any);
 
     // Default API mocks
-    mockInvoke.mockImplementation((cmd, _args) => {
+    mockInvoke.mockImplementation((cmd: string, _args?: unknown) => {
       if (cmd === "get_transactions") {
         return Promise.resolve([
           {
@@ -150,7 +150,7 @@ describe("AccountDetails", () => {
     render(<AccountDetails account={account} onUpdate={vi.fn()} />);
 
     const row = await screen.findByText("Grocery Store");
-    fireEvent.contextMenu(row.closest("tr"));
+    fireEvent.contextMenu(row.closest("tr")!);
 
     expect(
       await screen.findByRole("button", { name: "Duplicate" }),
@@ -162,7 +162,7 @@ describe("AccountDetails", () => {
     render(<AccountDetails account={account} onUpdate={vi.fn()} />);
 
     const row = await screen.findByText("Grocery Store");
-    fireEvent.contextMenu(row.closest("tr"));
+    fireEvent.contextMenu(row.closest("tr")!);
     await screen.findByRole("button", { name: "Duplicate" });
 
     fireEvent.mouseDown(document.body);

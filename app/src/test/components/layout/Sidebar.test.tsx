@@ -1,3 +1,4 @@
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Sidebar from "../../../components/layout/Sidebar";
@@ -5,9 +6,9 @@ import { usePrivacy } from "../../../contexts/privacy";
 import { NumberFormatContext } from "../../../contexts/number-format";
 
 // Mock dependencies
-vi.mock("../../../i18n/i18n", () => ({ t: (k) => k }));
+vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val) => `fmt-${val}`,
+  useFormatNumber: () => (val: number) => `fmt-${val}`,
 }));
 vi.mock("../../../utils/networth", () => ({
   computeNetWorth: () => 12345.67,
@@ -67,9 +68,9 @@ vi.mock("../../../features/accounts/AccountList", () => ({
   default: () => <div data-testid="AccountList" />,
 }));
 
-const renderWithContext = (ui) => {
+const renderWithContext = (ui: React.ReactElement) => {
   return render(
-    <NumberFormatContext.Provider value={{ formatNumber: (v) => `fmt-${v}` }}>
+    <NumberFormatContext.Provider value={{ formatNumber: (v: number) => `fmt-${v}` } as never}>
       {ui}
     </NumberFormatContext.Provider>,
   );
@@ -101,6 +102,10 @@ describe("Sidebar", () => {
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
         sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        selectedId=""
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
       />,
     );
 
@@ -116,6 +121,10 @@ describe("Sidebar", () => {
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
         sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        selectedId=""
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
       />,
     );
 
@@ -129,6 +138,10 @@ describe("Sidebar", () => {
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
         sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        selectedId=""
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
       />,
     );
 
@@ -150,6 +163,10 @@ describe("Sidebar", () => {
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
         sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        selectedId=""
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
       />,
     );
     expect(screen.getByText("EyeOff")).toBeInTheDocument();
@@ -162,6 +179,9 @@ describe("Sidebar", () => {
         onSelectAccount={mockOnSelectAccount}
         selectedId="investments"
         sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
       />,
     );
 
@@ -177,10 +197,13 @@ describe("Sidebar", () => {
         onSelectAccount={mockOnSelectAccount}
         selectedId="fire-calculator"
         sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
       />,
     );
 
     const link = screen.getByText("nav.fire_calculator").closest("button");
-    expect(link.className).toContain("sidebar-nav-item-active");
+    expect(link!.className).toContain("sidebar-nav-item-active");
   });
 });

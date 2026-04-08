@@ -18,11 +18,11 @@ describe("MaskedNumber", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useFormatNumber.mockReturnValue(mockFormatNumber);
+    vi.mocked(useFormatNumber).mockReturnValue(mockFormatNumber);
   });
 
   it("renders the formatted number when privacy mode is off", () => {
-    usePrivacy.mockReturnValue({ isPrivacyMode: false });
+    vi.mocked(usePrivacy).mockReturnValue({ isPrivacyMode: false, togglePrivacyMode: vi.fn() });
     mockFormatNumber.mockReturnValue("$1,234.56");
 
     render(<MaskedNumber value={1234.56} options={{ style: "currency" }} />);
@@ -45,7 +45,7 @@ describe("MaskedNumber", () => {
   });
 
   it("reveals value on hover when privacy mode is on", () => {
-    usePrivacy.mockReturnValue({ isPrivacyMode: true });
+    vi.mocked(usePrivacy).mockReturnValue({ isPrivacyMode: true, togglePrivacyMode: vi.fn() });
 
     // When privacy is on, formatNumber is called twice.
     // Once for display (implied that regular formatNumber respects privacy context externally, but here we mock it)
@@ -56,7 +56,7 @@ describe("MaskedNumber", () => {
     // const unmaskedValue = formatNumber(value, { ...options, ignorePrivacy: true });
 
     // So we need to mock formatNumber implementation behavior or return values based on calls.
-    mockFormatNumber.mockImplementation((val, opts) => {
+    mockFormatNumber.mockImplementation((val: number, opts?: Record<string, unknown>) => {
       if (opts?.ignorePrivacy) return "$1,234.56";
       return "****";
     });
@@ -79,7 +79,7 @@ describe("MaskedNumber", () => {
   });
 
   it("passes className and other props to the span", () => {
-    usePrivacy.mockReturnValue({ isPrivacyMode: false });
+    vi.mocked(usePrivacy).mockReturnValue({ isPrivacyMode: false, togglePrivacyMode: vi.fn() });
     mockFormatNumber.mockReturnValue("123");
 
     render(
@@ -96,8 +96,8 @@ describe("MaskedNumber", () => {
   });
 
   it("combines className with cursor-help when privacy mode is on", () => {
-    usePrivacy.mockReturnValue({ isPrivacyMode: true });
-    mockFormatNumber.mockImplementation((val, opts) => {
+    vi.mocked(usePrivacy).mockReturnValue({ isPrivacyMode: true, togglePrivacyMode: vi.fn() });
+    mockFormatNumber.mockImplementation((val: number, opts?: Record<string, unknown>) => {
       if (opts?.ignorePrivacy) return "123";
       return "***";
     });

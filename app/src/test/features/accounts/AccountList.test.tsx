@@ -1,9 +1,10 @@
+import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import AccountList from "../../../features/accounts/AccountList";
 import { NumberFormatContext } from "../../../contexts/number-format";
 
-vi.mock("../../../i18n/i18n", () => ({ t: (k) => k }));
+vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
 
 // Mock dependencies
 vi.mock("lucide-react", () => ({
@@ -14,9 +15,9 @@ vi.mock("lucide-react", () => ({
 }));
 
 // We can simply render with the context provider instead of mocking the hook
-const renderWithContext = (ui, { formatNumber = (v) => String(v) } = {}) => {
+const renderWithContext = (ui: React.ReactElement, { formatNumber = (v: number | string) => String(v) } = {}) => {
   return render(
-    <NumberFormatContext.Provider value={{ formatNumber }}>
+    <NumberFormatContext.Provider value={{ formatNumber } as never}>
       {ui}
     </NumberFormatContext.Provider>,
   );
@@ -66,7 +67,7 @@ describe("AccountList", () => {
       .closest('div[draggable="true"]');
 
     // Simulate Drag Start on Account A
-    fireEvent.dragStart(accountA, {
+    fireEvent.dragStart(accountA!, {
       dataTransfer: {
         setData: vi.fn(),
         effectAllowed: "move",
@@ -75,7 +76,7 @@ describe("AccountList", () => {
 
     // Simulate Drag Enter on Account B
     // We provide a timestamp > 50 to pass the throttle check
-    fireEvent.dragEnter(accountB, {
+    fireEvent.dragEnter(accountB!, {
       dataTransfer: { dropEffect: "move" },
       timeStamp: 100,
     });
@@ -120,7 +121,7 @@ describe("AccountList", () => {
     const accountItem = screen
       .getByText("Account A")
       .closest(".account-list-menu-container");
-    fireEvent.contextMenu(accountItem);
+    fireEvent.contextMenu(accountItem!);
 
     await waitFor(() => {
       expect(
@@ -128,8 +129,8 @@ describe("AccountList", () => {
       ).not.toBeNull();
     });
     const portal = document.querySelector(".account-list-menu-portal");
-    expect(portal.textContent).toContain("account.action.rename");
-    expect(portal.textContent).toContain("account.action.delete");
+    expect(portal!.textContent).toContain("account.action.rename");
+    expect(portal!.textContent).toContain("account.action.delete");
   });
 
   it("clicking Rename in context menu shows an inline input", async () => {
@@ -147,7 +148,7 @@ describe("AccountList", () => {
     const accountItem = screen
       .getByText("Account A")
       .closest(".account-list-menu-container");
-    fireEvent.contextMenu(accountItem);
+    fireEvent.contextMenu(accountItem!);
 
     await waitFor(() => {
       expect(
@@ -157,16 +158,16 @@ describe("AccountList", () => {
 
     const renameBtn = Array.from(
       document
-        .querySelector(".account-list-menu-portal")
+        .querySelector(".account-list-menu-portal")!
         .querySelectorAll("button"),
-    ).find((b) => b.textContent.includes("account.action.rename"));
-    fireEvent.click(renameBtn);
+    ).find((b) => b.textContent?.includes("account.action.rename"));
+    fireEvent.click(renameBtn!);
 
     const input = await screen.findByRole("textbox");
-    expect(input.value).toBe("Account A");
+    expect((input as HTMLInputElement).value).toBe("Account A");
 
     fireEvent.change(input, { target: { value: "New Name" } });
-    fireEvent.submit(input.closest("form"));
+    fireEvent.submit(input.closest("form")!);
 
     expect(onRenameAccount).toHaveBeenCalledWith("1", "New Name");
   });
@@ -186,7 +187,7 @@ describe("AccountList", () => {
     const accountItem = screen
       .getByText("Account A")
       .closest(".account-list-menu-container");
-    fireEvent.contextMenu(accountItem);
+    fireEvent.contextMenu(accountItem!);
 
     await waitFor(() => {
       expect(
@@ -196,10 +197,10 @@ describe("AccountList", () => {
 
     const deleteBtn = Array.from(
       document
-        .querySelector(".account-list-menu-portal")
+        .querySelector(".account-list-menu-portal")!
         .querySelectorAll("button"),
-    ).find((b) => b.textContent.includes("account.action.delete"));
-    fireEvent.click(deleteBtn);
+    ).find((b) => b.textContent?.includes("account.action.delete"));
+    fireEvent.click(deleteBtn!);
 
     expect(onDeleteAccount).toHaveBeenCalledWith("1");
   });
@@ -218,7 +219,7 @@ describe("AccountList", () => {
     const accountItem = screen
       .getByText("Account A")
       .closest(".account-list-menu-container");
-    fireEvent.contextMenu(accountItem);
+    fireEvent.contextMenu(accountItem!);
 
     await waitFor(() => {
       expect(

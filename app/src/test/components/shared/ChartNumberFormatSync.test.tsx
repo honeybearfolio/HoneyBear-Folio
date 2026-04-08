@@ -4,7 +4,7 @@ import ChartNumberFormatSync from "../../../components/shared/ChartNumberFormatS
 import ChartJS from "chart.js/auto";
 
 // Mock format utility
-const mockFormatNumber = vi.fn((value, _options) => `$${value.toFixed(2)}`);
+const mockFormatNumber = vi.fn((value: number, _options: unknown) => `$${value.toFixed(2)}`);
 vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => mockFormatNumber,
 }));
@@ -14,10 +14,10 @@ describe("ChartNumberFormatSync", () => {
     vi.clearAllMocks();
     // Reset Chart.js defaults
     if (ChartJS.defaults.plugins.tooltip.callbacks) {
-      delete ChartJS.defaults.plugins.tooltip.callbacks.label;
+      delete (ChartJS.defaults.plugins.tooltip.callbacks as any).label;
     }
     if (ChartJS.defaults.scales?.linear?.ticks) {
-      delete ChartJS.defaults.scales.linear.ticks.callback;
+      delete (ChartJS.defaults.scales.linear.ticks as any).callback;
     }
   });
 
@@ -54,7 +54,7 @@ describe("ChartNumberFormatSync", () => {
       parsed: { y: 1234.56 },
     };
 
-    const _result = callback(ctx);
+    const _result = (callback as any)(ctx);
 
     expect(mockFormatNumber).toHaveBeenCalledWith(1234.56, {
       style: "currency",
@@ -72,7 +72,7 @@ describe("ChartNumberFormatSync", () => {
       raw: 500,
     };
 
-    callback(ctx);
+    (callback as any)(ctx);
 
     expect(mockFormatNumber).toHaveBeenCalledWith(500, { style: "currency" });
   });
@@ -87,7 +87,7 @@ describe("ChartNumberFormatSync", () => {
       raw: "not a number",
     };
 
-    const _result = callback(ctx);
+    const _result = (callback as any)(ctx);
 
     expect(_result).toBe("Test: ");
   });
@@ -96,7 +96,7 @@ describe("ChartNumberFormatSync", () => {
     render(<ChartNumberFormatSync />);
 
     const callback = ChartJS.defaults.scales.linear.ticks.callback;
-    callback(1000);
+    (callback as any)(1000, 0, []);
 
     expect(mockFormatNumber).toHaveBeenCalledWith(1000, { style: "currency" });
   });
@@ -105,7 +105,7 @@ describe("ChartNumberFormatSync", () => {
     render(<ChartNumberFormatSync />);
 
     const callback = ChartJS.defaults.scales.linear.ticks.callback;
-    const result = callback("not a number");
+    const result = (callback as any)("not a number", 0, []);
 
     expect(result).toBe("not a number");
   });

@@ -1,12 +1,11 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import PropTypes from "prop-types";
 import { ToastProvider } from "../../../components/ui/Toast";
 import { useToast } from "../../../contexts/toast";
 
 // Test component to consume context
-function TestComponent({ onShowToast }) {
-  const { showToast } = useToast();
+function TestComponent({ onShowToast }: { onShowToast?: (id: string) => void }) {
+  const { showToast } = useToast() as any;
   return (
     <div>
       <button
@@ -29,7 +28,6 @@ function TestComponent({ onShowToast }) {
     </div>
   );
 }
-TestComponent.propTypes = { onShowToast: PropTypes.func };
 
 describe("ToastProvider", () => {
   beforeEach(() => {
@@ -187,11 +185,11 @@ describe("ToastProvider", () => {
   });
 
   it("returns toast id from showToast", () => {
-    let toastId;
+    let toastId: string | undefined;
     render(
       <ToastProvider>
         <TestComponent
-          onShowToast={(id) => {
+          onShowToast={(id: string) => {
             toastId = id;
           }}
         />
@@ -217,6 +215,6 @@ describe("ToastProvider", () => {
     expect(container).toHaveAttribute("aria-live", "polite");
     expect(container).toHaveAttribute("aria-atomic", "true");
     // ensure toasts are portalled to document.body so they can sit above other in-app windows
-    expect(container.parentElement).toBe(document.body);
+    expect(container!.parentElement).toBe(document.body);
   });
 });

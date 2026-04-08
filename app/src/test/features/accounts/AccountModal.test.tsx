@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import PropTypes from "prop-types";
+import type { ReactNode } from "react";
+import React from "react";
 import AccountModal from "../../../features/accounts/AccountModal";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -19,15 +20,15 @@ vi.mock("../../../hooks/useCustomRate", () => ({
 }));
 
 vi.mock("../../../utils/format", () => ({
-  useParseNumber: () => (val) => parseFloat(val),
+  useParseNumber: () => (val: string) => parseFloat(val),
 }));
 
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => key,
+  t: (key: string) => key,
 }));
 
 vi.mock("../../../components/ui/Modal", () => {
-  const Modal = ({ children, onClose }) => (
+  const Modal = ({ children, onClose }: { children?: ReactNode; onClose?: () => void }) => (
     <div data-testid="modal">
       <button onClick={onClose} data-testid="modal-close">
         Close
@@ -35,42 +36,37 @@ vi.mock("../../../components/ui/Modal", () => {
       {children}
     </div>
   );
-  Modal.propTypes = { children: PropTypes.node, onClose: PropTypes.func };
 
-  const ModalHeader = ({ title }) => <h1>{title}</h1>;
-  ModalHeader.propTypes = { title: PropTypes.node };
+  const ModalHeader = ({ title }: { title?: ReactNode }) => <h1>{title}</h1>;
 
-  const ModalBody = ({ children }) => <div>{children}</div>;
-  ModalBody.propTypes = { children: PropTypes.node };
+  const ModalBody = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
 
-  const ModalFooter = ({ children }) => <div>{children}</div>;
-  ModalFooter.propTypes = { children: PropTypes.node };
+  const ModalFooter = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
 
   return { Modal, ModalHeader, ModalBody, ModalFooter };
 });
 
 // Mock CustomSelect
 vi.mock("../../../components/ui/CustomSelect", () => {
-  const CustomSelect = ({ value, onChange, options, placeholder }) => (
+  const CustomSelect = ({ value, onChange, options, placeholder }: {
+    value: string;
+    onChange: (v: string) => void;
+    options: { value: string; label: string }[];
+    placeholder?: string;
+  }) => (
     <select
       data-testid="currency-select"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
     >
       <option value="">{placeholder}</option>
-      {options.map((opt) => (
+      {options.map((opt: { value: string; label: string }) => (
         <option key={opt.value} value={opt.value}>
           {opt.label}
         </option>
       ))}
     </select>
   );
-  CustomSelect.propTypes = {
-    value: PropTypes.string,
-    onChange: PropTypes.func,
-    options: PropTypes.array,
-    placeholder: PropTypes.string,
-  };
   return { default: CustomSelect };
 });
 
@@ -120,7 +116,7 @@ describe("AccountModal", () => {
     const form = screen
       .getByPlaceholderText("account.placeholder.name")
       .closest("form");
-    fireEvent.submit(form);
+    fireEvent.submit(form!);
 
     expect(mockShowToast).toHaveBeenCalledWith(
       expect.stringContaining("account.error.empty_name"),
@@ -148,7 +144,7 @@ describe("AccountModal", () => {
     const form = screen
       .getByPlaceholderText("account.placeholder.name")
       .closest("form");
-    fireEvent.submit(form);
+    fireEvent.submit(form!);
 
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith("create_account", {
@@ -187,7 +183,7 @@ describe("AccountModal", () => {
     });
 
     const form = screen.getByDisplayValue("Updated Name").closest("form");
-    fireEvent.submit(form);
+    fireEvent.submit(form!);
 
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith("update_account", {

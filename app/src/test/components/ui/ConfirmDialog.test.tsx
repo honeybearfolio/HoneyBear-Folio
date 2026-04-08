@@ -1,20 +1,18 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import PropTypes from "prop-types";
 import { ConfirmDialogProvider } from "../../../components/ui/ConfirmDialog";
 import { useConfirm } from "../../../contexts/confirm";
 
-const TestComponent = ({ onResult }) => {
+const TestComponent = ({ onResult }: { onResult: (result: boolean) => void }) => {
   const confirm = useConfirm();
 
   const handleAction = async () => {
-    const result = await confirm("Are you sure?");
+    const result = await (confirm as any)("Are you sure?");
     onResult(result);
   };
 
   return <button onClick={handleAction}>Trigger Confirm</button>;
 };
-TestComponent.propTypes = { onResult: PropTypes.func };
 
 describe("ConfirmDialogProvider", () => {
   it("shows dialog when confirm is called", async () => {

@@ -20,7 +20,7 @@ vi.mock("chartjs-chart-sankey", () => ({
 }));
 
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val) => `${val}`,
+  useFormatNumber: () => (val: number) => `${val}`,
 }));
 
 // Provide a light NumberFormat context mock so the component can call
@@ -42,7 +42,7 @@ vi.mock("../../../contexts/number-format", () => ({
 }));
 
 vi.mock("../../../i18n/i18n", () => ({
-  t: (k) => k,
+  t: (k: string) => k,
 }));
 
 vi.mock("../../../hooks/useIsDark", () => ({
@@ -54,8 +54,8 @@ import SankeyDiagram from "../../../features/dashboard/SankeyDiagram";
 
 describe("SankeyDiagram", () => {
   it("renders without crashing", () => {
-    const transactions = [];
-    render(<SankeyDiagram transactions={transactions} />);
+    const transactions: never[] = [];
+    render(<SankeyDiagram transactions={transactions} timeRange="1y" accountMap={{}} getPrice={() => undefined} />);
     expect(true).toBe(true);
   });
 });

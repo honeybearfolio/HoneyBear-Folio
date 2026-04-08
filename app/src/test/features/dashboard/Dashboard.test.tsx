@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { NumberFormatContext } from "../../../contexts/number-format";
 
 // Mock dependencies
-vi.mock("../../../i18n/i18n", () => ({ t: (k) => k }));
+vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
 vi.mock("../../../hooks/useIsDark", () => ({ default: () => false }));
 
 // Mock Chart.js components to avoid canvas errors
@@ -31,8 +31,8 @@ vi.mock("chart.js", () => ({
 
 // Mock format utils
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val) => `fmt-${val}`,
-  useFormatDate: () => (_date) => "formatted-date",
+  useFormatNumber: () => (val: number) => `fmt-${val}`,
+  useFormatDate: () => (_date: unknown) => "formatted-date",
   getDatePickerFormat: () => "yyyy-MM-dd",
 }));
 
@@ -51,7 +51,7 @@ describe("Dashboard", () => {
 
   it("fetches data and renders charts", async () => {
     // Mock data
-    invoke.mockImplementation((cmd) => {
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
       if (cmd === "get_all_transactions")
         return Promise.resolve([
           {
@@ -73,7 +73,7 @@ describe("Dashboard", () => {
 
     render(
       <NumberFormatContext.Provider
-        value={{ dateFormat: "MM/dd/yyyy", firstDayOfWeek: 0, currency: "USD" }}
+        value={{ dateFormat: "MM/dd/yyyy", firstDayOfWeek: 0, currency: "USD" } as never}
       >
         <Dashboard />
       </NumberFormatContext.Provider>,
@@ -88,11 +88,11 @@ describe("Dashboard", () => {
 
   it("uses provided accounts prop if available", async () => {
     const propAccounts = [{ id: 99, name: "Prop Account", balance: 500 }];
-    invoke.mockResolvedValue([]); // transactions
+    vi.mocked(invoke).mockResolvedValue([]); // transactions
 
     render(
       <NumberFormatContext.Provider
-        value={{ dateFormat: "MM/dd/yyyy", firstDayOfWeek: 0, currency: "USD" }}
+        value={{ dateFormat: "MM/dd/yyyy", firstDayOfWeek: 0, currency: "USD" } as never}
       >
         <Dashboard accounts={propAccounts} />
       </NumberFormatContext.Provider>,

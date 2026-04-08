@@ -1,3 +1,4 @@
+import React from "react";
 import {
   render,
   screen,
@@ -32,8 +33,8 @@ vi.mock("../../../hooks/useIsDark", () => ({
 }));
 
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key, params) => {
-    const map = {
+  t: (key: string, params?: Record<string, unknown>) => {
+    const map: Record<string, string> = {
       "dashboard.current_net_worth": "Current Net Worth",
       "fire.annual_expenses": "Annual Expenses",
       "fire.expected_return": "Expected Annual Return",
@@ -101,7 +102,7 @@ vi.mock("../../../utils/fire", () => ({
     totalYears: 55,
     simulationCount: 1000,
   }),
-  calculateDeterministicProjection: ({ annualExpenses, withdrawalRate }) => ({
+  calculateDeterministicProjection: ({ annualExpenses, withdrawalRate }: { annualExpenses: number; withdrawalRate: number }) => ({
     fireNumber: annualExpenses / (withdrawalRate / 100),
     yearsToFire: 15,
     projectionData: Array(51)
@@ -111,13 +112,13 @@ vi.mock("../../../utils/fire", () => ({
   }),
 }));
 
-const renderWithContext = (ui) => {
+const renderWithContext = (ui: React.ReactElement) => {
   return render(
     <NumberFormatContext.Provider
       value={{
-        formatNumber: (val) => String(val),
-        parseNumber: (val) => Number(val),
-      }}
+        formatNumber: (val: number) => String(val),
+        parseNumber: (val: string) => Number(val),
+      } as never}
     >
       {ui}
     </NumberFormatContext.Provider>,
@@ -130,7 +131,7 @@ describe("FireCalculator", () => {
     sessionStorage.clear();
 
     // Default invoke implementation
-    vi.mocked(invoke).mockImplementation((cmd) => {
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
       if (cmd === "get_accounts")
         return Promise.resolve([
           {
@@ -191,7 +192,7 @@ describe("FireCalculator", () => {
     const netWorthInput = inputs[0]; // Current Net Worth is 1st
 
     await waitFor(() => {
-      expect(netWorthInput.value).toBe("50000");
+      expect((netWorthInput as HTMLInputElement).value).toBe("50000");
     });
   });
 
@@ -215,7 +216,7 @@ describe("FireCalculator", () => {
 
     // Should still be 60000
     const inputs2 = screen.getAllByRole("textbox");
-    expect(inputs2[1].value).toBe("60000");
+    expect((inputs2[1] as HTMLInputElement).value).toBe("60000");
   });
 
   it.skip("respects user modifications over fetched data", async () => {
@@ -225,15 +226,15 @@ describe("FireCalculator", () => {
     const netWorthInput = inputs[0];
 
     // Wait for initial fetch (50000 from mock)
-    await waitFor(() => expect(netWorthInput.value).toBe("50000"));
+    await waitFor(() => expect((netWorthInput as HTMLInputElement).value).toBe("50000"));
 
     // User changes it to 75000
     fireEvent.change(netWorthInput, { target: { value: "75000" } });
-    expect(netWorthInput.value).toBe("75000"); // Input updates immediately
+    expect((netWorthInput as HTMLInputElement).value).toBe("75000"); // Input updates immediately
 
     // Wait for effect to save to sessionStorage (debounce/async checks)
     await waitFor(() => {
-      const saved = JSON.parse(sessionStorage.getItem("fireCalculatorState"));
+      const saved = JSON.parse(sessionStorage.getItem("fireCalculatorState")!);
       expect(saved).not.toBeNull();
       expect(saved.currentNetWorth).toBe(75000);
       expect(saved.userModified.currentNetWorth).toBe(true);
@@ -249,7 +250,7 @@ describe("FireCalculator", () => {
     const netWorthInput2 = inputs2[0];
 
     await waitFor(() => {
-      expect(netWorthInput2.value).toBe("75000");
+      expect((netWorthInput2 as HTMLInputElement).value).toBe("75000");
     });
   });
 });

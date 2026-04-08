@@ -1,11 +1,12 @@
+import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import WelcomeWindow from "../../../components/shared/WelcomeWindow";
 
 // Mock i18n
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => {
-    const translations = {
+  t: (key: string) => {
+    const translations: Record<string, string> = {
       "welcome.title": "Welcome to HoneyBear Folio",
       "welcome.subtitle": "Let's set up your preferences to get started.",
       "settings.theme": "Theme",
@@ -68,12 +69,17 @@ vi.mock("../../../utils/currencies", () => ({
 
 // Mock format utility
 vi.mock("../../../utils/format", () => ({
-  formatDateForUI: (date, format) => format,
+  formatDateForUI: (date: string, format: string) => format,
 }));
 
 // Mock CustomSelect to expose options/change easily and return distinct testids per control
 vi.mock("../../../components/ui/CustomSelect", () => ({
-  default: ({ value, onChange, options, placeholder }) => {
+  default: ({ value, onChange, options, placeholder }: {
+    value: string;
+    onChange: (v: string) => void;
+    options: { value: string; label: string }[];
+    placeholder?: string;
+  }) => {
     const p = String(placeholder || "").toLowerCase();
     const testId = p.includes("language")
       ? "language-select"
@@ -89,7 +95,7 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
       <select
         data-testid={testId}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (
@@ -103,9 +109,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
 }));
 
 // Mock dev settings
-let devSettings = {};
+let devSettings: Record<string, boolean> = {};
 vi.mock("../../../config/dev-settings", () => ({
-  getDevSetting: (key) => devSettings[key],
+  getDevSetting: (key: string) => devSettings[key],
 }));
 
 describe("WelcomeWindow", () => {
