@@ -14,12 +14,11 @@ import SettingsView from "./features/settings/SettingsView";
 import SessionPicker from "./features/session/SessionPicker";
 import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
-import { ToastProvider } from "./components/ui/Toast";
-import { ConfirmDialogProvider } from "./components/ui/ConfirmDialog";
+import { ToastContainer } from "./components/ui/Toast";
+import { ConfirmDialogContainer } from "./components/ui/ConfirmDialog";
 import ErrorBoundary from "./components/layout/ErrorBoundary";
-import { NumberFormatProvider } from "./contexts/NumberFormatContext";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { PrivacyProvider } from "./contexts/PrivacyContext";
+import { NumberFormatEffects } from "./contexts/NumberFormatContext";
+import { ThemeEffects } from "./contexts/ThemeContext";
 import ChartNumberFormatSync from "./components/shared/ChartNumberFormatSync";
 import UpdateNotification from "./components/shared/UpdateNotification";
 import WelcomeWindow from "./components/shared/WelcomeWindow";
@@ -75,11 +74,11 @@ function App() {
 
   if (sessionState === "picking") {
     return (
-      <NumberFormatProvider>
-        <ThemeProvider>
-          <SessionPicker onSessionReady={handleSessionReady} />
-        </ThemeProvider>
-      </NumberFormatProvider>
+      <>
+        <NumberFormatEffects />
+        <ThemeEffects />
+        <SessionPicker onSessionReady={handleSessionReady} />
+      </>
     );
   }
 
@@ -331,161 +330,149 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   }, []);
 
   return (
-    <NumberFormatProvider>
-      <ThemeProvider>
-        <PrivacyProvider>
-          <ToastProvider>
-            <ConfirmDialogProvider>
-              <ErrorBoundary>
-                <ChartNumberFormatSync />
-                <UpdateNotification />
-                <div
-                  className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans overflow-hidden"
-                  onContextMenu={(e) => e.preventDefault()}
-                >
-                  <div
-                    style={{ width: isSidebarOpen ? sidebarWidth : 0 }}
-                    className={`${
-                      isResizing
-                        ? "transition-none"
-                        : "transition-all duration-300 ease-in-out"
-                    } overflow-hidden flex-shrink-0 relative`}
-                  >
-                    <div
-                      style={{ width: sidebarWidth }}
-                      className="h-full relative flex"
-                    >
-                      <div className="flex-1 w-full h-full overflow-hidden">
-                        <Sidebar
-                          accounts={
-                            accounts as {
-                              id: string | number;
-                              name: string;
-                              balance: number;
-                              kind: string;
-                            }[]
-                          }
-                          marketValues={marketValues}
-                          selectedId={selectedAccountId}
-                          onSelectAccount={(id: string | number) =>
-                            setSelectedAccountId(String(id))
-                          }
-                          onUpdate={handleAccountUpdate}
-                          onClose={() => setIsSidebarOpen(false)}
-                          sidebarVisibility={sidebarVisibility}
-                          settingsSection={settingsSection}
-                          onChangeSettingsSection={setSettingsSection}
-                          activeSession={activeSession ?? undefined}
-                          onSwitchSession={onSwitchSession}
-                        />
-                      </div>
-                      <div
-                        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-brand-500/50 active:bg-brand-500 z-50 transition-colors delay-100 hover:delay-0"
-                        onMouseDown={startResizing}
-                      />
-                    </div>
-                  </div>
+    <ErrorBoundary>
+      <NumberFormatEffects />
+      <ThemeEffects />
+      <ChartNumberFormatSync />
+      <UpdateNotification />
+      <div
+        className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans overflow-hidden"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <div
+          style={{ width: isSidebarOpen ? sidebarWidth : 0 }}
+          className={`${
+            isResizing
+              ? "transition-none"
+              : "transition-all duration-300 ease-in-out"
+          } overflow-hidden flex-shrink-0 relative`}
+        >
+          <div style={{ width: sidebarWidth }} className="h-full relative flex">
+            <div className="flex-1 w-full h-full overflow-hidden">
+              <Sidebar
+                accounts={
+                  accounts as {
+                    id: string | number;
+                    name: string;
+                    balance: number;
+                    kind: string;
+                  }[]
+                }
+                marketValues={marketValues}
+                selectedId={selectedAccountId}
+                onSelectAccount={(id: string | number) =>
+                  setSelectedAccountId(String(id))
+                }
+                onUpdate={handleAccountUpdate}
+                onClose={() => setIsSidebarOpen(false)}
+                sidebarVisibility={sidebarVisibility}
+                settingsSection={settingsSection}
+                onChangeSettingsSection={setSettingsSection}
+                activeSession={activeSession ?? undefined}
+                onSwitchSession={onSwitchSession}
+              />
+            </div>
+            <div
+              className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-brand-500/50 active:bg-brand-500 z-50 transition-colors delay-100 hover:delay-0"
+              onMouseDown={startResizing}
+            />
+          </div>
+        </div>
 
-                  <main className="flex-1 min-w-0 px-4 py-4 md:py-8 overflow-y-auto bg-slate-50 dark:bg-slate-900 relative">
-                    <div
-                      className={`fixed top-4 left-4 z-50 transition-all duration-300 ${
-                        !isSidebarOpen
-                          ? "opacity-100 translate-x-0"
-                          : "opacity-0 -translate-x-4 pointer-events-none"
-                      }`}
-                    >
-                      <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-2 bg-white dark:bg-slate-800 text-slate-500 hover:text-brand-600 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                        title={t("app.show_sidebar")}
-                        aria-label={t("app.show_sidebar")}
-                      >
-                        <PanelLeftOpen size={20} />
-                      </button>
-                    </div>
-                    <div>
-                      {selectedAccountId === "settings" ? (
-                        <SettingsView
-                          activeSection={settingsSection}
-                          sidebarVisibility={sidebarVisibility}
-                          onChangeSidebarVisibility={setSidebarVisibility}
-                        />
-                      ) : selectedAccountId === "dashboard" ? (
-                        <Dashboard
-                          accounts={accounts}
-                          marketValues={marketValues}
-                        />
-                      ) : selectedAccountId === "investment-dashboard" ? (
-                        <InvestmentDashboard />
-                      ) : selectedAccountId === "fire-calculator" ? (
-                        <FireCalculator />
-                      ) : selectedAccountId === "rules" ? (
-                        <RulesList />
-                      ) : selectedAccountId === "scheduled" ? (
-                        <ScheduledList />
-                      ) : selectedAccountId === "chat" ? (
-                        <ChatView />
-                      ) : selectedAccount ? (
-                        <AccountDetails
-                          key={selectedAccount.id}
-                          account={selectedAccount}
-                          onUpdate={handleAccountUpdate}
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-[80vh] text-slate-400">
-                          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none mb-8 animate-in fade-in zoom-in duration-500">
-                            <Wallet className="w-16 h-16 text-brand-500" />
-                          </div>
-                          <h2 className="text-3xl font-bold mb-3 text-slate-800 dark:text-slate-100 tracking-tight">
-                            {t("welcome.title")}
-                          </h2>
-                          <p className="text-lg text-slate-500 dark:text-slate-400 max-w-md text-center leading-relaxed">
-                            {t("welcome.select_account")}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </main>
+        <main className="flex-1 min-w-0 px-4 py-4 md:py-8 overflow-y-auto bg-slate-50 dark:bg-slate-900 relative">
+          <div
+            className={`fixed top-4 left-4 z-50 transition-all duration-300 ${
+              !isSidebarOpen
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 -translate-x-4 pointer-events-none"
+            }`}
+          >
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 bg-white dark:bg-slate-800 text-slate-500 hover:text-brand-600 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              title={t("app.show_sidebar")}
+              aria-label={t("app.show_sidebar")}
+            >
+              <PanelLeftOpen size={20} />
+            </button>
+          </div>
+          <div>
+            {selectedAccountId === "settings" ? (
+              <SettingsView
+                activeSection={settingsSection}
+                sidebarVisibility={sidebarVisibility}
+                onChangeSidebarVisibility={setSidebarVisibility}
+              />
+            ) : selectedAccountId === "dashboard" ? (
+              <Dashboard accounts={accounts} marketValues={marketValues} />
+            ) : selectedAccountId === "investment-dashboard" ? (
+              <InvestmentDashboard />
+            ) : selectedAccountId === "fire-calculator" ? (
+              <FireCalculator />
+            ) : selectedAccountId === "rules" ? (
+              <RulesList />
+            ) : selectedAccountId === "scheduled" ? (
+              <ScheduledList />
+            ) : selectedAccountId === "chat" ? (
+              <ChatView />
+            ) : selectedAccount ? (
+              <AccountDetails
+                key={selectedAccount.id}
+                account={selectedAccount}
+                onUpdate={handleAccountUpdate}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[80vh] text-slate-400">
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none mb-8 animate-in fade-in zoom-in duration-500">
+                  <Wallet className="w-16 h-16 text-brand-500" />
                 </div>
+                <h2 className="text-3xl font-bold mb-3 text-slate-800 dark:text-slate-100 tracking-tight">
+                  {t("welcome.title")}
+                </h2>
+                <p className="text-lg text-slate-500 dark:text-slate-400 max-w-md text-center leading-relaxed">
+                  {t("welcome.select_account")}
+                </p>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
-                {globalError && (
-                  <div className="fixed inset-4 z-60 p-6 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200">
-                    <h3 className="text-lg font-bold mb-2">
-                      An unexpected error occurred
-                    </h3>
-                    <pre className="text-sm max-h-60 overflow-auto whitespace-pre-wrap">
-                      {typeof globalError === "string"
-                        ? globalError
-                        : globalError.stack || String(globalError)}
-                    </pre>
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        className="bg-white dark:bg-slate-700 text-sm px-3 py-1 rounded border"
-                        onClick={() => {
-                          console.clear();
-                          setGlobalError(null);
-                        }}
-                      >
-                        Dismiss
-                      </button>
-                      <button
-                        className="bg-slate-700 text-white text-sm px-3 py-1 rounded"
-                        onClick={() => window.location.reload()}
-                      >
-                        Reload
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </ErrorBoundary>
-              <WelcomeWindow />
-              <DevTools />
-              <div id="datepicker-portal" />
-            </ConfirmDialogProvider>
-          </ToastProvider>{" "}
-        </PrivacyProvider>
-      </ThemeProvider>{" "}
-    </NumberFormatProvider>
+      {globalError && (
+        <div className="fixed inset-4 z-60 p-6 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200">
+          <h3 className="text-lg font-bold mb-2">
+            An unexpected error occurred
+          </h3>
+          <pre className="text-sm max-h-60 overflow-auto whitespace-pre-wrap">
+            {typeof globalError === "string"
+              ? globalError
+              : globalError.stack || String(globalError)}
+          </pre>
+          <div className="mt-3 flex gap-2">
+            <button
+              className="bg-white dark:bg-slate-700 text-sm px-3 py-1 rounded border"
+              onClick={() => {
+                console.clear();
+                setGlobalError(null);
+              }}
+            >
+              Dismiss
+            </button>
+            <button
+              className="bg-slate-700 text-white text-sm px-3 py-1 rounded"
+              onClick={() => window.location.reload()}
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      )}
+      <WelcomeWindow />
+      <DevTools />
+      <ToastContainer />
+      <ConfirmDialogContainer />
+      <div id="datepicker-portal" />
+    </ErrorBoundary>
   );
 }
 

@@ -9,7 +9,7 @@ import {
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import FireCalculator from "../../../features/fire/FireCalculator";
 import { invoke } from "@tauri-apps/api/core";
-import { NumberFormatContext } from "../../../contexts/number-format";
+import { useNumberFormatStore } from "../../../stores/number-format";
 
 // Mock dependencies
 vi.mock("react-chartjs-2", () => ({
@@ -119,18 +119,8 @@ vi.mock("../../../utils/fire", () => ({
 }));
 
 const renderWithContext = (ui: React.ReactElement) => {
-  return render(
-    <NumberFormatContext.Provider
-      value={
-        {
-          formatNumber: (val: number) => String(val),
-          parseNumber: (val: string) => Number(val),
-        } as never
-      }
-    >
-      {ui}
-    </NumberFormatContext.Provider>,
-  );
+  useNumberFormatStore.setState({ locale: "en-US", currency: "USD" });
+  return render(ui);
 };
 
 describe("FireCalculator", () => {

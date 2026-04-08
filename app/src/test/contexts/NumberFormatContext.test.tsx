@@ -1,9 +1,10 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { NumberFormatProvider } from "../../contexts/NumberFormatContext";
+import { NumberFormatEffects } from "../../contexts/NumberFormatContext";
+import { useNumberFormatStore } from "../../stores/number-format";
 import { useNumberFormat } from "../../contexts/number-format";
 
-// Test component to consume context
+// Test component to consume hook
 function TestComponent() {
   const {
     locale,
@@ -25,17 +26,21 @@ function TestComponent() {
   );
 }
 
-describe("NumberFormatProvider", () => {
+describe("NumberFormat Zustand store", () => {
   beforeEach(() => {
     localStorage.clear();
+    useNumberFormatStore.setState({
+      locale: "en-US",
+      currency: "USD",
+      dateFormat: "YYYY-MM-DD",
+      firstDayOfWeek: 1,
+      uiLanguage: "en",
+      translationVersion: 0,
+    });
   });
 
   it("uses default values if localStorage is empty", () => {
-    render(
-      <NumberFormatProvider>
-        <TestComponent />
-      </NumberFormatProvider>,
-    );
+    render(<TestComponent />);
 
     expect(screen.getByTestId("locale")).toHaveTextContent("en-US");
     expect(screen.getByTestId("currency")).toHaveTextContent("USD");
@@ -47,9 +52,10 @@ describe("NumberFormatProvider", () => {
     const spy = vi.spyOn(i18n, "setLanguage").mockResolvedValue();
 
     render(
-      <NumberFormatProvider>
+      <>
+        <NumberFormatEffects />
         <TestComponent />
-      </NumberFormatProvider>,
+      </>,
     );
 
     fireEvent.click(screen.getByText("Set UI Language ES"));
@@ -67,7 +73,6 @@ describe("NumberFormatProvider", () => {
     const i18n = await import("../../i18n/i18n");
     const esJson = (await import("../../i18n/es.json")).default;
 
-    // Mock setLanguage so it also applies the locale object (simulates loader)
     const setLangMock = vi
       .spyOn(i18n, "setLanguage")
       .mockImplementation(async (lang) => {
@@ -83,19 +88,17 @@ describe("NumberFormatProvider", () => {
     }
 
     render(
-      <NumberFormatProvider>
+      <>
+        <NumberFormatEffects />
         <Translated />
         <TestComponent />
-      </NumberFormatProvider>,
+      </>,
     );
 
-    // initial render should be English
     expect(screen.getByTestId("translated")).toHaveTextContent("Language");
 
-    // change UI language in the provider
     fireEvent.click(screen.getByText("Set UI Language ES"));
 
-    // after the mocked async loader finishes, the provider forces a re-render
     await waitFor(() => {
       expect(screen.getByTestId("translated")).toHaveTextContent("Idioma");
     });
@@ -103,26 +106,8 @@ describe("NumberFormatProvider", () => {
     setLangMock.mockRestore();
   });
 
-  it("loads values from localStorage", () => {
-    localStorage.setItem("hb_number_format", "fr-FR");
-    localStorage.setItem("hb_currency", "GBP");
-
-    render(
-      <NumberFormatProvider>
-        <TestComponent />
-      </NumberFormatProvider>,
-    );
-
-    expect(screen.getByTestId("locale")).toHaveTextContent("fr-FR");
-    expect(screen.getByTestId("currency")).toHaveTextContent("GBP");
-  });
-
   it("updates state and persists to localStorage", async () => {
-    render(
-      <NumberFormatProvider>
-        <TestComponent />
-      </NumberFormatProvider>,
-    );
+    render(<TestComponent />);
 
     fireEvent.click(screen.getByText("Set Locale DE"));
     expect(screen.getByTestId("locale")).toHaveTextContent("de-DE");

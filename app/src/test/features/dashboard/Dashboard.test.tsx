@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Dashboard from "../../../features/dashboard/Dashboard";
 import { invoke } from "@tauri-apps/api/core";
-import { NumberFormatContext } from "../../../contexts/number-format";
+import { useNumberFormatStore } from "../../../stores/number-format";
 
 // Mock dependencies
 vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
@@ -47,6 +47,12 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
 describe("Dashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useNumberFormatStore.setState({
+      dateFormat: "MM/dd/yyyy",
+      firstDayOfWeek: 0,
+      currency: "USD",
+      locale: "en-US",
+    });
   });
 
   it("fetches data and renders charts", async () => {
@@ -71,19 +77,7 @@ describe("Dashboard", () => {
       return Promise.resolve(null);
     });
 
-    render(
-      <NumberFormatContext.Provider
-        value={
-          {
-            dateFormat: "MM/dd/yyyy",
-            firstDayOfWeek: 0,
-            currency: "USD",
-          } as never
-        }
-      >
-        <Dashboard />
-      </NumberFormatContext.Provider>,
-    );
+    render(<Dashboard />);
 
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith("get_all_transactions");
@@ -96,19 +90,7 @@ describe("Dashboard", () => {
     const propAccounts = [{ id: 99, name: "Prop Account", balance: 500 }];
     vi.mocked(invoke).mockResolvedValue([]); // transactions
 
-    render(
-      <NumberFormatContext.Provider
-        value={
-          {
-            dateFormat: "MM/dd/yyyy",
-            firstDayOfWeek: 0,
-            currency: "USD",
-          } as never
-        }
-      >
-        <Dashboard accounts={propAccounts} />
-      </NumberFormatContext.Provider>,
-    );
+    render(<Dashboard accounts={propAccounts} />);
 
     // Should fetch transactions but NOT accounts
     await waitFor(() => {
