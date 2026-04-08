@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
+import React, { useState, useEffect } from "react";
 import { PrivacyContext } from "./privacy";
 
-export function PrivacyProvider({ children }) {
+interface PrivacyProviderProps {
+  children: React.ReactNode;
+}
+
+export function PrivacyProvider({ children }: PrivacyProviderProps) {
   const [isPrivacyMode, setIsPrivacyMode] = useState(() => {
     try {
       return localStorage.getItem("hb_privacy_mode") === "true";
@@ -17,7 +20,7 @@ export function PrivacyProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem("hb_privacy_mode", isPrivacyMode);
+      localStorage.setItem("hb_privacy_mode", String(isPrivacyMode));
     } catch {
       // ignore
     }
@@ -29,7 +32,3 @@ export function PrivacyProvider({ children }) {
     </PrivacyContext.Provider>
   );
 }
-
-PrivacyProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};

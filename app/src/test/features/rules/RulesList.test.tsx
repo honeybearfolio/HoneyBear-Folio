@@ -61,7 +61,12 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
 // Mock CustomSelect
 vi.mock("../../../components/ui/CustomSelect", () => ({
-  default: ({ value, onChange, options, placeholder }: {
+  default: ({
+    value,
+    onChange,
+    options,
+    placeholder,
+  }: {
     value: string;
     onChange: (v: string) => void;
     options: { value: string; label: string }[];
@@ -70,7 +75,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     <select
       data-testid="select"
       value={value}
-      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+        onChange(e.target.value)
+      }
     >
       <option value="">{placeholder}</option>
       {options.map((opt: { value: string; label: string }) => (
@@ -350,8 +357,14 @@ describe("RulesList", () => {
           }),
         }),
       );
-      const payload = (vi.mocked(invoke).mock.calls.find((c) => c[0] === "create_rule")![1] as Record<string, unknown> as { args: { conditions: unknown[] } })
-        .args;
+      const payload = (
+        vi
+          .mocked(invoke)
+          .mock.calls.find((c) => c[0] === "create_rule")![1] as Record<
+          string,
+          unknown
+        > as { args: { conditions: unknown[] } }
+      ).args;
       expect(payload.conditions.length).toBe(2);
     });
 
@@ -435,14 +448,20 @@ describe("RulesList", () => {
         "create_rule",
         expect.objectContaining({
           args: expect.objectContaining({
-            match_pattern: 123.45,
+            match_pattern: "123.45",
             actions: expect.any(Array),
           }),
         }),
       );
       // action values are stringified by the component
-      const payload = (vi.mocked(invoke).mock.calls.find((c) => c[0] === "create_rule")![1] as Record<string, unknown> as { args: { actions: { value: string }[] } })
-        .args;
+      const payload = (
+        vi
+          .mocked(invoke)
+          .mock.calls.find((c) => c[0] === "create_rule")![1] as Record<
+          string,
+          unknown
+        > as { args: { actions: { value: string }[] } }
+      ).args;
       expect(payload.actions[0].value).toBe("42");
     });
   });
@@ -574,8 +593,9 @@ describe("RulesList", () => {
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
     // Enter invalid regex
-    const patternInput =
-      within(conditionGroup!).getByPlaceholderText("^pattern.*$");
+    const patternInput = within(conditionGroup!).getByPlaceholderText(
+      "^pattern.*$",
+    );
     fireEvent.change(patternInput, { target: { value: "[invalid" } });
 
     // Should show validation error
@@ -605,8 +625,9 @@ describe("RulesList", () => {
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
     // Enter valid regex
-    const patternInput =
-      within(conditionGroup!).getByPlaceholderText("^pattern.*$");
+    const patternInput = within(conditionGroup!).getByPlaceholderText(
+      "^pattern.*$",
+    );
     fireEvent.change(patternInput, { target: { value: "^Star.*Coffee$" } });
 
     // Should show help text as title, not error
@@ -706,10 +727,14 @@ describe("RulesList", () => {
     });
     const portal = document.querySelector(".rule-action-menu-portal");
     expect(
-      within(portal as HTMLElement).getByRole("button", { name: /rules\.edit/i }),
+      within(portal as HTMLElement).getByRole("button", {
+        name: /rules\.edit/i,
+      }),
     ).toBeInTheDocument();
     expect(
-      within(portal as HTMLElement).getByRole("button", { name: /rules\.delete/i }),
+      within(portal as HTMLElement).getByRole("button", {
+        name: /rules\.delete/i,
+      }),
     ).toBeInTheDocument();
   });
 

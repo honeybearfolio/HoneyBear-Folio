@@ -4,8 +4,8 @@ import UpdateNotification from "../../../components/shared/UpdateNotification";
 
 // Mock i18n
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => {
-    const translations = {
+  t: (key: string) => {
+    const translations: Record<string, string> = {
       "update.title": "Update Available",
       "update.available_text": "A new version is available",
       "update.update_now": "Update Now",
@@ -29,9 +29,9 @@ vi.mock("@tauri-apps/plugin-process", () => ({
 }));
 
 // Mock dev settings
-let devSettings = {};
+let devSettings: Record<string, boolean> = {};
 vi.mock("../../../config/dev-settings", () => ({
-  getDevSetting: (key) => devSettings[key],
+  getDevSetting: (key: string) => devSettings[key],
 }));
 
 describe("UpdateNotification", () => {

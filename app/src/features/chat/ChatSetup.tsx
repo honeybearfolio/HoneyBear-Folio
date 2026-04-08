@@ -96,12 +96,12 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
     setLoading(true);
     setError(null);
     try {
-      const settings = await rust.get_llm_settings() as LlmSettings;
+      const settings = (await rust.get_llm_settings()) as LlmSettings;
       if (settings.ollama_url) setOllamaUrl(settings.ollama_url);
 
       const ok = await rust.check_ollama_connection();
       if (ok) {
-        const list = await rust.list_ollama_models() as OllamaModel[];
+        const list = (await rust.list_ollama_models()) as OllamaModel[];
         setModels(list);
         if (list.length > 0) setSelectedModel(list[0].name);
         setStep("model");
@@ -123,7 +123,7 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
       });
       const ok = await rust.check_ollama_connection();
       if (ok) {
-        const list = await rust.list_ollama_models() as OllamaModel[];
+        const list = (await rust.list_ollama_models()) as OllamaModel[];
         setModels(list);
         if (list.length > 0 && !selectedModel) setSelectedModel(list[0].name);
         setStep("model");

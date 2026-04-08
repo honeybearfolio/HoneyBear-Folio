@@ -1,16 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Dispatch, SetStateAction } from "react";
 
-function resolveDefault(defaultValue) {
-  return typeof defaultValue === "function" ? defaultValue() : defaultValue;
+function resolveDefault<T>(defaultValue: T | (() => T)): T {
+  return typeof defaultValue === "function"
+    ? (defaultValue as () => T)()
+    : defaultValue;
 }
 
-export default function useLocalStorageState(
-  key,
-  defaultValue,
-  deserialize = (value) => value,
-  serialize = String,
-) {
-  const [state, setState] = useState(() => {
+export default function useLocalStorageState<T>(
+  key: string,
+  defaultValue: T | (() => T),
+  deserialize: (value: string) => T = (value) => value as unknown as T,
+  serialize: (value: T) => string = String,
+): [T, Dispatch<SetStateAction<T>>] {
+  const [state, setState] = useState<T>(() => {
     if (typeof window === "undefined") {
       return resolveDefault(defaultValue);
     }

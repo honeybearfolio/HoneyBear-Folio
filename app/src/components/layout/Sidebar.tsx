@@ -99,7 +99,10 @@ export default function Sidebar({
   const [showAccountModal, setShowAccountModal] = useState(false);
 
   // Compute total balance using helper so logic is shared with Dashboard/App
-  const totalBalance = computeNetWorth(accounts as { id: number; balance?: unknown; exchange_rate?: number }[], marketValues);
+  const totalBalance = computeNetWorth(
+    accounts as { id: number; balance?: unknown; exchange_rate?: number }[],
+    marketValues,
+  );
   const formatNumber = useFormatNumber();
   const formattedTotalBalance = formatNumber(totalBalance, {
     style: "currency",
@@ -110,7 +113,9 @@ export default function Sidebar({
   const [sortConfig, setSortConfig] = useState<SortConfig>(() => {
     try {
       const stored = localStorage.getItem("hb_account_sort_config");
-      return stored ? JSON.parse(stored) as SortConfig : { field: "name", direction: "asc" };
+      return stored
+        ? (JSON.parse(stored) as SortConfig)
+        : { field: "name", direction: "asc" };
     } catch {
       return { field: "name", direction: "asc" };
     }
@@ -119,7 +124,10 @@ export default function Sidebar({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+      if (
+        sortMenuRef.current &&
+        !sortMenuRef.current.contains(event.target as Node)
+      ) {
         setShowSortMenu(false);
       }
     }
@@ -132,7 +140,7 @@ export default function Sidebar({
   const [manualOrder, setManualOrder] = useState<(string | number)[]>(() => {
     try {
       const stored = localStorage.getItem("hb_account_order");
-      return stored ? JSON.parse(stored) as (string | number)[] : [];
+      return stored ? (JSON.parse(stored) as (string | number)[]) : [];
     } catch {
       return [];
     }
@@ -155,7 +163,8 @@ export default function Sidebar({
     }
 
     list.sort((a, b) => {
-      let valA: string | number = 0, valB: string | number = 0;
+      let valA: string | number = 0,
+        valB: string | number = 0;
 
       if (sortConfig.field === "name") {
         valA = a.name.toLowerCase();
@@ -514,7 +523,7 @@ export default function Sidebar({
                           <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-800/50 border-b border-slate-700/50">
                             {t("sort.sort_by")}
                           </div>
-                          {([
+                          {[
                             {
                               label: t("sort.manual"),
                               field: "manual",
@@ -550,7 +559,7 @@ export default function Sidebar({
                               field: "value",
                               dir: "desc" as const,
                             },
-                          ]).map((opt) => (
+                          ].map((opt) => (
                             <button
                               key={`${opt.field}-${opt.dir}`}
                               onClick={() => handleSort(opt.field, opt.dir)}
@@ -658,6 +667,3 @@ export default function Sidebar({
     </div>
   );
 }
-
-
-

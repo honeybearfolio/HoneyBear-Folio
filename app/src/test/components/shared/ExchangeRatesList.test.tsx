@@ -4,8 +4,8 @@ import ExchangeRatesList from "../../../components/shared/ExchangeRatesList";
 
 // Lightweight i18n mock for keys used by the component
 vi.mock("../../../i18n/i18n", () => ({
-  t: (k, opts) => {
-    const map = {
+  t: (k: string, opts?: Record<string, string>) => {
+    const map: Record<string, string> = {
       "settings.exchange_rates_empty": "No custom exchange rates configured.",
       "settings.exchange_rates_custom": "custom",
       "settings.exchange_rates_auto": "auto",
@@ -28,16 +28,21 @@ vi.mock("../../../contexts/confirm", () => ({
 
 // We'll provide a mutable in-memory store so multiple `invoke` calls
 // behave like a small backend (get_all_exchange_rates, set_custom_exchange_rate, delete_custom_exchange_rate)
-let inMemoryRates = [];
+interface ExchangeRate {
+  currency: string;
+  rate: number;
+  isCustom?: boolean;
+}
+
+let inMemoryRates: ExchangeRate[] = [];
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn((cmd, args) => {
+  invoke: vi.fn((cmd: string, args?: Record<string, unknown>) => {
     if (cmd === "get_all_exchange_rates") {
-      // return a shallow copy to emulate serialization
       return Promise.resolve(inMemoryRates.slice());
     }
 
     if (cmd === "set_custom_exchange_rate") {
-      const { currency, rate } = args;
+      const { currency, rate } = args as { currency: string; rate: number };
       const idx = inMemoryRates.findIndex((r) => r.currency === currency);
       if (idx >= 0) inMemoryRates[idx].rate = rate;
       else inMemoryRates.push({ currency, rate });
@@ -45,7 +50,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     }
 
     if (cmd === "delete_custom_exchange_rate") {
-      const { currency } = args;
+      const { currency } = args as { currency: string };
       inMemoryRates = inMemoryRates.filter((r) => r.currency !== currency);
       return Promise.resolve();
     }

@@ -73,7 +73,13 @@ describe("Dashboard", () => {
 
     render(
       <NumberFormatContext.Provider
-        value={{ dateFormat: "MM/dd/yyyy", firstDayOfWeek: 0, currency: "USD" } as never}
+        value={
+          {
+            dateFormat: "MM/dd/yyyy",
+            firstDayOfWeek: 0,
+            currency: "USD",
+          } as never
+        }
       >
         <Dashboard />
       </NumberFormatContext.Provider>,
@@ -92,7 +98,13 @@ describe("Dashboard", () => {
 
     render(
       <NumberFormatContext.Provider
-        value={{ dateFormat: "MM/dd/yyyy", firstDayOfWeek: 0, currency: "USD" } as never}
+        value={
+          {
+            dateFormat: "MM/dd/yyyy",
+            firstDayOfWeek: 0,
+            currency: "USD",
+          } as never
+        }
       >
         <Dashboard accounts={propAccounts} />
       </NumberFormatContext.Provider>,

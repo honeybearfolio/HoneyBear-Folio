@@ -15,7 +15,10 @@ vi.mock("lucide-react", () => ({
 }));
 
 // We can simply render with the context provider instead of mocking the hook
-const renderWithContext = (ui: React.ReactElement, { formatNumber = (v: number | string) => String(v) } = {}) => {
+const renderWithContext = (
+  ui: React.ReactElement,
+  { formatNumber = (v: number | string) => String(v) } = {},
+) => {
   return render(
     <NumberFormatContext.Provider value={{ formatNumber } as never}>
       {ui}

@@ -1,4 +1,11 @@
-export const CURRENCIES = [
+export interface Currency {
+  code: string;
+  name: string;
+  symbol: string;
+  position: "left" | "right";
+}
+
+export const CURRENCIES: readonly Currency[] = [
   {
     code: "AED",
     name: "United Arab Emirates Dirham",

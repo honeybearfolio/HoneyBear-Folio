@@ -4,8 +4,8 @@ import ErrorBoundary from "../../../components/layout/ErrorBoundary";
 
 // Mock i18n
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => {
-    const translations = {
+  t: (key: string) => {
+    const translations: Record<string, string> = {
       "error.something_went_wrong": "Something went wrong",
       "error.check_console": "Check the console for details",
       "error.show_details": "Show details",
@@ -17,7 +17,7 @@ vi.mock("../../../i18n/i18n", () => ({
 }));
 
 // Component that throws an error
-function ThrowingComponent({ message }) {
+function ThrowingComponent({ message }: { message: string }): never {
   throw new Error(message);
 }
 
@@ -114,8 +114,11 @@ describe("ErrorBoundary", () => {
 
   it("reloads page when Reload is clicked", () => {
     const originalLocation = window.location;
-    delete window.location;
-    window.location = { reload: vi.fn() };
+    Object.defineProperty(window, "location", {
+      value: { reload: vi.fn() },
+      writable: true,
+      configurable: true,
+    });
 
     render(
       <ErrorBoundary>
@@ -128,7 +131,11 @@ describe("ErrorBoundary", () => {
 
     expect(window.location.reload).toHaveBeenCalled();
 
-    window.location = originalLocation;
+    Object.defineProperty(window, "location", {
+      value: originalLocation,
+      writable: true,
+      configurable: true,
+    });
   });
 
   it("logs error to console", () => {

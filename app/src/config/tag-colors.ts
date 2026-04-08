@@ -2,7 +2,14 @@
  * Predefined color palette for category/tag badges.
  * Each entry maps a color key to Tailwind classes for light and dark mode.
  */
-const TAG_COLORS = {
+interface TagColor {
+  bg: string;
+  text: string;
+  border: string;
+  dot: string;
+}
+
+const TAG_COLORS: Record<string, TagColor> = {
   slate: {
     bg: "bg-slate-100 dark:bg-slate-700",
     text: "text-slate-700 dark:text-slate-300",
@@ -89,16 +96,16 @@ const TAG_COLORS = {
   },
 };
 
-export const TAG_COLOR_KEYS = Object.keys(TAG_COLORS);
+export const TAG_COLOR_KEYS: string[] = Object.keys(TAG_COLORS);
 
-export const DEFAULT_COLOR = "slate";
-export const TRANSFER_DEFAULT_COLOR = "purple";
+export const DEFAULT_COLOR: string = "slate";
+export const TRANSFER_DEFAULT_COLOR: string = "purple";
 
 /**
  * Get the Tailwind badge classes for a given color key.
  * Returns combined bg + text + border classes.
  */
-export function getColorClasses(colorKey) {
+export function getColorClasses(colorKey: string): string {
   const color = TAG_COLORS[colorKey] || TAG_COLORS[DEFAULT_COLOR];
   return `${color.bg} ${color.text} ${color.border}`;
 }
@@ -106,7 +113,7 @@ export function getColorClasses(colorKey) {
 /**
  * Get the dot class for a color key (used in color selector UI).
  */
-export function getColorDot(colorKey) {
+export function getColorDot(colorKey: string): string {
   const color = TAG_COLORS[colorKey] || TAG_COLORS[DEFAULT_COLOR];
   return color.dot;
 }

@@ -4,8 +4,8 @@ import ExportModal from "../../../components/shared/ExportModal";
 
 // Mock i18n
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => {
-    const translations = {
+  t: (key: string) => {
+    const translations: Record<string, string> = {
       "export.title": "Export Data",
       "export.select_format": "Select format",
       "export.format.json": "JSON",
@@ -25,19 +25,19 @@ vi.mock("../../../i18n/i18n", () => ({
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (...args) => mockInvoke(...args),
+  invoke: (...args: unknown[]) => mockInvoke(...args),
 }));
 
 const mockSave = vi.fn();
 vi.mock("@tauri-apps/plugin-dialog", () => ({
-  save: (...args) => mockSave(...args),
+  save: (...args: unknown[]) => mockSave(...args),
 }));
 
 const mockWriteTextFile = vi.fn();
 const mockWriteFile = vi.fn();
 vi.mock("@tauri-apps/plugin-fs", () => ({
-  writeTextFile: (...args) => mockWriteTextFile(...args),
-  writeFile: (...args) => mockWriteFile(...args),
+  writeTextFile: (...args: unknown[]) => mockWriteTextFile(...args),
+  writeFile: (...args: unknown[]) => mockWriteFile(...args),
 }));
 
 // Mock toast
@@ -48,7 +48,7 @@ vi.mock("../../../contexts/toast", () => ({
 
 // Mock format utility
 vi.mock("../../../utils/format", () => ({
-  formatNumberForExport: (v) => (v != null ? String(v) : ""),
+  formatNumberForExport: (v: unknown) => (v != null ? String(v) : ""),
 }));
 
 describe("ExportModal", () => {
@@ -58,7 +58,7 @@ describe("ExportModal", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvoke.mockImplementation((cmd) => {
+    mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_accounts") {
         return Promise.resolve([
           { id: 1, name: "Checking" },

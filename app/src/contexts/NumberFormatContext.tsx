@@ -1,29 +1,38 @@
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
+import React, { useState, useEffect } from "react";
 import { NumberFormatContext } from "./number-format";
 import useLocalStorageState from "../hooks/useLocalStorageState";
 import { setLanguage } from "../i18n/i18n";
 
-const parseFirstDayOfWeek = (value) => {
+const parseFirstDayOfWeek = (value: string): number => {
   const parsed = parseInt(value, 10);
   return Number.isNaN(parsed) ? 1 : parsed;
 };
 
-export function NumberFormatProvider({ children }) {
-  const [locale, setLocale] = useLocalStorageState("hb_number_format", "en-US");
-  const [currency, setCurrency] = useLocalStorageState("hb_currency", "USD");
-  const [dateFormat, setDateFormat] = useLocalStorageState(
+interface NumberFormatProviderProps {
+  children: React.ReactNode;
+}
+
+export function NumberFormatProvider({ children }: NumberFormatProviderProps) {
+  const [locale, setLocale] = useLocalStorageState<string>(
+    "hb_number_format",
+    "en-US",
+  );
+  const [currency, setCurrency] = useLocalStorageState<string>(
+    "hb_currency",
+    "USD",
+  );
+  const [dateFormat, setDateFormat] = useLocalStorageState<string>(
     "hb_date_format",
     "YYYY-MM-DD",
   );
-  const [firstDayOfWeek, setFirstDayOfWeek] = useLocalStorageState(
+  const [firstDayOfWeek, setFirstDayOfWeek] = useLocalStorageState<number>(
     "hb_first_day_of_week",
     1,
     parseFirstDayOfWeek,
   );
 
   // UI language (controls the translations used by the app). Default is English.
-  const [uiLanguage, setUiLanguage] = useLocalStorageState(
+  const [uiLanguage, setUiLanguage] = useLocalStorageState<string>(
     "hb_ui_language",
     "en",
   );
@@ -70,7 +79,3 @@ export function NumberFormatProvider({ children }) {
     </NumberFormatContext.Provider>
   );
 }
-
-NumberFormatProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};

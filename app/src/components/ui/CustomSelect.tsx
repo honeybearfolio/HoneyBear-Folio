@@ -1,8 +1,33 @@
-import PropTypes from "prop-types";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 import { t } from "../../i18n/i18n";
+
+interface SelectOption {
+  value: string | number;
+  label: React.ReactNode;
+}
+
+interface MenuCoords {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+interface CustomSelectProps {
+  value: string | number | undefined;
+  onChange: (value: string | number) => void;
+  options: SelectOption[];
+  placeholder?: React.ReactNode;
+  fullWidth?: boolean;
+  openUpward?: boolean;
+  className?: string;
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  "data-testid"?: string;
+}
 
 export default function CustomSelect({
   value,
@@ -12,15 +37,14 @@ export default function CustomSelect({
   fullWidth = true,
   openUpward = false,
   className = "",
-  // allow tests/parents to set a custom test id which will be forwarded to the trigger
   "data-testid": dataTestId,
-}) {
+}: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
-  const containerRef = useRef(null);
-  const listRef = useRef(null);
-  const searchRef = useRef(null);
-  const [menuCoords, setMenuCoords] = useState(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [menuCoords, setMenuCoords] = useState<MenuCoords | null>(null);
   const [search, setSearch] = useState("");
 
   const selected = options.find((o) => String(o.value) === String(value));
@@ -31,7 +55,7 @@ export default function CustomSelect({
   });
 
   useEffect(() => {
-    const onClickOutside = (e) => {
+    const onClickOutside = (e: MouseEvent) => {
       const tgt = e && e.target;
       const clickedInsideTrigger =
         containerRef.current &&
@@ -63,7 +87,7 @@ export default function CustomSelect({
 
   useEffect(() => {
     if (!open) return;
-    function handleScrollOrResize(e) {
+    function handleScrollOrResize(e: Event) {
       // If the scroll/wheel/touch event originates from inside the menu or the trigger, ignore it
       try {
         const tgt = e && e.target;
@@ -146,7 +170,7 @@ export default function CustomSelect({
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (!open) {
@@ -281,24 +305,3 @@ export default function CustomSelect({
     </div>
   );
 }
-
-CustomSelect.propTypes = {
-  value: PropTypes.any,
-  onChange: PropTypes.func.isRequired,
-  options: PropTypes.arrayOf(
-    PropTypes.shape({ value: PropTypes.any, label: PropTypes.node }),
-  ).isRequired,
-  placeholder: PropTypes.node,
-  fullWidth: PropTypes.bool,
-  openUpward: PropTypes.bool,
-  className: PropTypes.string,
-  "data-testid": PropTypes.string,
-};
-
-CustomSelect.defaultProps = {
-  value: undefined,
-  placeholder: "",
-  fullWidth: true,
-  className: "",
-  "data-testid": undefined,
-};

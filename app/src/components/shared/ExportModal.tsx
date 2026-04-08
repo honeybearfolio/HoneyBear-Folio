@@ -95,7 +95,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
     rust
       .get_all_transactions()
       .then((txs) => {
-        const dates = (txs as Transaction[]).map((tx: Transaction) => tx.date).filter(Boolean);
+        const dates = (txs as Transaction[])
+          .map((tx: Transaction) => tx.date)
+          .filter(Boolean);
         setTransactionDates(dates);
       })
       .catch(() => {});
@@ -185,8 +187,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       setExporting(true);
 
       // 1. Fetch Data
-      const accounts = await rust.get_accounts({}) as Account[];
-      const transactions = await rust.get_all_transactions() as Transaction[];
+      const accounts = (await rust.get_accounts()) as Account[];
+      const transactions = (await rust.get_all_transactions()) as Transaction[];
 
       // 2. Prepare Data based on format
       let content: string | undefined;
@@ -195,14 +197,16 @@ export default function ExportModal({ onClose }: ExportModalProps) {
 
       if (format === "json") {
         // Replace transaction account IDs with account names for easier interoperability
-        const transactionsWithAccountNames = transactions.map((tx: Transaction) => {
-          const acc = accounts.find((a: Account) => a.id === tx.account_id);
-          const { account_id, ...rest } = tx;
-          return {
-            ...rest,
-            account: acc ? acc.name : account_id,
-          };
-        });
+        const transactionsWithAccountNames = transactions.map(
+          (tx: Transaction) => {
+            const acc = accounts.find((a: Account) => a.id === tx.account_id);
+            const { account_id, ...rest } = tx;
+            return {
+              ...rest,
+              account: acc ? acc.name : account_id,
+            };
+          },
+        );
 
         const data = {
           accounts,
@@ -309,7 +313,10 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         await rust.write_xlsx({ filePath, sheets });
       } else if (format === "pdf") {
         // Fetch exchange rates
-        const exchangeRates: Record<string, { map: Record<string, number>; list: DailyPrice[] }> = {};
+        const exchangeRates: Record<
+          string,
+          { map: Record<string, number>; list: DailyPrice[] }
+        > = {};
         const appCurrency = localStorage.getItem("hb_currency") || "USD";
 
         try {
@@ -323,9 +330,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
               // Try to fetch historical daily prices for this currency pair
               let dailyPrices: DailyPrice[] = [];
               try {
-                dailyPrices = await rust.get_daily_stock_prices({
+                dailyPrices = (await rust.get_daily_stock_prices({
                   ticker: pair,
-                }) as DailyPrice[];
+                })) as DailyPrice[];
               } catch {
                 // Historical prices may not be available
               }
@@ -343,7 +350,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
                 map[today] = entry.rate;
                 list.push({ date: today, price: entry.rate });
                 // Also add an early date so historical lookups always have a fallback
-                if (!list.some((p: DailyPrice) => p.date <= pdfDateRange.start)) {
+                if (
+                  !list.some((p: DailyPrice) => p.date <= pdfDateRange.start)
+                ) {
                   map["1970-01-01"] = entry.rate;
                   list.unshift({ date: "1970-01-01", price: entry.rate });
                 }
@@ -360,11 +369,12 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         // Fetch stock quotes if user has investments
         let quotes: unknown[] = [];
         try {
-          const { currentHoldings } =
-            buildHoldingsFromTransactions(transactions as InvestmentTransaction[]);
+          const { currentHoldings } = buildHoldingsFromTransactions(
+            transactions as InvestmentTransaction[],
+          );
           if (currentHoldings.length > 0) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
-            quotes = await rust.get_stock_quotes({ tickers }) as unknown[];
+            quotes = (await rust.get_stock_quotes({ tickers })) as unknown[];
           }
         } catch {
           // Quotes are optional
@@ -642,7 +652,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
                 </label>
                 <DatePicker
                   selected={customEndDate}
-                  onChange={(date: Date | null) => { if (date) setCustomEndDate(date); }}
+                  onChange={(date: Date | null) => {
+                    if (date) setCustomEndDate(date);
+                  }}
                   selectsEnd
                   startDate={customStartDate}
                   endDate={customEndDate}
@@ -690,6 +702,3 @@ export default function ExportModal({ onClose }: ExportModalProps) {
     </Modal>
   );
 }
-
-
-

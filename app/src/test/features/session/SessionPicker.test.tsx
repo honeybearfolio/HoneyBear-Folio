@@ -4,7 +4,7 @@ import SessionPicker from "../../../features/session/SessionPicker";
 
 // Mock i18n
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => key,
+  t: (key: string) => key,
 }));
 
 // Mock Tauri dialog
@@ -44,7 +44,7 @@ describe("SessionPicker", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    rust.get_recent_sessions.mockResolvedValue([]);
+    vi.mocked(rust.get_recent_sessions).mockResolvedValue([]);
   });
 
   it("renders title and action buttons", async () => {
@@ -66,7 +66,7 @@ describe("SessionPicker", () => {
   });
 
   it("renders recent sessions when available", async () => {
-    rust.get_recent_sessions.mockResolvedValue([
+    vi.mocked(rust.get_recent_sessions).mockResolvedValue([
       {
         path: "/home/user/personal.db",
         name: "Personal Finances",
@@ -92,7 +92,7 @@ describe("SessionPicker", () => {
   });
 
   it("shows file not found badge for missing sessions", async () => {
-    rust.get_recent_sessions.mockResolvedValue([
+    vi.mocked(rust.get_recent_sessions).mockResolvedValue([
       {
         path: "/home/user/deleted.db",
         name: "Deleted DB",
@@ -117,8 +117,8 @@ describe("SessionPicker", () => {
       file_exists: true,
       file_size: 1024,
     };
-    rust.get_recent_sessions.mockResolvedValue([session]);
-    rust.open_session.mockResolvedValue(session);
+    vi.mocked(rust.get_recent_sessions).mockResolvedValue([session]);
+    vi.mocked(rust.open_session).mockResolvedValue(session);
 
     render(<SessionPicker onSessionReady={mockOnSessionReady} />);
 
@@ -137,7 +137,7 @@ describe("SessionPicker", () => {
   });
 
   it("removes a session from the list when trash is clicked", async () => {
-    rust.get_recent_sessions.mockResolvedValue([
+    vi.mocked(rust.get_recent_sessions).mockResolvedValue([
       {
         path: "/home/user/old.db",
         name: "Old DB",
@@ -158,14 +158,14 @@ describe("SessionPicker", () => {
     fireEvent.click(removeBtn);
 
     await waitFor(() => {
-      expect(rust.remove_recent_session).toHaveBeenCalledWith({
+      expect(vi.mocked(rust.remove_recent_session)).toHaveBeenCalledWith({
         path: "/home/user/old.db",
       });
     });
   });
 
   it("displays error when open_session fails", async () => {
-    rust.get_recent_sessions.mockResolvedValue([
+    vi.mocked(rust.get_recent_sessions).mockResolvedValue([
       {
         path: "/home/user/broken.db",
         name: "Broken",
@@ -174,7 +174,7 @@ describe("SessionPicker", () => {
         file_size: 100,
       },
     ]);
-    rust.open_session.mockRejectedValue("File is corrupted");
+    vi.mocked(rust.open_session).mockRejectedValue("File is corrupted");
 
     render(<SessionPicker onSessionReady={mockOnSessionReady} />);
 

@@ -20,7 +20,9 @@ interface ExchangeRatesListProps {
  * Shows custom rates with edit/delete options and Yahoo-sourced
  * currencies with an option to override.
  */
-export default function ExchangeRatesList({ onRateChange }: ExchangeRatesListProps) {
+export default function ExchangeRatesList({
+  onRateChange,
+}: ExchangeRatesListProps) {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCurrency, setEditingCurrency] = useState<string | null>(null);
@@ -92,7 +94,10 @@ export default function ExchangeRatesList({ onRateChange }: ExchangeRatesListPro
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currency: string) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    currency: string,
+  ) => {
     if (e.key === "Enter") {
       handleSaveEdit(currency);
     } else if (e.key === "Escape") {
@@ -207,6 +212,3 @@ export default function ExchangeRatesList({ onRateChange }: ExchangeRatesListPro
     </div>
   );
 }
-
-
-

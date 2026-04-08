@@ -71,7 +71,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       // Also ask the backend for the system theme (Linux/older webviews may report wrong prefers-color-scheme)
       (async () => {
         try {
-          const sys = await rust.get_system_theme({});
+          const sys = await rust.get_system_theme();
           if (sys === "dark" || sys === "light") {
             applyTheme(sys);
           }

@@ -16,7 +16,10 @@ export interface ConfirmContextValue {
 
 export const ConfirmContext = createContext<ConfirmContextValue | null>(null);
 
-export function useConfirm(): (message: string, options?: ConfirmOptions) => Promise<boolean> {
+export function useConfirm(): (
+  message: string,
+  options?: ConfirmOptions,
+) => Promise<boolean> {
   const ctx = useContext(ConfirmContext);
   if (!ctx) {
     // Fallback if provider is missing

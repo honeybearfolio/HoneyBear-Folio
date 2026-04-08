@@ -24,7 +24,9 @@ describe("ToastContext", () => {
     });
 
     it("noop showToast does not throw when called", () => {
-      const capturedShowToastRef: { current: ((...args: any[]) => void) | null } = { current: null };
+      const capturedShowToastRef: {
+        current: ((...args: any[]) => void) | null;
+      } = { current: null };
       function CaptureComponent() {
         const { showToast } = useToast();
         // assign to ref property inside effect (no mutation during render)

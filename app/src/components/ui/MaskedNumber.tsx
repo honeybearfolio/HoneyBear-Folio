@@ -1,14 +1,19 @@
 import { useState } from "react";
-import PropTypes from "prop-types";
 import { useFormatNumber } from "../../utils/format";
 import { usePrivacy } from "../../contexts/privacy";
+
+interface MaskedNumberProps extends React.HTMLAttributes<HTMLSpanElement> {
+  value: number | string | undefined;
+  options?: Record<string, unknown>;
+  className?: string;
+}
 
 export default function MaskedNumber({
   value,
   options = {},
   className,
   ...props
-}) {
+}: MaskedNumberProps) {
   const formatNumber = useFormatNumber();
   const { isPrivacyMode } = usePrivacy();
   const [isHovered, setIsHovered] = useState(false);
@@ -42,9 +47,3 @@ export default function MaskedNumber({
 
   return <>{formattedValue}</>;
 }
-
-MaskedNumber.propTypes = {
-  value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  options: PropTypes.object,
-  className: PropTypes.string,
-};

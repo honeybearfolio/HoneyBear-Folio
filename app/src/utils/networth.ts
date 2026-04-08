@@ -1,4 +1,11 @@
-function toNumeric(value) {
+interface NetWorthAccount {
+  id: number;
+  balance?: unknown;
+  exchange_rate?: number;
+  [key: string]: unknown;
+}
+
+function toNumeric(value: unknown): number {
   // Reject booleans explicitly (they can coerce to 1/0) and treat non-numeric strings as invalid
   if (typeof value === "boolean" || value === null || value === undefined)
     return NaN;
@@ -6,9 +13,12 @@ function toNumeric(value) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-export function computeNetWorth(accounts = [], marketValues = {}) {
+export function computeNetWorth(
+  accounts: NetWorthAccount[] = [],
+  marketValues: Record<number, number> = {},
+): number {
   if (!Array.isArray(accounts)) return 0;
-  return accounts.reduce((sum, acc) => {
+  return accounts.reduce((sum: number, acc) => {
     if (!acc) return sum;
 
     const balanceNumeric = toNumeric(acc.balance);

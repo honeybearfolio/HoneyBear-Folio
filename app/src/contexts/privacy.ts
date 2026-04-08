@@ -1,10 +1,15 @@
 import { createContext, useContext } from "react";
 
-export const PrivacyContext = createContext({
+export interface PrivacyContextValue {
+  isPrivacyMode: boolean;
+  togglePrivacyMode: () => void;
+}
+
+export const PrivacyContext = createContext<PrivacyContextValue>({
   isPrivacyMode: false,
   togglePrivacyMode: () => {},
 });
 
-export function usePrivacy() {
+export function usePrivacy(): PrivacyContextValue {
   return useContext(PrivacyContext);
 }

@@ -28,7 +28,10 @@ export function formatNumberWithLocale(
     if (currencyDef) {
       // Format the number as decimal first (preserving locale separators)
       const { ignorePrivacy: _ip, ...intlOpts } = opts;
-      const decimalOptions: Intl.NumberFormatOptions = { ...intlOpts, style: "decimal" as const };
+      const decimalOptions: Intl.NumberFormatOptions = {
+        ...intlOpts,
+        style: "decimal" as const,
+      };
       delete decimalOptions.currency;
       delete decimalOptions.currencyDisplay;
 
@@ -106,7 +109,10 @@ export function useFormatNumber(): (
 
         // Build decimal options (same fraction digits as finalOptions)
         const { ignorePrivacy: _ip2, ...intlFinalOpts } = finalOptions;
-        const decimalOptions: NumberFormatOptions = { ...intlFinalOpts, style: "decimal" as const };
+        const decimalOptions: NumberFormatOptions = {
+          ...intlFinalOpts,
+          style: "decimal" as const,
+        };
         delete decimalOptions.currency;
         delete decimalOptions.currencyDisplay;
 
@@ -262,7 +268,9 @@ export function getDatePickerFormat(formatKey: string): string {
   return DATE_FORMATS[formatKey]?.datePicker || "yyyy-MM-dd";
 }
 
-export function useFormatDate(): (value: string | Date | null | undefined) => string {
+export function useFormatDate(): (
+  value: string | Date | null | undefined,
+) => string {
   const { dateFormat, locale } = useNumberFormat();
   return (value: string | Date | null | undefined): string =>
     formatDateForUI(value, dateFormat, locale);

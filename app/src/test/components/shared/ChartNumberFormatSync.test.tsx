@@ -4,7 +4,9 @@ import ChartNumberFormatSync from "../../../components/shared/ChartNumberFormatS
 import ChartJS from "chart.js/auto";
 
 // Mock format utility
-const mockFormatNumber = vi.fn((value: number, _options: unknown) => `$${value.toFixed(2)}`);
+const mockFormatNumber = vi.fn(
+  (value: number, _options: unknown) => `$${value.toFixed(2)}`,
+);
 vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => mockFormatNumber,
 }));

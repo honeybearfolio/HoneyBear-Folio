@@ -1,5 +1,16 @@
 import { rust } from "../api/tauri-client";
 
+interface ComputeReportDataParams {
+  accounts: unknown[];
+  transactions: unknown[];
+  startDate: string;
+  endDate: string;
+  appCurrency: string;
+  exchangeRates: unknown;
+  quotes: unknown[];
+  labels: unknown[];
+}
+
 export async function computeReportData({
   accounts,
   transactions,
@@ -9,7 +20,7 @@ export async function computeReportData({
   exchangeRates,
   quotes,
   labels,
-}) {
+}: ComputeReportDataParams): Promise<unknown> {
   return rust.compute_report_data({
     input: {
       accounts,

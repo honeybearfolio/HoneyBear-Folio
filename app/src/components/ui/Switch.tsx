@@ -1,6 +1,10 @@
-import PropTypes from "prop-types";
+interface SwitchProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}
 
-export default function Switch({ checked, onChange, disabled }) {
+export default function Switch({ checked, onChange, disabled }: SwitchProps) {
   return (
     <button
       type="button"
@@ -21,9 +25,3 @@ export default function Switch({ checked, onChange, disabled }) {
     </button>
   );
 }
-
-Switch.propTypes = {
-  checked: PropTypes.bool.isRequired,
-  onChange: PropTypes.func.isRequired,
-  disabled: PropTypes.bool,
-};

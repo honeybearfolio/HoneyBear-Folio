@@ -28,7 +28,13 @@ vi.mock("../../../i18n/i18n", () => ({
 }));
 
 vi.mock("../../../components/ui/Modal", () => {
-  const Modal = ({ children, onClose }: { children?: ReactNode; onClose?: () => void }) => (
+  const Modal = ({
+    children,
+    onClose,
+  }: {
+    children?: ReactNode;
+    onClose?: () => void;
+  }) => (
     <div data-testid="modal">
       <button onClick={onClose} data-testid="modal-close">
         Close
@@ -39,16 +45,25 @@ vi.mock("../../../components/ui/Modal", () => {
 
   const ModalHeader = ({ title }: { title?: ReactNode }) => <h1>{title}</h1>;
 
-  const ModalBody = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
+  const ModalBody = ({ children }: { children?: ReactNode }) => (
+    <div>{children}</div>
+  );
 
-  const ModalFooter = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
+  const ModalFooter = ({ children }: { children?: ReactNode }) => (
+    <div>{children}</div>
+  );
 
   return { Modal, ModalHeader, ModalBody, ModalFooter };
 });
 
 // Mock CustomSelect
 vi.mock("../../../components/ui/CustomSelect", () => {
-  const CustomSelect = ({ value, onChange, options, placeholder }: {
+  const CustomSelect = ({
+    value,
+    onChange,
+    options,
+    placeholder,
+  }: {
     value: string;
     onChange: (v: string) => void;
     options: { value: string; label: string }[];
@@ -57,7 +72,9 @@ vi.mock("../../../components/ui/CustomSelect", () => {
     <select
       data-testid="currency-select"
       value={value}
-      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+        onChange(e.target.value)
+      }
     >
       <option value="">{placeholder}</option>
       {options.map((opt: { value: string; label: string }) => (

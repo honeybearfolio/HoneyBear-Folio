@@ -5,7 +5,7 @@ import "../../styles/Toast.css";
 import { ToastContext } from "../../contexts/toast";
 import { t } from "../../i18n/i18n";
 
-type ToastType = "info" | "success" | "error";
+type ToastType = "info" | "success" | "error" | "warning";
 
 interface Toast {
   id: string;
@@ -25,7 +25,13 @@ export function ToastProvider({ children }: ToastProviderProps) {
   }, []);
 
   const showToast = useCallback(
-    (message: string, { type = "info", duration = 4000 }: { type?: ToastType; duration?: number } = {}) => {
+    (
+      message: string,
+      {
+        type = "info",
+        duration = 4000,
+      }: { type?: ToastType; duration?: number } = {},
+    ) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       setToasts((t) => [...t, { id, message, type }]);
 

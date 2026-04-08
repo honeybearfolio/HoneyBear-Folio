@@ -71,7 +71,10 @@ interface SettingsViewProps {
   onChangeSidebarVisibility?: (visibility: Record<string, boolean>) => void;
 }
 
-function LlmSettingsSection({ showTooltip, hideTooltip }: LlmSettingsSectionProps) {
+function LlmSettingsSection({
+  showTooltip,
+  hideTooltip,
+}: LlmSettingsSectionProps) {
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [ollamaModel, setOllamaModel] = useState("");
   const [models, setModels] = useState<OllamaModel[]>([]);
@@ -95,7 +98,7 @@ function LlmSettingsSection({ showTooltip, hideTooltip }: LlmSettingsSectionProp
       const ok = await rust.check_ollama_connection();
       setConnected(ok as boolean);
       if (ok) {
-        const list = await rust.list_ollama_models() as OllamaModel[];
+        const list = (await rust.list_ollama_models()) as OllamaModel[];
         setModels(list);
       }
     } catch {
@@ -123,7 +126,12 @@ function LlmSettingsSection({ showTooltip, hideTooltip }: LlmSettingsSectionProp
   }
 
   async function handleClearHistory() {
-    const ok = await (confirm as (message: string, options?: Record<string, unknown>) => Promise<boolean>)(t("chat.clear_history_confirm"), {
+    const ok = await (
+      confirm as (
+        message: string,
+        options?: Record<string, unknown>,
+      ) => Promise<boolean>
+    )(t("chat.clear_history_confirm"), {
       title: t("chat.clear_history"),
       kind: "warning",
     });
@@ -291,7 +299,7 @@ export default function SettingsView({
     let mounted = true;
     (async () => {
       try {
-        const p = await rust.get_db_path_command({}) as string;
+        const p = (await rust.get_db_path_command()) as string;
         if (mounted) setDbPath(p);
       } catch (e) {
         console.error("Failed to fetch DB path:", e);
@@ -336,7 +344,7 @@ export default function SettingsView({
       });
       if (path) {
         await rust.set_db_path({ path });
-        const p = await rust.get_db_path_command({}) as string;
+        const p = (await rust.get_db_path_command()) as string;
         setDbPath(p);
       }
     } catch (e) {
@@ -346,7 +354,12 @@ export default function SettingsView({
 
   async function handleResetDefaults() {
     try {
-      const confirmed = await (confirm as (message: string, options?: Record<string, unknown>) => Promise<boolean>)(t("settings.reset_confirm"), {
+      const confirmed = await (
+        confirm as (
+          message: string,
+          options?: Record<string, unknown>,
+        ) => Promise<boolean>
+      )(t("settings.reset_confirm"), {
         kind: "warning",
       });
       if (!confirmed) return;
@@ -368,8 +381,8 @@ export default function SettingsView({
       onChangeSidebarVisibility?.({ ...DEFAULT_SIDEBAR_VISIBILITY });
 
       try {
-        await rust.reset_db_path({});
-        const p = await rust.get_db_path_command({}) as string;
+        await rust.reset_db_path();
+        const p = (await rust.get_db_path_command()) as string;
         setDbPath(p);
       } catch (e) {
         console.error("Failed to reset DB path:", e);
@@ -383,7 +396,7 @@ export default function SettingsView({
     if (activeSection === "customization") {
       (async () => {
         try {
-          const cats = await rust.get_categories({}) as string[];
+          const cats = (await rust.get_categories()) as string[];
           const all = cats.includes("Transfer") ? cats : ["Transfer", ...cats];
           setCategories(all.sort((a: string, b: string) => a.localeCompare(b)));
         } catch (e) {
@@ -1222,5 +1235,3 @@ export default function SettingsView({
     </ErrorBoundary>
   );
 }
-
-

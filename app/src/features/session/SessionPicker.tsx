@@ -255,11 +255,12 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
                         <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
                           {session.path}
                         </span>
-                        {session.file_exists && (session.file_size ?? 0) > 0 && (
-                          <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                            {formatFileSize(session.file_size)}
-                          </span>
-                        )}
+                        {session.file_exists &&
+                          (session.file_size ?? 0) > 0 && (
+                            <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                              {formatFileSize(session.file_size)}
+                            </span>
+                          )}
                         {!session.file_exists && (
                           <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
                             <AlertTriangle className="w-3 h-3" />

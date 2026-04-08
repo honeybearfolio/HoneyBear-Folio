@@ -1,13 +1,36 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
-import PropTypes from "prop-types";
+import { X, type LucideIcon } from "lucide-react";
 import "../../styles/Modal.css";
 import { t } from "../../i18n/i18n";
 
-export function Modal({ children, onClose, size = "md", className = "" }) {
+type ModalSize =
+  | "sm"
+  | "md"
+  | "lg"
+  | "xl"
+  | "2xl"
+  | "3xl"
+  | "4xl"
+  | "5xl"
+  | "6xl"
+  | "full";
+
+interface ModalProps {
+  children: React.ReactNode;
+  onClose: () => void;
+  size?: ModalSize;
+  className?: string;
+}
+
+export function Modal({
+  children,
+  onClose,
+  size = "md",
+  className = "",
+}: ModalProps) {
   useEffect(() => {
-    const handleEscape = (e) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handleEscape);
@@ -23,7 +46,7 @@ export function Modal({ children, onClose, size = "md", className = "" }) {
     };
   }, []);
 
-  const sizeClasses = {
+  const sizeClasses: Record<ModalSize, string> = {
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
@@ -50,14 +73,19 @@ export function Modal({ children, onClose, size = "md", className = "" }) {
   );
 }
 
-Modal.propTypes = {
-  children: PropTypes.node.isRequired,
-  onClose: PropTypes.func.isRequired,
-  size: PropTypes.oneOf(["sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "full"]),
-  className: PropTypes.string,
-};
+interface ModalHeaderProps {
+  children?: React.ReactNode;
+  onClose?: () => void;
+  title?: React.ReactNode;
+  icon?: LucideIcon;
+}
 
-export function ModalHeader({ children, onClose, title, icon: Icon }) {
+export function ModalHeader({
+  children,
+  onClose,
+  title,
+  icon: Icon,
+}: ModalHeaderProps) {
   return (
     <div className="modal-header">
       <h2 className="modal-title">
@@ -77,27 +105,20 @@ export function ModalHeader({ children, onClose, title, icon: Icon }) {
   );
 }
 
-ModalHeader.propTypes = {
-  children: PropTypes.node,
-  onClose: PropTypes.func,
-  title: PropTypes.node,
-  icon: PropTypes.elementType,
-};
+interface ModalBodyProps {
+  children: React.ReactNode;
+  className?: string;
+}
 
-export function ModalBody({ children, className = "" }) {
+export function ModalBody({ children, className = "" }: ModalBodyProps) {
   return <div className={`modal-body ${className}`}>{children}</div>;
 }
 
-ModalBody.propTypes = {
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-};
-
-export function ModalFooter({ children, className = "" }) {
-  return <div className={`modal-footer ${className}`}>{children}</div>;
+interface ModalFooterProps {
+  children: React.ReactNode;
+  className?: string;
 }
 
-ModalFooter.propTypes = {
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-};
+export function ModalFooter({ children, className = "" }: ModalFooterProps) {
+  return <div className={`modal-footer ${className}`}>{children}</div>;
+}

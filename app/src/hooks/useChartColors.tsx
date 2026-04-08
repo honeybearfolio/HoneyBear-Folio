@@ -2,14 +2,30 @@ import { useMemo } from "react";
 import useIsDark from "./useIsDark";
 import useIsHighContrast from "./useIsHighContrast";
 
-export default function useChartColors() {
+export interface ChartColors {
+  primary: string;
+  secondary: string;
+  success: string;
+  line: string;
+  profit: string;
+  loss: string;
+  text: string;
+  grid: string;
+  background: string;
+  tooltipBg: string;
+  tooltipText: string;
+  palette: string[];
+}
+
+export default function useChartColors(): ChartColors {
   const isDark = useIsDark();
   const isHighContrast = useIsHighContrast();
 
-  const colors = useMemo(() => {
+  const colors = useMemo<ChartColors>(() => {
     // Read computed styles from the root element to get CSS variables
     const style = getComputedStyle(document.documentElement);
-    const getVal = (name) => style.getPropertyValue(name).trim();
+    const getVal = (name: string): string =>
+      style.getPropertyValue(name).trim();
 
     const brand300 = getVal("--color-brand-300") || "#ffc44a";
     const brand400 = getVal("--color-brand-400") || "#ffab20";

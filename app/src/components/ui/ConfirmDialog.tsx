@@ -27,7 +27,9 @@ interface ConfirmDialogProviderProps {
   children: React.ReactNode;
 }
 
-export function ConfirmDialogProvider({ children }: ConfirmDialogProviderProps) {
+export function ConfirmDialogProvider({
+  children,
+}: ConfirmDialogProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<ConfirmState>({
     message: "",
@@ -128,6 +130,3 @@ function ConfirmDialog({
     </Modal>
   );
 }
-
-
-

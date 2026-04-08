@@ -34,8 +34,12 @@ import { fetchMarketValuesForAccounts } from "./utils/market-values";
 
 function App() {
   // Session management — "picking" shows the session picker, "active" shows the main app
-  const [sessionState, setSessionState] = useState<"loading" | "picking" | "active">("loading");
-  const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
+  const [sessionState, setSessionState] = useState<
+    "loading" | "picking" | "active"
+  >("loading");
+  const [activeSession, setActiveSession] = useState<ActiveSession | null>(
+    null,
+  );
 
   useEffect(() => {
     rust
@@ -112,15 +116,20 @@ interface MainAppProps {
 }
 
 function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
-  const [sidebarWidth, setSidebarWidth] = useState<number>(APP_DEFAULTS.SIDEBAR_WIDTH);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(
+    APP_DEFAULTS.SIDEBAR_WIDTH,
+  );
   const [isResizing, setIsResizing] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [marketValues, setMarketValues] = useState<Record<string, number>>({});
-  const [settingsSection, setSettingsSection] = useState<SettingsSection>("general");
-  const [sidebarVisibility, setSidebarVisibility] = useState<Record<string, boolean>>(() => {
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("general");
+  const [sidebarVisibility, setSidebarVisibility] = useState<
+    Record<string, boolean>
+  >(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_VISIBILITY);
       const defaults = DEFAULT_SIDEBAR_VISIBILITY;
@@ -190,7 +199,9 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
     try {
       const currency =
         localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
-      const accs = (await rust.get_accounts({ targetCurrency: currency })) as Account[];
+      const accs = (await rust.get_accounts({
+        targetCurrency: currency,
+      })) as Account[];
       accs.sort((a: Account, b: Account) => b.balance - a.balance);
       setAccounts(accs);
       return accs;
@@ -250,7 +261,10 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
 
   // Calculate total balance
 
-  const totalBalance = computeNetWorth(accounts as { id: number; balance?: unknown; exchange_rate?: number }[], marketValues);
+  const totalBalance = computeNetWorth(
+    accounts as { id: number; balance?: unknown; exchange_rate?: number }[],
+    marketValues,
+  );
 
   const totalCashBalance = accounts.reduce((sum, acc) => {
     const balance = Number(acc.balance) || 0;
@@ -343,10 +357,19 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
                     >
                       <div className="flex-1 w-full h-full overflow-hidden">
                         <Sidebar
-                          accounts={accounts as { id: string | number; name: string; balance: number; kind: string }[]}
+                          accounts={
+                            accounts as {
+                              id: string | number;
+                              name: string;
+                              balance: number;
+                              kind: string;
+                            }[]
+                          }
                           marketValues={marketValues}
                           selectedId={selectedAccountId}
-                          onSelectAccount={(id: string | number) => setSelectedAccountId(String(id))}
+                          onSelectAccount={(id: string | number) =>
+                            setSelectedAccountId(String(id))
+                          }
                           onUpdate={handleAccountUpdate}
                           onClose={() => setIsSidebarOpen(false)}
                           sidebarVisibility={sidebarVisibility}

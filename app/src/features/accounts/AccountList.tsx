@@ -40,7 +40,9 @@ export default function AccountList({
   const draggingIdRef = useRef<string | number | null>(null);
   const lastReorder = useRef(0);
   const [menuOpenId, setMenuOpenId] = useState<string | number | null>(null);
-  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const [renamingId, setRenamingId] = useState<string | number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -82,16 +84,19 @@ export default function AccountList({
     }
   }, [renamingId]);
 
-  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, accountId: string | number) => {
-    // Store in both state (for UI) and ref (for reliable access during drag)
-    setDraggingId(accountId);
-    draggingIdRef.current = accountId;
+  const handleDragStart = useCallback(
+    (e: React.DragEvent<HTMLDivElement>, accountId: string | number) => {
+      // Store in both state (for UI) and ref (for reliable access during drag)
+      setDraggingId(accountId);
+      draggingIdRef.current = accountId;
 
-    // Set data transfer - required for drag to work
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(accountId));
-    e.dataTransfer.setData("application/x-account-id", String(accountId));
-  }, []);
+      // Set data transfer - required for drag to work
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(accountId));
+      e.dataTransfer.setData("application/x-account-id", String(accountId));
+    },
+    [],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -320,4 +325,3 @@ export default function AccountList({
     </div>
   );
 }
-

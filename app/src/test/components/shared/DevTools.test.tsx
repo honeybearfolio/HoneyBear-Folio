@@ -9,9 +9,9 @@ vi.mock("../../../contexts/toast", () => ({
 }));
 
 // Mock dev settings
-let devSettings = {};
+let devSettings: Record<string, boolean> = {};
 vi.mock("../../../config/dev-settings", () => ({
-  getDevSetting: (key) => devSettings[key],
+  getDevSetting: (key: string) => devSettings[key],
 }));
 
 describe("DevTools", () => {

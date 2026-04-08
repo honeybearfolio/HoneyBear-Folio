@@ -1,3 +1,4 @@
+import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ScheduledList from "../../../features/scheduled/ScheduledList";
@@ -10,12 +11,17 @@ vi.mock("../../../utils/currencies", () => ({
 }));
 
 vi.mock("react-datepicker", () => ({
-  default: (props) => (
+  default: (props: {
+    selected?: Date | null;
+    onChange: (date: Date) => void;
+    [key: string]: unknown;
+  }) => (
     <input
       data-testid="datepicker"
-      {...props}
       value={props.selected ? props.selected.toISOString().split("T")[0] : ""}
-      onChange={(e) => props.onChange(new Date(e.target.value))}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+        props.onChange(new Date(e.target.value))
+      }
     />
   ),
 }));
@@ -35,7 +41,7 @@ vi.mock("lucide-react", () => ({
 }));
 
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => key,
+  t: (key: string) => key,
 }));
 
 // Mock hooks
@@ -52,15 +58,27 @@ vi.mock("../../../contexts/toast", () => ({
 
 // Mock CustomSelect
 vi.mock("../../../components/ui/CustomSelect", () => ({
-  default: ({ value, onChange, options, placeholder }) => (
+  default: ({
+    value,
+    onChange,
+    options,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    options: { value: string; label: string }[];
+    placeholder?: string;
+  }) => (
     <select
       data-testid="custom-select"
       value={value || ""}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+        onChange(e.target.value)
+      }
       aria-label={placeholder}
     >
       <option value="">{placeholder}</option>
-      {options.map((opt) => (
+      {options.map((opt: { value: string; label: string }) => (
         <option key={opt.value} value={opt.value}>
           {opt.label}
         </option>
@@ -71,11 +89,23 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
 
 // Mock NumberInput
 vi.mock("../../../components/ui/NumberInput", () => ({
-  default: ({ value, onChange, placeholder, className }) => (
+  default: ({
+    value,
+    onChange,
+    placeholder,
+    className,
+  }: {
+    value: number;
+    onChange: (v: string) => void;
+    placeholder?: string;
+    className?: string;
+  }) => (
     <input
       type="number"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+        onChange(e.target.value)
+      }
       placeholder={placeholder}
       className={className}
     />
@@ -83,22 +113,24 @@ vi.mock("../../../components/ui/NumberInput", () => ({
 }));
 
 vi.mock("../../../utils/format", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
-    useFormatNumber: () => (val) => String(val),
-    useFormatDate: () => (date) => String(date).split("T")[0],
+    useFormatNumber: () => (val: number) => String(val),
+    useFormatDate: () => (date: string) => String(date).split("T")[0],
   };
 });
 
-const renderWithContext = (ui) => {
+const renderWithContext = (ui: React.ReactElement) => {
   return render(
     <NumberFormatContext.Provider
-      value={{
-        formatNumber: (v) => String(v),
-        dateFormat: "YYYY-MM-DD",
-        firstDayOfWeek: 0,
-      }}
+      value={
+        {
+          formatNumber: (v: number) => String(v),
+          dateFormat: "YYYY-MM-DD",
+          firstDayOfWeek: 0,
+        } as never
+      }
     >
       {ui}
     </NumberFormatContext.Provider>,
@@ -129,7 +161,7 @@ describe("ScheduledList", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    invoke.mockImplementation((cmd) => {
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
       if (cmd === "get_scheduled_transactions")
         return Promise.resolve(mockSchedules);
       if (cmd === "get_accounts") return Promise.resolve(mockAccounts);
@@ -191,10 +223,9 @@ describe("ScheduledList", () => {
       );
     });
 
-    expect(mockShowToast).toHaveBeenCalledWith(
-      "scheduled.created_success",
-      "success",
-    );
+    expect(mockShowToast).toHaveBeenCalledWith("scheduled.created_success", {
+      type: "success",
+    });
   });
 
   it("handles creating an investment schedule", async () => {
@@ -237,10 +268,9 @@ describe("ScheduledList", () => {
       );
     });
 
-    expect(mockShowToast).toHaveBeenCalledWith(
-      "scheduled.created_success",
-      "success",
-    );
+    expect(mockShowToast).toHaveBeenCalledWith("scheduled.created_success", {
+      type: "success",
+    });
   });
 
   it("handles deleting a schedule", async () => {
@@ -249,7 +279,7 @@ describe("ScheduledList", () => {
     renderWithContext(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
-    const trashBtn = screen.getByTestId("trash-icon").closest("button");
+    const trashBtn = screen.getByTestId("trash-icon").closest("button")!;
     fireEvent.click(trashBtn);
 
     await waitFor(() => {
@@ -262,10 +292,9 @@ describe("ScheduledList", () => {
       });
     });
 
-    expect(mockShowToast).toHaveBeenCalledWith(
-      "scheduled.deleted_success",
-      "success",
-    );
+    expect(mockShowToast).toHaveBeenCalledWith("scheduled.deleted_success", {
+      type: "success",
+    });
   });
 
   it("shows context menu with toggle/edit/delete on right-click", async () => {

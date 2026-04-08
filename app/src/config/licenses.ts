@@ -1,7 +1,13 @@
 // A list of major third-party libraries used in the project with their licenses.
 // This is a manual selection for attribution purposes.
 
-const THIRD_PARTY_LICENSES = [
+interface LicenseEntry {
+  name: string;
+  license: string;
+  url: string;
+}
+
+const THIRD_PARTY_LICENSES: readonly LicenseEntry[] = [
   // Core Frameworks
   {
     name: "React & React DOM",
@@ -57,12 +63,6 @@ const THIRD_PARTY_LICENSES = [
     license: "MIT",
     url: "https://github.com/mholt/PapaParse",
   },
-  {
-    name: "prop-types",
-    license: "MIT",
-    url: "https://github.com/facebook/prop-types",
-  },
-
   // Rust Backend Libraries (Major)
   {
     name: "rusqlite",

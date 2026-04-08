@@ -148,11 +148,25 @@ interface MenuCoords {
   height?: number;
 }
 
-type FormFieldKey = "payee" | "category" | "notes" | "amount" | "date" | "ticker" | "shares" | "price" | "fee";
+type FormFieldKey =
+  | "payee"
+  | "category"
+  | "notes"
+  | "amount"
+  | "date"
+  | "ticker"
+  | "shares"
+  | "price"
+  | "fee";
 
-export default function AccountDetails({ account, onUpdate }: AccountDetailsProps) {
+export default function AccountDetails({
+  account,
+  onUpdate,
+}: AccountDetailsProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [pendingOccurrences, setPendingOccurrences] = useState<PendingOccurrence[]>([]);
+  const [pendingOccurrences, setPendingOccurrences] = useState<
+    PendingOccurrence[]
+  >([]);
   const confirm = useConfirm();
   const { checkAndPrompt, dialog } = useCustomRate();
   const { getTagClasses } = useTagColors();
@@ -167,11 +181,20 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
   } = useNumberFormat();
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [payeeSuggestions, setPayeeSuggestions] = useState<AutocompleteSuggestion[]>([]);
-  const [categorySuggestions, setCategorySuggestions] = useState<AutocompleteSuggestion[]>([]);
-  const [availableAccounts, setAvailableAccounts] = useState<AvailableAccount[]>([]);
-  const [addTargetAccount, setAddTargetAccount] = useState<AvailableAccount | null>(null);
-  const [tickerSuggestions, setTickerSuggestions] = useState<TickerSuggestion[]>([]);
+  const [payeeSuggestions, setPayeeSuggestions] = useState<
+    AutocompleteSuggestion[]
+  >([]);
+  const [categorySuggestions, setCategorySuggestions] = useState<
+    AutocompleteSuggestion[]
+  >([]);
+  const [availableAccounts, setAvailableAccounts] = useState<
+    AvailableAccount[]
+  >([]);
+  const [addTargetAccount, setAddTargetAccount] =
+    useState<AvailableAccount | null>(null);
+  const [tickerSuggestions, setTickerSuggestions] = useState<
+    TickerSuggestion[]
+  >([]);
   const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
   const [rules, setRules] = useState<Rule[]>([]);
 
@@ -196,7 +219,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
   // Close account menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (accountMenuOpen && !(event.target as HTMLElement).closest(".account-action-menu")) {
+      if (
+        accountMenuOpen &&
+        !(event.target as HTMLElement).closest(".account-action-menu")
+      ) {
         setAccountMenuOpen(false);
       }
     }
@@ -231,7 +257,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
   const [isBuy, setIsBuy] = useState(true);
 
   // Sorting State
-  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: string | null }>({ key: null, direction: null });
+  const [sortConfig, setSortConfig] = useState<{
+    key: string | null;
+    direction: string | null;
+  }>({ key: null, direction: null });
 
   // Rules Engine Logic
   const prevValues = useRef({
@@ -280,7 +309,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
     const sortedRules = [...rules].sort((a, b) => b.priority - a.priority);
 
     // Evaluate a single condition against current form values
-    const evaluateCondition = (condition: RuleCondition, values: Record<string, string>) => {
+    const evaluateCondition = (
+      condition: RuleCondition,
+      values: Record<string, string>,
+    ) => {
       const fieldValue = values[condition.field];
       const conditionValue = condition.value;
       const strFieldValue = String(fieldValue ?? "");
@@ -354,7 +386,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
         }
       }
       // Legacy format: single match_field/match_pattern (exact match)
-      return rule.match_field ? values[rule.match_field] === rule.match_pattern : false;
+      return rule.match_field
+        ? values[rule.match_field] === rule.match_pattern
+        : false;
     };
 
     // Apply all actions for a rule
@@ -378,7 +412,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
 
     // Identify changed fields
     const changedFields = Object.keys(currentValues).filter(
-      (k) => currentValues[k as FormFieldKey] !== prevValues.current[k as FormFieldKey],
+      (k) =>
+        currentValues[k as FormFieldKey] !==
+        prevValues.current[k as FormFieldKey],
     );
 
     // Only apply rules if something changed
@@ -408,10 +444,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
     try {
       const [payees, accountsList, categories, fetchedRules] =
         await Promise.all([
-          rust.get_payees({}) as Promise<string[]>,
-          rust.get_accounts({}) as Promise<Account[]>,
-          rust.get_categories({}) as Promise<string[]>,
-          rust.get_rules({}) as Promise<Rule[]>,
+          rust.get_payees() as Promise<string[]>,
+          rust.get_accounts() as Promise<Account[]>,
+          rust.get_categories() as Promise<string[]>,
+          rust.get_rules() as Promise<Rule[]>,
         ]);
       setRules(fetchedRules);
 
@@ -477,18 +513,22 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
       if (account.id === "all") {
         const [transactionsList, accounts] = await Promise.all([
           rust.get_all_transactions() as Promise<Transaction[]>,
-          rust.get_accounts({}) as Promise<Account[]>,
+          rust.get_accounts() as Promise<Account[]>,
         ]);
         // Attach account_name for display in the consolidated view
         txs = (transactionsList as Transaction[]).map((tx: Transaction) => {
-          const acc = (accounts as Account[]).find((a: Account) => a.id === tx.account_id);
+          const acc = (accounts as Account[]).find(
+            (a: Account) => a.id === tx.account_id,
+          );
           return {
             ...tx,
             account_name: acc ? acc.name : String(tx.account_id),
           };
         });
       } else {
-        txs = await rust.get_transactions({ accountId: account.id }) as Transaction[];
+        txs = (await rust.get_transactions({
+          accountId: account.id,
+        })) as Transaction[];
       }
       setTransactions(txs);
     } catch (e) {
@@ -499,7 +539,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
   async function fetchPendingOccurrences() {
     try {
       const accountId = account.id === "all" ? null : account.id;
-      const occs = await rust.get_pending_occurrences({ accountId }) as PendingOccurrence[];
+      const occs = (await rust.get_pending_occurrences({
+        accountId,
+      })) as PendingOccurrence[];
       setPendingOccurrences(occs);
     } catch (e) {
       console.error("Failed to fetch pending occurrences:", e);
@@ -507,7 +549,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
     }
   }
 
-  async function handleApplyOccurrence(occ: PendingOccurrence, useToday: boolean) {
+  async function handleApplyOccurrence(
+    occ: PendingOccurrence,
+    useToday: boolean,
+  ) {
     try {
       const applyDate = useToday
         ? new Date().toISOString().split("T")[0]
@@ -592,7 +637,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
     }
   }, [editForm.payee, availableAccounts]);
 
-  const tickerTimeoutRef = useMemo(() => ({ current: null as ReturnType<typeof setTimeout> | null }), []);
+  const tickerTimeoutRef = useMemo(
+    () => ({ current: null as ReturnType<typeof setTimeout> | null }),
+    [],
+  );
 
   const handleTickerChange = (query: string) => {
     if (tickerTimeoutRef.current) clearTimeout(tickerTimeoutRef.current);
@@ -604,7 +652,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
 
     tickerTimeoutRef.current = setTimeout(async () => {
       try {
-        const suggestions = await rust.search_ticker({ query }) as TickerSuggestion[];
+        const suggestions = (await rust.search_ticker({
+          query,
+        })) as TickerSuggestion[];
         setTickerSuggestions(suggestions);
         setShowTickerSuggestions(true);
       } catch (error) {
@@ -877,8 +927,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
 
     if (sortConfig.key !== null) {
       data.sort((a: Transaction, b: Transaction) => {
-        let aValue: string | number = (a[sortConfig.key!] as string | number) ?? "";
-        let bValue: string | number = (b[sortConfig.key!] as string | number) ?? "";
+        let aValue: string | number =
+          (a[sortConfig.key!] as string | number) ?? "";
+        let bValue: string | number =
+          (b[sortConfig.key!] as string | number) ?? "";
 
         // Handle numeric values
         if (
@@ -1754,7 +1806,10 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
                                   menuCoords.x !== undefined
                                     ? `${Math.min(menuCoords.x, window.innerWidth - 224 - 8)}px`
                                     : `${Math.min(
-                                        Math.max((menuCoords.right ?? 0) - 224, 8),
+                                        Math.max(
+                                          (menuCoords.right ?? 0) - 224,
+                                          8,
+                                        ),
                                         window.innerWidth - 224 - 8,
                                       )}px`,
                               }}
@@ -1863,7 +1918,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
                         <td className="px-6 py-3">
                           <DatePicker
                             selected={
-                              editForm.date ? new Date(editForm.date as string) : null
+                              editForm.date
+                                ? new Date(editForm.date as string)
+                                : null
                             }
                             onChange={(date: Date | null) =>
                               setEditForm({
@@ -1884,7 +1941,8 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
                         {account.id === "all" && (
                           <td className="px-6 py-3">
                             <span className="text-sm text-slate-700 dark:text-slate-300">
-                              {(editForm.account_name as string) || String(editForm.account_id ?? "")}
+                              {(editForm.account_name as string) ||
+                                String(editForm.account_id ?? "")}
                             </span>
                           </td>
                         )}
@@ -1940,7 +1998,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
                               <input
                                 type="text"
                                 className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                                value={(editForm.category as string) || "Investment"}
+                                value={
+                                  (editForm.category as string) || "Investment"
+                                }
                                 onChange={(e) =>
                                   setEditForm({
                                     ...editForm,
@@ -2021,7 +2081,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
 
                             <td className="px-6 py-3">
                               <NumberInput
-                                value={editForm.shares as number | string | undefined}
+                                value={
+                                  editForm.shares as number | string | undefined
+                                }
                                 onChange={(num) =>
                                   setEditForm({
                                     ...editForm,
@@ -2037,7 +2099,12 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
                             <td className="px-6 py-3">
                               <div className="relative">
                                 <NumberInput
-                                  value={editForm.price_per_share as number | string | undefined}
+                                  value={
+                                    editForm.price_per_share as
+                                      | number
+                                      | string
+                                      | undefined
+                                  }
                                   onChange={(num) =>
                                     setEditForm({
                                       ...editForm,
@@ -2054,7 +2121,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
                             <td className="px-6 py-3">
                               <div className="relative">
                                 <NumberInput
-                                  value={editForm.fee as number | string | undefined}
+                                  value={
+                                    editForm.fee as number | string | undefined
+                                  }
                                   onChange={(num) =>
                                     setEditForm({
                                       ...editForm,
@@ -2200,7 +2269,9 @@ export default function AccountDetails({ account, onUpdate }: AccountDetailsProp
 
                             <td className="px-6 py-3">
                               <NumberInput
-                                value={editForm.amount as number | string | undefined}
+                                value={
+                                  editForm.amount as number | string | undefined
+                                }
                                 onChange={(num) =>
                                   setEditForm({
                                     ...editForm,
@@ -2534,4 +2605,3 @@ function AutocompleteInput({
     </div>
   );
 }
-

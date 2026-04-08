@@ -83,7 +83,8 @@ export default function InvestmentDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      const transactions = await rust.get_all_transactions() as InvestmentTransaction[];
+      const transactions =
+        (await rust.get_all_transactions()) as InvestmentTransaction[];
       const { currentHoldings } = buildHoldingsFromTransactions(transactions);
 
       if (currentHoldings.length === 0) {
@@ -93,7 +94,9 @@ export default function InvestmentDashboard() {
       }
 
       const tickers = currentHoldings.map((h) => h.ticker);
-      const quotes = await rust.get_stock_quotes({ tickers }) as InvestmentQuote[];
+      const quotes = (await rust.get_stock_quotes({
+        tickers,
+      })) as InvestmentQuote[];
 
       const finalHoldings = mergeHoldingsWithQuotes(currentHoldings, quotes);
       setHoldings(finalHoldings as Holding[]);
@@ -138,80 +141,89 @@ export default function InvestmentDashboard() {
   }, [holdings, isDark, chartColors]);
 
   const chartOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "65%",
-      borderRadius: 4,
-      plugins: {
-        legend: {
-          position: "right" as const,
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-            padding: 20,
-            color: chartColors.text,
-            font: {
-              family: "Inter",
-              size: 12,
+    () =>
+      ({
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "65%",
+        borderRadius: 4,
+        plugins: {
+          legend: {
+            position: "right" as const,
+            labels: {
+              usePointStyle: true,
+              boxWidth: 8,
+              padding: 20,
+              color: chartColors.text,
+              font: {
+                family: "Inter",
+                size: 12,
+              },
+            },
+          },
+          title: {
+            display: false,
+          },
+          tooltip: {
+            backgroundColor: chartColors.tooltipBg,
+            titleColor: chartColors.tooltipText,
+            bodyColor: chartColors.tooltipText,
+            padding: 12,
+            cornerRadius: 8,
+            titleFont: { family: "Inter", size: 13 },
+            bodyFont: { family: "Inter", size: 12 },
+            callbacks: {
+              label: function (context: {
+                label?: string;
+                dataset: { originalData?: number[] };
+                dataIndex: number;
+                raw?: unknown;
+                parsed?: unknown;
+              }) {
+                const prefix = context.label ? context.label + ": " : "";
+                const value = context.dataset.originalData
+                  ? context.dataset.originalData[context.dataIndex]
+                  : (context.raw ?? context.parsed ?? 0);
+                return (
+                  prefix +
+                  formatNumber(Number(value) || 0, {
+                    style: "currency",
+                    ignorePrivacy: true,
+                  })
+                );
+              },
+              labelColor: function (context: {
+                dataset: { backgroundColor?: unknown; borderColor?: unknown };
+                dataIndex: number;
+              }) {
+                const dataset = context.dataset;
+                const index = context.dataIndex;
+                const tooltipBg = chartColors.tooltipBg;
+                const bg =
+                  Array.isArray(dataset.backgroundColor) &&
+                  dataset.backgroundColor[index] !== undefined
+                    ? dataset.backgroundColor[index]
+                    : dataset.backgroundColor;
+                const border =
+                  Array.isArray(dataset.borderColor) &&
+                  dataset.borderColor[index] !== undefined
+                    ? dataset.borderColor[index]
+                    : dataset.borderColor;
+                // If the slice has a transparent background (negative sector), use tooltip bg so it blends in
+                const backgroundColor =
+                  bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
+                    ? tooltipBg
+                    : bg;
+                return {
+                  borderColor: String(border),
+                  backgroundColor: String(backgroundColor),
+                  borderWidth: 2,
+                };
+              },
             },
           },
         },
-        title: {
-          display: false,
-        },
-        tooltip: {
-          backgroundColor: chartColors.tooltipBg,
-          titleColor: chartColors.tooltipText,
-          bodyColor: chartColors.tooltipText,
-          padding: 12,
-          cornerRadius: 8,
-          titleFont: { family: "Inter", size: 13 },
-          bodyFont: { family: "Inter", size: 12 },
-          callbacks: {
-            label: function (context: { label?: string; dataset: { originalData?: number[] }; dataIndex: number; raw?: unknown; parsed?: unknown }) {
-              const prefix = context.label ? context.label + ": " : "";
-              const value = context.dataset.originalData
-                ? context.dataset.originalData[context.dataIndex]
-                : (context.raw ?? context.parsed ?? 0);
-              return (
-                prefix +
-                formatNumber(Number(value) || 0, {
-                  style: "currency",
-                  ignorePrivacy: true,
-                })
-              );
-            },
-            labelColor: function (context: { dataset: { backgroundColor?: unknown; borderColor?: unknown }; dataIndex: number }) {
-              const dataset = context.dataset;
-              const index = context.dataIndex;
-              const tooltipBg = chartColors.tooltipBg;
-              const bg =
-                Array.isArray(dataset.backgroundColor) &&
-                dataset.backgroundColor[index] !== undefined
-                  ? dataset.backgroundColor[index]
-                  : dataset.backgroundColor;
-              const border =
-                Array.isArray(dataset.borderColor) &&
-                dataset.borderColor[index] !== undefined
-                  ? dataset.borderColor[index]
-                  : dataset.borderColor;
-              // If the slice has a transparent background (negative sector), use tooltip bg so it blends in
-              const backgroundColor =
-                bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
-                  ? tooltipBg
-                  : bg;
-              return {
-                borderColor: String(border),
-                backgroundColor: String(backgroundColor),
-                borderWidth: 2,
-              };
-            },
-          },
-        },
-      },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any),
+      }) as any,
     [formatNumber, chartColors],
   );
 
@@ -514,7 +526,15 @@ function TreeMap({ items, totalValue, isDark }: TreeMapProps) {
   );
 }
 
-function TreeMapNode({ items, x, y, w, h, totalValue, isDark }: TreeMapNodeProps) {
+function TreeMapNode({
+  items,
+  x,
+  y,
+  w,
+  h,
+  totalValue,
+  isDark,
+}: TreeMapNodeProps) {
   const formatNumber = useFormatNumber();
 
   if (items.length === 0) return null;

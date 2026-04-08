@@ -95,10 +95,15 @@ interface DashboardProps {
   marketValues?: Record<string, number>;
 }
 
-export default function Dashboard({ accounts: propAccounts = [], marketValues = {} }: DashboardProps) {
+export default function Dashboard({
+  accounts: propAccounts = [],
+  marketValues = {},
+}: DashboardProps) {
   const [accounts, setAccounts] = useState<Account[]>(propAccounts);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [dailyPrices, setDailyPrices] = useState<Record<string, DailyPriceData>>({});
+  const [dailyPrices, setDailyPrices] = useState<
+    Record<string, DailyPriceData>
+  >({});
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [timeRange, setTimeRange] = useState("1Y"); // 1M, 3M, 6M, YTD, 1Y, ALL, CUSTOM
   const [customStartDate, setCustomStartDate] = useState(
@@ -129,14 +134,14 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const txs = await rust.get_all_transactions() as Transaction[];
+        const txs = (await rust.get_all_transactions()) as Transaction[];
         setTransactions(txs);
 
         // If parent passed accounts, use them; otherwise fetch from backend
         if (propAccounts && propAccounts.length > 0) {
           setAccounts(propAccounts);
         } else {
-          const accs = await rust.get_accounts({}) as Account[];
+          const accs = (await rust.get_accounts()) as Account[];
           setAccounts(accs);
         }
       } catch (e) {
@@ -149,7 +154,9 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
   useEffect(() => {
     const fetchQuotes = async () => {
       if (transactions.length === 0) return;
-      const { currentHoldings } = buildHoldingsFromTransactions(transactions as any);
+      const { currentHoldings } = buildHoldingsFromTransactions(
+        transactions as any,
+      );
       if (currentHoldings.length === 0) {
         setQuotes([]);
         return;
@@ -157,7 +164,9 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
       const tickers = currentHoldings.map((h) => h.ticker);
       const uniqueTickers = [...new Set(tickers)];
       try {
-        const qs = await rust.get_stock_quotes({ tickers: uniqueTickers }) as Quote[];
+        const qs = (await rust.get_stock_quotes({
+          tickers: uniqueTickers,
+        })) as Quote[];
         setQuotes(qs);
       } catch (e) {
         console.error("Failed to fetch quotes:", e);
@@ -208,9 +217,13 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
         // Then fetch
         const pricesMap: Record<string, DailyPriceData> = {};
         for (const ticker of tickers) {
-          const prices = await rust.get_daily_stock_prices({ ticker }) as DailyPriceEntry[];
+          const prices = (await rust.get_daily_stock_prices({
+            ticker,
+          })) as DailyPriceEntry[];
           // Sort prices by date ascending to ensure getPrice binary search/linear scan works
-          prices.sort((a: DailyPriceEntry, b: DailyPriceEntry) => (a.date > b.date ? 1 : -1));
+          prices.sort((a: DailyPriceEntry, b: DailyPriceEntry) =>
+            a.date > b.date ? 1 : -1,
+          );
 
           // Convert to map for faster lookup: date -> price
           const priceByDate: Record<string, number> = {};
@@ -249,7 +262,9 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
 
   // Track user toggles for account visibility (dashboard-wide filter).
   // Default: all accounts selected so the full picture is shown on load.
-  const [toggledAccounts, setToggledAccounts] = useState<Record<string | number, boolean>>(() => {
+  const [toggledAccounts, setToggledAccounts] = useState<
+    Record<string | number, boolean>
+  >(() => {
     const map: Record<string | number, boolean> = {};
     propAccounts.forEach((a) => (map[a.id] = true));
     return map;
@@ -485,7 +500,9 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
     if (totalData.length > 0) {
       const currentTotal = computeNetWorth(
         filteredAccounts as unknown as Parameters<typeof computeNetWorth>[0],
-        filteredMarketValues as unknown as Parameters<typeof computeNetWorth>[1],
+        filteredMarketValues as unknown as Parameters<
+          typeof computeNetWorth
+        >[1],
       );
       totalData[totalData.length - 1] = currentTotal;
     }
@@ -494,7 +511,9 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
       label: t("dashboard.datasets.total_net_worth"),
       data: totalData,
       borderColor: chartColors.line,
-      backgroundColor: (context: { chart: { ctx: CanvasRenderingContext2D } }) => {
+      backgroundColor: (context: {
+        chart: { ctx: CanvasRenderingContext2D };
+      }) => {
         const ctx = context.chart.ctx;
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
         gradient.addColorStop(0, chartColors.line + "33"); // 20% opacity
@@ -854,7 +873,9 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
     const isDayBucket =
       timeRange === "1M" ||
       (timeRange === "CUSTOM" &&
-        (customEndDate.getTime() - customStartDate.getTime()) / (1000 * 60 * 60 * 24) <= 31);
+        (customEndDate.getTime() - customStartDate.getTime()) /
+          (1000 * 60 * 60 * 24) <=
+          31);
 
     if (isDayBucket) {
       // Last 30 days or custom range <= 31 days
@@ -1467,7 +1488,11 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
                           checked={!!toggledAccounts[acc.id]}
                           onChange={() => toggleAccountVisibility(acc.id)}
                           aria-label={acc.name}
-                          style={{ ["--hb-account-color" as string]: color } as React.CSSProperties}
+                          style={
+                            {
+                              ["--hb-account-color" as string]: color,
+                            } as React.CSSProperties
+                          }
                         />
                         <span
                           className="account-dot w-3 h-3 rounded-full flex-shrink-0"
@@ -1507,7 +1532,14 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
           </h3>
           <p className="summary-card-value">
             <MaskedNumber
-              value={computeNetWorth(filteredAccounts as unknown as Parameters<typeof computeNetWorth>[0], filteredMarketValues as unknown as Parameters<typeof computeNetWorth>[1])}
+              value={computeNetWorth(
+                filteredAccounts as unknown as Parameters<
+                  typeof computeNetWorth
+                >[0],
+                filteredMarketValues as unknown as Parameters<
+                  typeof computeNetWorth
+                >[1],
+              )}
               options={{ style: "currency" }}
             />
           </p>
@@ -1592,7 +1624,10 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
               </div>
               <div className="chart-body">
                 {incomeVsExpensesData ? (
-                  <Bar options={barOptions as any} data={incomeVsExpensesData} />
+                  <Bar
+                    options={barOptions as any}
+                    data={incomeVsExpensesData}
+                  />
                 ) : (
                   <div className="loading-container">
                     <div className="loading-content">
@@ -1642,7 +1677,10 @@ export default function Dashboard({ accounts: propAccounts = [], marketValues = 
               </div>
               <div className="chart-body">
                 {doughnutData ? (
-                  <Doughnut options={doughnutOptions as any} data={doughnutData!} />
+                  <Doughnut
+                    options={doughnutOptions as any}
+                    data={doughnutData!}
+                  />
                 ) : (
                   <div className="loading-container">
                     <div className="loading-content">

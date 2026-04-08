@@ -1,11 +1,12 @@
+import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import SettingsView from "../../../features/settings/SettingsView";
 
 // Mock i18n (provide AVAILABLE_LANGUAGES used by the component)
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key) => {
-    const map = {
+  t: (key: string) => {
+    const map: Record<string, string> = {
       "settings.title": "Settings",
       "settings.general": "General",
       "settings.customization": "Customization",
@@ -94,7 +95,17 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 // Mock CustomSelect to expose options easily and provide sensible test ids based on placeholder
 vi.mock("../../../components/ui/CustomSelect", () => ({
-  default: ({ value, onChange, options, placeholder }) => {
+  default: ({
+    value,
+    onChange,
+    options,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    options: { value: string; label: string }[];
+    placeholder?: string;
+  }) => {
     const p = String(placeholder || "").toLowerCase();
     const testId = p.includes("language")
       ? "language-select"
@@ -110,7 +121,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
       <select
         data-testid={testId}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+          onChange(e.target.value)
+        }
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (

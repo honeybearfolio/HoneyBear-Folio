@@ -1,8 +1,42 @@
-import { WEEKDAY_KEYS, createDefaultScheduledForm } from "../../constants/app";
+import {
+  WEEKDAY_KEYS,
+  createDefaultScheduledForm,
+  type ScheduledFormState,
+} from "../../constants/app";
 
 export { WEEKDAY_KEYS, createDefaultScheduledForm };
+export type { ScheduledFormState };
 
-export function toScheduledPayload(formState, translate) {
+type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
+
+interface ScheduledPayload {
+  accountId: number | null;
+  payee: string;
+  amount: number;
+  category: string | null;
+  notes: string | null;
+  currency: string | null;
+  recurrenceType: string;
+  intervalValue: number | null;
+  intervalUnit: string | null;
+  daysOfWeek: number[] | null;
+  ordinal: number | null;
+  weekday: number | null;
+  startDate: string;
+  endDate: string | null;
+  maxOccurrences: number | null;
+  transactionType: string;
+  ticker: string | null;
+  shares: number | null;
+  pricePerShare: number | null;
+  fee: number | null;
+  isBuy: boolean | null;
+}
+
+export function toScheduledPayload(
+  formState: ScheduledFormState,
+  translate: TranslateFn,
+): ScheduledPayload {
   const isInvestment = formState.transactionType === "investment";
 
   let amount = Number(formState.amount) || 0;
@@ -63,7 +97,20 @@ export function toScheduledPayload(formState, translate) {
   };
 }
 
-export function getRecurrenceSummary(sched, translate) {
+interface ScheduledRecord {
+  recurrence_type: string;
+  interval_value?: number;
+  interval_unit?: string;
+  days_of_week?: number[];
+  ordinal?: number;
+  weekday?: number;
+  [key: string]: unknown;
+}
+
+export function getRecurrenceSummary(
+  sched: ScheduledRecord,
+  translate: TranslateFn,
+): string {
   if (sched.recurrence_type === "every_n") {
     const n = sched.interval_value || 1;
     const unit = translate(`scheduled.unit.${sched.interval_unit || "month"}`);
@@ -83,7 +130,16 @@ export function getRecurrenceSummary(sched, translate) {
   return "";
 }
 
-export function getAccountName(accounts, accountId) {
+interface AccountRecord {
+  id: number;
+  name: string;
+  [key: string]: unknown;
+}
+
+export function getAccountName(
+  accounts: AccountRecord[],
+  accountId: number,
+): string {
   const acc = accounts.find((a) => a.id === accountId);
   return acc ? acc.name : String(accountId);
 }

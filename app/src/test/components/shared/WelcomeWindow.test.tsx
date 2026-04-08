@@ -74,7 +74,12 @@ vi.mock("../../../utils/format", () => ({
 
 // Mock CustomSelect to expose options/change easily and return distinct testids per control
 vi.mock("../../../components/ui/CustomSelect", () => ({
-  default: ({ value, onChange, options, placeholder }: {
+  default: ({
+    value,
+    onChange,
+    options,
+    placeholder,
+  }: {
     value: string;
     onChange: (v: string) => void;
     options: { value: string; label: string }[];
@@ -95,7 +100,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
       <select
         data-testid={testId}
         value={value}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+          onChange(e.target.value)
+        }
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (

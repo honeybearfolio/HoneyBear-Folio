@@ -8,7 +8,7 @@ export const STORAGE_KEYS = {
   FIRST_DAY_OF_WEEK: "hb_first_day_of_week",
   UI_LANGUAGE: "hb_ui_language",
   CHAT_THINK: "hb_chat_think",
-};
+} as const;
 
 export const APP_DEFAULTS = {
   SIDEBAR_MIN_WIDTH: 240,
@@ -21,9 +21,19 @@ export const APP_DEFAULTS = {
   DATE_FORMAT: "YYYY-MM-DD",
   FIRST_DAY_OF_WEEK: 1,
   UI_LANGUAGE: "en",
-};
+} as const;
 
-export const DEFAULT_SIDEBAR_VISIBILITY = {
+export interface SidebarVisibility {
+  dashboard: boolean;
+  investments: boolean;
+  fire: boolean;
+  rules: boolean;
+  scheduled: boolean;
+  all: boolean;
+  chat: boolean;
+}
+
+export const DEFAULT_SIDEBAR_VISIBILITY: SidebarVisibility = {
   dashboard: true,
   investments: true,
   fire: true,
@@ -33,7 +43,7 @@ export const DEFAULT_SIDEBAR_VISIBILITY = {
   chat: true,
 };
 
-export const RESETTABLE_STORAGE_KEYS = [
+export const RESETTABLE_STORAGE_KEYS: string[] = [
   STORAGE_KEYS.NUMBER_FORMAT,
   STORAGE_KEYS.CURRENCY,
   STORAGE_KEYS.THEME,
@@ -44,7 +54,7 @@ export const RESETTABLE_STORAGE_KEYS = [
   STORAGE_KEYS.SIDEBAR_VISIBILITY,
 ];
 
-export const EXTERNAL_URLS = {
+export const EXTERNAL_URLS: Record<string, string> = {
   GITHUB_REPO: "https://github.com/HoneyBearFolio/HoneyBear-Folio",
   WEBSITE: "https://honeybearfolio.github.io",
 };
@@ -52,7 +62,7 @@ export const EXTERNAL_URLS = {
 EXTERNAL_URLS.DOCS = `${EXTERNAL_URLS.WEBSITE}/docs`;
 EXTERNAL_URLS.LICENSE = `${EXTERNAL_URLS.GITHUB_REPO}/blob/main/LICENSE`;
 
-export const WEEKDAY_KEYS = [
+export const WEEKDAY_KEYS: readonly string[] = [
   "weekday.sunday",
   "weekday.monday",
   "weekday.tuesday",
@@ -62,7 +72,33 @@ export const WEEKDAY_KEYS = [
   "weekday.saturday",
 ];
 
-export function createDefaultScheduledForm() {
+export interface ScheduledFormState {
+  id: number | null;
+  accountId: number | null;
+  transactionType: string;
+  payee: string;
+  amount: string | number;
+  category: string;
+  notes: string;
+  currency: string;
+  recurrenceType: string;
+  intervalValue: number;
+  intervalUnit: string;
+  daysOfWeek: number[];
+  ordinal: number;
+  weekday: number;
+  startDate: string;
+  endDate: string;
+  maxOccurrences: string | number;
+  enabled: boolean;
+  ticker: string;
+  shares: string | number;
+  pricePerShare: string | number;
+  fee: string | number;
+  isBuy: boolean;
+}
+
+export function createDefaultScheduledForm(): ScheduledFormState {
   return {
     id: null,
     accountId: null,
@@ -90,16 +126,36 @@ export function createDefaultScheduledForm() {
   };
 }
 
-export const DEFAULT_RULE_CONDITION = {
+export interface RuleCondition {
+  field: string;
+  operator: string;
+  value: string;
+  negated?: boolean;
+}
+
+export interface RuleAction {
+  field: string;
+  value: string;
+}
+
+export interface RuleFormState {
+  id: number | null;
+  priority: number;
+  logic: string;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+}
+
+export const DEFAULT_RULE_CONDITION: RuleCondition = {
   field: "payee",
   operator: "equals",
   value: "",
   negated: false,
 };
 
-export const DEFAULT_RULE_ACTION = { field: "category", value: "" };
+export const DEFAULT_RULE_ACTION: RuleAction = { field: "category", value: "" };
 
-export function createDefaultRuleFormState() {
+export function createDefaultRuleFormState(): RuleFormState {
   return {
     id: null,
     priority: 0,

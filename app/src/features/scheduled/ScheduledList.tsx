@@ -94,10 +94,14 @@ export default function ScheduledList() {
     createDefaultScheduledForm(),
   );
   const [showForm, setShowForm] = useState(false);
-  const [tickerSuggestions, setTickerSuggestions] = useState<TickerSuggestion[]>([]);
+  const [tickerSuggestions, setTickerSuggestions] = useState<
+    TickerSuggestion[]
+  >([]);
   const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
-  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(
+    null,
+  );
 
   const confirm = useConfirm();
   const { showToast } = useToast();
@@ -111,8 +115,8 @@ export default function ScheduledList() {
     (async () => {
       try {
         const [scheds, accs] = await Promise.all([
-          rust.get_scheduled_transactions({}),
-          rust.get_accounts({}),
+          rust.get_scheduled_transactions(),
+          rust.get_accounts(),
         ]);
         if (mounted) {
           setSchedules(scheds as ScheduleRecord[]);
@@ -131,7 +135,9 @@ export default function ScheduledList() {
     function handleClickOutside(event: MouseEvent) {
       if (
         menuOpenId &&
-        !(event.target as HTMLElement).closest(".sched-action-menu-container") &&
+        !(event.target as HTMLElement).closest(
+          ".sched-action-menu-container",
+        ) &&
         !(event.target as HTMLElement).closest(".sched-action-menu-portal")
       ) {
         setMenuOpenId(null);
@@ -159,7 +165,7 @@ export default function ScheduledList() {
 
   async function fetchSchedules() {
     try {
-      const r = await rust.get_scheduled_transactions({}) as ScheduleRecord[];
+      const r = (await rust.get_scheduled_transactions()) as ScheduleRecord[];
       setSchedules(r);
     } catch (e) {
       console.error("Failed to fetch scheduled transactions:", e);
@@ -184,7 +190,9 @@ export default function ScheduledList() {
 
     tickerTimeoutRef.current = setTimeout(async () => {
       try {
-        const suggestions = await rust.search_ticker({ query }) as TickerSuggestion[];
+        const suggestions = (await rust.search_ticker({
+          query,
+        })) as TickerSuggestion[];
         setTickerSuggestions(suggestions);
         setShowTickerSuggestions(true);
       } catch (error) {
@@ -468,7 +476,10 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.accountId ?? undefined}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, accountId: Number(val) }))
+                        setFormState((prev) => ({
+                          ...prev,
+                          accountId: Number(val),
+                        }))
                       }
                       options={accountOptions}
                       placeholder={t("scheduled.field.account")}
@@ -512,7 +523,10 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.currency}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, currency: String(val) }))
+                        setFormState((prev) => ({
+                          ...prev,
+                          currency: String(val),
+                        }))
                       }
                       options={currencyOptions}
                       placeholder={t("scheduled.field.currency")}
@@ -570,7 +584,10 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.accountId ?? undefined}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, accountId: Number(val) }))
+                        setFormState((prev) => ({
+                          ...prev,
+                          accountId: Number(val),
+                        }))
                       }
                       options={accountOptions}
                       placeholder={t("scheduled.field.account")}
@@ -726,7 +743,10 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.currency}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, currency: String(val) }))
+                        setFormState((prev) => ({
+                          ...prev,
+                          currency: String(val),
+                        }))
                       }
                       options={currencyOptions}
                       placeholder={t("scheduled.field.currency")}
@@ -764,7 +784,10 @@ export default function ScheduledList() {
                 <CustomSelect
                   value={formState.recurrenceType}
                   onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, recurrenceType: String(val) }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      recurrenceType: String(val),
+                    }))
                   }
                   options={recurrenceTypeOptions}
                   className="w-52"
@@ -790,7 +813,10 @@ export default function ScheduledList() {
                     <CustomSelect
                       value={formState.intervalUnit}
                       onChange={(val) =>
-                        setFormState((prev) => ({ ...prev, intervalUnit: String(val) }))
+                        setFormState((prev) => ({
+                          ...prev,
+                          intervalUnit: String(val),
+                        }))
                       }
                       options={intervalUnitOptions}
                       className="w-32"

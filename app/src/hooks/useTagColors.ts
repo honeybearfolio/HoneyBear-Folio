@@ -7,7 +7,9 @@ import {
 
 const STORAGE_KEY = "hb_tag_colors";
 
-function readFromStorage() {
+type TagColorMap = Record<string, string>;
+
+function readFromStorage(): TagColorMap {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
@@ -16,7 +18,7 @@ function readFromStorage() {
   }
 }
 
-function writeToStorage(map) {
+function writeToStorage(map: TagColorMap): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   } catch {
@@ -24,10 +26,18 @@ function writeToStorage(map) {
   }
 }
 
-export default function useTagColors() {
-  const [tagColors, setTagColors] = useState(readFromStorage);
+interface UseTagColorsReturn {
+  tagColors: TagColorMap;
+  setTagColor: (categoryName: string, colorKey: string) => void;
+  removeTagColor: (categoryName: string) => void;
+  resetAll: () => void;
+  getTagClasses: (categoryName: string) => string;
+}
 
-  const setTagColor = useCallback((categoryName, colorKey) => {
+export default function useTagColors(): UseTagColorsReturn {
+  const [tagColors, setTagColors] = useState<TagColorMap>(readFromStorage);
+
+  const setTagColor = useCallback((categoryName: string, colorKey: string) => {
     setTagColors((prev) => {
       const next = { ...prev, [categoryName]: colorKey };
       writeToStorage(next);
@@ -35,7 +45,7 @@ export default function useTagColors() {
     });
   }, []);
 
-  const removeTagColor = useCallback((categoryName) => {
+  const removeTagColor = useCallback((categoryName: string) => {
     setTagColors((prev) => {
       const next = { ...prev };
       delete next[categoryName];
@@ -54,7 +64,7 @@ export default function useTagColors() {
   }, []);
 
   const getTagClasses = useCallback(
-    (categoryName) => {
+    (categoryName: string): string => {
       if (!categoryName) return getColorClasses(DEFAULT_COLOR);
 
       const assigned = tagColors[categoryName];

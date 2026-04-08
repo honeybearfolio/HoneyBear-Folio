@@ -1,12 +1,46 @@
 // Helpers to compute holdings and portfolio metrics from transactions and quotes
 
-export function buildHoldingsFromTransactions(transactions) {
-  const holdingMap = {};
-  let firstTradeDate = null;
+interface InvestmentTransaction {
+  date: string;
+  ticker?: string;
+  shares?: number;
+  price_per_share?: number;
+  fee?: number;
+  account_id: number;
+  [key: string]: unknown;
+}
+
+interface InvestmentQuote {
+  symbol: string;
+  regularMarketPrice: number;
+  regularMarketChangePercent?: number;
+  quoteType?: string | null;
+  [key: string]: unknown;
+}
+
+interface Holding {
+  ticker: string;
+  shares: number;
+  costBasis: number;
+}
+
+interface MergedHolding extends Holding {
+  price: number;
+  currentValue: number;
+  roi: number;
+  changePercent: number;
+  quoteType: string | null;
+}
+
+export function buildHoldingsFromTransactions(
+  transactions: InvestmentTransaction[],
+): { currentHoldings: Holding[]; firstTradeDate: Date | null } {
+  const holdingMap: Record<string, Holding> = {};
+  let firstTradeDate: Date | null = null;
 
   // Sort transactions by date to ensure consistent results
   const txs = [...transactions].sort(
-    (a, b) => new Date(a.date) - new Date(b.date),
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
 
   txs.forEach((tx) => {
@@ -45,8 +79,11 @@ export function buildHoldingsFromTransactions(transactions) {
   return { currentHoldings, firstTradeDate };
 }
 
-export function mergeHoldingsWithQuotes(holdings, quotes) {
-  const finalHoldings = holdings.map((h) => {
+export function mergeHoldingsWithQuotes(
+  holdings: Holding[],
+  quotes: InvestmentQuote[],
+): MergedHolding[] {
+  const finalHoldings: MergedHolding[] = holdings.map((h) => {
     const quote = quotes.find(
       (q) => q.symbol.toLowerCase() === h.ticker.toLowerCase(),
     );
@@ -59,8 +96,8 @@ export function mergeHoldingsWithQuotes(holdings, quotes) {
       price,
       currentValue,
       roi,
-      changePercent: quote ? quote.regularMarketChangePercent : 0,
-      quoteType: quote ? quote.quoteType : null,
+      changePercent: quote ? (quote.regularMarketChangePercent ?? 0) : 0,
+      quoteType: quote ? (quote.quoteType ?? null) : null,
     };
   });
 
@@ -68,7 +105,10 @@ export function mergeHoldingsWithQuotes(holdings, quotes) {
   return finalHoldings;
 }
 
-export function computePortfolioTotals(finalHoldings) {
+export function computePortfolioTotals(finalHoldings: MergedHolding[]): {
+  totalValue: number;
+  totalCostBasis: number;
+} {
   const totalValue = finalHoldings.reduce(
     (s, h) => s + (h.currentValue || 0),
     0,
@@ -80,8 +120,11 @@ export function computePortfolioTotals(finalHoldings) {
   return { totalValue, totalCostBasis };
 }
 
-export function computeNetWorthMarketValues(transactions, quotes) {
-  const accountHoldings = {};
+export function computeNetWorthMarketValues(
+  transactions: InvestmentTransaction[],
+  quotes: InvestmentQuote[],
+): Record<string, number> {
+  const accountHoldings: Record<string, Record<string, number>> = {};
   transactions.forEach((tx) => {
     if (tx.ticker && tx.shares) {
       if (!accountHoldings[tx.account_id]) accountHoldings[tx.account_id] = {};
@@ -91,10 +134,10 @@ export function computeNetWorthMarketValues(transactions, quotes) {
     }
   });
 
-  const quoteMap = {};
+  const quoteMap: Record<string, number> = {};
   quotes.forEach((q) => (quoteMap[q.symbol] = q.regularMarketPrice));
 
-  const map = {};
+  const map: Record<string, number> = {};
   for (const [accountId, holdings] of Object.entries(accountHoldings)) {
     let val = 0;
     for (const [ticker, shares] of Object.entries(holdings)) {

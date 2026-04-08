@@ -1,17 +1,23 @@
 import { useState, useRef, useEffect } from "react";
-import PropTypes from "prop-types";
 import "../../styles/Modal.css";
 import { t } from "../../i18n/i18n";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
+
+interface CustomRateDialogProps {
+  isOpen: boolean;
+  currency?: string;
+  onConfirm: (rate: number) => void;
+  onCancel: () => void;
+}
 
 export default function CustomRateDialog({
   isOpen,
   currency,
   onConfirm,
   onCancel,
-}) {
+}: CustomRateDialogProps) {
   const [rate, setRate] = useState("");
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -25,7 +31,7 @@ export default function CustomRateDialog({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(rate);
     if (isNaN(val) || val <= 0) return;
@@ -68,10 +74,3 @@ export default function CustomRateDialog({
     </Modal>
   );
 }
-
-CustomRateDialog.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  currency: PropTypes.string,
-  onConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};

@@ -3,7 +3,11 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ConfirmDialogProvider } from "../../../components/ui/ConfirmDialog";
 import { useConfirm } from "../../../contexts/confirm";
 
-const TestComponent = ({ onResult }: { onResult: (result: boolean) => void }) => {
+const TestComponent = ({
+  onResult,
+}: {
+  onResult: (result: boolean) => void;
+}) => {
   const confirm = useConfirm();
 
   const handleAction = async () => {

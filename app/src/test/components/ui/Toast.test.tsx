@@ -4,7 +4,11 @@ import { ToastProvider } from "../../../components/ui/Toast";
 import { useToast } from "../../../contexts/toast";
 
 // Test component to consume context
-function TestComponent({ onShowToast }: { onShowToast?: (id: string) => void }) {
+function TestComponent({
+  onShowToast,
+}: {
+  onShowToast?: (id: string) => void;
+}) {
   const { showToast } = useToast() as any;
   return (
     <div>

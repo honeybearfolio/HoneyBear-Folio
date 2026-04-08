@@ -1,6 +1,24 @@
-import PropTypes from "prop-types";
 import { useState, useEffect, useRef } from "react";
 import { useFormatNumber, useParseNumber } from "../../utils/format";
+
+interface NumberInputProps {
+  value: number | string | undefined | null;
+  onChange: (value: number) => void;
+  className?: string;
+  placeholder?: string;
+  maximumFractionDigits?: number;
+  minimumFractionDigits?: number;
+  useGrouping?: boolean;
+  inputMode?:
+    | "decimal"
+    | "numeric"
+    | "text"
+    | "none"
+    | "tel"
+    | "search"
+    | "email"
+    | "url";
+}
 
 export default function NumberInput({
   value,
@@ -11,12 +29,12 @@ export default function NumberInput({
   minimumFractionDigits,
   useGrouping = true,
   inputMode = "decimal",
-}) {
+}: NumberInputProps) {
   const formatNumber = useFormatNumber();
   const parseNumber = useParseNumber();
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const ref = useRef(null);
+  const ref = useRef<HTMLInputElement>(null);
 
   // When value changes externally, update display if not editing
   useEffect(() => {
@@ -89,14 +107,3 @@ export default function NumberInput({
     />
   );
 }
-
-NumberInput.propTypes = {
-  value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  onChange: PropTypes.func.isRequired,
-  className: PropTypes.string,
-  placeholder: PropTypes.string,
-  maximumFractionDigits: PropTypes.number,
-  minimumFractionDigits: PropTypes.number,
-  useGrouping: PropTypes.bool,
-  inputMode: PropTypes.string,
-};

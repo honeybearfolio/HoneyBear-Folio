@@ -1,19 +1,18 @@
-/* global __APP_VERSION__, __APP_COMMIT__ */
-
 // Small helper to compute a displayable version string.
 // Rules:
 // - In production builds we prefer the package.json version injected at build time
 // - In development builds we show the current commit (if available) or "development"
 
-export const APP_VERSION =
+export const APP_VERSION: string | null =
   typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : null;
-export const APP_COMMIT =
+export const APP_COMMIT: string | null =
   typeof __APP_COMMIT__ !== "undefined" ? __APP_COMMIT__ : null;
 
 // A release build is a production build with a version available
-export const IS_RELEASE = import.meta.env.PROD === true && !!APP_VERSION;
+export const IS_RELEASE: boolean =
+  import.meta.env.PROD === true && !!APP_VERSION;
 
-export function getDisplayVersion() {
+export function getDisplayVersion(): string {
   const isProd = import.meta.env.PROD === true;
 
   // If this is a production build and we have a version, show it

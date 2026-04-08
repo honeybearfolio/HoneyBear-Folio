@@ -41,7 +41,9 @@ export default function RulesList() {
   );
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
-  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const formRef = useRef<HTMLDivElement>(null);
 
   useNumberFormat();
@@ -50,7 +52,7 @@ export default function RulesList() {
 
   async function fetchRules() {
     try {
-      const r = await rust.get_rules({}) as RuleRecord[];
+      const r = (await rust.get_rules()) as RuleRecord[];
       setRules(r);
     } catch (e) {
       console.error("Failed to fetch rules:", e);
@@ -61,7 +63,7 @@ export default function RulesList() {
     let mounted = true;
     (async () => {
       try {
-        const r = await rust.get_rules({}) as RuleRecord[];
+        const r = (await rust.get_rules()) as RuleRecord[];
         if (mounted) setRules(r);
       } catch (e) {
         console.error("Failed to fetch rules:", e);
@@ -254,7 +256,9 @@ export default function RulesList() {
     setDraggingId(null);
     draggingIdRef.current = null;
     try {
-      await rust.update_rules_order({ ruleIds: rules.map((r: RuleRecord) => r.id) });
+      await rust.update_rules_order({
+        ruleIds: rules.map((r: RuleRecord) => r.id),
+      });
     } catch (err) {
       console.error("Failed to reorder rules:", err);
       fetchRules();
@@ -422,7 +426,10 @@ export default function RulesList() {
                       <CustomSelect
                         value={formState.logic}
                         onChange={(val) =>
-                          setFormState((prev) => ({ ...prev, logic: String(val) }))
+                          setFormState((prev) => ({
+                            ...prev,
+                            logic: String(val),
+                          }))
                         }
                         options={logicOptions}
                         className="w-24 h-9"
@@ -682,7 +689,12 @@ export default function RulesList() {
               const actions: RuleAction[] =
                 (rule.actions?.length ?? 0) > 0
                   ? rule.actions!
-                  : [{ field: rule.action_field ?? "", value: rule.action_value ?? "" }];
+                  : [
+                      {
+                        field: rule.action_field ?? "",
+                        value: rule.action_value ?? "",
+                      },
+                    ];
               const logic = rule.logic || "and";
 
               return (

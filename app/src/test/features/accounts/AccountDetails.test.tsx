@@ -69,7 +69,9 @@ describe("AccountDetails", () => {
     vi.mocked(formatInteractions.useParseNumber).mockReturnValue(
       mockParseNumber as any,
     );
-    vi.mocked(formatInteractions.useFormatDate).mockReturnValue(mockFormatDate as any);
+    vi.mocked(formatInteractions.useFormatDate).mockReturnValue(
+      mockFormatDate as any,
+    );
 
     vi.mocked(confirmHook.useConfirm).mockReturnValue(mockConfirm);
 

@@ -1,4 +1,10 @@
-const CONTRIBUTORS = [
+interface Contributor {
+  username: string;
+  roleKey: string;
+  github?: string;
+}
+
+const CONTRIBUTORS: readonly Contributor[] = [
   {
     username: "BernatBC",
     roleKey: "about.lead_developer",

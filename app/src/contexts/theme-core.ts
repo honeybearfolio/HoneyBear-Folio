@@ -1,8 +1,13 @@
 import { createContext, useContext } from "react";
 
-const ThemeContext = createContext();
+export interface ThemeContextValue {
+  theme: string;
+  setTheme: (newTheme: string) => void;
+}
 
-function useTheme() {
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
   if (context === undefined) {
     throw new Error("useTheme must be used within a ThemeProvider");

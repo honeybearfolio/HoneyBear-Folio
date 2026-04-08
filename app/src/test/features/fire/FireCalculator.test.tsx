@@ -102,7 +102,13 @@ vi.mock("../../../utils/fire", () => ({
     totalYears: 55,
     simulationCount: 1000,
   }),
-  calculateDeterministicProjection: ({ annualExpenses, withdrawalRate }: { annualExpenses: number; withdrawalRate: number }) => ({
+  calculateDeterministicProjection: ({
+    annualExpenses,
+    withdrawalRate,
+  }: {
+    annualExpenses: number;
+    withdrawalRate: number;
+  }) => ({
     fireNumber: annualExpenses / (withdrawalRate / 100),
     yearsToFire: 15,
     projectionData: Array(51)
@@ -115,10 +121,12 @@ vi.mock("../../../utils/fire", () => ({
 const renderWithContext = (ui: React.ReactElement) => {
   return render(
     <NumberFormatContext.Provider
-      value={{
-        formatNumber: (val: number) => String(val),
-        parseNumber: (val: string) => Number(val),
-      } as never}
+      value={
+        {
+          formatNumber: (val: number) => String(val),
+          parseNumber: (val: string) => Number(val),
+        } as never
+      }
     >
       {ui}
     </NumberFormatContext.Provider>,
@@ -226,7 +234,9 @@ describe("FireCalculator", () => {
     const netWorthInput = inputs[0];
 
     // Wait for initial fetch (50000 from mock)
-    await waitFor(() => expect((netWorthInput as HTMLInputElement).value).toBe("50000"));
+    await waitFor(() =>
+      expect((netWorthInput as HTMLInputElement).value).toBe("50000"),
+    );
 
     // User changes it to 75000
     fireEvent.change(netWorthInput, { target: { value: "75000" } });

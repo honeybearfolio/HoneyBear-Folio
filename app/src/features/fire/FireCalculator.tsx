@@ -169,8 +169,9 @@ export default function FireCalculator() {
   async function fetchData() {
     setLoading(true);
     try {
-      const accounts = await rust.get_accounts({}) as Account[];
-      const transactions = await rust.get_all_transactions() as InvestmentTransaction[];
+      const accounts = (await rust.get_accounts()) as Account[];
+      const transactions =
+        (await rust.get_all_transactions()) as InvestmentTransaction[];
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =
@@ -180,7 +181,9 @@ export default function FireCalculator() {
       const tickers = currentHoldings.map((h) => h.ticker);
       let quotes: InvestmentQuote[] = [];
       if (tickers.length > 0) {
-        quotes = await rust.get_stock_quotes({ tickers }) as InvestmentQuote[];
+        quotes = (await rust.get_stock_quotes({
+          tickers,
+        })) as InvestmentQuote[];
       }
 
       // Compute portfolio totals
@@ -219,7 +222,8 @@ export default function FireCalculator() {
           totalPortfolioCostBasis;
         const now = new Date();
         const yearsInvested = Math.max(
-          (now.getTime() - firstTradeDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25),
+          (now.getTime() - firstTradeDate.getTime()) /
+            (1000 * 60 * 60 * 24 * 365.25),
           0.1,
         );
 
@@ -382,12 +386,13 @@ export default function FireCalculator() {
     };
   }, []);
 
-  const [deterministicProjection, setDeterministicProjection] = useState<ProjectionResult>({
-    fireNumber: 0,
-    yearsToFire: null,
-    projectionData: [],
-    neverReached: false,
-  });
+  const [deterministicProjection, setDeterministicProjection] =
+    useState<ProjectionResult>({
+      fireNumber: 0,
+      yearsToFire: null,
+      projectionData: [],
+      neverReached: false,
+    });
 
   const { fireNumber, yearsToFire, projectionData, neverReached } =
     deterministicProjection;
@@ -434,7 +439,8 @@ export default function FireCalculator() {
   ]);
 
   // Monte Carlo simulation (debounced to avoid excessive recalculation)
-  const [monteCarloResult, setMonteCarloResult] = useState<MonteCarloResult | null>(null);
+  const [monteCarloResult, setMonteCarloResult] =
+    useState<MonteCarloResult | null>(null);
 
   const runSimulation = useCallback(async () => {
     const result = await runMonteCarloSimulation({

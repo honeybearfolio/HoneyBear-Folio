@@ -68,7 +68,10 @@ interface Account {
   kind: string;
 }
 
-export default function ImportModal({ onClose, onImportComplete }: ImportModalProps) {
+export default function ImportModal({
+  onClose,
+  onImportComplete,
+}: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [columns, setColumns] = useState<string[]>([]);
   const [mapping, setMapping] = useState<FieldMapping>({
@@ -158,7 +161,10 @@ export default function ImportModal({ onClose, onImportComplete }: ImportModalPr
           Papa.parse(data as string, {
             header: true,
             skipEmptyLines: true,
-            complete: (results: { meta: { fields?: string[] }; data: Record<string, unknown>[] }) => {
+            complete: (results: {
+              meta: { fields?: string[] };
+              data: Record<string, unknown>[];
+            }) => {
               setColumns(results.meta.fields || []);
               setPreviewRows((results.data || []).slice(0, 5));
               autoMapColumns(results.meta.fields || []);
@@ -214,7 +220,9 @@ export default function ImportModal({ onClose, onImportComplete }: ImportModalPr
             // Send file bytes to Rust/calamine
             const arrayBuffer = e.target!.result as ArrayBuffer;
             const bytes = Array.from(new Uint8Array(arrayBuffer));
-            const result = await rust.read_xlsx({ data: bytes }) as { data: unknown[][] };
+            const result = (await rust.read_xlsx({ data: bytes })) as {
+              data: unknown[][];
+            };
             const json = result.data; // Array of arrays
 
             if (json.length > 0) {
@@ -283,7 +291,10 @@ export default function ImportModal({ onClose, onImportComplete }: ImportModalPr
 
   useEffect(() => {
     // Fetch accounts on mount
-    rust.get_accounts({}).then((data) => setAccounts(data as Account[])).catch(console.error);
+    rust
+      .get_accounts()
+      .then((data) => setAccounts(data as Account[]))
+      .catch(console.error);
 
     // Prevent background from scrolling while modal is open
     const prevOverflow = document.body.style.overflow;
@@ -440,7 +451,9 @@ export default function ImportModal({ onClose, onImportComplete }: ImportModalPr
         try {
           const arrayBuffer = e.target!.result as ArrayBuffer;
           const bytes = Array.from(new Uint8Array(arrayBuffer));
-          const result = await rust.read_xlsx({ data: bytes }) as { data: unknown[][] };
+          const result = (await rust.read_xlsx({ data: bytes })) as {
+            data: unknown[][];
+          };
           const json = result.data; // Array of arrays
 
           if (json.length > 0) {
@@ -480,7 +493,10 @@ export default function ImportModal({ onClose, onImportComplete }: ImportModalPr
     let localAccounts: Account[] = [...accounts];
 
     // Group rows by account identifier to determine account type before creation
-    const rowsByAccount = new Map<string, { identifier: unknown; rows: Record<string, unknown>[] }>();
+    const rowsByAccount = new Map<
+      string,
+      { identifier: unknown; rows: Record<string, unknown>[] }
+    >();
     const rowIndices = new Map<Record<string, unknown>, number>();
 
     for (let i = 0; i < rows.length; i++) {
@@ -1062,6 +1078,3 @@ export default function ImportModal({ onClose, onImportComplete }: ImportModalPr
     </Modal>
   );
 }
-
-
-

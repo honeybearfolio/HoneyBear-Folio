@@ -40,7 +40,10 @@ interface ReasoningBlockProps {
   defaultExpanded?: boolean;
 }
 
-function ReasoningBlock({ thinking, defaultExpanded = false }: ReasoningBlockProps) {
+function ReasoningBlock({
+  thinking,
+  defaultExpanded = false,
+}: ReasoningBlockProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   if (!thinking) return null;
   return (
@@ -113,7 +116,9 @@ function MessageBubble({ message, toolCalls }: MessageBubbleProps) {
           <span>
             {t("chat.tool_call").replace(
               "{tool}",
-              (message.tool_call_id ? TOOL_DISPLAY_NAMES[message.tool_call_id] : undefined) ||
+              (message.tool_call_id
+                ? TOOL_DISPLAY_NAMES[message.tool_call_id]
+                : undefined) ||
                 message.tool_call_id ||
                 "data",
             )}
@@ -201,7 +206,9 @@ export default function ChatView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [streamingSegments, setStreamingSegments] = useState<StreamingSegment[]>([]);
+  const [streamingSegments, setStreamingSegments] = useState<
+    StreamingSegment[]
+  >([]);
 
   const [streamingStatus, setStreamingStatus] = useState("thinking");
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
@@ -245,7 +252,6 @@ export default function ChatView() {
   useEffect(() => {
     if (!configured) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const unlisteners: any[] = [];
     // Each segment represents one model round: { thinking: string, content: string }
     let segments: StreamingSegment[] = [{ thinking: "", content: "" }];
@@ -261,45 +267,54 @@ export default function ChatView() {
       }
     }).then((u) => unlisteners.push(u));
 
-    listen<{ conversation_id: string; token: string }>("llm-thinking", (event) => {
-      if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        const last = segments[segments.length - 1];
-        segments = [
-          ...segments.slice(0, -1),
-          { ...last, thinking: last.thinking + event.payload.token },
-        ];
-        setStreamingSegments([...segments]);
-      }
-    }).then((u) => unlisteners.push(u));
-
-    listen<{ conversation_id: string; tool_name: string }>("llm-tool-call", (event) => {
-      if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        const last = segments[segments.length - 1];
-        segments = [
-          ...segments.slice(0, -1),
-          {
-            ...last,
-            toolCalls: [...(last.toolCalls || []), event.payload.tool_name],
-          },
-        ];
-        setStreamingSegments([...segments]);
-      }
-    }).then((u) => unlisteners.push(u));
-
-    listen<{ conversation_id: string; status: string }>("llm-status", (event) => {
-      if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        const status = event.payload.status;
-        // A new reasoning round starts → push a fresh segment
-        if (status === "thinking_tools") {
+    listen<{ conversation_id: string; token: string }>(
+      "llm-thinking",
+      (event) => {
+        if (activeConvo && event.payload.conversation_id === activeConvo.id) {
+          const last = segments[segments.length - 1];
           segments = [
-            ...segments,
-            { thinking: "", content: "", toolCalls: [] },
+            ...segments.slice(0, -1),
+            { ...last, thinking: last.thinking + event.payload.token },
           ];
           setStreamingSegments([...segments]);
         }
-        setStreamingStatus(status);
-      }
-    }).then((u) => unlisteners.push(u));
+      },
+    ).then((u) => unlisteners.push(u));
+
+    listen<{ conversation_id: string; tool_name: string }>(
+      "llm-tool-call",
+      (event) => {
+        if (activeConvo && event.payload.conversation_id === activeConvo.id) {
+          const last = segments[segments.length - 1];
+          segments = [
+            ...segments.slice(0, -1),
+            {
+              ...last,
+              toolCalls: [...(last.toolCalls || []), event.payload.tool_name],
+            },
+          ];
+          setStreamingSegments([...segments]);
+        }
+      },
+    ).then((u) => unlisteners.push(u));
+
+    listen<{ conversation_id: string; status: string }>(
+      "llm-status",
+      (event) => {
+        if (activeConvo && event.payload.conversation_id === activeConvo.id) {
+          const status = event.payload.status;
+          // A new reasoning round starts → push a fresh segment
+          if (status === "thinking_tools") {
+            segments = [
+              ...segments,
+              { thinking: "", content: "", toolCalls: [] },
+            ];
+            setStreamingSegments([...segments]);
+          }
+          setStreamingStatus(status);
+        }
+      },
+    ).then((u) => unlisteners.push(u));
 
     const resetStreaming = () => {
       segments = [{ thinking: "", content: "", toolCalls: [] }];
@@ -346,7 +361,7 @@ export default function ChatView() {
 
   async function loadConversations() {
     try {
-      const list = await rust.get_conversations() as Conversation[];
+      const list = (await rust.get_conversations()) as Conversation[];
       setConversations(list);
     } catch {
       // ignore
@@ -355,9 +370,9 @@ export default function ChatView() {
 
   async function loadMessages(conversationId: string) {
     try {
-      const msgs = await rust.get_conversation_messages({
+      const msgs = (await rust.get_conversation_messages({
         conversationId: conversationId,
-      }) as ChatMessage[];
+      })) as ChatMessage[];
       setMessages(msgs);
     } catch {
       // ignore
@@ -371,9 +386,9 @@ export default function ChatView() {
 
   async function handleNewConversation() {
     try {
-      const convo = await rust.create_conversation({
+      const convo = (await rust.create_conversation({
         title: t("chat.new_conversation"),
-      }) as Conversation;
+      })) as Conversation;
       await loadConversations();
       setActiveConvo(convo);
       setMessages([]);
@@ -383,7 +398,10 @@ export default function ChatView() {
     }
   }
 
-  async function handleDeleteConversation(convo: Conversation, e: React.MouseEvent) {
+  async function handleDeleteConversation(
+    convo: Conversation,
+    e: React.MouseEvent,
+  ) {
     e.stopPropagation();
     try {
       await rust.delete_conversation({ conversationId: convo.id });
@@ -412,10 +430,14 @@ export default function ChatView() {
         });
         await loadConversations();
         if (activeConvo?.id === convoId) {
-          setActiveConvo((prev) => prev ? {
-            ...prev,
-            title: editTitleValue.trim(),
-          } : prev);
+          setActiveConvo((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  title: editTitleValue.trim(),
+                }
+              : prev,
+          );
         }
       } catch {
         // ignore
@@ -435,7 +457,7 @@ export default function ChatView() {
     if (!convo) {
       try {
         const title = text.length > 40 ? text.substring(0, 40) + "…" : text;
-        convo = await rust.create_conversation({ title }) as Conversation;
+        convo = (await rust.create_conversation({ title })) as Conversation;
         setActiveConvo(convo);
         await loadConversations();
       } catch {
@@ -543,9 +565,14 @@ export default function ChatView() {
   messages.forEach((msg) => {
     if (msg.role === "assistant" && msg.tool_calls) {
       try {
-        const tcs = JSON.parse(msg.tool_calls) as Array<{ function?: { name: string }; name?: string }>;
+        const tcs = JSON.parse(msg.tool_calls) as Array<{
+          function?: { name: string };
+          name?: string;
+        }>;
         if (msg.id !== undefined) {
-          toolCallsMap[msg.id] = tcs.map((tc) => tc.function?.name || tc.name || "");
+          toolCallsMap[msg.id] = tcs.map(
+            (tc) => tc.function?.name || tc.name || "",
+          );
         }
       } catch {
         // ignore
@@ -642,7 +669,9 @@ export default function ChatView() {
                 <MessageBubble
                   key={msg.id}
                   message={msg}
-                  toolCalls={msg.id !== undefined ? toolCallsMap[msg.id] : undefined}
+                  toolCalls={
+                    msg.id !== undefined ? toolCallsMap[msg.id] : undefined
+                  }
                 />
               ))}
 

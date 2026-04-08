@@ -1,4 +1,3 @@
-/* global process */
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import fs from "fs";
@@ -10,8 +9,9 @@ const host = process.env.TAURI_DEV_HOST;
 // Read package version and compute the current commit (short) if available
 const pkg = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), "package.json"), "utf8"),
-);
-let commit = process.env.GITHUB_SHA || process.env.APP_COMMIT || null;
+) as { version: string };
+let commit: string | null =
+  process.env.GITHUB_SHA || process.env.APP_COMMIT || null;
 if (!commit) {
   try {
     commit = child_process
@@ -57,7 +57,7 @@ export default defineConfig(async () => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
+        manualChunks: (id: string) => {
           if (
             id.includes("node_modules/react") ||
             id.includes("node_modules/react-dom")
@@ -90,7 +90,7 @@ export default defineConfig(async () => ({
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: "./src/test/setup.js",
+    setupFiles: "./src/test/setup.ts",
     css: true,
   },
 }));

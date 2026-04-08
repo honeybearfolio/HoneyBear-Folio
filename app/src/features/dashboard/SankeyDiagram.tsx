@@ -37,7 +37,15 @@ interface SankeyDiagramProps {
   appCurrency?: string;
 }
 
-export default function SankeyDiagram({ transactions, timeRange, customStartDate, customEndDate, accountMap, getPrice, appCurrency }: SankeyDiagramProps) {
+export default function SankeyDiagram({
+  transactions,
+  timeRange,
+  customStartDate,
+  customEndDate,
+  accountMap,
+  getPrice,
+  appCurrency,
+}: SankeyDiagramProps) {
   const isDark = useIsDark();
   const chartColors = useChartColors();
   const formatNumber = useFormatNumber();
@@ -165,10 +173,14 @@ export default function SankeyDiagram({ transactions, timeRange, customStartDate
 
     // 2. Budget -> Intermediate Nodes
     let expensesTotal = 0;
-    Object.values(expenseCategories).forEach((v) => (expensesTotal += v as number));
+    Object.values(expenseCategories).forEach(
+      (v) => (expensesTotal += v as number),
+    );
 
     let investmentsTotal = 0;
-    Object.values(investmentCategories).forEach((v) => (investmentsTotal += v as number));
+    Object.values(investmentCategories).forEach(
+      (v) => (investmentsTotal += v as number),
+    );
 
     let surplus = 0;
     let deficit = 0;

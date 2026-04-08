@@ -4,12 +4,12 @@ import InvestmentDashboard from "../../../features/investments/InvestmentDashboa
 import { invoke } from "@tauri-apps/api/core";
 
 // Mock dependencies
-vi.mock("../../../i18n/i18n", () => ({ t: (k) => k }));
+vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
 vi.mock("../../../hooks/useIsDark", () => ({ default: () => false }));
 
 // Mock utils
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val) => `fmt-${val}`,
+  useFormatNumber: () => (val: number) => `fmt-${val}`,
 }));
 
 // Mock number-format context used by formatting hooks/components
@@ -30,10 +30,13 @@ vi.mock("../../../contexts/number-format", () => ({
 }));
 
 vi.mock("../../../utils/investments", () => ({
-  buildHoldingsFromTransactions: (txs) => ({
+  buildHoldingsFromTransactions: (txs: unknown[]) => ({
     currentHoldings: txs.length > 0 ? [{ ticker: "AAPL", qty: 10 }] : [],
   }),
-  mergeHoldingsWithQuotes: (holdings, _quotes) =>
+  mergeHoldingsWithQuotes: (
+    holdings: { ticker: string; qty: number }[],
+    _quotes: unknown,
+  ) =>
     holdings.map((h) => ({
       ...h,
       currentValue: 1500, // 10 * 150
@@ -58,7 +61,7 @@ describe("InvestmentDashboard", () => {
   });
 
   it("fetches data and renders chart when holdings exist", async () => {
-    invoke.mockImplementation((cmd) => {
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
       if (cmd === "get_all_transactions") return Promise.resolve([1]); // Dummy tx
       if (cmd === "get_stock_quotes")
         return Promise.resolve({ AAPL: { price: 150 } });
@@ -81,7 +84,7 @@ describe("InvestmentDashboard", () => {
   });
 
   it("handles empty state", async () => {
-    invoke.mockImplementation((cmd) => {
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
       if (cmd === "get_all_transactions") return Promise.resolve([]);
       return Promise.resolve(null);
     });

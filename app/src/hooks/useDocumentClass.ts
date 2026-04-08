@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from "react";
 
-export default function useDocumentClass(className) {
+export default function useDocumentClass(className: string): boolean {
   const [hasClass, setHasClass] = useState(() => {
     if (typeof window !== "undefined") {
       return document.documentElement.classList.contains(className);

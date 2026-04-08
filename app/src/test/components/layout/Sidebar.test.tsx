@@ -70,7 +70,9 @@ vi.mock("../../../features/accounts/AccountList", () => ({
 
 const renderWithContext = (ui: React.ReactElement) => {
   return render(
-    <NumberFormatContext.Provider value={{ formatNumber: (v: number) => `fmt-${v}` } as never}>
+    <NumberFormatContext.Provider
+      value={{ formatNumber: (v: number) => `fmt-${v}` } as never}
+    >
       {ui}
     </NumberFormatContext.Provider>,
   );

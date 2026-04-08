@@ -4,8 +4,8 @@ import CustomRateDialog from "../../../components/shared/CustomRateDialog";
 
 // Mock i18n
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key, params) => {
-    const translations = {
+  t: (key: string, params?: Record<string, string>) => {
+    const translations: Record<string, string> = {
       "custom_rate.title": "Set Exchange Rate",
       "custom_rate.message": `Enter exchange rate for ${params?.currency || "currency"}`,
       "account.cancel": "Cancel",
@@ -119,7 +119,7 @@ describe("CustomRateDialog", () => {
     const input = screen.getByPlaceholderText("0.0");
     fireEvent.change(input, { target: { value: "1.5" } });
 
-    expect(input.value).toBe("1.5");
+    expect((input as HTMLInputElement).value).toBe("1.5");
   });
 
   it("displays the currency name in the message", () => {
