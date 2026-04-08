@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import PropTypes from "prop-types";
 import { listen } from "@tauri-apps/api/event";
 import { rust } from "../../api/tauri-client";
 import { t } from "../../i18n/i18n";
@@ -26,7 +25,7 @@ import {
 } from "lucide-react";
 import "../../styles/Chat.css";
 
-const TOOL_DISPLAY_NAMES = {
+const TOOL_DISPLAY_NAMES: Record<string, string> = {
   get_accounts: "accounts",
   get_transactions: "transactions",
   get_categories: "categories",
@@ -36,7 +35,12 @@ const TOOL_DISPLAY_NAMES = {
   get_exchange_rates: "exchange rates",
 };
 
-function ReasoningBlock({ thinking, defaultExpanded = false }) {
+interface ReasoningBlockProps {
+  thinking?: string;
+  defaultExpanded?: boolean;
+}
+
+function ReasoningBlock({ thinking, defaultExpanded = false }: ReasoningBlockProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   if (!thinking) return null;
   return (
@@ -58,12 +62,11 @@ function ReasoningBlock({ thinking, defaultExpanded = false }) {
   );
 }
 
-ReasoningBlock.propTypes = {
-  thinking: PropTypes.string,
-  defaultExpanded: PropTypes.bool,
-};
+interface ToolCallBadgeProps {
+  toolName: string;
+}
 
-function ToolCallBadge({ toolName }) {
+function ToolCallBadge({ toolName }: ToolCallBadgeProps) {
   const displayName = TOOL_DISPLAY_NAMES[toolName] || toolName;
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 rounded-full text-xs font-medium">
@@ -73,11 +76,23 @@ function ToolCallBadge({ toolName }) {
   );
 }
 
-ToolCallBadge.propTypes = {
-  toolName: PropTypes.string.isRequired,
-};
+interface ChatMessage {
+  id?: number;
+  role: string;
+  content?: string;
+  tool_call_id?: string;
+  thinking?: string;
+  conversation_id?: string;
+  created_at?: string;
+  tool_calls?: string;
+}
 
-function MessageBubble({ message, toolCalls }) {
+interface MessageBubbleProps {
+  message: ChatMessage;
+  toolCalls?: string[];
+}
+
+function MessageBubble({ message, toolCalls }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const isTool = message.role === "tool";
   const [expanded, setExpanded] = useState(false);
@@ -98,7 +113,7 @@ function MessageBubble({ message, toolCalls }) {
           <span>
             {t("chat.tool_call").replace(
               "{tool}",
-              TOOL_DISPLAY_NAMES[message.tool_call_id] ||
+              (message.tool_call_id ? TOOL_DISPLAY_NAMES[message.tool_call_id] : undefined) ||
                 message.tool_call_id ||
                 "data",
             )}
@@ -157,29 +172,41 @@ function MessageBubble({ message, toolCalls }) {
   );
 }
 
-MessageBubble.propTypes = {
-  message: PropTypes.shape({
-    role: PropTypes.string.isRequired,
-    content: PropTypes.string,
-    tool_call_id: PropTypes.string,
-    thinking: PropTypes.string,
-  }).isRequired,
-  toolCalls: PropTypes.arrayOf(PropTypes.string),
-};
+interface Conversation {
+  id: string;
+  title?: string;
+  created_at?: string;
+}
+
+interface LlmSettings {
+  ollama_url?: string;
+  ollama_model?: string;
+}
+
+interface OllamaModel {
+  name: string;
+  size?: number;
+}
+
+interface StreamingSegment {
+  thinking: string;
+  content: string;
+  toolCalls?: string[];
+}
 
 export default function ChatView() {
-  const [configured, setConfigured] = useState(null); // null = loading
-  const [conversations, setConversations] = useState([]);
-  const [activeConvo, setActiveConvo] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [configured, setConfigured] = useState<boolean | null>(null); // null = loading
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConvo, setActiveConvo] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
-  const [streamingSegments, setStreamingSegments] = useState([]);
+  const [streamingSegments, setStreamingSegments] = useState<StreamingSegment[]>([]);
 
   const [streamingStatus, setStreamingStatus] = useState("thinking");
-  const [editingTitle, setEditingTitle] = useState(null);
+  const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [editTitleValue, setEditTitleValue] = useState("");
-  const [models, setModels] = useState([]);
+  const [models, setModels] = useState<OllamaModel[]>([]);
   const [currentModel, setCurrentModel] = useState("");
   const [ollamaUrl, setOllamaUrl] = useState("");
   const [thinkEnabled, setThinkEnabled] = useState(() => {
@@ -189,20 +216,21 @@ export default function ChatView() {
       return false;
     }
   });
-  const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Check if configured on mount and load models
   useEffect(() => {
-    rust.get_llm_settings().then((s) => {
-      const isConfigured = s.ollama_model && s.ollama_model.length > 0;
+    rust.get_llm_settings().then((_s) => {
+      const s = _s as LlmSettings;
+      const isConfigured = !!(s.ollama_model && s.ollama_model.length > 0);
       setConfigured(isConfigured);
       if (s.ollama_model) setCurrentModel(s.ollama_model);
       if (s.ollama_url) setOllamaUrl(s.ollama_url);
       if (isConfigured) {
         rust
           .list_ollama_models()
-          .then((list) => setModels(list))
+          .then((list) => setModels(list as OllamaModel[]))
           .catch(() => {});
       }
     });
@@ -217,11 +245,12 @@ export default function ChatView() {
   useEffect(() => {
     if (!configured) return;
 
-    const unlisteners = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const unlisteners: any[] = [];
     // Each segment represents one model round: { thinking: string, content: string }
-    let segments = [{ thinking: "", content: "" }];
+    let segments: StreamingSegment[] = [{ thinking: "", content: "" }];
 
-    listen("llm-token", (event) => {
+    listen<{ conversation_id: string; token: string }>("llm-token", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         const last = segments[segments.length - 1];
         segments = [
@@ -232,7 +261,7 @@ export default function ChatView() {
       }
     }).then((u) => unlisteners.push(u));
 
-    listen("llm-thinking", (event) => {
+    listen<{ conversation_id: string; token: string }>("llm-thinking", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         const last = segments[segments.length - 1];
         segments = [
@@ -243,7 +272,7 @@ export default function ChatView() {
       }
     }).then((u) => unlisteners.push(u));
 
-    listen("llm-tool-call", (event) => {
+    listen<{ conversation_id: string; tool_name: string }>("llm-tool-call", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         const last = segments[segments.length - 1];
         segments = [
@@ -257,7 +286,7 @@ export default function ChatView() {
       }
     }).then((u) => unlisteners.push(u));
 
-    listen("llm-status", (event) => {
+    listen<{ conversation_id: string; status: string }>("llm-status", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         const status = event.payload.status;
         // A new reasoning round starts → push a fresh segment
@@ -280,7 +309,7 @@ export default function ChatView() {
       setStreamingStatus("thinking");
     };
 
-    listen("llm-done", (event) => {
+    listen<{ conversation_id: string }>("llm-done", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         resetStreaming();
         loadMessages(activeConvo.id);
@@ -288,7 +317,7 @@ export default function ChatView() {
       }
     }).then((u) => unlisteners.push(u));
 
-    listen("llm-error", (event) => {
+    listen<{ conversation_id: string; error: string }>("llm-error", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         resetStreaming();
         // Add error as a local pseudo-message
@@ -306,7 +335,7 @@ export default function ChatView() {
     }).then((u) => unlisteners.push(u));
 
     return () => {
-      unlisteners.forEach((u) => u.then?.((fn) => fn()) || u());
+      unlisteners.forEach((u) => u.then?.((fn: () => void) => fn()) || u());
     };
   }, [configured, activeConvo]);
 
@@ -317,25 +346,25 @@ export default function ChatView() {
 
   async function loadConversations() {
     try {
-      const list = await rust.get_conversations();
+      const list = await rust.get_conversations() as Conversation[];
       setConversations(list);
     } catch {
       // ignore
     }
   }
 
-  async function loadMessages(conversationId) {
+  async function loadMessages(conversationId: string) {
     try {
       const msgs = await rust.get_conversation_messages({
         conversationId: conversationId,
-      });
+      }) as ChatMessage[];
       setMessages(msgs);
     } catch {
       // ignore
     }
   }
 
-  async function handleSelectConversation(convo) {
+  async function handleSelectConversation(convo: Conversation) {
     setActiveConvo(convo);
     await loadMessages(convo.id);
   }
@@ -344,7 +373,7 @@ export default function ChatView() {
     try {
       const convo = await rust.create_conversation({
         title: t("chat.new_conversation"),
-      });
+      }) as Conversation;
       await loadConversations();
       setActiveConvo(convo);
       setMessages([]);
@@ -354,7 +383,7 @@ export default function ChatView() {
     }
   }
 
-  async function handleDeleteConversation(convo, e) {
+  async function handleDeleteConversation(convo: Conversation, e: React.MouseEvent) {
     e.stopPropagation();
     try {
       await rust.delete_conversation({ conversationId: convo.id });
@@ -368,13 +397,13 @@ export default function ChatView() {
     }
   }
 
-  function handleStartRename(convo, e) {
+  function handleStartRename(convo: Conversation, e: React.MouseEvent) {
     e.stopPropagation();
     setEditingTitle(convo.id);
-    setEditTitleValue(convo.title);
+    setEditTitleValue(convo.title || "");
   }
 
-  async function handleFinishRename(convoId) {
+  async function handleFinishRename(convoId: string) {
     if (editTitleValue.trim()) {
       try {
         await rust.rename_conversation({
@@ -383,10 +412,10 @@ export default function ChatView() {
         });
         await loadConversations();
         if (activeConvo?.id === convoId) {
-          setActiveConvo((prev) => ({
+          setActiveConvo((prev) => prev ? {
             ...prev,
             title: editTitleValue.trim(),
-          }));
+          } : prev);
         }
       } catch {
         // ignore
@@ -406,7 +435,7 @@ export default function ChatView() {
     if (!convo) {
       try {
         const title = text.length > 40 ? text.substring(0, 40) + "…" : text;
-        convo = await rust.create_conversation({ title });
+        convo = await rust.create_conversation({ title }) as Conversation;
         setActiveConvo(convo);
         await loadConversations();
       } catch {
@@ -421,7 +450,7 @@ export default function ChatView() {
         id: Date.now(),
         role: "user",
         content: text,
-        conversation_id: convo.id,
+        conversation_id: convo!.id,
         created_at: new Date().toISOString(),
       },
     ]);
@@ -431,7 +460,7 @@ export default function ChatView() {
 
     try {
       await rust.llm_chat({
-        conversationId: convo.id,
+        conversationId: convo!.id,
         userMessage: text,
         think: thinkEnabled,
       });
@@ -443,7 +472,7 @@ export default function ChatView() {
           id: Date.now(),
           role: "assistant",
           content: `⚠️ ${e}`,
-          conversation_id: convo.id,
+          conversation_id: convo!.id,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -463,17 +492,17 @@ export default function ChatView() {
     loadMessages(activeConvo.id);
   }, [activeConvo]);
 
-  function handleKeyDown(e) {
+  function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   }
 
-  async function handleModelChange(model) {
-    setCurrentModel(model);
+  async function handleModelChange(model: string | number) {
+    setCurrentModel(String(model));
     try {
-      await rust.set_llm_settings({ ollamaUrl, ollamaModel: model });
+      await rust.set_llm_settings({ ollamaUrl, ollamaModel: String(model) });
     } catch {
       // ignore
     }
@@ -510,12 +539,14 @@ export default function ChatView() {
   }
 
   // Collect tool calls per assistant message for display
-  const toolCallsMap = {};
+  const toolCallsMap: Record<number, string[]> = {};
   messages.forEach((msg) => {
     if (msg.role === "assistant" && msg.tool_calls) {
       try {
-        const tcs = JSON.parse(msg.tool_calls);
-        toolCallsMap[msg.id] = tcs.map((tc) => tc.function?.name || tc.name);
+        const tcs = JSON.parse(msg.tool_calls) as Array<{ function?: { name: string }; name?: string }>;
+        if (msg.id !== undefined) {
+          toolCallsMap[msg.id] = tcs.map((tc) => tc.function?.name || tc.name || "");
+        }
       } catch {
         // ignore
       }
@@ -611,7 +642,7 @@ export default function ChatView() {
                 <MessageBubble
                   key={msg.id}
                   message={msg}
-                  toolCalls={toolCallsMap[msg.id]}
+                  toolCalls={msg.id !== undefined ? toolCallsMap[msg.id] : undefined}
                 />
               ))}
 

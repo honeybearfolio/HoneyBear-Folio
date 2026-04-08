@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import PropTypes from "prop-types";
 import { rust } from "../../api/tauri-client";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
@@ -18,10 +17,60 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
 
+interface InvestmentTransaction {
+  date: string;
+  ticker?: string;
+  shares?: number;
+  price_per_share?: number;
+  fee?: number;
+  account_id: number;
+  [key: string]: unknown;
+}
+
+interface InvestmentQuote {
+  symbol: string;
+  regularMarketPrice: number;
+  [key: string]: unknown;
+}
+
+interface Holding {
+  ticker: string;
+  shares: number;
+  costBasis: number;
+  price: number;
+  currentValue: number;
+  currentPrice?: number;
+  roi: number;
+  changePercent?: number;
+  quoteType?: string | null;
+}
+
+interface TreeMapItem {
+  ticker: string;
+  currentValue: number;
+  roi: number;
+}
+
+interface TreeMapProps {
+  items: TreeMapItem[];
+  totalValue: number;
+  isDark?: boolean;
+}
+
+interface TreeMapNodeProps {
+  items: TreeMapItem[];
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  totalValue: number;
+  isDark?: boolean;
+}
+
 export default function InvestmentDashboard() {
-  const [holdings, setHoldings] = useState([]);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const isDark = useIsDark();
   const chartColors = useChartColors();
 
@@ -34,7 +83,7 @@ export default function InvestmentDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      const transactions = await rust.get_all_transactions();
+      const transactions = await rust.get_all_transactions() as InvestmentTransaction[];
       const { currentHoldings } = buildHoldingsFromTransactions(transactions);
 
       if (currentHoldings.length === 0) {
@@ -44,13 +93,13 @@ export default function InvestmentDashboard() {
       }
 
       const tickers = currentHoldings.map((h) => h.ticker);
-      const quotes = await rust.get_stock_quotes({ tickers });
+      const quotes = await rust.get_stock_quotes({ tickers }) as InvestmentQuote[];
 
       const finalHoldings = mergeHoldingsWithQuotes(currentHoldings, quotes);
-      setHoldings(finalHoldings);
-    } catch (e) {
+      setHoldings(finalHoldings as Holding[]);
+    } catch (e: unknown) {
       console.error("Error fetching investment data:", e);
-      setError(e.toString());
+      setError(String(e));
     } finally {
       setLoading(false);
     }
@@ -78,7 +127,7 @@ export default function InvestmentDashboard() {
           }),
           borderColor: isDark ? "#474240" : "#ffffff",
           borderWidth: 4,
-          borderDash: (ctx) => {
+          borderDash: (ctx: { dataIndex: number }) => {
             const val = rawData[ctx.dataIndex];
             return val < 0 ? [5, 5] : [];
           },
@@ -96,7 +145,7 @@ export default function InvestmentDashboard() {
       borderRadius: 4,
       plugins: {
         legend: {
-          position: "right",
+          position: "right" as const,
           labels: {
             usePointStyle: true,
             boxWidth: 8,
@@ -120,7 +169,7 @@ export default function InvestmentDashboard() {
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context) {
+            label: function (context: { label?: string; dataset: { originalData?: number[] }; dataIndex: number; raw?: unknown; parsed?: unknown }) {
               const prefix = context.label ? context.label + ": " : "";
               const value = context.dataset.originalData
                 ? context.dataset.originalData[context.dataIndex]
@@ -133,7 +182,7 @@ export default function InvestmentDashboard() {
                 })
               );
             },
-            labelColor: function (context) {
+            labelColor: function (context: { dataset: { backgroundColor?: unknown; borderColor?: unknown }; dataIndex: number }) {
               const dataset = context.dataset;
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
@@ -153,15 +202,16 @@ export default function InvestmentDashboard() {
                   ? tooltipBg
                   : bg;
               return {
-                borderColor: border,
-                backgroundColor,
+                borderColor: String(border),
+                backgroundColor: String(backgroundColor),
                 borderWidth: 2,
               };
             },
           },
         },
       },
-    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any),
     [formatNumber, chartColors],
   );
 
@@ -447,7 +497,7 @@ export default function InvestmentDashboard() {
   );
 }
 
-function TreeMap({ items, totalValue, isDark }) {
+function TreeMap({ items, totalValue, isDark }: TreeMapProps) {
   // Recursive binary split treemap
   return (
     <div className="w-full h-full relative">
@@ -464,7 +514,7 @@ function TreeMap({ items, totalValue, isDark }) {
   );
 }
 
-function TreeMapNode({ items, x, y, w, h, totalValue, isDark }) {
+function TreeMapNode({ items, x, y, w, h, totalValue, isDark }: TreeMapNodeProps) {
   const formatNumber = useFormatNumber();
 
   if (items.length === 0) return null;
@@ -618,31 +668,3 @@ function TreeMapNode({ items, x, y, w, h, totalValue, isDark }) {
     </>
   );
 }
-
-TreeMap.propTypes = {
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      ticker: PropTypes.string.isRequired,
-      currentValue: PropTypes.number.isRequired,
-      roi: PropTypes.number.isRequired,
-    }),
-  ).isRequired,
-  totalValue: PropTypes.number.isRequired,
-  isDark: PropTypes.bool,
-};
-
-TreeMapNode.propTypes = {
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      ticker: PropTypes.string.isRequired,
-      currentValue: PropTypes.number.isRequired,
-      roi: PropTypes.number.isRequired,
-    }),
-  ).isRequired,
-  x: PropTypes.number.isRequired,
-  y: PropTypes.number.isRequired,
-  w: PropTypes.number.isRequired,
-  h: PropTypes.number.isRequired,
-  totalValue: PropTypes.number.isRequired,
-  isDark: PropTypes.bool,
-};

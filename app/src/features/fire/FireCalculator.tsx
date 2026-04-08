@@ -53,6 +53,50 @@ ChartJS.register(
   Filler,
 );
 
+interface Account {
+  id: number;
+  kind: string;
+  balance: number;
+  [key: string]: unknown;
+}
+
+interface InvestmentTransaction {
+  date: string;
+  ticker?: string;
+  shares?: number;
+  price_per_share?: number;
+  fee?: number;
+  account_id: number;
+  amount: number;
+  category?: string;
+  [key: string]: unknown;
+}
+
+interface InvestmentQuote {
+  symbol: string;
+  regularMarketPrice: number;
+  [key: string]: unknown;
+}
+
+interface ProjectionResult {
+  fireNumber: number;
+  yearsToFire: number | null;
+  projectionData: number[];
+  neverReached: boolean;
+}
+
+interface MonteCarloResult {
+  successRate: number;
+  simulationCount: number;
+  percentiles: {
+    p10: number[];
+    p25: number[];
+    p50: number[];
+    p75: number[];
+    p90: number[];
+  };
+}
+
 export default function FireCalculator() {
   // Initialize state from sessionStorage if available (persists for the lifetime of the browser/tab session, including reloads, and is cleared when the tab or window is closed)
   const savedState = useMemo(() => {
@@ -125,8 +169,8 @@ export default function FireCalculator() {
   async function fetchData() {
     setLoading(true);
     try {
-      const accounts = await rust.get_accounts();
-      const transactions = await rust.get_all_transactions();
+      const accounts = await rust.get_accounts({}) as Account[];
+      const transactions = await rust.get_all_transactions() as InvestmentTransaction[];
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =
@@ -134,9 +178,9 @@ export default function FireCalculator() {
 
       // Fetch quotes for holdings once
       const tickers = currentHoldings.map((h) => h.ticker);
-      let quotes = [];
+      let quotes: InvestmentQuote[] = [];
       if (tickers.length > 0) {
-        quotes = await rust.get_stock_quotes({ tickers });
+        quotes = await rust.get_stock_quotes({ tickers }) as InvestmentQuote[];
       }
 
       // Compute portfolio totals
@@ -152,7 +196,7 @@ export default function FireCalculator() {
         quotes,
       );
 
-      const totalBalance = accounts.reduce((sum, acc) => {
+      const totalBalance = accounts.reduce((sum: number, acc: Account) => {
         if (acc.kind === "brokerage") {
           return (
             sum +
@@ -175,7 +219,7 @@ export default function FireCalculator() {
           totalPortfolioCostBasis;
         const now = new Date();
         const yearsInvested = Math.max(
-          (now - firstTradeDate) / (1000 * 60 * 60 * 24 * 365.25),
+          (now.getTime() - firstTradeDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25),
           0.1,
         );
 
@@ -319,7 +363,7 @@ export default function FireCalculator() {
 
   // Also listen to Tauri close event in case beforeunload doesn't fire in some environments
   useEffect(() => {
-    let unlisten;
+    let unlisten: (() => void) | undefined;
     (async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
@@ -338,7 +382,7 @@ export default function FireCalculator() {
     };
   }, []);
 
-  const [deterministicProjection, setDeterministicProjection] = useState({
+  const [deterministicProjection, setDeterministicProjection] = useState<ProjectionResult>({
     fireNumber: 0,
     yearsToFire: null,
     projectionData: [],
@@ -366,7 +410,7 @@ export default function FireCalculator() {
       });
 
       if (!cancelled) {
-        setDeterministicProjection(result);
+        setDeterministicProjection(result as ProjectionResult);
       }
     };
 
@@ -390,7 +434,7 @@ export default function FireCalculator() {
   ]);
 
   // Monte Carlo simulation (debounced to avoid excessive recalculation)
-  const [monteCarloResult, setMonteCarloResult] = useState(null);
+  const [monteCarloResult, setMonteCarloResult] = useState<MonteCarloResult | null>(null);
 
   const runSimulation = useCallback(async () => {
     const result = await runMonteCarloSimulation({
@@ -405,7 +449,7 @@ export default function FireCalculator() {
       retirementDuration,
       simulationCount,
     });
-    setMonteCarloResult(result);
+    setMonteCarloResult(result as MonteCarloResult);
   }, [
     currentNetWorth,
     annualSavings,
@@ -1027,7 +1071,7 @@ export default function FireCalculator() {
                           // This ensures a "hollow" look matching the line style, avoiding issues
                           // with semi-transparent fills (0.1 opacity) looking washed out or "white".
                           return {
-                            borderColor: dataset.borderColor,
+                            borderColor: dataset.borderColor as string,
                             backgroundColor: tooltipBg,
                             borderWidth: 2,
                           };

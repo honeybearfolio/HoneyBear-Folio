@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import {
   Settings,
   Globe,
@@ -51,17 +50,39 @@ import {
   STORAGE_KEYS,
 } from "../../constants/app";
 
-function LlmSettingsSection({ showTooltip, hideTooltip }) {
+interface LlmSettings {
+  ollama_url?: string;
+  ollama_model?: string;
+}
+
+interface OllamaModel {
+  name: string;
+  size?: number;
+}
+
+interface LlmSettingsSectionProps {
+  showTooltip: (e: React.MouseEvent | React.FocusEvent) => void;
+  hideTooltip: (e: React.MouseEvent | React.FocusEvent) => void;
+}
+
+interface SettingsViewProps {
+  activeSection?: "general" | "customization" | "formats" | "about";
+  sidebarVisibility?: Record<string, boolean>;
+  onChangeSidebarVisibility?: (visibility: Record<string, boolean>) => void;
+}
+
+function LlmSettingsSection({ showTooltip, hideTooltip }: LlmSettingsSectionProps) {
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [ollamaModel, setOllamaModel] = useState("");
-  const [models, setModels] = useState([]);
-  const [connected, setConnected] = useState(null);
+  const [models, setModels] = useState<OllamaModel[]>([]);
+  const [connected, setConnected] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const confirm = useConfirm();
   const { showToast } = useToast();
 
   useEffect(() => {
-    rust.get_llm_settings().then((s) => {
+    rust.get_llm_settings().then((_s) => {
+      const s = _s as LlmSettings;
       if (s.ollama_url) setOllamaUrl(s.ollama_url);
       if (s.ollama_model) setOllamaModel(s.ollama_model);
     });
@@ -72,9 +93,9 @@ function LlmSettingsSection({ showTooltip, hideTooltip }) {
     try {
       await rust.set_llm_settings({ ollamaUrl, ollamaModel });
       const ok = await rust.check_ollama_connection();
-      setConnected(ok);
+      setConnected(ok as boolean);
       if (ok) {
-        const list = await rust.list_ollama_models();
+        const list = await rust.list_ollama_models() as OllamaModel[];
         setModels(list);
       }
     } catch {
@@ -84,10 +105,10 @@ function LlmSettingsSection({ showTooltip, hideTooltip }) {
     }
   }
 
-  async function handleSaveModel(val) {
-    setOllamaModel(val);
+  async function handleSaveModel(val: string | number) {
+    setOllamaModel(String(val));
     try {
-      await rust.set_llm_settings({ ollamaUrl, ollamaModel: val });
+      await rust.set_llm_settings({ ollamaUrl, ollamaModel: String(val) });
     } catch {
       // ignore
     }
@@ -102,7 +123,7 @@ function LlmSettingsSection({ showTooltip, hideTooltip }) {
   }
 
   async function handleClearHistory() {
-    const ok = await confirm(t("chat.clear_history_confirm"), {
+    const ok = await (confirm as (message: string, options?: Record<string, unknown>) => Promise<boolean>)(t("chat.clear_history_confirm"), {
       title: t("chat.clear_history"),
       kind: "warning",
     });
@@ -216,16 +237,11 @@ function LlmSettingsSection({ showTooltip, hideTooltip }) {
   );
 }
 
-LlmSettingsSection.propTypes = {
-  showTooltip: PropTypes.func.isRequired,
-  hideTooltip: PropTypes.func.isRequired,
-};
-
 export default function SettingsView({
   activeSection,
   sidebarVisibility,
   onChangeSidebarVisibility,
-}) {
+}: SettingsViewProps) {
   const {
     locale,
     setLocale,
@@ -244,7 +260,7 @@ export default function SettingsView({
   const confirm = useConfirm();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
   const { tagColors, setTagColor, resetAll: resetTagColors } = useTagColors();
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [fontSize, setFontSize] = useState(() => {
     try {
       const v = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
@@ -275,7 +291,7 @@ export default function SettingsView({
     let mounted = true;
     (async () => {
       try {
-        const p = await rust.get_db_path_command();
+        const p = await rust.get_db_path_command({}) as string;
         if (mounted) setDbPath(p);
       } catch (e) {
         console.error("Failed to fetch DB path:", e);
@@ -286,8 +302,8 @@ export default function SettingsView({
     };
   }, []);
 
-  function showTooltip(e) {
-    const el = e.currentTarget;
+  function showTooltip(e: React.MouseEvent | React.FocusEvent) {
+    const el = e.currentTarget as HTMLElement;
     try {
       const rect = el.getBoundingClientRect();
       el.style.setProperty("--tooltip-top", `${rect.top - 8}px`);
@@ -298,12 +314,12 @@ export default function SettingsView({
     }
   }
 
-  function hideTooltip(e) {
-    const el = e.currentTarget;
+  function hideTooltip(e: React.MouseEvent | React.FocusEvent) {
+    const el = e.currentTarget as HTMLElement;
     el.removeAttribute("data-tooltip-visible");
   }
 
-  async function openExternal(url) {
+  async function openExternal(url: string) {
     try {
       await open(url);
     } catch (e) {
@@ -320,7 +336,7 @@ export default function SettingsView({
       });
       if (path) {
         await rust.set_db_path({ path });
-        const p = await rust.get_db_path_command();
+        const p = await rust.get_db_path_command({}) as string;
         setDbPath(p);
       }
     } catch (e) {
@@ -330,7 +346,7 @@ export default function SettingsView({
 
   async function handleResetDefaults() {
     try {
-      const confirmed = await confirm(t("settings.reset_confirm"), {
+      const confirmed = await (confirm as (message: string, options?: Record<string, unknown>) => Promise<boolean>)(t("settings.reset_confirm"), {
         kind: "warning",
       });
       if (!confirmed) return;
@@ -349,11 +365,11 @@ export default function SettingsView({
       setFirstDayOfWeek(APP_DEFAULTS.FIRST_DAY_OF_WEEK);
       setUiLanguage(APP_DEFAULTS.UI_LANGUAGE);
       resetTagColors();
-      onChangeSidebarVisibility({ ...DEFAULT_SIDEBAR_VISIBILITY });
+      onChangeSidebarVisibility?.({ ...DEFAULT_SIDEBAR_VISIBILITY });
 
       try {
-        await rust.reset_db_path();
-        const p = await rust.get_db_path_command();
+        await rust.reset_db_path({});
+        const p = await rust.get_db_path_command({}) as string;
         setDbPath(p);
       } catch (e) {
         console.error("Failed to reset DB path:", e);
@@ -367,9 +383,9 @@ export default function SettingsView({
     if (activeSection === "customization") {
       (async () => {
         try {
-          const cats = await rust.get_categories();
+          const cats = await rust.get_categories({}) as string[];
           const all = cats.includes("Transfer") ? cats : ["Transfer", ...cats];
-          setCategories(all.sort((a, b) => a.localeCompare(b)));
+          setCategories(all.sort((a: string, b: string) => a.localeCompare(b)));
         } catch (e) {
           console.error("Failed to fetch categories:", e);
         }
@@ -439,7 +455,7 @@ export default function SettingsView({
               <div className="relative settings-select">
                 <CustomSelect
                   value={uiLanguage}
-                  onChange={(v) => setUiLanguage(v)}
+                  onChange={(v) => setUiLanguage(String(v))}
                   options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({
                     value: code,
                     label,
@@ -554,7 +570,7 @@ export default function SettingsView({
                 <div className="relative settings-select mt-2">
                   <CustomSelect
                     value={theme}
-                    onChange={(v) => setTheme(v)}
+                    onChange={(v) => setTheme(String(v))}
                     options={[
                       { value: "light", label: t("settings.theme.light") },
                       {
@@ -683,7 +699,7 @@ export default function SettingsView({
                     <Switch
                       checked={sidebarVisibility[key]}
                       onChange={(val) =>
-                        onChangeSidebarVisibility({
+                        onChangeSidebarVisibility?.({
                           ...sidebarVisibility,
                           [key]: val,
                         })
@@ -796,9 +812,9 @@ export default function SettingsView({
                 <CustomSelect
                   value={currency}
                   onChange={async (v) => {
-                    setCurrency(v);
+                    setCurrency(String(v));
                     if (v) {
-                      const confirmed = await checkAndPrompt(v);
+                      const confirmed = await checkAndPrompt(String(v));
                       if (!confirmed) {
                         setCurrency(currency);
                       }
@@ -840,7 +856,7 @@ export default function SettingsView({
               <div className="relative settings-select">
                 <CustomSelect
                   value={locale}
-                  onChange={(v) => setLocale(v)}
+                  onChange={(v) => setLocale(String(v))}
                   options={[
                     { value: "en-US", label: "1,234.56" },
                     { value: "de-DE", label: "1.234,56" },
@@ -882,7 +898,7 @@ export default function SettingsView({
               <div className="relative settings-select">
                 <CustomSelect
                   value={dateFormat}
-                  onChange={(v) => setDateFormat(v)}
+                  onChange={(v) => setDateFormat(String(v))}
                   options={dateFormatOptions}
                   placeholder={t("settings.select_date_format_placeholder")}
                   fullWidth={false}
@@ -1207,19 +1223,4 @@ export default function SettingsView({
   );
 }
 
-SettingsView.propTypes = {
-  activeSection: PropTypes.oneOf([
-    "general",
-    "customization",
-    "formats",
-    "about",
-  ]),
-  sidebarVisibility: PropTypes.objectOf(PropTypes.bool),
-  onChangeSidebarVisibility: PropTypes.func,
-};
 
-SettingsView.defaultProps = {
-  activeSection: "general",
-  sidebarVisibility: undefined,
-  onChangeSidebarVisibility: undefined,
-};

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
 import { rust } from "../../api/tauri-client";
 import { t } from "../../i18n/i18n";
 import {
@@ -14,9 +13,24 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+interface OllamaModel {
+  name: string;
+  size?: number;
+}
+
+interface LlmSettings {
+  ollama_url?: string;
+  ollama_model?: string;
+}
+
+interface StepIndicatorProps {
+  steps: string[];
+  current: string;
+}
+
 const STEPS = ["connect", "model", "ready"];
 
-function StepIndicator({ steps, current }) {
+function StepIndicator({ steps, current }: StepIndicatorProps) {
   const currentIdx = steps.indexOf(current);
   return (
     <div className="flex items-center justify-center gap-2 mb-8">
@@ -61,19 +75,18 @@ function StepIndicator({ steps, current }) {
   );
 }
 
-StepIndicator.propTypes = {
-  steps: PropTypes.arrayOf(PropTypes.string).isRequired,
-  current: PropTypes.string.isRequired,
-};
+interface ChatSetupProps {
+  onComplete: () => void;
+}
 
-export default function ChatSetup({ onComplete }) {
-  const [step, setStep] = useState("connect");
+export default function ChatSetup({ onComplete }: ChatSetupProps) {
+  const [step, setStep] = useState<"connect" | "model" | "ready">("connect");
   const [loading, setLoading] = useState(true);
-  const [models, setModels] = useState([]);
+  const [models, setModels] = useState<OllamaModel[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     checkConnection();
@@ -83,12 +96,12 @@ export default function ChatSetup({ onComplete }) {
     setLoading(true);
     setError(null);
     try {
-      const settings = await rust.get_llm_settings();
+      const settings = await rust.get_llm_settings() as LlmSettings;
       if (settings.ollama_url) setOllamaUrl(settings.ollama_url);
 
       const ok = await rust.check_ollama_connection();
       if (ok) {
-        const list = await rust.list_ollama_models();
+        const list = await rust.list_ollama_models() as OllamaModel[];
         setModels(list);
         if (list.length > 0) setSelectedModel(list[0].name);
         setStep("model");
@@ -110,7 +123,7 @@ export default function ChatSetup({ onComplete }) {
       });
       const ok = await rust.check_ollama_connection();
       if (ok) {
-        const list = await rust.list_ollama_models();
+        const list = await rust.list_ollama_models() as OllamaModel[];
         setModels(list);
         if (list.length > 0 && !selectedModel) setSelectedModel(list[0].name);
         setStep("model");
@@ -143,7 +156,7 @@ export default function ChatSetup({ onComplete }) {
     }
   }
 
-  function formatModelSize(bytes) {
+  function formatModelSize(bytes: number | undefined) {
     if (!bytes) return "";
     const gb = bytes / 1e9;
     return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(bytes / 1e6).toFixed(0)} MB`;
@@ -338,7 +351,3 @@ export default function ChatSetup({ onComplete }) {
     </div>
   );
 }
-
-ChatSetup.propTypes = {
-  onComplete: PropTypes.func.isRequired,
-};
