@@ -1,8 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { ThemeContext, useTheme } from "../../contexts/theme-core";
+import { describe, it, expect, beforeEach } from "vitest";
+import { useTheme } from "../../contexts/theme-core";
+import { useThemeStore } from "../../stores/theme";
 
-// Test component to consume context
+// Test component to consume hook
 function TestComponent() {
   const { theme, setTheme } = useTheme();
   return (
@@ -13,125 +14,57 @@ function TestComponent() {
   );
 }
 
-describe("ThemeContext", () => {
-  describe("useTheme", () => {
-    it("throws error when used outside ThemeProvider", () => {
-      // Suppress console.error for expected error
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+describe("useTheme (Zustand store)", () => {
+  beforeEach(() => {
+    useThemeStore.setState({ theme: "system" });
+  });
 
-      expect(() => render(<TestComponent />)).toThrow(
-        "useTheme must be used within a ThemeProvider",
-      );
+  it("returns default theme value", () => {
+    render(<TestComponent />);
+    expect(screen.getByTestId("theme")).toHaveTextContent("system");
+  });
 
-      consoleSpy.mockRestore();
-    });
+  it("can call setTheme", () => {
+    render(<TestComponent />);
+    screen.getByRole("button").click();
+    expect(useThemeStore.getState().theme).toBe("dark");
+  });
 
-    it("returns context value when used inside provider", () => {
-      const mockSetTheme = vi.fn();
-      const contextValue = { theme: "light", setTheme: mockSetTheme };
+  it("works with dark theme value", () => {
+    useThemeStore.setState({ theme: "dark" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("theme")).toHaveTextContent("dark");
+  });
 
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
+  it("works with system theme value", () => {
+    useThemeStore.setState({ theme: "system" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("theme")).toHaveTextContent("system");
+  });
 
-      expect(screen.getByTestId("theme")).toHaveTextContent("light");
-    });
+  it("works with high-contrast-dark theme value", () => {
+    useThemeStore.setState({ theme: "high-contrast-dark" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("theme")).toHaveTextContent("high-contrast-dark");
+  });
 
-    it("can call setTheme from context", () => {
-      const mockSetTheme = vi.fn();
-      const contextValue = { theme: "light", setTheme: mockSetTheme };
+  it("works with high-contrast-light theme value", () => {
+    useThemeStore.setState({ theme: "high-contrast-light" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("theme")).toHaveTextContent(
+      "high-contrast-light",
+    );
+  });
 
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
+  it("works with ink-light theme value", () => {
+    useThemeStore.setState({ theme: "ink-light" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("theme")).toHaveTextContent("ink-light");
+  });
 
-      screen.getByRole("button").click();
-      expect(mockSetTheme).toHaveBeenCalledWith("dark");
-    });
-
-    it("works with dark theme value", () => {
-      const contextValue = { theme: "dark", setTheme: vi.fn() };
-
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
-
-      expect(screen.getByTestId("theme")).toHaveTextContent("dark");
-    });
-
-    it("works with system theme value", () => {
-      const contextValue = { theme: "system", setTheme: vi.fn() };
-
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
-
-      expect(screen.getByTestId("theme")).toHaveTextContent("system");
-    });
-
-    it("works with high-contrast-dark theme value", () => {
-      const contextValue = { theme: "high-contrast-dark", setTheme: vi.fn() };
-
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
-
-      expect(screen.getByTestId("theme")).toHaveTextContent(
-        "high-contrast-dark",
-      );
-    });
-
-    it("works with high-contrast-light theme value", () => {
-      const contextValue = {
-        theme: "high-contrast-light",
-        setTheme: vi.fn(),
-      };
-
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
-
-      expect(screen.getByTestId("theme")).toHaveTextContent(
-        "high-contrast-light",
-      );
-    });
-
-    it("works with ink-light theme value", () => {
-      const contextValue = { theme: "ink-light", setTheme: vi.fn() };
-
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
-
-      expect(screen.getByTestId("theme")).toHaveTextContent("ink-light");
-    });
-
-    it("works with ink-dark theme value", () => {
-      const contextValue = { theme: "ink-dark", setTheme: vi.fn() };
-
-      render(
-        <ThemeContext.Provider value={contextValue}>
-          <TestComponent />
-        </ThemeContext.Provider>,
-      );
-
-      expect(screen.getByTestId("theme")).toHaveTextContent("ink-dark");
-    });
+  it("works with ink-dark theme value", () => {
+    useThemeStore.setState({ theme: "ink-dark" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("theme")).toHaveTextContent("ink-dark");
   });
 });

@@ -1,19 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { ThemeContext } from "./theme-core";
+import { useEffect } from "react";
+import { useThemeStore } from "../stores/theme";
 import { rust } from "../api/tauri-client";
 import { listen } from "@tauri-apps/api/event";
 
-interface ThemeProviderProps {
-  children: React.ReactNode;
-}
-
-export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("hb_theme") || "system";
-    }
-    return "system";
-  });
+export function ThemeEffects() {
+  const theme = useThemeStore((s) => s.theme);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -110,15 +101,5 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [theme]);
 
-  const value = {
-    theme,
-    setTheme: (newTheme: string) => {
-      setTheme(newTheme);
-      localStorage.setItem("hb_theme", newTheme);
-    },
-  };
-
-  return (
-    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-  );
+  return null;
 }

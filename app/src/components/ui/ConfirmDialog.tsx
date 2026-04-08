@@ -1,79 +1,36 @@
-import { useState, useCallback, useRef } from "react";
-import { ConfirmContext } from "../../contexts/confirm";
+import { useConfirmStore } from "../../stores/confirm";
 import { t } from "../../i18n/i18n";
 import "../../styles/Modal.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "./Modal";
 
 type ConfirmKind = "info" | "warning" | "error";
 
-interface ConfirmOptions {
-  title?: string;
-  okLabel?: string;
-  cancelLabel?: string;
-  kind?: ConfirmKind;
-  showCancel?: boolean;
-}
+export function ConfirmDialogContainer() {
+  const isOpen = useConfirmStore((s) => s.isOpen);
+  const message = useConfirmStore((s) => s.message);
+  const options = useConfirmStore((s) => s.options);
+  const handleClose = useConfirmStore((s) => s.handleClose);
 
-interface ConfirmState {
-  message: string;
-  title: string;
-  okLabel: string;
-  cancelLabel: string;
-  kind: ConfirmKind;
-  showCancel?: boolean;
-}
+  if (!isOpen) return null;
 
-interface ConfirmDialogProviderProps {
-  children: React.ReactNode;
-}
-
-export function ConfirmDialogProvider({
-  children,
-}: ConfirmDialogProviderProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [options, setOptions] = useState<ConfirmState>({
-    message: "",
-    title: t("confirm.title"),
-    okLabel: t("confirm.ok"),
-    cancelLabel: t("account.cancel"),
-    kind: "info" as ConfirmKind,
-  });
-  const resolveRef = useRef<((value: boolean) => void) | null>(null);
-
-  const confirm = useCallback((message: string, opts: ConfirmOptions = {}) => {
-    return new Promise<boolean>((resolve) => {
-      setOptions({
-        message,
-        title: opts.title || t("confirm.title"),
-        okLabel: opts.okLabel || t("confirm.ok"),
-        cancelLabel: opts.cancelLabel || t("account.cancel"),
-        kind: opts.kind || "info",
-        showCancel: opts.showCancel !== undefined ? opts.showCancel : true,
-      });
-      setIsOpen(true);
-      resolveRef.current = resolve;
-    });
-  }, []);
-
-  const handleClose = useCallback((result: boolean) => {
-    setIsOpen(false);
-    if (resolveRef.current) {
-      resolveRef.current(result);
-      resolveRef.current = null;
-    }
-  }, []);
+  const title = options.title || t("confirm.title");
+  const okLabel = options.okLabel || t("confirm.ok");
+  const cancelLabel = options.cancelLabel || t("account.cancel");
+  const kind = options.kind || "info";
+  const showCancel =
+    options.showCancel !== undefined ? options.showCancel : true;
 
   return (
-    <ConfirmContext.Provider value={{ confirm }}>
-      {children}
-      {isOpen && (
-        <ConfirmDialog
-          {...options}
-          onConfirm={() => handleClose(true)}
-          onCancel={() => handleClose(false)}
-        />
-      )}
-    </ConfirmContext.Provider>
+    <ConfirmDialog
+      message={message}
+      title={title}
+      okLabel={okLabel}
+      cancelLabel={cancelLabel}
+      kind={kind}
+      showCancel={showCancel}
+      onConfirm={() => handleClose(true)}
+      onCancel={() => handleClose(false)}
+    />
   );
 }
 

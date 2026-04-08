@@ -1,9 +1,10 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { ToastContext, useToast } from "../../contexts/toast";
+import { render, screen, act } from "@testing-library/react";
+import { describe, it, expect, beforeEach } from "vitest";
+import { useToast } from "../../contexts/toast";
+import { useToastStore } from "../../stores/toast";
 
-// Test component to consume context
+// Test component to consume hook
 function TestComponent() {
   const { showToast } = useToast();
   return (
@@ -13,53 +14,41 @@ function TestComponent() {
   );
 }
 
-describe("ToastContext", () => {
-  describe("useToast", () => {
-    it("returns noop showToast when used outside provider", () => {
-      // Should not throw
-      render(<TestComponent />);
+describe("useToast (Zustand store)", () => {
+  beforeEach(() => {
+    useToastStore.setState({ toasts: [] });
+  });
 
-      // Should render without crashing
-      expect(screen.getByRole("button")).toBeInTheDocument();
-    });
+  it("provides showToast without any provider", () => {
+    render(<TestComponent />);
+    expect(screen.getByRole("button")).toBeInTheDocument();
+  });
 
-    it("noop showToast does not throw when called", () => {
-      const capturedShowToastRef: {
-        current: ((...args: any[]) => void) | null;
-      } = { current: null };
-      function CaptureComponent() {
-        const { showToast } = useToast();
-        // assign to ref property inside effect (no mutation during render)
-        React.useEffect(() => {
-          capturedShowToastRef.current = showToast;
-        }, [showToast]);
-        return null;
-      }
+  it("showToast does not throw when called", () => {
+    const capturedShowToastRef: {
+      current: ((...args: any[]) => void) | null;
+    } = { current: null };
+    function CaptureComponent() {
+      const { showToast } = useToast();
+      React.useEffect(() => {
+        capturedShowToastRef.current = showToast;
+      }, [showToast]);
+      return null;
+    }
 
-      render(<CaptureComponent />);
+    render(<CaptureComponent />);
 
-      // Calling noop should not throw
-      expect(() => capturedShowToastRef.current!("message")).not.toThrow();
-      expect(() => capturedShowToastRef.current!()).not.toThrow();
-    });
+    expect(() => capturedShowToastRef.current!("message")).not.toThrow();
+  });
 
-    it("returns context value when used inside provider", () => {
-      const mockShowToast = vi.fn();
-      const contextValue = { showToast: mockShowToast };
+  it("showToast adds a toast to the store", () => {
+    render(<TestComponent />);
 
-      function TestWithProvider() {
-        const { showToast } = useToast();
-        return <button onClick={() => showToast("Hello")}>Click</button>;
-      }
-
-      render(
-        <ToastContext.Provider value={contextValue}>
-          <TestWithProvider />
-        </ToastContext.Provider>,
-      );
-
+    act(() => {
       screen.getByRole("button").click();
-      expect(mockShowToast).toHaveBeenCalledWith("Hello");
     });
+
+    expect(useToastStore.getState().toasts).toHaveLength(1);
+    expect(useToastStore.getState().toasts[0].message).toBe("Test message");
   });
 });

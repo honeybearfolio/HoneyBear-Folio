@@ -2,7 +2,6 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import AccountList from "../../../features/accounts/AccountList";
-import { NumberFormatContext } from "../../../contexts/number-format";
 
 vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
 
@@ -14,17 +13,9 @@ vi.mock("lucide-react", () => ({
   Trash2: () => <span>Delete</span>,
 }));
 
-// We can simply render with the context provider instead of mocking the hook
-const renderWithContext = (
-  ui: React.ReactElement,
-  { formatNumber = (v: number | string) => String(v) } = {},
-) => {
-  return render(
-    <NumberFormatContext.Provider value={{ formatNumber } as never}>
-      {ui}
-    </NumberFormatContext.Provider>,
-  );
-};
+vi.mock("../../../utils/format", () => ({
+  useFormatNumber: () => (v: number | string) => String(v),
+}));
 
 describe("AccountList", () => {
   const mockAccounts = [
@@ -33,7 +24,7 @@ describe("AccountList", () => {
   ];
 
   it("renders list of accounts", () => {
-    renderWithContext(
+    render(
       <AccountList
         accounts={mockAccounts}
         onSelectAccount={vi.fn()}
@@ -47,7 +38,7 @@ describe("AccountList", () => {
 
   it("handles drag and drop reordering", () => {
     const onReorder = vi.fn();
-    renderWithContext(
+    render(
       <AccountList
         accounts={mockAccounts}
         onReorder={onReorder}
@@ -95,7 +86,7 @@ describe("AccountList", () => {
 
   it("calls onSelectAccount when clicked", () => {
     const onSelectAccount = vi.fn();
-    renderWithContext(
+    render(
       <AccountList
         accounts={mockAccounts}
         onSelectAccount={onSelectAccount}
@@ -111,7 +102,7 @@ describe("AccountList", () => {
   it("right-clicking an account shows Rename and Delete in a context menu", async () => {
     const onRenameAccount = vi.fn();
     const onDeleteAccount = vi.fn();
-    renderWithContext(
+    render(
       <AccountList
         accounts={mockAccounts}
         onSelectAccount={vi.fn()}
@@ -138,7 +129,7 @@ describe("AccountList", () => {
 
   it("clicking Rename in context menu shows an inline input", async () => {
     const onRenameAccount = vi.fn();
-    renderWithContext(
+    render(
       <AccountList
         accounts={mockAccounts}
         onSelectAccount={vi.fn()}
@@ -177,7 +168,7 @@ describe("AccountList", () => {
 
   it("clicking Delete in context menu calls onDeleteAccount", async () => {
     const onDeleteAccount = vi.fn();
-    renderWithContext(
+    render(
       <AccountList
         accounts={mockAccounts}
         onSelectAccount={vi.fn()}
@@ -209,7 +200,7 @@ describe("AccountList", () => {
   });
 
   it("context menu closes when clicking outside", async () => {
-    renderWithContext(
+    render(
       <AccountList
         accounts={mockAccounts}
         onSelectAccount={vi.fn()}

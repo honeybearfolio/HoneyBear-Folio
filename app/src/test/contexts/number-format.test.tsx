@@ -1,73 +1,41 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import {
-  NumberFormatContext,
-  useNumberFormat,
-} from "../../contexts/number-format";
+import { describe, it, expect, beforeEach } from "vitest";
+import { useNumberFormat } from "../../contexts/number-format";
+import { useNumberFormatStore } from "../../stores/number-format";
 
-// Test component to consume context
+// Test component to consume hook
 function TestComponent() {
-  const ctx = useNumberFormat() as any;
-  const { locale, currency, formatNumber } = ctx;
+  const { locale, currency } = useNumberFormat();
   return (
     <div>
       <span data-testid="locale">{locale}</span>
       <span data-testid="currency">{currency}</span>
-      <span data-testid="formatted">{formatNumber(1234.56)}</span>
     </div>
   );
 }
 
-describe("NumberFormatContext", () => {
-  describe("useNumberFormat", () => {
-    it("throws error when used outside NumberFormatProvider", () => {
-      // Suppress console.error for expected error
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+describe("useNumberFormat (Zustand store)", () => {
+  beforeEach(() => {
+    useNumberFormatStore.setState({ locale: "en-US", currency: "USD" });
+  });
 
-      expect(() => render(<TestComponent />)).toThrow(
-        "useNumberFormat must be used within NumberFormatProvider",
-      );
+  it("returns default values without any provider", () => {
+    render(<TestComponent />);
+    expect(screen.getByTestId("locale")).toHaveTextContent("en-US");
+    expect(screen.getByTestId("currency")).toHaveTextContent("USD");
+  });
 
-      consoleSpy.mockRestore();
-    });
+  it("reflects store state changes", () => {
+    useNumberFormatStore.setState({ locale: "de-DE", currency: "EUR" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("locale")).toHaveTextContent("de-DE");
+    expect(screen.getByTestId("currency")).toHaveTextContent("EUR");
+  });
 
-    it("returns context value when used inside provider", () => {
-      const mockFormatNumber = vi.fn().mockReturnValue("1,234.56");
-      const contextValue = {
-        locale: "en-US",
-        currency: "USD",
-        formatNumber: mockFormatNumber,
-      };
-
-      render(
-        <NumberFormatContext.Provider value={contextValue as any}>
-          <TestComponent />
-        </NumberFormatContext.Provider>,
-      );
-
-      expect(screen.getByTestId("locale")).toHaveTextContent("en-US");
-      expect(screen.getByTestId("currency")).toHaveTextContent("USD");
-      expect(screen.getByTestId("formatted")).toHaveTextContent("1,234.56");
-      expect(mockFormatNumber).toHaveBeenCalledWith(1234.56);
-    });
-
-    it("works with different locales", () => {
-      const contextValue = {
-        locale: "de-DE",
-        currency: "EUR",
-        formatNumber: (n: number) => n.toLocaleString("de-DE"),
-      };
-
-      render(
-        <NumberFormatContext.Provider value={contextValue as any}>
-          <TestComponent />
-        </NumberFormatContext.Provider>,
-      );
-
-      expect(screen.getByTestId("locale")).toHaveTextContent("de-DE");
-      expect(screen.getByTestId("currency")).toHaveTextContent("EUR");
-    });
+  it("works with different locales", () => {
+    useNumberFormatStore.setState({ locale: "ja-JP", currency: "JPY" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("locale")).toHaveTextContent("ja-JP");
+    expect(screen.getByTestId("currency")).toHaveTextContent("JPY");
   });
 });

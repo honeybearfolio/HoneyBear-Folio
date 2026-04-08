@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ScheduledList from "../../../features/scheduled/ScheduledList";
-import { NumberFormatContext } from "../../../contexts/number-format";
+import { useNumberFormatStore } from "../../../stores/number-format";
 import { invoke } from "@tauri-apps/api/core";
 
 // Mock dependencies
@@ -122,19 +122,11 @@ vi.mock("../../../utils/format", async (importOriginal) => {
 });
 
 const renderWithContext = (ui: React.ReactElement) => {
-  return render(
-    <NumberFormatContext.Provider
-      value={
-        {
-          formatNumber: (v: number) => String(v),
-          dateFormat: "YYYY-MM-DD",
-          firstDayOfWeek: 0,
-        } as never
-      }
-    >
-      {ui}
-    </NumberFormatContext.Provider>,
-  );
+  useNumberFormatStore.setState({
+    dateFormat: "YYYY-MM-DD",
+    firstDayOfWeek: 0,
+  });
+  return render(ui);
 };
 
 describe("ScheduledList", () => {

@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Sidebar from "../../../components/layout/Sidebar";
 import { usePrivacy } from "../../../contexts/privacy";
-import { NumberFormatContext } from "../../../contexts/number-format";
 
 // Mock dependencies
 vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
@@ -69,13 +68,7 @@ vi.mock("../../../features/accounts/AccountList", () => ({
 }));
 
 const renderWithContext = (ui: React.ReactElement) => {
-  return render(
-    <NumberFormatContext.Provider
-      value={{ formatNumber: (v: number) => `fmt-${v}` } as never}
-    >
-      {ui}
-    </NumberFormatContext.Provider>,
-  );
+  return render(ui);
 };
 
 describe("Sidebar", () => {
