@@ -5,36 +5,35 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import prettier from "eslint-plugin-prettier";
 import eslintConfigPrettier from "eslint-config-prettier";
+import tseslint from "typescript-eslint";
 
 export default [
   { ignores: ["dist", "src-tauri/target"] },
   {
-    files: ["src/test/**/*.{js,jsx}"],
+    files: ["src/test/**/*.{ts,tsx}"],
     languageOptions: {
       globals: { ...globals.node, ...globals.jest },
     },
-    rules: {
-      // In tests we don't enforce prop-types and jest/node globals are available
-      "react/prop-types": "off",
-    },
   },
   {
-    files: ["**/*.{js,jsx}"],
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: "latest",
         ecmaFeatures: { jsx: true },
         sourceType: "module",
       },
     },
-    settings: { react: { version: "18.3" } },
+    settings: { react: { version: "19" } },
     plugins: {
       react,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       prettier,
+      "@typescript-eslint": tseslint.plugin,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -46,7 +45,16 @@ export default [
         "warn",
         { allowConstantExport: true },
       ],
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "no-undef": "off",
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
       "prettier/prettier": "error",
     },
   },

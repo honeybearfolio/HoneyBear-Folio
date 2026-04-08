@@ -1,0 +1,173 @@
+import { rust } from "../api/tauri-client";
+
+interface Transaction {
+  account_id: number;
+  ticker?: string;
+  shares?: number;
+  [key: string]: unknown;
+}
+
+interface Quote {
+  symbol: string;
+  regularMarketPrice: number;
+  currency?: string;
+  [key: string]: unknown;
+}
+
+interface Account {
+  id: number;
+  currency?: string;
+  [key: string]: unknown;
+}
+
+type HoldingsMap = Record<string, Record<string, number>>;
+type QuoteMap = Record<string, Quote>;
+type RateMap = Record<string, number>;
+type CurrencyMap = Record<number, string>;
+type MarketValueMap = Record<string, number>;
+
+function buildAccountHoldings(transactions: Transaction[]): {
+  accountHoldings: HoldingsMap;
+  allTickers: Set<string>;
+} {
+  const accountHoldings: HoldingsMap = {};
+  const allTickers = new Set<string>();
+
+  transactions.forEach((tx) => {
+    if (tx.ticker && tx.shares) {
+      if (!accountHoldings[tx.account_id]) accountHoldings[tx.account_id] = {};
+      if (!accountHoldings[tx.account_id][tx.ticker])
+        accountHoldings[tx.account_id][tx.ticker] = 0;
+      accountHoldings[tx.account_id][tx.ticker] += tx.shares;
+      allTickers.add(tx.ticker);
+    }
+  });
+
+  return { accountHoldings, allTickers };
+}
+
+function buildQuoteMap(quotes: Quote[]): QuoteMap {
+  const quoteMap: QuoteMap = {};
+  quotes.forEach((quote) => {
+    quoteMap[quote.symbol] = quote;
+  });
+  return quoteMap;
+}
+
+interface FetchExchangeRatesParams {
+  accountHoldings: HoldingsMap;
+  accountCcyMap: CurrencyMap;
+  appCurrency: string;
+  quoteMap: QuoteMap;
+}
+
+async function fetchExchangeRates({
+  accountHoldings,
+  accountCcyMap,
+  appCurrency,
+  quoteMap,
+}: FetchExchangeRatesParams): Promise<RateMap> {
+  const ratesToFetch = new Set<string>();
+  const quoteKeys = Object.keys(quoteMap);
+
+  for (const [accountId, holdings] of Object.entries(accountHoldings)) {
+    const targetCcy = accountCcyMap[Number(accountId)] || appCurrency;
+    for (const ticker of Object.keys(holdings)) {
+      const matchingTicker = quoteKeys.find(
+        (name) => name.toLowerCase() === ticker.toLowerCase(),
+      );
+      const quote = matchingTicker ? quoteMap[matchingTicker] : undefined;
+      if (quote && quote.currency && quote.currency !== targetCcy) {
+        ratesToFetch.add(`${quote.currency}${targetCcy}=X`);
+      }
+    }
+  }
+
+  if (ratesToFetch.size === 0) return {};
+
+  const rateQuotes = (await rust.get_stock_quotes({
+    tickers: Array.from(ratesToFetch),
+  })) as Quote[];
+  const rates: RateMap = {};
+  rateQuotes.forEach((quote) => {
+    rates[quote.symbol] = quote.regularMarketPrice;
+  });
+  return rates;
+}
+
+interface ComputeMarketValuesParams {
+  accountHoldings: HoldingsMap;
+  accountCcyMap: CurrencyMap;
+  appCurrency: string;
+  quoteMap: QuoteMap;
+  exchangeRates: RateMap;
+}
+
+function computeMarketValues({
+  accountHoldings,
+  accountCcyMap,
+  appCurrency,
+  quoteMap,
+  exchangeRates,
+}: ComputeMarketValuesParams): MarketValueMap {
+  const newMarketValues: MarketValueMap = {};
+
+  for (const [accountId, holdings] of Object.entries(accountHoldings)) {
+    let totalValue = 0;
+    const targetCcy = accountCcyMap[Number(accountId)] || appCurrency;
+
+    for (const [ticker, shares] of Object.entries(holdings)) {
+      if (shares > 0.0001) {
+        const quoteName = Object.keys(quoteMap).find(
+          (name) => name.toLowerCase() === ticker.toLowerCase(),
+        );
+        const quote = quoteName ? quoteMap[quoteName] : undefined;
+        if (!quote) continue;
+
+        let price = quote.regularMarketPrice || 0;
+        if (quote.currency && quote.currency !== targetCcy) {
+          const pair = `${quote.currency}${targetCcy}=X`;
+          if (exchangeRates[pair]) price = price * exchangeRates[pair];
+        }
+        totalValue += shares * price;
+      }
+    }
+
+    newMarketValues[accountId] = totalValue;
+  }
+
+  return newMarketValues;
+}
+
+export async function fetchMarketValuesForAccounts(
+  currentAccounts: Account[] = [],
+  appCurrency: string = "USD",
+): Promise<MarketValueMap> {
+  const transactions = (await rust.get_all_transactions()) as Transaction[];
+  const { accountHoldings, allTickers } = buildAccountHoldings(transactions);
+  if (allTickers.size === 0) return {};
+
+  const accountCcyMap: CurrencyMap = {};
+  currentAccounts.forEach((acc) => {
+    if (acc.currency) accountCcyMap[acc.id] = acc.currency;
+  });
+
+  const quotes = (await rust.get_stock_quotes({
+    tickers: Array.from(allTickers),
+  })) as Quote[];
+  const quoteMap = buildQuoteMap(quotes);
+  const exchangeRates = await fetchExchangeRates({
+    accountHoldings,
+    accountCcyMap,
+    appCurrency,
+    quoteMap,
+  });
+
+  return computeMarketValues({
+    accountHoldings,
+    accountCcyMap,
+    appCurrency,
+    quoteMap,
+    exchangeRates,
+  });
+}
