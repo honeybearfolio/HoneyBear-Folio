@@ -1,8 +1,22 @@
 import { createContext, useContext } from "react";
 
-export const ConfirmContext = createContext(null);
+type ConfirmKind = "info" | "warning" | "error";
 
-export function useConfirm() {
+export interface ConfirmOptions {
+  title?: string;
+  okLabel?: string;
+  cancelLabel?: string;
+  kind?: ConfirmKind;
+  showCancel?: boolean;
+}
+
+export interface ConfirmContextValue {
+  confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>;
+}
+
+export const ConfirmContext = createContext<ConfirmContextValue | null>(null);
+
+export function useConfirm(): (message: string, options?: ConfirmOptions) => Promise<boolean> {
   const ctx = useContext(ConfirmContext);
   if (!ctx) {
     // Fallback if provider is missing

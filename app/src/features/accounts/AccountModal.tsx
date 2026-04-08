@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import { useState } from "react";
 import { Check, Wallet, Globe } from "lucide-react";
 import "../../styles/Modal.css";
@@ -16,12 +15,25 @@ import { useCustomRate } from "../../hooks/useCustomRate";
 import { useToast } from "../../contexts/toast";
 import { useParseNumber } from "../../utils/format";
 
+interface Account {
+  id: string | number;
+  name: string;
+  currency?: string;
+}
+
+interface AccountModalProps {
+  onClose: () => void;
+  onUpdate: () => void;
+  account?: Account | null;
+  isEditing?: boolean;
+}
+
 export default function AccountModal({
   onClose,
   onUpdate,
   account = null,
   isEditing = false,
-}) {
+}: AccountModalProps) {
   const [name, setName] = useState(account?.name || "");
   const [balanceStr, setBalanceStr] = useState("");
   const [currency, setCurrency] = useState(account?.currency || "");
@@ -30,14 +42,14 @@ export default function AccountModal({
   const parseNumber = useParseNumber();
   const { checkAndPrompt, dialog, isLoading } = useCustomRate();
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const nameTrimmed = name.trim();
 
     if (nameTrimmed.length === 0) {
       showToast(
         t("account.error.empty_name") || "Account name cannot be empty",
-        { type: "warning" },
+        { type: "warning" as const },
       );
       return;
     }
@@ -45,7 +57,7 @@ export default function AccountModal({
     try {
       if (isEditing) {
         await rust.update_account({
-          id: account.id,
+          id: account!.id,
           name: nameTrimmed,
           currency: currency || null,
         });
@@ -78,12 +90,12 @@ export default function AccountModal({
           t("error.account_exists", { name: nameTrimmed }) ||
             `Account "${nameTrimmed}" already exists`,
           {
-            type: "warning",
+            type: "warning" as const,
           },
         );
       } else {
         showToast(t("error.something_went_wrong") || "Something went wrong", {
-          type: "danger",
+          type: "error",
         });
       }
     }
@@ -155,10 +167,10 @@ export default function AccountModal({
                     label: `${c.code} (${c.symbol}) - ${c.name}`,
                   })),
                 ]}
-                onChange={async (val) => {
-                  setCurrency(val);
+                onChange={async (val: string | number) => {
+                  setCurrency(String(val));
                   if (val) {
-                    const confirmed = await checkAndPrompt(val);
+                    const confirmed = await checkAndPrompt(String(val));
                     if (!confirmed) {
                       setCurrency("");
                     }
@@ -197,9 +209,3 @@ export default function AccountModal({
   );
 }
 
-AccountModal.propTypes = {
-  onClose: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired,
-  account: PropTypes.object,
-  isEditing: PropTypes.bool,
-};

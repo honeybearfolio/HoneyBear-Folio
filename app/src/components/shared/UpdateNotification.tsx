@@ -8,16 +8,28 @@ import "../../styles/Modal.css";
 import { t } from "../../i18n/i18n";
 import { getDevSetting } from "../../config/dev-settings";
 
+interface UpdateEvent {
+  event: "Started" | "Progress" | "Finished";
+  data?: { contentLength?: number; chunkLength?: number };
+}
+
+interface UpdateInfo {
+  available: boolean;
+  version: string;
+  body?: string;
+  downloadAndInstall: (cb: (event: UpdateEvent) => void) => Promise<void>;
+}
+
 export default function UpdateNotification() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState(null);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showNotes, setShowNotes] = useState(false);
 
-  const cleanReleaseNotes = (body) => {
+  const cleanReleaseNotes = (body: string | undefined) => {
     if (!body) return "";
     let cleaned = body.replace(/\s*\([^)]+\)\s*[—-]\s*@[\w-]+/g, "");
     cleaned = cleaned.replace(/\*\*Assets:\*\*[\s\S]*$/i, "");
@@ -35,7 +47,7 @@ export default function UpdateNotification() {
       const forceShow = getDevSetting("FORCE_SHOW_UPDATE_POPUP");
 
       try {
-        let update;
+        let update: UpdateInfo | undefined;
 
         if (forceShow) {
           // Mock update data for testing UI
@@ -44,7 +56,7 @@ export default function UpdateNotification() {
             available: true,
             version: "2.0.0-dev-test",
             body: "## Dev Test Update\n\nThis is a forced update notification from dev-settings.\n\n- **Feature**: Testing update notifications",
-            downloadAndInstall: async (cb) => {
+            downloadAndInstall: async (cb: (event: UpdateEvent) => void) => {
               // Simulate download process
               cb({ event: "Started", data: { contentLength: 100 } });
               for (let i = 0; i <= 10; i++) {
@@ -55,7 +67,7 @@ export default function UpdateNotification() {
             },
           };
         } else {
-          update = await check();
+          update = (await check()) as unknown as UpdateInfo | undefined;
         }
 
         if (update?.available) {
@@ -80,13 +92,13 @@ export default function UpdateNotification() {
       let downloaded = 0;
       let contentLength = 0;
 
-      await updateInfo.downloadAndInstall((event) => {
+      await updateInfo.downloadAndInstall((event: UpdateEvent) => {
         switch (event.event) {
           case "Started":
-            contentLength = event.data.contentLength;
+            contentLength = event.data?.contentLength ?? 0;
             break;
           case "Progress":
-            downloaded += event.data.chunkLength;
+            downloaded += event.data?.chunkLength ?? 0;
             if (contentLength > 0) {
               setProgress(Math.round((downloaded / contentLength) * 100));
             }
@@ -101,7 +113,7 @@ export default function UpdateNotification() {
       setDownloaded(true);
     } catch (err) {
       console.error("Failed to install update:", err);
-      setError(err.message || t("update.failed_update"));
+      setError(err instanceof Error ? err.message : t("update.failed_update"));
       setDownloading(false);
     }
   };

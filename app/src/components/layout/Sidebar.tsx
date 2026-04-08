@@ -1,5 +1,4 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import PropTypes from "prop-types";
 import ImportModal from "../shared/ImportModal";
 import ExportModal from "../shared/ExportModal";
 import AccountModal from "../../features/accounts/AccountModal";
@@ -38,6 +37,50 @@ import MaskedNumber from "../ui/MaskedNumber";
 import { rust } from "../../api/tauri-client";
 import { useConfirm } from "../../contexts/confirm";
 
+interface Account {
+  id: string | number;
+  name: string;
+  balance: number;
+  kind: string;
+}
+
+interface SidebarVisibility {
+  dashboard?: boolean;
+  investments?: boolean;
+  fire?: boolean;
+  chat?: boolean;
+  rules?: boolean;
+  scheduled?: boolean;
+  all?: boolean;
+  [key: string]: boolean | undefined;
+}
+
+interface ActiveSession {
+  path?: string;
+  name?: string;
+}
+
+type SettingsSection = "general" | "customization" | "formats" | "about";
+
+interface SortConfig {
+  field: string;
+  direction: "asc" | "desc";
+}
+
+interface SidebarProps {
+  accounts: Account[];
+  marketValues: Record<string | number, number>;
+  selectedId: string | number;
+  onSelectAccount: (id: string | number) => void;
+  onUpdate: () => void;
+  onClose: () => void;
+  sidebarVisibility: SidebarVisibility;
+  settingsSection?: SettingsSection;
+  onChangeSettingsSection?: (section: SettingsSection) => void;
+  activeSession?: ActiveSession;
+  onSwitchSession?: () => void;
+}
+
 export default function Sidebar({
   accounts,
   marketValues,
@@ -50,13 +93,13 @@ export default function Sidebar({
   onChangeSettingsSection,
   activeSession,
   onSwitchSession,
-}) {
+}: SidebarProps) {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
   // Compute total balance using helper so logic is shared with Dashboard/App
-  const totalBalance = computeNetWorth(accounts, marketValues);
+  const totalBalance = computeNetWorth(accounts as { id: number; balance?: unknown; exchange_rate?: number }[], marketValues);
   const formatNumber = useFormatNumber();
   const formattedTotalBalance = formatNumber(totalBalance, {
     style: "currency",
@@ -64,19 +107,19 @@ export default function Sidebar({
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
 
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [sortConfig, setSortConfig] = useState(() => {
+  const [sortConfig, setSortConfig] = useState<SortConfig>(() => {
     try {
       const stored = localStorage.getItem("hb_account_sort_config");
-      return stored ? JSON.parse(stored) : { field: "name", direction: "asc" };
+      return stored ? JSON.parse(stored) as SortConfig : { field: "name", direction: "asc" };
     } catch {
       return { field: "name", direction: "asc" };
     }
   });
-  const sortMenuRef = useRef(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) {
+    function handleClickOutside(event: MouseEvent) {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
         setShowSortMenu(false);
       }
     }
@@ -86,10 +129,10 @@ export default function Sidebar({
     };
   }, []);
 
-  const [manualOrder, setManualOrder] = useState(() => {
+  const [manualOrder, setManualOrder] = useState<(string | number)[]>(() => {
     try {
       const stored = localStorage.getItem("hb_account_order");
-      return stored ? JSON.parse(stored) : [];
+      return stored ? JSON.parse(stored) as (string | number)[] : [];
     } catch {
       return [];
     }
@@ -112,7 +155,7 @@ export default function Sidebar({
     }
 
     list.sort((a, b) => {
-      let valA, valB;
+      let valA: string | number = 0, valB: string | number = 0;
 
       if (sortConfig.field === "name") {
         valA = a.name.toLowerCase();
@@ -137,26 +180,26 @@ export default function Sidebar({
     return list;
   }, [accounts, marketValues, sortConfig, manualOrder]);
 
-  const handleSort = (field, direction) => {
+  const handleSort = (field: string, direction: "asc" | "desc") => {
     const newConfig = { field, direction };
     setSortConfig(newConfig);
     setShowSortMenu(false);
     localStorage.setItem("hb_account_sort_config", JSON.stringify(newConfig));
   };
 
-  const handleReorder = (newAccountsList) => {
+  const handleReorder = (newAccountsList: { id: string | number }[]) => {
     const newOrder = newAccountsList.map((a) => a.id);
     setManualOrder(newOrder);
     localStorage.setItem("hb_account_order", JSON.stringify(newOrder));
   };
 
-  const handleSelect = (id) => {
+  const handleSelect = (id: string | number) => {
     onSelectAccount(id);
   };
 
   const confirm = useConfirm();
 
-  async function handleRenameAccount(id, newName) {
+  async function handleRenameAccount(id: string | number, newName: string) {
     try {
       await rust.rename_account({ id, newName });
       if (onUpdate) onUpdate();
@@ -165,7 +208,7 @@ export default function Sidebar({
     }
   }
 
-  async function handleDeleteAccount(id) {
+  async function handleDeleteAccount(id: string | number) {
     const account = accounts.find((a) => a.id === id);
     const confirmed = await confirm(
       t("confirm.delete_account", { name: account?.name ?? id }),
@@ -269,7 +312,7 @@ export default function Sidebar({
             <h2 className="sidebar-section-title">{t("nav.settings")}</h2>
             <div className="space-y-1">
               <button
-                onClick={() => onChangeSettingsSection("general")}
+                onClick={() => onChangeSettingsSection?.("general")}
                 className={`sidebar-nav-item group ${
                   settingsSection === "general"
                     ? "sidebar-nav-item-active"
@@ -283,7 +326,7 @@ export default function Sidebar({
               </button>
               {sidebarVisibility && (
                 <button
-                  onClick={() => onChangeSettingsSection("customization")}
+                  onClick={() => onChangeSettingsSection?.("customization")}
                   className={`sidebar-nav-item group ${
                     settingsSection === "customization"
                       ? "sidebar-nav-item-active"
@@ -299,7 +342,7 @@ export default function Sidebar({
                 </button>
               )}
               <button
-                onClick={() => onChangeSettingsSection("formats")}
+                onClick={() => onChangeSettingsSection?.("formats")}
                 className={`sidebar-nav-item group ${
                   settingsSection === "formats"
                     ? "sidebar-nav-item-active"
@@ -312,7 +355,7 @@ export default function Sidebar({
                 <span className="font-medium">{t("settings.formats")}</span>
               </button>
               <button
-                onClick={() => onChangeSettingsSection("about")}
+                onClick={() => onChangeSettingsSection?.("about")}
                 className={`sidebar-nav-item group ${
                   settingsSection === "about"
                     ? "sidebar-nav-item-active"
@@ -471,43 +514,43 @@ export default function Sidebar({
                           <div className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-800/50 border-b border-slate-700/50">
                             {t("sort.sort_by")}
                           </div>
-                          {[
+                          {([
                             {
                               label: t("sort.manual"),
                               field: "manual",
-                              dir: "asc",
+                              dir: "asc" as const,
                             },
                             {
                               label: t("sort.name_asc"),
                               field: "name",
-                              dir: "asc",
+                              dir: "asc" as const,
                             },
                             {
                               label: t("sort.name_desc"),
                               field: "name",
-                              dir: "desc",
+                              dir: "desc" as const,
                             },
                             {
                               label: t("sort.balance_asc"),
                               field: "balance",
-                              dir: "asc",
+                              dir: "asc" as const,
                             },
                             {
                               label: t("sort.balance_desc"),
                               field: "balance",
-                              dir: "desc",
+                              dir: "desc" as const,
                             },
                             {
                               label: t("sort.value_asc"),
                               field: "value",
-                              dir: "asc",
+                              dir: "asc" as const,
                             },
                             {
                               label: t("sort.value_desc"),
                               field: "value",
-                              dir: "desc",
+                              dir: "desc" as const,
                             },
-                          ].map((opt) => (
+                          ]).map((opt) => (
                             <button
                               key={`${opt.field}-${opt.dir}`}
                               onClick={() => handleSort(opt.field, opt.dir)}
@@ -616,28 +659,5 @@ export default function Sidebar({
   );
 }
 
-Sidebar.propTypes = {
-  accounts: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      name: PropTypes.string.isRequired,
-      balance: PropTypes.number.isRequired,
-      kind: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
-  marketValues: PropTypes.object.isRequired,
-  selectedId: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-    .isRequired,
-  onSelectAccount: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired,
-  onClose: PropTypes.func.isRequired,
-  sidebarVisibility: PropTypes.objectOf(PropTypes.bool).isRequired,
-  onChangeSidebarVisibility: PropTypes.func.isRequired,
-  settingsSection: PropTypes.string,
-  onChangeSettingsSection: PropTypes.func,
-  activeSession: PropTypes.shape({
-    path: PropTypes.string,
-    name: PropTypes.string,
-  }),
-  onSwitchSession: PropTypes.func,
-};
+
+

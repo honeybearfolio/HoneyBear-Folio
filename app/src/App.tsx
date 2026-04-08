@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
+
 import { rust } from "./api/tauri-client";
 import Sidebar from "./components/layout/Sidebar";
 import { computeNetWorth } from "./utils/networth";
@@ -34,13 +34,14 @@ import { fetchMarketValuesForAccounts } from "./utils/market-values";
 
 function App() {
   // Session management — "picking" shows the session picker, "active" shows the main app
-  const [sessionState, setSessionState] = useState("loading");
-  const [activeSession, setActiveSession] = useState(null);
+  const [sessionState, setSessionState] = useState<"loading" | "picking" | "active">("loading");
+  const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
 
   useEffect(() => {
     rust
       .get_active_session()
-      .then((session) => {
+      .then((_session) => {
+        const session = _session as ActiveSession | null;
         if (session && session.file_exists) {
           setActiveSession(session);
           setSessionState("active");
@@ -53,7 +54,7 @@ function App() {
       });
   }, []);
 
-  function handleSessionReady(session) {
+  function handleSessionReady(session: ActiveSession) {
     setActiveSession(session);
     setSessionState("active");
   }
@@ -87,16 +88,39 @@ function App() {
   );
 }
 
-function MainApp({ activeSession, onSwitchSession }) {
-  const [sidebarWidth, setSidebarWidth] = useState(APP_DEFAULTS.SIDEBAR_WIDTH);
+interface ActiveSession {
+  path?: string;
+  name?: string;
+  file_exists?: boolean;
+}
+
+interface Account {
+  id: string | number;
+  name: string;
+  balance: number;
+  totalValue?: number;
+  currency?: string;
+  kind?: string;
+  exchange_rate?: number;
+}
+
+type SettingsSection = "general" | "customization" | "formats" | "about";
+
+interface MainAppProps {
+  activeSession: ActiveSession | null;
+  onSwitchSession: () => void;
+}
+
+function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
+  const [sidebarWidth, setSidebarWidth] = useState<number>(APP_DEFAULTS.SIDEBAR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [accounts, setAccounts] = useState([]);
-  const [marketValues, setMarketValues] = useState({});
-  const [settingsSection, setSettingsSection] = useState("general");
-  const [sidebarVisibility, setSidebarVisibility] = useState(() => {
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [marketValues, setMarketValues] = useState<Record<string, number>>({});
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("general");
+  const [sidebarVisibility, setSidebarVisibility] = useState<Record<string, boolean>>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_VISIBILITY);
       const defaults = DEFAULT_SIDEBAR_VISIBILITY;
@@ -125,7 +149,7 @@ function MainApp({ activeSession, onSwitchSession }) {
   }, []);
 
   const resize = useCallback(
-    (mouseMoveEvent) => {
+    (mouseMoveEvent: MouseEvent) => {
       if (isResizing) {
         const newWidth = mouseMoveEvent.clientX;
         if (
@@ -162,12 +186,12 @@ function MainApp({ activeSession, onSwitchSession }) {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  async function fetchAccounts() {
+  async function fetchAccounts(): Promise<Account[]> {
     try {
       const currency =
         localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
-      const accs = await rust.get_accounts({ targetCurrency: currency });
-      accs.sort((a, b) => b.balance - a.balance);
+      const accs = (await rust.get_accounts({ targetCurrency: currency })) as Account[];
+      accs.sort((a: Account, b: Account) => b.balance - a.balance);
       setAccounts(accs);
       return accs;
     } catch (e) {
@@ -176,12 +200,12 @@ function MainApp({ activeSession, onSwitchSession }) {
     }
   }
 
-  async function fetchMarketValues(currentAccounts = []) {
+  async function fetchMarketValues(currentAccounts: Account[] = []) {
     try {
       const appCurrency =
         localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
       const values = await fetchMarketValuesForAccounts(
-        currentAccounts,
+        currentAccounts as { id: number; currency?: string }[],
         appCurrency,
       );
       setMarketValues(values);
@@ -226,7 +250,7 @@ function MainApp({ activeSession, onSwitchSession }) {
 
   // Calculate total balance
 
-  const totalBalance = computeNetWorth(accounts, marketValues);
+  const totalBalance = computeNetWorth(accounts as { id: number; balance?: unknown; exchange_rate?: number }[], marketValues);
 
   const totalCashBalance = accounts.reduce((sum, acc) => {
     const balance = Number(acc.balance) || 0;
@@ -269,16 +293,16 @@ function MainApp({ activeSession, onSwitchSession }) {
   }
 
   // Global error overlay state
-  const [globalError, setGlobalError] = useState(null);
+  const [globalError, setGlobalError] = useState<string | Error | null>(null);
 
   // Install global handlers to catch uncaught errors and promise rejections
   useEffect(() => {
-    function handleWindowError(event) {
+    function handleWindowError(event: ErrorEvent) {
       console.error("Window error:", event.error || event.message, event);
       setGlobalError(event.error || event.message || "Unknown error");
     }
 
-    function handleRejection(event) {
+    function handleRejection(event: PromiseRejectionEvent) {
       console.error("Unhandled rejection:", event.reason || event);
       setGlobalError(event.reason || "Unhandled promise rejection");
     }
@@ -319,17 +343,16 @@ function MainApp({ activeSession, onSwitchSession }) {
                     >
                       <div className="flex-1 w-full h-full overflow-hidden">
                         <Sidebar
-                          accounts={accounts}
+                          accounts={accounts as { id: string | number; name: string; balance: number; kind: string }[]}
                           marketValues={marketValues}
                           selectedId={selectedAccountId}
-                          onSelectAccount={setSelectedAccountId}
+                          onSelectAccount={(id: string | number) => setSelectedAccountId(String(id))}
                           onUpdate={handleAccountUpdate}
                           onClose={() => setIsSidebarOpen(false)}
                           sidebarVisibility={sidebarVisibility}
-                          onChangeSidebarVisibility={setSidebarVisibility}
                           settingsSection={settingsSection}
                           onChangeSettingsSection={setSettingsSection}
-                          activeSession={activeSession}
+                          activeSession={activeSession ?? undefined}
                           onSwitchSession={onSwitchSession}
                         />
                       </div>
@@ -442,13 +465,5 @@ function MainApp({ activeSession, onSwitchSession }) {
     </NumberFormatProvider>
   );
 }
-
-MainApp.propTypes = {
-  activeSession: PropTypes.shape({
-    path: PropTypes.string,
-    name: PropTypes.string,
-  }),
-  onSwitchSession: PropTypes.func.isRequired,
-};
 
 export default App;

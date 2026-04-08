@@ -1,10 +1,28 @@
-import PropTypes from "prop-types";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { GripVertical, Edit, Trash2 } from "lucide-react";
 import { t } from "../../i18n/i18n";
+
+interface Account {
+  id: string | number;
+  name: string;
+  balance: number;
+  currency?: string;
+}
+
+interface AccountListProps {
+  accounts: Account[];
+  selectedId?: string | number;
+  onSelectAccount: (id: string | number) => void;
+  marketValues?: Record<string, number>;
+  Icon: React.ComponentType<{ className?: string }>;
+  onReorder?: (accounts: Account[]) => void;
+  isDraggable?: boolean;
+  onRenameAccount?: (id: string | number, newName: string) => void;
+  onDeleteAccount?: (id: string | number) => void;
+}
 
 export default function AccountList({
   accounts,
@@ -16,23 +34,24 @@ export default function AccountList({
   isDraggable,
   onRenameAccount,
   onDeleteAccount,
-}) {
+}: AccountListProps) {
   const formatNumber = useFormatNumber();
-  const [draggingId, setDraggingId] = useState(null);
-  const draggingIdRef = useRef(null);
+  const [draggingId, setDraggingId] = useState<string | number | null>(null);
+  const draggingIdRef = useRef<string | number | null>(null);
   const lastReorder = useRef(0);
-  const [menuOpenId, setMenuOpenId] = useState(null);
-  const [menuCoords, setMenuCoords] = useState(null);
-  const [renamingId, setRenamingId] = useState(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | number | null>(null);
+  const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(null);
+  const [renamingId, setRenamingId] = useState<string | number | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  const renameInputRef = useRef(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
       if (
         menuOpenId &&
-        !event.target.closest(".account-list-menu-container") &&
-        !event.target.closest(".account-list-menu-portal")
+        !target?.closest(".account-list-menu-container") &&
+        !target?.closest(".account-list-menu-portal")
       ) {
         setMenuOpenId(null);
         setMenuCoords(null);
@@ -63,7 +82,7 @@ export default function AccountList({
     }
   }, [renamingId]);
 
-  const handleDragStart = useCallback((e, accountId) => {
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, accountId: string | number) => {
     // Store in both state (for UI) and ref (for reliable access during drag)
     setDraggingId(accountId);
     draggingIdRef.current = accountId;
@@ -74,7 +93,7 @@ export default function AccountList({
     e.dataTransfer.setData("application/x-account-id", String(accountId));
   }, []);
 
-  const handleDragOver = useCallback((e) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     // Setting dropEffect is critical for Windows to show correct cursor
@@ -82,7 +101,7 @@ export default function AccountList({
   }, []);
 
   const handleDragEnter = useCallback(
-    (e, targetIndex) => {
+    (e: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
       e.preventDefault();
       e.stopPropagation();
       e.dataTransfer.dropEffect = "move";
@@ -111,7 +130,7 @@ export default function AccountList({
     [accounts, onReorder],
   );
 
-  const handleDrop = useCallback((e) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   }, []);
@@ -168,7 +187,7 @@ export default function AccountList({
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (renameValue.trim()) {
-                    onRenameAccount(account.id, renameValue.trim());
+                    onRenameAccount?.(account.id, renameValue.trim());
                   }
                   setRenamingId(null);
                 }}
@@ -184,7 +203,7 @@ export default function AccountList({
                   onChange={(e) => setRenameValue(e.target.value)}
                   onBlur={() => {
                     if (renameValue.trim()) {
-                      onRenameAccount(account.id, renameValue.trim());
+                      onRenameAccount?.(account.id, renameValue.trim());
                     }
                     setRenamingId(null);
                   }}
@@ -302,14 +321,3 @@ export default function AccountList({
   );
 }
 
-AccountList.propTypes = {
-  accounts: PropTypes.array.isRequired,
-  selectedId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  onSelectAccount: PropTypes.func.isRequired,
-  marketValues: PropTypes.object,
-  Icon: PropTypes.func.isRequired,
-  onReorder: PropTypes.func,
-  isDraggable: PropTypes.bool,
-  onRenameAccount: PropTypes.func,
-  onDeleteAccount: PropTypes.func,
-};

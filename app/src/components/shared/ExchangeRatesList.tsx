@@ -1,20 +1,29 @@
 import { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
 import { rust } from "../../api/tauri-client";
 import { Pencil, Trash2, RefreshCw } from "lucide-react";
 import { t } from "../../i18n/i18n";
 import { useConfirm } from "../../contexts/confirm";
 import "../../styles/Settings.css";
 
+interface ExchangeRate {
+  currency: string;
+  rate: number;
+  isCustom: boolean;
+}
+
+interface ExchangeRatesListProps {
+  onRateChange?: () => void;
+}
+
 /**
  * Component to display and manage exchange rates.
  * Shows custom rates with edit/delete options and Yahoo-sourced
  * currencies with an option to override.
  */
-export default function ExchangeRatesList({ onRateChange }) {
-  const [rates, setRates] = useState([]);
+export default function ExchangeRatesList({ onRateChange }: ExchangeRatesListProps) {
+  const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingCurrency, setEditingCurrency] = useState(null);
+  const [editingCurrency, setEditingCurrency] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const confirm = useConfirm();
 
@@ -22,11 +31,11 @@ export default function ExchangeRatesList({ onRateChange }) {
     setLoading(true);
     try {
       const appCurrency = localStorage.getItem("hb_currency") || "USD";
-      const result = await rust.get_all_exchange_rates({
+      const result = (await rust.get_all_exchange_rates({
         appCurrency,
-      });
+      })) as ExchangeRate[];
       // Sort: custom rates first, then Yahoo, alphabetically within each group
-      result.sort((a, b) => {
+      result.sort((a: ExchangeRate, b: ExchangeRate) => {
         if (a.isCustom !== b.isCustom) return a.isCustom ? -1 : 1;
         return a.currency.localeCompare(b.currency);
       });
@@ -42,7 +51,7 @@ export default function ExchangeRatesList({ onRateChange }) {
     loadRates();
   }, [loadRates]);
 
-  const handleEdit = (currency, currentRate) => {
+  const handleEdit = (currency: string, currentRate: number | string) => {
     setEditingCurrency(currency);
     setEditValue(currentRate ? String(currentRate) : "");
   };
@@ -52,7 +61,7 @@ export default function ExchangeRatesList({ onRateChange }) {
     setEditValue("");
   };
 
-  const handleSaveEdit = async (currency) => {
+  const handleSaveEdit = async (currency: string) => {
     const newRate = parseFloat(editValue);
     if (isNaN(newRate) || newRate <= 0) return;
 
@@ -67,7 +76,7 @@ export default function ExchangeRatesList({ onRateChange }) {
     }
   };
 
-  const handleDelete = async (currency) => {
+  const handleDelete = async (currency: string) => {
     const confirmed = await confirm(
       t("settings.exchange_rate_delete_confirm", { currency }),
       { kind: "warning" },
@@ -83,7 +92,7 @@ export default function ExchangeRatesList({ onRateChange }) {
     }
   };
 
-  const handleKeyDown = (e, currency) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currency: string) => {
     if (e.key === "Enter") {
       handleSaveEdit(currency);
     } else if (e.key === "Escape") {
@@ -199,6 +208,5 @@ export default function ExchangeRatesList({ onRateChange }) {
   );
 }
 
-ExchangeRatesList.propTypes = {
-  onRateChange: PropTypes.func,
-};
+
+

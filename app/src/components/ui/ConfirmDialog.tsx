@@ -1,23 +1,45 @@
 import { useState, useCallback, useRef } from "react";
-import PropTypes from "prop-types";
 import { ConfirmContext } from "../../contexts/confirm";
 import { t } from "../../i18n/i18n";
 import "../../styles/Modal.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "./Modal";
 
-export function ConfirmDialogProvider({ children }) {
+type ConfirmKind = "info" | "warning" | "error";
+
+interface ConfirmOptions {
+  title?: string;
+  okLabel?: string;
+  cancelLabel?: string;
+  kind?: ConfirmKind;
+  showCancel?: boolean;
+}
+
+interface ConfirmState {
+  message: string;
+  title: string;
+  okLabel: string;
+  cancelLabel: string;
+  kind: ConfirmKind;
+  showCancel?: boolean;
+}
+
+interface ConfirmDialogProviderProps {
+  children: React.ReactNode;
+}
+
+export function ConfirmDialogProvider({ children }: ConfirmDialogProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [options, setOptions] = useState({
+  const [options, setOptions] = useState<ConfirmState>({
     message: "",
     title: t("confirm.title"),
     okLabel: t("confirm.ok"),
     cancelLabel: t("account.cancel"),
-    kind: "info", // info, warning, error
+    kind: "info" as ConfirmKind,
   });
-  const resolveRef = useRef(null);
+  const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
-  const confirm = useCallback((message, opts = {}) => {
-    return new Promise((resolve) => {
+  const confirm = useCallback((message: string, opts: ConfirmOptions = {}) => {
+    return new Promise<boolean>((resolve) => {
       setOptions({
         message,
         title: opts.title || t("confirm.title"),
@@ -31,7 +53,7 @@ export function ConfirmDialogProvider({ children }) {
     });
   }, []);
 
-  const handleClose = useCallback((result) => {
+  const handleClose = useCallback((result: boolean) => {
     setIsOpen(false);
     if (resolveRef.current) {
       resolveRef.current(result);
@@ -53,9 +75,16 @@ export function ConfirmDialogProvider({ children }) {
   );
 }
 
-ConfirmDialogProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};
+interface ConfirmDialogProps {
+  message: string;
+  title?: string;
+  okLabel?: string;
+  cancelLabel?: string;
+  kind?: ConfirmKind;
+  showCancel?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
 
 function ConfirmDialog({
   message,
@@ -66,7 +95,7 @@ function ConfirmDialog({
   showCancel,
   onConfirm,
   onCancel,
-}) {
+}: ConfirmDialogProps) {
   if (typeof document === "undefined") return null;
 
   const getButtonClass = () => {
@@ -100,13 +129,5 @@ function ConfirmDialog({
   );
 }
 
-ConfirmDialog.propTypes = {
-  message: PropTypes.string.isRequired,
-  title: PropTypes.string,
-  okLabel: PropTypes.string,
-  cancelLabel: PropTypes.string,
-  kind: PropTypes.oneOf(["info", "warning", "error"]),
-  showCancel: PropTypes.bool,
-  onConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};
+
+

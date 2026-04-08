@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import { rust } from "../../api/tauri-client";
 import { save, open } from "@tauri-apps/plugin-dialog";
 import {
@@ -14,11 +13,23 @@ import {
 } from "lucide-react";
 import { t } from "../../i18n/i18n";
 
-function formatRelativeTime(isoString) {
+interface Session {
+  path: string;
+  name: string;
+  last_opened?: string;
+  file_exists?: boolean;
+  file_size?: number;
+}
+
+interface SessionPickerProps {
+  onSessionReady: (session: Session) => void;
+}
+
+function formatRelativeTime(isoString: string | undefined) {
   if (!isoString) return "";
   const date = new Date(isoString);
   const now = new Date();
-  const diffMs = now - date;
+  const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 1) return "just now";
   if (diffMins < 60) return `${diffMins}m ago`;
@@ -29,25 +40,25 @@ function formatRelativeTime(isoString) {
   return date.toLocaleDateString();
 }
 
-function formatFileSize(bytes) {
+function formatFileSize(bytes: number | undefined) {
   if (!bytes || bytes === 0) return "";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function SessionPicker({ onSessionReady }) {
-  const [sessions, setSessions] = useState([]);
+export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editingPath, setEditingPath] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [editingPath, setEditingPath] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const renameInputRef = useRef(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   async function loadSessions() {
     try {
       setLoading(true);
-      const recent = await rust.get_recent_sessions();
+      const recent = (await rust.get_recent_sessions()) as Session[];
       setSessions(recent);
     } catch (e) {
       console.error("Failed to load sessions:", e);
@@ -68,10 +79,10 @@ export default function SessionPicker({ onSessionReady }) {
     }
   }, [editingPath]);
 
-  async function handleOpenSession(path) {
+  async function handleOpenSession(path: string) {
     try {
       setError(null);
-      const session = await rust.open_session({ path });
+      const session = (await rust.open_session({ path })) as Session;
       onSessionReady(session);
     } catch (e) {
       setError(String(e));
@@ -86,7 +97,7 @@ export default function SessionPicker({ onSessionReady }) {
         defaultPath: "honeybear.db",
       });
       if (path) {
-        const session = await rust.create_session({ path });
+        const session = (await rust.create_session({ path })) as Session;
         onSessionReady(session);
       }
     } catch (e) {
@@ -102,7 +113,7 @@ export default function SessionPicker({ onSessionReady }) {
         multiple: false,
       });
       if (path) {
-        const session = await rust.open_session({ path });
+        const session = (await rust.open_session({ path })) as Session;
         onSessionReady(session);
       }
     } catch (e) {
@@ -110,7 +121,7 @@ export default function SessionPicker({ onSessionReady }) {
     }
   }
 
-  async function handleRemove(e, path) {
+  async function handleRemove(e: React.MouseEvent, path: string) {
     e.stopPropagation();
     try {
       await rust.remove_recent_session({ path });
@@ -120,13 +131,13 @@ export default function SessionPicker({ onSessionReady }) {
     }
   }
 
-  function startRename(e, session) {
+  function startRename(e: React.MouseEvent, session: Session) {
     e.stopPropagation();
     setEditingPath(session.path);
     setEditName(session.name);
   }
 
-  async function commitRename(e) {
+  async function commitRename(e?: React.MouseEvent) {
     if (e) e.stopPropagation();
     if (!editingPath) return;
     try {
@@ -142,14 +153,14 @@ export default function SessionPicker({ onSessionReady }) {
     setEditingPath(null);
   }
 
-  function cancelRename(e) {
+  function cancelRename(e?: React.MouseEvent) {
     if (e) e.stopPropagation();
     setEditingPath(null);
   }
 
-  function handleRenameKeyDown(e) {
-    if (e.key === "Enter") commitRename(e);
-    if (e.key === "Escape") cancelRename(e);
+  function handleRenameKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") commitRename();
+    if (e.key === "Escape") cancelRename();
   }
 
   return (
@@ -244,7 +255,7 @@ export default function SessionPicker({ onSessionReady }) {
                         <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
                           {session.path}
                         </span>
-                        {session.file_exists && session.file_size > 0 && (
+                        {session.file_exists && (session.file_size ?? 0) > 0 && (
                           <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">
                             {formatFileSize(session.file_size)}
                           </span>
@@ -315,7 +326,3 @@ export default function SessionPicker({ onSessionReady }) {
     </div>
   );
 }
-
-SessionPicker.propTypes = {
-  onSessionReady: PropTypes.func.isRequired,
-};

@@ -2,7 +2,15 @@ import { useNumberFormat } from "../contexts/number-format";
 import { usePrivacy } from "../contexts/privacy";
 import { CURRENCIES } from "./currencies";
 
-export function formatNumberWithLocale(value, locale, options = {}) {
+interface NumberFormatOptions extends Intl.NumberFormatOptions {
+  ignorePrivacy?: boolean;
+}
+
+export function formatNumberWithLocale(
+  value: unknown,
+  locale: string | undefined,
+  options: NumberFormatOptions = {},
+): string {
   if (value === undefined || value === null || Number.isNaN(Number(value)))
     return "";
 
@@ -19,7 +27,8 @@ export function formatNumberWithLocale(value, locale, options = {}) {
     const currencyDef = CURRENCIES.find((c) => c.code === opts.currency);
     if (currencyDef) {
       // Format the number as decimal first (preserving locale separators)
-      const decimalOptions = { ...opts, style: "decimal" };
+      const { ignorePrivacy: _ip, ...intlOpts } = opts;
+      const decimalOptions: Intl.NumberFormatOptions = { ...intlOpts, style: "decimal" as const };
       delete decimalOptions.currency;
       delete decimalOptions.currencyDisplay;
 
@@ -67,11 +76,14 @@ export function formatNumberWithLocale(value, locale, options = {}) {
   }
 }
 
-export function useFormatNumber() {
+export function useFormatNumber(): (
+  value: unknown,
+  options?: NumberFormatOptions,
+) => string {
   const { locale, currency } = useNumberFormat();
   const { isPrivacyMode } = usePrivacy();
 
-  return (value, options = {}) => {
+  return (value: unknown, options: NumberFormatOptions = {}): string => {
     const finalOptions = { ...options };
     if (finalOptions.style === "currency" && !finalOptions.currency) {
       finalOptions.currency = currency || "USD";
@@ -93,7 +105,8 @@ export function useFormatNumber() {
         const sign = isNegative ? "-" : "";
 
         // Build decimal options (same fraction digits as finalOptions)
-        const decimalOptions = { ...finalOptions, style: "decimal" };
+        const { ignorePrivacy: _ip2, ...intlFinalOpts } = finalOptions;
+        const decimalOptions: NumberFormatOptions = { ...intlFinalOpts, style: "decimal" as const };
         delete decimalOptions.currency;
         delete decimalOptions.currencyDisplay;
 
@@ -127,7 +140,10 @@ export function useFormatNumber() {
 }
 
 // Parse a localized number string into a JS number.
-export function parseNumberWithLocale(str, locale) {
+export function parseNumberWithLocale(
+  str: unknown,
+  locale: string | undefined,
+): number {
   if (str === undefined || str === null) return NaN;
   if (typeof str === "number") return str;
 
@@ -167,14 +183,14 @@ export function parseNumberWithLocale(str, locale) {
   return Number.isNaN(num) ? NaN : num;
 }
 
-export function useParseNumber() {
+export function useParseNumber(): (str: unknown) => number {
   const { locale } = useNumberFormat();
-  return (str) => parseNumberWithLocale(str, locale);
+  return (str: unknown): number => parseNumberWithLocale(str, locale);
 }
 
 // Date format helpers used for UI-only date formatting. These do NOT affect
 // import/export formats which continue to use ISO dates.
-export const DATE_FORMATS = {
+export const DATE_FORMATS: Record<string, { datePicker: string }> = {
   "YYYY-MM-DD": { datePicker: "yyyy-MM-dd" },
   "YYYY/MM/DD": { datePicker: "yyyy/MM/dd" },
   "MM/DD/YYYY": { datePicker: "MM/dd/yyyy" },
@@ -186,11 +202,15 @@ export const DATE_FORMATS = {
   "MMMM D, YYYY": { datePicker: "MMMM d, yyyy" },
 };
 
-function pad2(n) {
+function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-export function formatDateForUI(value, formatKey, _locale) {
+export function formatDateForUI(
+  value: string | Date | null | undefined,
+  formatKey: string,
+  _locale?: string,
+): string {
   if (!value) return "";
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -238,16 +258,17 @@ export function formatDateForUI(value, formatKey, _locale) {
   }
 }
 
-export function getDatePickerFormat(formatKey) {
+export function getDatePickerFormat(formatKey: string): string {
   return DATE_FORMATS[formatKey]?.datePicker || "yyyy-MM-dd";
 }
 
-export function useFormatDate() {
+export function useFormatDate(): (value: string | Date | null | undefined) => string {
   const { dateFormat, locale } = useNumberFormat();
-  return (value) => formatDateForUI(value, dateFormat, locale);
+  return (value: string | Date | null | undefined): string =>
+    formatDateForUI(value, dateFormat, locale);
 }
 
-export function formatNumberForExport(value) {
+export function formatNumberForExport(value: unknown): string {
   if (value === undefined || value === null) return "";
   if (typeof value === "number") return String(value);
   const s = String(value).trim();

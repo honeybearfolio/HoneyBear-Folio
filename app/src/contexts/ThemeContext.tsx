@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+import React, { useEffect, useState } from "react";
 import { ThemeContext } from "./theme-core";
 import { rust } from "../api/tauri-client";
 import { listen } from "@tauri-apps/api/event";
 
-export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
+interface ThemeProviderProps {
+  children: React.ReactNode;
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const [theme, setTheme] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("hb_theme") || "system";
     }
@@ -22,7 +25,7 @@ export function ThemeProvider({ children }) {
       root.classList.remove("ink");
     };
 
-    const applyTheme = (themeToApply) => {
+    const applyTheme = (themeToApply: string) => {
       removeOldTheme();
       if (themeToApply === "dark") {
         root.classList.add("dark");
@@ -45,8 +48,8 @@ export function ThemeProvider({ children }) {
 
     if (theme === "system") {
       // First try the browser/media query (works on macOS/Windows and newer webviews)
-      let mediaQuery;
-      let handleChange;
+      let mediaQuery: MediaQueryList | undefined;
+      let handleChange: ((e: MediaQueryListEvent) => void) | undefined;
       if (typeof window.matchMedia === "function") {
         mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
         applyTheme(mediaQuery.matches ? "dark" : "light");
@@ -68,7 +71,7 @@ export function ThemeProvider({ children }) {
       // Also ask the backend for the system theme (Linux/older webviews may report wrong prefers-color-scheme)
       (async () => {
         try {
-          const sys = await rust.get_system_theme();
+          const sys = await rust.get_system_theme({});
           if (sys === "dark" || sys === "light") {
             applyTheme(sys);
           }
@@ -78,8 +81,8 @@ export function ThemeProvider({ children }) {
         }
       })();
 
-      let unlistenFn;
-      listen("system-theme-changed", (event) => {
+      let unlistenFn: (() => void) | undefined;
+      listen("system-theme-changed", (event: { payload: unknown }) => {
         const sys = event.payload;
         if (sys === "dark" || sys === "light") {
           applyTheme(sys);
@@ -109,7 +112,7 @@ export function ThemeProvider({ children }) {
 
   const value = {
     theme,
-    setTheme: (newTheme) => {
+    setTheme: (newTheme: string) => {
       setTheme(newTheme);
       localStorage.setItem("hb_theme", newTheme);
     },
@@ -119,7 +122,3 @@ export function ThemeProvider({ children }) {
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
-
-ThemeProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};

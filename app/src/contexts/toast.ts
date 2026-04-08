@@ -1,8 +1,14 @@
 import { createContext, useContext } from "react";
 
-export const ToastContext = createContext(null);
+type ToastType = "info" | "success" | "error";
 
-export function useToast() {
+export interface ToastContextValue {
+  showToast: (message: string, options?: { type?: ToastType; duration?: number }) => void;
+}
+
+export const ToastContext = createContext<ToastContextValue | null>(null);
+
+export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   // If there's no provider (e.g., in isolated tests), return a safe noop implementation
   if (!ctx) return { showToast: () => {} };

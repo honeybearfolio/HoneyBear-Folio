@@ -1,20 +1,31 @@
 import { useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import PropTypes from "prop-types";
 import { Info, CheckCircle, AlertCircle, X } from "lucide-react";
 import "../../styles/Toast.css";
 import { ToastContext } from "../../contexts/toast";
 import { t } from "../../i18n/i18n";
 
-export function ToastProvider({ children }) {
-  const [toasts, setToasts] = useState([]);
+type ToastType = "info" | "success" | "error";
 
-  const removeToast = useCallback((id) => {
+interface Toast {
+  id: string;
+  message: string;
+  type: ToastType;
+}
+
+interface ToastProviderProps {
+  children: React.ReactNode;
+}
+
+export function ToastProvider({ children }: ToastProviderProps) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const removeToast = useCallback((id: string) => {
     setToasts((t) => t.filter((x) => x.id !== id));
   }, []);
 
   const showToast = useCallback(
-    (message, { type = "info", duration = 4000 } = {}) => {
+    (message: string, { type = "info", duration = 4000 }: { type?: ToastType; duration?: number } = {}) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       setToasts((t) => [...t, { id, message, type }]);
 
@@ -27,7 +38,7 @@ export function ToastProvider({ children }) {
     [removeToast],
   );
 
-  const getIcon = (type) => {
+  const getIcon = (type: ToastType) => {
     switch (type) {
       case "success":
         return <CheckCircle size={18} className="text-emerald-500" />;
@@ -69,9 +80,5 @@ export function ToastProvider({ children }) {
     </ToastContext.Provider>
   );
 }
-
-ToastProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-};
 
 export default ToastProvider;
