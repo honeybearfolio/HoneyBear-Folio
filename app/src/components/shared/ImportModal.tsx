@@ -253,7 +253,7 @@ export default function ImportModal({
         reader.readAsArrayBuffer(file);
       }
     },
-    [autoMapColumns],
+    [autoMapColumns, t],
   );
 
   // Handle file dropped via Tauri's native drag-drop (receives file path)
@@ -286,7 +286,7 @@ export default function ImportModal({
         );
       }
     },
-    [parseFile],
+    [parseFile, t],
   );
 
   useEffect(() => {

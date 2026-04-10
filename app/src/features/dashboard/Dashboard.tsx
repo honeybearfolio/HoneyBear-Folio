@@ -614,6 +614,7 @@ export default function Dashboard({
     appCurrency,
     getPrice,
     chartColors,
+    t,
   ]);
 
   const doughnutData = useMemo(() => {
@@ -758,6 +759,7 @@ export default function Dashboard({
     dailyPrices,
     isDark,
     chartColors,
+    t,
   ]);
 
   const expensesByCategoryData = useMemo(() => {
@@ -861,6 +863,7 @@ export default function Dashboard({
     getPrice,
     appCurrency,
     chartColors,
+    t,
   ]);
 
   const incomeVsExpensesData = useMemo(() => {
@@ -985,6 +988,7 @@ export default function Dashboard({
     getPrice,
     appCurrency,
     chartColors,
+    t,
   ]);
 
   const doughnutOptions = useMemo(

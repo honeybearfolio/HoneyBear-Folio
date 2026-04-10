@@ -594,6 +594,7 @@ export default function FireCalculator() {
     retirementAge,
     retirementDuration,
     chartColors,
+    t,
   ]);
 
   // Calculate retirement age when FIRE is reached

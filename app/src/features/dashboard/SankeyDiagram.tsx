@@ -301,6 +301,7 @@ export default function SankeyDiagram({
     appCurrency,
     isDark,
     chartColors,
+    t,
   ]);
 
   const options = {
