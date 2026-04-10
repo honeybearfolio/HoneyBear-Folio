@@ -164,21 +164,21 @@ describe("FireCalculator", () => {
     });
   });
 
-  it.skip("calculates FIRE number based on expenses", async () => {
+  it("calculates FIRE number based on expenses", async () => {
     renderWithContext(<FireCalculator />);
 
-    // Inputs are not associated with labels via htmlFor/id, so we use order
-    const inputs = screen.getAllByRole("textbox");
+    // Wait for the initial data fetch to complete before interacting
+    const inputs = await screen.findAllByRole("textbox");
     const expensesInput = inputs[1]; // Annual Expenses is 2nd
 
+    // NumberInput commits on blur, so we need the full focus → change → blur sequence
+    fireEvent.focus(expensesInput);
     fireEvent.change(expensesInput, { target: { value: "50000" } });
-
-    // Debug output if fails
-    // screen.debug();
+    fireEvent.blur(expensesInput);
 
     await waitFor(() => {
-      // Use regex to be more flexible with formatting
-      expect(screen.getByText(/1250000/)).toBeInTheDocument();
+      // Mock returns annualExpenses / (withdrawalRate / 100) = 50000 / 0.04 = $1,250,000
+      expect(screen.getByText(/\$1,250,000/)).toBeInTheDocument();
     });
   });
 
@@ -194,30 +194,38 @@ describe("FireCalculator", () => {
     });
   });
 
-  it.skip("persists state to sessionStorage", async () => {
+  it("persists state to sessionStorage", async () => {
     const { unmount } = renderWithContext(<FireCalculator />);
 
-    const inputs = screen.getAllByRole("textbox");
+    // Wait for initial load before interacting
+    const inputs = await screen.findAllByRole("textbox");
     const expensesInput = inputs[1];
-    fireEvent.change(expensesInput, { target: { value: "60000" } });
 
-    // Wait for update
     await waitFor(() => {
-      expect(screen.getByText("1500000")).toBeInTheDocument(); // 60000 / 0.04
+      expect((expensesInput as HTMLInputElement).value).toBeDefined();
     });
 
-    // Unmount to simulate page leave
+    // NumberInput commits on blur
+    fireEvent.focus(expensesInput);
+    fireEvent.change(expensesInput, { target: { value: "60000" } });
+    fireEvent.blur(expensesInput);
+
+    // Wait for the useEffect to persist the updated expenses to sessionStorage
+    await waitFor(() => {
+      const saved = sessionStorage.getItem("fireCalculatorState");
+      expect(saved).not.toBeNull();
+      expect(JSON.parse(saved!).annualExpenses).toBe(60000);
+    });
+
     unmount();
 
-    // Render again
+    // Re-render: should restore from sessionStorage
     renderWithContext(<FireCalculator />);
-
-    // Should still be 60000
     const inputs2 = screen.getAllByRole("textbox");
     expect((inputs2[1] as HTMLInputElement).value).toBe("60000");
   });
 
-  it.skip("respects user modifications over fetched data", async () => {
+  it("respects user modifications over fetched data", async () => {
     // 1. Render and modify Net Worth manually
     const { unmount } = renderWithContext(<FireCalculator />);
     const inputs = await screen.findAllByRole("textbox");
@@ -228,22 +236,24 @@ describe("FireCalculator", () => {
       expect((netWorthInput as HTMLInputElement).value).toBe("50000"),
     );
 
-    // User changes it to 75000
+    // User changes it to 75000 — NumberInput commits on blur
+    fireEvent.focus(netWorthInput);
     fireEvent.change(netWorthInput, { target: { value: "75000" } });
-    expect((netWorthInput as HTMLInputElement).value).toBe("75000"); // Input updates immediately
+    fireEvent.blur(netWorthInput);
 
-    // Wait for effect to save to sessionStorage (debounce/async checks)
+    // Wait for effect to save to sessionStorage
     await waitFor(() => {
-      const saved = JSON.parse(sessionStorage.getItem("fireCalculatorState")!);
-      expect(saved).not.toBeNull();
+      const raw = sessionStorage.getItem("fireCalculatorState");
+      expect(raw).not.toBeNull();
+      const saved = JSON.parse(raw!);
       expect(saved.currentNetWorth).toBe(75000);
       expect(saved.userModified.currentNetWorth).toBe(true);
     });
 
     unmount();
 
-    // 2. Render again.
-    // Even if fetch returns 50000 (mock), it should stay 75000 because it was modified by user
+    // 2. Re-render — fetch would return 50000, but sessionStorage has 75000 with
+    //    userModified.currentNetWorth=true, so the persisted value wins.
     renderWithContext(<FireCalculator />);
 
     const inputs2 = await screen.findAllByRole("textbox");
