@@ -10,11 +10,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import RulesList from "../../../features/rules/RulesList";
 import { invoke } from "@tauri-apps/api/core";
 
-// Mock dependencies
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => key,
-}));
-
 // Number formatting hooks are used by NumberInput — provide light mocks so
 // RulesList can be exercised without wrapping providers.
 vi.mock("../../../utils/format", () => ({
@@ -36,7 +31,6 @@ vi.mock("../../../contexts/number-format", () => ({
     setFirstDayOfWeek: () => {},
     uiLanguage: "en",
     setUiLanguage: () => {},
-    translationVersion: 0,
   }),
 }));
 
@@ -135,22 +129,22 @@ describe("RulesList", () => {
 
     // open the create-rule form (header Add button)
     const headerAddBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Fill new rule form
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     const patternInput = within(conditionGroup!).getByPlaceholderText("Value");
     fireEvent.change(patternInput, { target: { value: "Netflix" } });
 
-    const actionGroup = screen.getAllByText("rules.then_set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
     const valueInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(valueInput, { target: { value: "Entertainment" } });
 
     // Find submit/add button (disambiguate from other 'add' buttons)
     const addButton = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") === "submit");
     expect(addButton).toBeTruthy();
     fireEvent.click(addButton!);
@@ -274,11 +268,11 @@ describe("RulesList", () => {
     const editBtn = screen.getByText("Edit").closest("button");
     fireEvent.click(editBtn!);
 
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     const patternInput = within(conditionGroup!).getByPlaceholderText("Value");
     expect((patternInput as HTMLInputElement).value).toBe("Old Payee");
 
-    const actionGroup = screen.getAllByText("rules.then_set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     expect((actionInput as HTMLInputElement).value).toBe("OldCat");
 
@@ -286,7 +280,7 @@ describe("RulesList", () => {
     fireEvent.change(patternInput, { target: { value: "New Payee" } });
     fireEvent.change(actionInput, { target: { value: "NewCat" } });
 
-    const submit = screen.getByRole("button", { name: /rules.update/ });
+    const submit = screen.getByRole("button", { name: /Update$/ });
     fireEvent.click(submit);
 
     await waitFor(() => {
@@ -311,22 +305,22 @@ describe("RulesList", () => {
 
     // open the create-rule form
     const headerAddBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Add a second condition
-    const addCond = screen.getByRole("button", { name: /rules.add_condition/ });
+    const addCond = screen.getByRole("button", { name: /Add condition/ });
     fireEvent.click(addCond);
-    expect(screen.getAllByText("rules.if").length).toBe(2);
+    expect(screen.getAllByText("If").length).toBe(2);
 
     // Logic selector should appear in the conditions header
-    const logicContainer = screen.getByText(/rules\.logic\s*:/).closest("div");
+    const logicContainer = screen.getByText(/Logic\s*:/).closest("div");
     const logicSelect = within(logicContainer!).getByTestId("select");
     fireEvent.change(logicSelect, { target: { value: "or" } });
 
     // Fill both conditions and an action
-    const conds = screen.getAllByText("rules.if");
+    const conds = screen.getAllByText("If");
     const firstCond = conds[0].closest("div");
     const firstPattern = within(firstCond!).getByPlaceholderText("Value");
     fireEvent.change(firstPattern, { target: { value: "A" } });
@@ -335,13 +329,13 @@ describe("RulesList", () => {
     const secondPattern = within(secondCond!).getByPlaceholderText("Value");
     fireEvent.change(secondPattern, { target: { value: "B" } });
 
-    const actionGroup = screen.getAllByText("rules.then_set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(actionInput, { target: { value: "SomeCat" } });
 
     // Submit while both conditions present and assert payload includes logic: 'or' and two conditions
     const submit = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") === "submit");
     expect(submit).toBeTruthy();
     fireEvent.click(submit!);
@@ -370,43 +364,37 @@ describe("RulesList", () => {
 
     // Re-open create form to test add/remove UI (form closes after submit)
     const headerAddBtnAgain = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtnAgain) fireEvent.click(headerAddBtnAgain);
 
     await waitFor(() =>
-      expect(screen.getAllByText("rules.if").length).toBeGreaterThan(0),
+      expect(screen.getAllByText("If").length).toBeGreaterThan(0),
     );
 
     // Add then remove a condition and assert UI updates
     const addCond2 = screen.getByRole("button", {
-      name: /rules.add_condition/,
+      name: /Add condition/,
     });
     fireEvent.click(addCond2);
-    await waitFor(() => expect(screen.getAllByText("rules.if").length).toBe(2));
+    await waitFor(() => expect(screen.getAllByText("If").length).toBe(2));
 
-    const condsAfter = screen.getAllByText("rules.if");
+    const condsAfter = screen.getAllByText("If");
     const secondCondAfter = condsAfter[1].closest("div");
-    const removeBtns2 = within(secondCondAfter!).getByTitle(
-      "rules.remove_condition",
-    );
+    const removeBtns2 = within(secondCondAfter!).getByTitle("Remove condition");
     fireEvent.click(removeBtns2);
-    await waitFor(() => expect(screen.getAllByText("rules.if").length).toBe(1));
+    await waitFor(() => expect(screen.getAllByText("If").length).toBe(1));
 
     // Add & remove action (UI) and assert updates
-    const addAction = screen.getByRole("button", { name: /rules.add_action/ });
+    const addAction = screen.getByRole("button", { name: /Add action/ });
     fireEvent.click(addAction);
-    await waitFor(() =>
-      expect(screen.getAllByText("rules.then_set").length).toBe(2),
-    );
+    await waitFor(() => expect(screen.getAllByText("Then set").length).toBe(2));
 
     const removeActionBtn = within(
-      screen.getAllByText("rules.then_set")[1].closest("div") as HTMLElement,
-    ).getByTitle("rules.remove_action");
+      screen.getAllByText("Then set")[1].closest("div") as HTMLElement,
+    ).getByTitle("Remove action");
     fireEvent.click(removeActionBtn);
-    await waitFor(() =>
-      expect(screen.getAllByText("rules.then_set").length).toBe(1),
-    );
+    await waitFor(() => expect(screen.getAllByText("Then set").length).toBe(1));
   });
 
   it("supports numeric fields for condition and action (NumberInput) and stringifies action values", async () => {
@@ -417,11 +405,11 @@ describe("RulesList", () => {
 
     // open the create-rule form
     const headerAddBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     // there are two selects inside the condition: [0] = field, [1] = operator
     const selects = within(conditionGroup!).getAllByTestId("select");
     const fieldSelect = selects[0];
@@ -433,12 +421,12 @@ describe("RulesList", () => {
     fireEvent.change(numInput, { target: { value: "123.45" } });
     fireEvent.blur(numInput);
 
-    const actionGroup = screen.getAllByText("rules.then_set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(actionInput, { target: { value: "42" } });
 
     const submitBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") === "submit");
     expect(submitBtn).toBeTruthy();
     fireEvent.click(submitBtn!);
@@ -474,11 +462,11 @@ describe("RulesList", () => {
 
     // open the create-rule form
     const headerAddBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
     // choose valueless operator
     fireEvent.change(operatorSelect, { target: { value: "is_empty" } });
@@ -486,7 +474,7 @@ describe("RulesList", () => {
     expect(within(conditionGroup!).queryByPlaceholderText("Value")).toBeNull();
 
     const submitBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") === "submit");
     expect(submitBtn).toBeTruthy();
     fireEvent.click(submitBtn!);
@@ -563,12 +551,12 @@ describe("RulesList", () => {
 
     // Open the create-rule form
     const headerAddBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Regex operators should appear in the operator select for text fields
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
     const options = within(operatorSelect).getAllByRole("option");
     const optionValues = options.map((o) => (o as HTMLOptionElement).value);
@@ -583,12 +571,12 @@ describe("RulesList", () => {
 
     // Open the create-rule form
     const headerAddBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Select matches_regex operator
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
@@ -599,11 +587,11 @@ describe("RulesList", () => {
     fireEvent.change(patternInput, { target: { value: "[invalid" } });
 
     // Should show validation error
-    expect(screen.getByText("rules.regex_invalid")).toBeInTheDocument();
+    expect(screen.getByText("Invalid regular expression")).toBeInTheDocument();
 
     // Submit button should be disabled
     const submitBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") === "submit");
     expect((submitBtn as HTMLButtonElement).disabled).toBe(true);
   });
@@ -615,12 +603,12 @@ describe("RulesList", () => {
 
     // Open the create-rule form
     const headerAddBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Select matches_regex operator
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
@@ -631,17 +619,19 @@ describe("RulesList", () => {
     fireEvent.change(patternInput, { target: { value: "^Star.*Coffee$" } });
 
     // Should show help text as title, not error
-    expect(screen.queryByText("rules.regex_invalid")).toBeNull();
-    expect(patternInput.getAttribute("title")).toBe("rules.regex_help");
+    expect(screen.queryByText("Invalid regular expression")).toBeNull();
+    expect(patternInput.getAttribute("title")).toBe(
+      "Use regular expression syntax (e.g. ^Coffee.*Shop$)",
+    );
 
     // Fill action value
-    const actionGroup = screen.getAllByText("rules.then_set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(actionInput, { target: { value: "Coffee" } });
 
     // Submit button should be enabled
     const submitBtn = screen
-      .getAllByRole("button", { name: /rules.add/ })
+      .getAllByRole("button", { name: /Add$/ })
       .find((b) => b.getAttribute("type") === "submit");
     expect((submitBtn as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(submitBtn!);
@@ -691,8 +681,7 @@ describe("RulesList", () => {
     const editBtn = screen.getByText("Edit").closest("button");
     fireEvent.click(editBtn!);
 
-    // The regex operator should be visible and selected
-    const conditionGroup = screen.getAllByText("rules.if")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0].closest("div");
     const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
     expect((operatorSelect as HTMLSelectElement).value).toBe("matches_regex");
   });
@@ -714,10 +703,8 @@ describe("RulesList", () => {
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
 
-    // The condition badge renders: "rules.field.payee rules.operator.contains "Coffee""
-    const conditionBadge = await screen.findByText(
-      'rules.field.payee rules.operator.contains "Coffee"',
-    );
+    // The condition badge renders: "Payee contains "Coffee""
+    const conditionBadge = await screen.findByText('Payee contains "Coffee"');
     const ruleRow = conditionBadge.closest("tr");
     fireEvent.contextMenu(ruleRow!);
 
@@ -728,12 +715,12 @@ describe("RulesList", () => {
     const portal = document.querySelector(".rule-action-menu-portal");
     expect(
       within(portal as HTMLElement).getByRole("button", {
-        name: /rules\.edit/i,
+        name: /Edit/i,
       }),
     ).toBeInTheDocument();
     expect(
       within(portal as HTMLElement).getByRole("button", {
-        name: /rules\.delete/i,
+        name: /Delete/i,
       }),
     ).toBeInTheDocument();
   });
@@ -755,10 +742,8 @@ describe("RulesList", () => {
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
 
-    // The condition badge renders: "rules.field.payee rules.operator.equals "Test""
-    const conditionBadge = await screen.findByText(
-      'rules.field.payee rules.operator.equals "Test"',
-    );
+    // The condition badge renders: "Payee equals "Test""
+    const conditionBadge = await screen.findByText('Payee equals "Test"');
     const ruleRow = conditionBadge.closest("tr");
     fireEvent.contextMenu(ruleRow!);
 

@@ -3,7 +3,8 @@ import { useTheme } from "../../contexts/theme-core";
 import { useNumberFormat } from "../../contexts/number-format";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../ui/CustomSelect";
-import { t, AVAILABLE_LANGUAGES } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
+import { AVAILABLE_LANGUAGES } from "../../i18n/i18n";
 import { formatDateForUI } from "../../utils/format";
 import { Check } from "lucide-react";
 import "../../styles/Modal.css";
@@ -11,6 +12,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import { getDevSetting } from "../../config/dev-settings";
 
 export default function WelcomeWindow() {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(() => {
     const forced = getDevSetting("FORCE_WELCOME_SCREEN");
     if (forced === true) return true;

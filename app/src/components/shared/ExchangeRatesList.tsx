@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import { Pencil, Trash2, RefreshCw } from "lucide-react";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { useConfirm } from "../../contexts/confirm";
 import "../../styles/Settings.css";
 
@@ -23,6 +23,7 @@ interface ExchangeRatesListProps {
 export default function ExchangeRatesList({
   onRateChange,
 }: ExchangeRatesListProps) {
+  const { t } = useTranslation();
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingCurrency, setEditingCurrency] = useState<string | null>(null);

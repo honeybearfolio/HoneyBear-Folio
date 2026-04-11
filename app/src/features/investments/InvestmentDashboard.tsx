@@ -9,7 +9,7 @@ import {
 } from "../../utils/investments";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -68,6 +68,7 @@ interface TreeMapNodeProps {
 }
 
 export default function InvestmentDashboard() {
+  const { t } = useTranslation();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

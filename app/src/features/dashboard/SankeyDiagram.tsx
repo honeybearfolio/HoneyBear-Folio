@@ -9,7 +9,7 @@ import {
 import { SankeyController, Flow } from "chartjs-chart-sankey";
 import { Chart } from "react-chartjs-2";
 import { useFormatNumber } from "../../utils/format";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
 
@@ -46,6 +46,7 @@ export default function SankeyDiagram({
   getPrice,
   appCurrency,
 }: SankeyDiagramProps) {
+  const { t } = useTranslation();
   const isDark = useIsDark();
   const chartColors = useChartColors();
   const formatNumber = useFormatNumber();
@@ -301,6 +302,7 @@ export default function SankeyDiagram({
     appCurrency,
     isDark,
     chartColors,
+    t,
   ]);
 
   const options = {

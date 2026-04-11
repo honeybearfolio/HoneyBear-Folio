@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { rust } from "../../api/tauri-client";
 import { Plus, Trash2, Edit, Save, GripVertical, X } from "lucide-react";
 import { useConfirm } from "../../contexts/confirm";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../contexts/number-format";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
@@ -33,6 +33,7 @@ interface RuleRecord {
 }
 
 export default function RulesList() {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<RuleRecord[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);

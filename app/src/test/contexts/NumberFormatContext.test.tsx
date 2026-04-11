@@ -1,8 +1,10 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { useTranslation } from "react-i18next";
 import { NumberFormatEffects } from "../../contexts/NumberFormatContext";
 import { useNumberFormatStore } from "../../stores/number-format";
 import { useNumberFormat } from "../../contexts/number-format";
+import i18n from "../../i18n/i18n";
 
 // Test component to consume hook
 function TestComponent() {
@@ -27,7 +29,7 @@ function TestComponent() {
 }
 
 describe("NumberFormat Zustand store", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     useNumberFormatStore.setState({
       locale: "en-US",
@@ -35,8 +37,8 @@ describe("NumberFormat Zustand store", () => {
       dateFormat: "YYYY-MM-DD",
       firstDayOfWeek: 1,
       uiLanguage: "en",
-      translationVersion: 0,
     });
+    await i18n.changeLanguage("en");
   });
 
   it("uses default values if localStorage is empty", () => {
@@ -47,9 +49,8 @@ describe("NumberFormat Zustand store", () => {
     expect(screen.getByTestId("uiLanguage")).toHaveTextContent("en");
   });
 
-  it("persists uiLanguage and calls i18n.setLanguage on change", async () => {
-    const i18n = await import("../../i18n/i18n");
-    const spy = vi.spyOn(i18n, "setLanguage").mockResolvedValue();
+  it("persists uiLanguage and calls i18n.changeLanguage on change", async () => {
+    const spy = vi.spyOn(i18n, "changeLanguage");
 
     render(
       <>
@@ -69,22 +70,10 @@ describe("NumberFormat Zustand store", () => {
     spy.mockRestore();
   });
 
-  it("updates rendered UI translations after async language resource loads", async () => {
-    const i18n = await import("../../i18n/i18n");
-    const esJson = (await import("../../i18n/es.json")).default;
-
-    const setLangMock = vi
-      .spyOn(i18n, "setLanguage")
-      .mockImplementation(async (lang) => {
-        if (lang === "es") {
-          i18n.setLocale(esJson);
-        }
-        return Promise.resolve();
-      });
-
+  it("updates rendered UI translations after language change", async () => {
     function Translated() {
-      useNumberFormat();
-      return <div data-testid="translated">{i18n.t("settings.language")}</div>;
+      const { t } = useTranslation();
+      return <div data-testid="translated">{t("settings.language")}</div>;
     }
 
     render(
@@ -102,8 +91,6 @@ describe("NumberFormat Zustand store", () => {
     await waitFor(() => {
       expect(screen.getByTestId("translated")).toHaveTextContent("Idioma");
     });
-
-    setLangMock.mockRestore();
   });
 
   it("updates state and persists to localStorage", async () => {

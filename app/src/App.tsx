@@ -23,7 +23,7 @@ import ChartNumberFormatSync from "./components/shared/ChartNumberFormatSync";
 import UpdateNotification from "./components/shared/UpdateNotification";
 import WelcomeWindow from "./components/shared/WelcomeWindow";
 import DevTools from "./components/shared/DevTools";
-import { t } from "./i18n/i18n";
+import { useTranslation } from "react-i18next";
 import {
   APP_DEFAULTS,
   DEFAULT_SIDEBAR_VISIBILITY,
@@ -115,6 +115,7 @@ interface MainAppProps {
 }
 
 function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
+  const { t } = useTranslation();
   const [sidebarWidth, setSidebarWidth] = useState<number>(
     APP_DEFAULTS.SIDEBAR_WIDTH,
   );

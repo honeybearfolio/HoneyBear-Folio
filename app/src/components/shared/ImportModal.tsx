@@ -15,7 +15,7 @@ import CustomSelect from "../ui/CustomSelect";
 // @ts-expect-error papaparse has no type declarations
 import Papa from "papaparse";
 import { parseNumberWithLocale } from "../../utils/format";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { useToast } from "../../contexts/toast";
 
 // Get MIME type based on file extension
@@ -72,6 +72,7 @@ export default function ImportModal({
   onClose,
   onImportComplete,
 }: ImportModalProps) {
+  const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
   const [columns, setColumns] = useState<string[]>([]);
   const [mapping, setMapping] = useState<FieldMapping>({
@@ -253,7 +254,7 @@ export default function ImportModal({
         reader.readAsArrayBuffer(file);
       }
     },
-    [autoMapColumns],
+    [autoMapColumns, t],
   );
 
   // Handle file dropped via Tauri's native drag-drop (receives file path)
@@ -286,7 +287,7 @@ export default function ImportModal({
         );
       }
     },
-    [parseFile],
+    [parseFile, t],
   );
 
   useEffect(() => {

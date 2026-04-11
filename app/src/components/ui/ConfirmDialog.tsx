@@ -1,5 +1,5 @@
 import { useConfirmStore } from "../../stores/confirm";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import "../../styles/Modal.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "./Modal";
 
@@ -10,6 +10,7 @@ export function ConfirmDialogContainer() {
   const message = useConfirmStore((s) => s.message);
   const options = useConfirmStore((s) => s.options);
   const handleClose = useConfirmStore((s) => s.handleClose);
+  const { t } = useTranslation();
 
   if (!isOpen) return null;
 

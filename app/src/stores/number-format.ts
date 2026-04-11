@@ -11,8 +11,6 @@ export interface NumberFormatState {
   setFirstDayOfWeek: (v: number) => void;
   uiLanguage: string;
   setUiLanguage: (v: string) => void;
-  translationVersion: number;
-  bumpTranslationVersion: () => void;
 }
 
 function readLS(key: string, fallback: string): string {
@@ -70,9 +68,6 @@ export const useNumberFormatStore = create<NumberFormatState>((set) => ({
     writeLS("hb_ui_language", v);
     set({ uiLanguage: v });
   },
-  translationVersion: 0,
-  bumpTranslationVersion: () =>
-    set((s) => ({ translationVersion: s.translationVersion + 1 })),
 }));
 
 export function useNumberFormat(): NumberFormatState {

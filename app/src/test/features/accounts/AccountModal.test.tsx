@@ -23,10 +23,6 @@ vi.mock("../../../utils/format", () => ({
   useParseNumber: () => (val: string) => parseFloat(val),
 }));
 
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => key,
-}));
-
 vi.mock("../../../components/ui/Modal", () => {
   const Modal = ({
     children,
@@ -97,9 +93,9 @@ describe("AccountModal", () => {
       <AccountModal onClose={vi.fn()} onUpdate={vi.fn()} isEditing={false} />,
     );
 
-    expect(screen.getByText("account.new_account")).toBeInTheDocument();
+    expect(screen.getByText("New Account")).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText("account.placeholder.name"),
+      screen.getByPlaceholderText("e.g., Main Savings"),
     ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("0.00")).toBeInTheDocument();
   });
@@ -120,7 +116,7 @@ describe("AccountModal", () => {
       />,
     );
 
-    expect(screen.getByText("account.edit_account")).toBeInTheDocument();
+    expect(screen.getByText("Edit Account")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Existing Account")).toBeInTheDocument();
 
     // Note: Balance input is disabled in edit mode usually, let's verify if implementation does that.
@@ -131,12 +127,12 @@ describe("AccountModal", () => {
     render(<AccountModal onClose={vi.fn()} onUpdate={vi.fn()} />);
 
     const form = screen
-      .getByPlaceholderText("account.placeholder.name")
+      .getByPlaceholderText("e.g., Main Savings")
       .closest("form");
     fireEvent.submit(form!);
 
     expect(mockShowToast).toHaveBeenCalledWith(
-      expect.stringContaining("account.error.empty_name"),
+      expect.stringContaining("Account name cannot be empty."),
       expect.objectContaining({ type: "warning" }),
     );
     expect(invoke).not.toHaveBeenCalled();
@@ -148,7 +144,7 @@ describe("AccountModal", () => {
     render(<AccountModal onClose={onClose} onUpdate={onUpdate} />);
 
     // Fill form
-    fireEvent.change(screen.getByPlaceholderText("account.placeholder.name"), {
+    fireEvent.change(screen.getByPlaceholderText("e.g., Main Savings"), {
       target: { value: "New Bank" },
     });
     fireEvent.change(screen.getByPlaceholderText("0.00"), {
@@ -159,7 +155,7 @@ describe("AccountModal", () => {
     });
 
     const form = screen
-      .getByPlaceholderText("account.placeholder.name")
+      .getByPlaceholderText("e.g., Main Savings")
       .closest("form");
     fireEvent.submit(form!);
 
@@ -169,13 +165,13 @@ describe("AccountModal", () => {
         balance: 1000,
         currency: "EUR",
         initialTransaction: {
-          payee: "transaction.title.opening_balance",
-          notes: "transaction.notes.initial_balance",
-          category: "transaction.category.income",
+          payee: "Opening Balance",
+          notes: "Initial Balance",
+          category: "Income",
         },
       });
       expect(mockShowToast).toHaveBeenCalledWith(
-        "account.created",
+        "Account created",
         expect.anything(),
       );
       expect(onUpdate).toHaveBeenCalled();
@@ -209,7 +205,7 @@ describe("AccountModal", () => {
         currency: "USD",
       });
       expect(mockShowToast).toHaveBeenCalledWith(
-        "account.updated",
+        "Account updated",
         expect.anything(),
       );
     });

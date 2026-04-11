@@ -5,55 +5,7 @@ import SettingsView from "../../../features/settings/SettingsView";
 
 // Mock i18n (provide AVAILABLE_LANGUAGES used by the component)
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => {
-    const map: Record<string, string> = {
-      "settings.title": "Settings",
-      "settings.general": "General",
-      "settings.customization": "Customization",
-      "settings.formats": "Formats",
-      "settings.language": "Language",
-      "settings.select_language_placeholder": "Select language",
-      "settings.language_help":
-        "Select the language used by the UI (affects menus, labels and tooltips).",
-      "settings.exchange_rates": "Exchange Rates",
-      "settings.theme": "Theme",
-      "settings.font_size": "Font size",
-
-      "settings.tooltip.theme":
-        "Choose light/dark or follow system preference.",
-      "settings.tooltip.database_file":
-        "Path to your local SQLite database file.",
-      "settings.tooltip.font_size":
-        "Adjust font size to control UI scale (smaller = more content fits, larger = easier to read).",
-      "settings.tooltip.currency":
-        "Default currency used by the app when formatting amounts.",
-      "settings.tooltip.number_format":
-        "Choose how numbers are grouped and which decimal separator to use.",
-      "settings.tooltip.date_format":
-        "Choose how dates are shown in the app (UI only; does not change import/export formats).",
-      "settings.tooltip.first_day_of_week":
-        "Choose the first day of the week for calendars.",
-
-      "settings.select_theme_placeholder": "Select theme",
-      "settings.reset_to_defaults": "Reset to defaults",
-      "settings.reset_confirm":
-        "Reset all settings to their default values? This cannot be undone.",
-
-      // exchange rates keys (some tests render the list)
-      "settings.exchange_rates_empty": "No custom exchange rates configured.",
-      "settings.exchange_rates_custom": "custom",
-      "settings.exchange_rate_edit": "Edit rate",
-      "settings.exchange_rate_delete": "Remove custom rate",
-      "settings.exchange_rate_delete_confirm":
-        "Remove custom rate for {currency}?",
-      "settings.tag_colors": "Tag Colors",
-      "settings.tag_colors.empty": "No tags",
-      "settings.tag_colors.default": "Default",
-      "confirm.save": "Save",
-      "account.cancel": "Cancel",
-    };
-    return map[key] || key;
-  },
+  default: { t: (key: string) => key },
   AVAILABLE_LANGUAGES: [
     { code: "en", label: "English" },
     { code: "es", label: "Español" },
@@ -195,9 +147,8 @@ describe("SettingsView", () => {
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
     fireEvent.click(btn);
 
-    const { t } = await import("../../../i18n/i18n");
     await expect(mockConfirmLocal).toHaveBeenCalledWith(
-      t("settings.reset_confirm"),
+      "Reset all settings to their default values? This cannot be undone.",
       expect.objectContaining({ kind: "warning" }),
     );
 

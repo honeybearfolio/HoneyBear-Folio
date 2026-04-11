@@ -1,13 +1,7 @@
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
 import en from "./en.json";
-
-type LocaleMap = Record<string, string>;
-
-let current: LocaleMap = en as LocaleMap;
-let currentLang: string = "en";
-
-export function setLocale(localeObj: LocaleMap): void {
-  current = localeObj;
-}
+import es from "./es.json";
 
 interface LanguageOption {
   code: string;
@@ -19,79 +13,29 @@ export const AVAILABLE_LANGUAGES: readonly LanguageOption[] = [
   { code: "es", label: "Español" },
 ];
 
-export function getCurrentLanguage(): string {
-  return currentLang;
-}
-
-export async function setLanguage(
-  langCode: string | null | undefined,
-): Promise<void> {
-  if (!langCode || langCode === "en") {
-    current = en as LocaleMap;
-    currentLang = "en";
-    return;
-  }
-
-  // Use Vite's import.meta.glob so the bundler can analyze available locale files
-  // and avoid the `vite:dynamic-import-vars` warning. This is tree-shakeable
-  // and only includes files present in this directory (./*.json).
-  const loaders = import.meta.glob(["./*.json", "!./en.json"]) as Record<
-    string,
-    () => Promise<{ default?: LocaleMap } & LocaleMap>
-  >;
-  const loader = loaders[`./${langCode}.json`];
-
-  if (!loader) {
-    console.warn(`Locale "${langCode}" not found — falling back to English`);
-    current = en as LocaleMap;
-    currentLang = "en";
-    return;
-  }
-
+function readLS(key: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
   try {
-    const mod = await loader();
-    const localeObj: LocaleMap =
-      mod && mod.default ? mod.default : (mod as unknown as LocaleMap);
-    setLocale(localeObj);
-    currentLang = langCode;
-  } catch (err: unknown) {
-    // If loading fails, fall back to English and surface error in console
-    // (don't throw so consumers remain resilient)
-
-    console.error(`Failed to load locale ${langCode}:`, err);
-    current = en as LocaleMap;
-    currentLang = "en";
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
   }
 }
 
-function interpolate(str: string, vars?: Record<string, unknown>): string {
-  if (!vars) return str;
-  return String(str).replace(/\{(.*?)\}/g, (_, k: string) => {
-    return vars[k] === undefined ? `{${k}}` : String(vars[k]);
-  });
-}
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    es: { translation: es },
+  },
+  lng: readLS("hb_ui_language", "en"),
+  fallbackLng: "en",
+  keySeparator: false,
+  nsSeparator: false,
+  interpolation: {
+    escapeValue: false,
+    prefix: "{",
+    suffix: "}",
+  },
+});
 
-export function t(key: string, vars?: Record<string, unknown>): string {
-  // If the current locale provides a non-empty, non-placeholder value, use it.
-  // Otherwise fall back to English (en.json) and finally the key as last resort.
-  const val = current && current[key];
-  const isValidTranslation =
-    typeof val === "string" && val.length > 0 && val !== key;
-
-  const enMap = en as LocaleMap;
-  const s = isValidTranslation ? val : (enMap && enMap[key]) || key;
-  return interpolate(s, vars);
-}
-
-export function useTranslation(): { t: typeof t } {
-  return { t };
-}
-
-export default {
-  t,
-  setLocale,
-  useTranslation,
-  setLanguage,
-  getCurrentLanguage,
-  AVAILABLE_LANGUAGES,
-};
+export default i18n;

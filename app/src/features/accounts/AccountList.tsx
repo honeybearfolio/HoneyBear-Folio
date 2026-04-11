@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { GripVertical, Edit, Trash2 } from "lucide-react";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 
 interface Account {
   id: string | number;
@@ -35,6 +35,7 @@ export default function AccountList({
   onRenameAccount,
   onDeleteAccount,
 }: AccountListProps) {
+  const { t } = useTranslation();
   const formatNumber = useFormatNumber();
   const [draggingId, setDraggingId] = useState<string | number | null>(null);
   const draggingIdRef = useRef<string | number | null>(null);

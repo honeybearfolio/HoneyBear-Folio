@@ -2,11 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import SessionPicker from "../../../features/session/SessionPicker";
 
-// Mock i18n
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => key,
-}));
-
 // Mock Tauri dialog
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   save: vi.fn(),
@@ -51,17 +46,17 @@ describe("SessionPicker", () => {
     render(<SessionPicker onSessionReady={mockOnSessionReady} />);
 
     await waitFor(() => {
-      expect(screen.getByText("session.title")).toBeInTheDocument();
+      expect(screen.getByText("HoneyBear Folio")).toBeInTheDocument();
     });
-    expect(screen.getByText("session.create_new")).toBeInTheDocument();
-    expect(screen.getByText("session.open_existing")).toBeInTheDocument();
+    expect(screen.getByText("Create New Session")).toBeInTheDocument();
+    expect(screen.getByText("Open Existing")).toBeInTheDocument();
   });
 
   it("shows empty state when no recent sessions", async () => {
     render(<SessionPicker onSessionReady={mockOnSessionReady} />);
 
     await waitFor(() => {
-      expect(screen.getByText("session.recent_sessions")).toBeInTheDocument();
+      expect(screen.getByText("Recent Sessions")).toBeInTheDocument();
     });
   });
 
@@ -105,7 +100,7 @@ describe("SessionPicker", () => {
     render(<SessionPicker onSessionReady={mockOnSessionReady} />);
 
     await waitFor(() => {
-      expect(screen.getByText("session.file_not_found")).toBeInTheDocument();
+      expect(screen.getByText("File not found")).toBeInTheDocument();
     });
   });
 

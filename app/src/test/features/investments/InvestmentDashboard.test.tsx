@@ -25,7 +25,6 @@ vi.mock("../../../contexts/number-format", () => ({
     setFirstDayOfWeek: () => {},
     uiLanguage: "en",
     setUiLanguage: () => {},
-    translationVersion: 0,
   }),
 }));
 

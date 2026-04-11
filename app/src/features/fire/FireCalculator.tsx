@@ -22,7 +22,7 @@ import {
   calculateDeterministicProjection,
 } from "../../utils/fire";
 import useChartColors from "../../hooks/useChartColors";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import {
   buildHoldingsFromTransactions,
   mergeHoldingsWithQuotes,
@@ -98,6 +98,7 @@ interface MonteCarloResult {
 }
 
 export default function FireCalculator() {
+  const { t } = useTranslation();
   // Initialize state from sessionStorage if available (persists for the lifetime of the browser/tab session, including reloads, and is cleared when the tab or window is closed)
   const savedState = useMemo(() => {
     const saved = sessionStorage.getItem("fireCalculatorState");
@@ -594,6 +595,7 @@ export default function FireCalculator() {
     retirementAge,
     retirementDuration,
     chartColors,
+    t,
   ]);
 
   // Calculate retirement age when FIRE is reached

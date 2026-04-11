@@ -13,9 +13,6 @@ vi.mock("../../../contexts/toast", () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
-// Mock i18n
-vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
-
 // Mock children
 vi.mock("../../../components/ui/Modal", () => {
   const Modal = ({ children }: { children?: ReactNode }) => (
@@ -51,8 +48,10 @@ describe("ImportModal", () => {
     // Wait for the useEffect to fire to avoid act warnings
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_accounts"));
 
-    expect(screen.getByText("import.title")).toBeInTheDocument();
-    expect(screen.getByText("import.drag_or_click")).toBeInTheDocument();
+    expect(screen.getByText("Import Transactions")).toBeInTheDocument();
+    expect(
+      screen.getByText("Drag and drop or click to select file"),
+    ).toBeInTheDocument();
   });
 
   it("handles file selection", async () => {
@@ -62,6 +61,8 @@ describe("ImportModal", () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_accounts"));
 
     // Check for support text key
-    expect(screen.getByText("import.supports")).toBeInTheDocument();
+    expect(
+      screen.getByText("Supports .csv, .xlsx, .xls, .json"),
+    ).toBeInTheDocument();
   });
 });

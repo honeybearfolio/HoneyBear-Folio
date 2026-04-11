@@ -2,19 +2,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import CustomRateDialog from "../../../components/shared/CustomRateDialog";
 
-// Mock i18n
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string, params?: Record<string, string>) => {
-    const translations: Record<string, string> = {
-      "custom_rate.title": "Set Exchange Rate",
-      "custom_rate.message": `Enter exchange rate for ${params?.currency || "currency"}`,
-      "account.cancel": "Cancel",
-      "confirm.save": "Save",
-    };
-    return translations[key] || key;
-  },
-}));
-
 describe("CustomRateDialog", () => {
   const defaultProps = {
     isOpen: true,
@@ -30,14 +17,16 @@ describe("CustomRateDialog", () => {
   it("renders nothing when isOpen is false", () => {
     render(<CustomRateDialog {...defaultProps} isOpen={false} />);
 
-    expect(screen.queryByText("Set Exchange Rate")).not.toBeInTheDocument();
+    expect(screen.queryByText("Custom Exchange Rate")).not.toBeInTheDocument();
   });
 
   it("renders dialog when isOpen is true", () => {
     render(<CustomRateDialog {...defaultProps} />);
 
-    expect(screen.getByText("Set Exchange Rate")).toBeInTheDocument();
-    expect(screen.getByText(/Enter exchange rate for EUR/)).toBeInTheDocument();
+    expect(screen.getByText("Custom Exchange Rate")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Yahoo Finance does not support EUR/),
+    ).toBeInTheDocument();
   });
 
   it("has a number input field", () => {
@@ -125,6 +114,8 @@ describe("CustomRateDialog", () => {
   it("displays the currency name in the message", () => {
     render(<CustomRateDialog {...defaultProps} currency="GBP" />);
 
-    expect(screen.getByText(/Enter exchange rate for GBP/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Yahoo Finance does not support GBP/),
+    ).toBeInTheDocument();
   });
 });

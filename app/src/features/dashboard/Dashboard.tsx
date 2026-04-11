@@ -29,7 +29,7 @@ import {
 import { buildHoldingsFromTransactions } from "../../utils/investments";
 import { useNumberFormat } from "../../contexts/number-format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(
   CategoryScale,
@@ -99,6 +99,7 @@ export default function Dashboard({
   accounts: propAccounts = [],
   marketValues = {},
 }: DashboardProps) {
+  const { t } = useTranslation();
   const [accounts, setAccounts] = useState<Account[]>(propAccounts);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [dailyPrices, setDailyPrices] = useState<
@@ -614,6 +615,7 @@ export default function Dashboard({
     appCurrency,
     getPrice,
     chartColors,
+    t,
   ]);
 
   const doughnutData = useMemo(() => {
@@ -758,6 +760,7 @@ export default function Dashboard({
     dailyPrices,
     isDark,
     chartColors,
+    t,
   ]);
 
   const expensesByCategoryData = useMemo(() => {
@@ -861,6 +864,7 @@ export default function Dashboard({
     getPrice,
     appCurrency,
     chartColors,
+    t,
   ]);
 
   const incomeVsExpensesData = useMemo(() => {
@@ -985,6 +989,7 @@ export default function Dashboard({
     getPrice,
     appCurrency,
     chartColors,
+    t,
   ]);
 
   const doughnutOptions = useMemo(
