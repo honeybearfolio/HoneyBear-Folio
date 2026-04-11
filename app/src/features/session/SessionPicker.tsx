@@ -11,7 +11,7 @@ import {
   Database,
   AlertTriangle,
 } from "lucide-react";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 
 interface Session {
   path: string;
@@ -48,6 +48,7 @@ function formatFileSize(bytes: number | undefined) {
 }
 
 export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

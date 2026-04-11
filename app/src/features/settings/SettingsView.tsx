@@ -19,7 +19,8 @@ import { useState, useEffect } from "react";
 import { rust } from "../../api/tauri-client";
 import { save } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
-import { t, AVAILABLE_LANGUAGES } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
+import { AVAILABLE_LANGUAGES } from "../../i18n/i18n";
 import { formatDateForUI } from "../../utils/format";
 import { IS_RELEASE, APP_VERSION, APP_COMMIT } from "../../utils/version";
 
@@ -75,6 +76,7 @@ function LlmSettingsSection({
   showTooltip,
   hideTooltip,
 }: LlmSettingsSectionProps) {
+  const { t } = useTranslation();
   const [ollamaUrl, setOllamaUrl] = useState("http://localhost:11434");
   const [ollamaModel, setOllamaModel] = useState("");
   const [models, setModels] = useState<OllamaModel[]>([]);
@@ -250,6 +252,7 @@ export default function SettingsView({
   sidebarVisibility,
   onChangeSidebarVisibility,
 }: SettingsViewProps) {
+  const { t } = useTranslation();
   const {
     locale,
     setLocale,

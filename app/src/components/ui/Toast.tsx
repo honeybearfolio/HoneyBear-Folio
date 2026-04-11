@@ -2,13 +2,14 @@ import { createPortal } from "react-dom";
 import { Info, CheckCircle, AlertCircle, X } from "lucide-react";
 import "../../styles/Toast.css";
 import { useToastStore } from "../../stores/toast";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 
 type ToastType = "info" | "success" | "error" | "warning";
 
 export function ToastContainer() {
   const toasts = useToastStore((s) => s.toasts);
   const removeToast = useToastStore((s) => s.removeToast);
+  const { t } = useTranslation();
 
   const getIcon = (type: ToastType) => {
     switch (type) {

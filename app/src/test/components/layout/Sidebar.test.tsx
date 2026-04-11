@@ -5,7 +5,6 @@ import Sidebar from "../../../components/layout/Sidebar";
 import { usePrivacy } from "../../../contexts/privacy";
 
 // Mock dependencies
-vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
 vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (val: number) => `fmt-${val}`,
 }));
@@ -104,10 +103,10 @@ describe("Sidebar", () => {
       />,
     );
 
-    expect(screen.getByText("nav.dashboard")).toBeInTheDocument();
-    expect(screen.getByText("nav.investments")).toBeInTheDocument();
-    expect(screen.getByText("nav.fire_calculator")).toBeInTheDocument();
-    expect(screen.getByText("nav.rules")).toBeInTheDocument();
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Investments")).toBeInTheDocument();
+    expect(screen.getByText("FIRE Calculator")).toBeInTheDocument();
+    expect(screen.getAllByText("Rules").length).toBeGreaterThanOrEqual(1);
   });
 
   it("displays computed net worth", () => {
@@ -141,7 +140,7 @@ describe("Sidebar", () => {
     );
 
     // The eye icon button
-    const toggleBtn = screen.getByTitle("sidebar.hide_values");
+    const toggleBtn = screen.getByTitle("Hide values");
     fireEvent.click(toggleBtn);
 
     expect(mockTogglePrivacy).toHaveBeenCalled();
@@ -180,7 +179,7 @@ describe("Sidebar", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("nav.dashboard"));
+    fireEvent.click(screen.getByText("Dashboard"));
     expect(mockOnSelectAccount).toHaveBeenCalledWith("dashboard");
   });
 
@@ -198,7 +197,7 @@ describe("Sidebar", () => {
       />,
     );
 
-    const link = screen.getByText("nav.fire_calculator").closest("button");
+    const link = screen.getByText("FIRE Calculator").closest("button");
     expect(link!.className).toContain("sidebar-nav-item-active");
   });
 });

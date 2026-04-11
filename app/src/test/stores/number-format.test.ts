@@ -9,7 +9,6 @@ describe("useNumberFormatStore", () => {
       dateFormat: "YYYY-MM-DD",
       firstDayOfWeek: 1,
       uiLanguage: "en",
-      translationVersion: 0,
     });
     vi.spyOn(Storage.prototype, "setItem");
   });
@@ -21,7 +20,6 @@ describe("useNumberFormatStore", () => {
     expect(s.dateFormat).toBe("YYYY-MM-DD");
     expect(s.firstDayOfWeek).toBe(1);
     expect(s.uiLanguage).toBe("en");
-    expect(s.translationVersion).toBe(0);
   });
 
   it("setLocale updates locale and persists", () => {
@@ -61,12 +59,5 @@ describe("useNumberFormatStore", () => {
     useNumberFormatStore.getState().setUiLanguage("es");
     expect(useNumberFormatStore.getState().uiLanguage).toBe("es");
     expect(localStorage.setItem).toHaveBeenCalledWith("hb_ui_language", "es");
-  });
-
-  it("bumpTranslationVersion increments translationVersion", () => {
-    useNumberFormatStore.getState().bumpTranslationVersion();
-    expect(useNumberFormatStore.getState().translationVersion).toBe(1);
-    useNumberFormatStore.getState().bumpTranslationVersion();
-    expect(useNumberFormatStore.getState().translationVersion).toBe(2);
   });
 });

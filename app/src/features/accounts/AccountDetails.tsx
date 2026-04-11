@@ -34,7 +34,7 @@ import { useConfirm } from "../../contexts/confirm";
 import NumberInput from "../../components/ui/NumberInput";
 import CustomSelect from "../../components/ui/CustomSelect";
 import MaskedNumber from "../../components/ui/MaskedNumber";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { CURRENCIES } from "../../utils/currencies";
 import { useCustomRate } from "../../hooks/useCustomRate";
 import useTagColors from "../../hooks/useTagColors";
@@ -163,6 +163,7 @@ export default function AccountDetails({
   account,
   onUpdate,
 }: AccountDetailsProps) {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [pendingOccurrences, setPendingOccurrences] = useState<
     PendingOccurrence[]
@@ -2552,6 +2553,7 @@ function AutocompleteInput({
   disabled,
   ...props
 }: AutocompleteInputProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const filtered = useMemo(() => {

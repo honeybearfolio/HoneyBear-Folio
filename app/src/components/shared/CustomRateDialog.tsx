@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import "../../styles/Modal.css";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 
 interface CustomRateDialogProps {
@@ -16,6 +16,7 @@ export default function CustomRateDialog({
   onConfirm,
   onCancel,
 }: CustomRateDialogProps) {
+  const { t } = useTranslation();
   const [rate, setRate] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 

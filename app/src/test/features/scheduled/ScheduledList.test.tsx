@@ -40,10 +40,6 @@ vi.mock("lucide-react", () => ({
   ArrowUpRight: () => <span data-testid="arrow-up">Up</span>,
 }));
 
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => key,
-}));
-
 // Mock hooks
 const mockConfirm = vi.fn();
 const mockShowToast = vi.fn();
@@ -167,23 +163,21 @@ describe("ScheduledList", () => {
     await waitFor(() => {
       expect(screen.getByText("Netflix")).toBeInTheDocument();
     });
-    expect(screen.getByText("scheduled.create")).toBeInTheDocument();
+    expect(screen.getByText("Create")).toBeInTheDocument();
   });
 
   it("opens form when Create button is clicked", async () => {
     renderWithContext(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
-    const createButton = screen.getByText("scheduled.create");
+    const createButton = screen.getByText("Create");
     fireEvent.click(createButton);
 
-    expect(
-      screen.getByPlaceholderText("scheduled.field.payee"),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Payee")).toBeInTheDocument();
 
     // ensure type toggle buttons render
-    expect(screen.getByText("scheduled.type.regular")).toBeInTheDocument();
-    expect(screen.getByText("scheduled.type.investment")).toBeInTheDocument();
+    expect(screen.getByText("Cash")).toBeInTheDocument();
+    expect(screen.getByText("Investment")).toBeInTheDocument();
   });
 
   it("handles creating a new schedule", async () => {
@@ -191,10 +185,10 @@ describe("ScheduledList", () => {
     await waitFor(() => screen.getByText("Netflix"));
 
     // Open form
-    fireEvent.click(screen.getByText("scheduled.create"));
+    fireEvent.click(screen.getByText("Create"));
 
     // Fill payee and account (regular transaction)
-    fireEvent.change(screen.getByPlaceholderText("scheduled.field.payee"), {
+    fireEvent.change(screen.getByPlaceholderText("Payee"), {
       target: { value: "Amazon" },
     });
     const accountSelect = screen.getAllByTestId("custom-select")[0];
@@ -203,7 +197,7 @@ describe("ScheduledList", () => {
     // Submit
     const buttons = screen.getAllByRole("button");
     const submitButton = buttons.find(
-      (b) => b.textContent && b.textContent.includes("scheduled.create"),
+      (b) => b.textContent && b.textContent.includes("Create"),
     );
     if (!submitButton) throw new Error("Submit button not found");
     fireEvent.click(submitButton);
@@ -215,9 +209,12 @@ describe("ScheduledList", () => {
       );
     });
 
-    expect(mockShowToast).toHaveBeenCalledWith("scheduled.created_success", {
-      type: "success",
-    });
+    expect(mockShowToast).toHaveBeenCalledWith(
+      "Scheduled transaction created",
+      {
+        type: "success",
+      },
+    );
   });
 
   it("handles creating an investment schedule", async () => {
@@ -225,8 +222,8 @@ describe("ScheduledList", () => {
     await waitFor(() => screen.getByText("Netflix"));
 
     // Open form and toggle to investment type
-    fireEvent.click(screen.getByText("scheduled.create"));
-    const investToggle = screen.getByText("scheduled.type.investment");
+    fireEvent.click(screen.getByText("Create"));
+    const investToggle = screen.getByText("Investment");
     fireEvent.click(investToggle);
 
     // ticker field should appear via placeholder
@@ -243,7 +240,7 @@ describe("ScheduledList", () => {
     // Submit
     const buttons2 = screen.getAllByRole("button");
     const submitButton2 = buttons2.find(
-      (b) => b.textContent && b.textContent.includes("scheduled.create"),
+      (b) => b.textContent && b.textContent.includes("Create"),
     );
     if (!submitButton2) throw new Error("Submit button not found");
     fireEvent.click(submitButton2);
@@ -260,9 +257,12 @@ describe("ScheduledList", () => {
       );
     });
 
-    expect(mockShowToast).toHaveBeenCalledWith("scheduled.created_success", {
-      type: "success",
-    });
+    expect(mockShowToast).toHaveBeenCalledWith(
+      "Scheduled transaction created",
+      {
+        type: "success",
+      },
+    );
   });
 
   it("handles deleting a schedule", async () => {
@@ -284,9 +284,12 @@ describe("ScheduledList", () => {
       });
     });
 
-    expect(mockShowToast).toHaveBeenCalledWith("scheduled.deleted_success", {
-      type: "success",
-    });
+    expect(mockShowToast).toHaveBeenCalledWith(
+      "Scheduled transaction deleted",
+      {
+        type: "success",
+      },
+    );
   });
 
   it("shows context menu with toggle/edit/delete on right-click", async () => {
@@ -298,8 +301,8 @@ describe("ScheduledList", () => {
 
     const portal = document.querySelector(".sched-action-menu-portal");
     expect(portal).toBeInTheDocument();
-    expect(portal).toHaveTextContent("scheduled.update");
-    expect(portal).toHaveTextContent("scheduled.delete");
+    expect(portal).toHaveTextContent("Update");
+    expect(portal).toHaveTextContent("Delete");
   });
 
   it("dismisses context menu on outside click", async () => {

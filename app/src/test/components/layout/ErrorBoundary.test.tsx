@@ -2,17 +2,19 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import ErrorBoundary from "../../../components/layout/ErrorBoundary";
 
-// Mock i18n
+// Mock i18n — ErrorBoundary uses i18n.t() directly (class component)
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => {
-    const translations: Record<string, string> = {
-      "error.something_went_wrong": "Something went wrong",
-      "error.check_console": "Check the console for details",
-      "error.show_details": "Show details",
-      "error.copy": "Copy",
-      "error.reload": "Reload",
-    };
-    return translations[key] || key;
+  default: {
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "error.something_went_wrong": "Something went wrong",
+        "error.check_console": "Check the console for details",
+        "error.show_details": "Show details",
+        "error.copy": "Copy",
+        "error.reload": "Reload",
+      };
+      return translations[key] || key;
+    },
   },
 }));
 

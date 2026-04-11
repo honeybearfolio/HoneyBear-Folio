@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { rust } from "../../api/tauri-client";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import {
   Bot,
   Loader2,
@@ -31,6 +31,7 @@ interface StepIndicatorProps {
 const STEPS = ["connect", "model", "ready"];
 
 function StepIndicator({ steps, current }: StepIndicatorProps) {
+  const { t } = useTranslation();
   const currentIdx = steps.indexOf(current);
   return (
     <div className="flex items-center justify-center gap-2 mb-8">
@@ -80,6 +81,7 @@ interface ChatSetupProps {
 }
 
 export default function ChatSetup({ onComplete }: ChatSetupProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<"connect" | "model" | "ready">("connect");
   const [loading, setLoading] = useState(true);
   const [models, setModels] = useState<OllamaModel[]>([]);

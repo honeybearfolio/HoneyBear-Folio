@@ -2,24 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ExchangeRatesList from "../../../components/shared/ExchangeRatesList";
 
-// Lightweight i18n mock for keys used by the component
-vi.mock("../../../i18n/i18n", () => ({
-  t: (k: string, opts?: Record<string, string>) => {
-    const map: Record<string, string> = {
-      "settings.exchange_rates_empty": "No custom exchange rates configured.",
-      "settings.exchange_rates_custom": "custom",
-      "settings.exchange_rates_auto": "auto",
-      "settings.exchange_rate_edit": "Edit rate",
-      "settings.exchange_rate_delete": "Remove custom rate",
-      "settings.exchange_rate_override": "Override rate",
-      "settings.exchange_rate_delete_confirm": `Remove custom rate for ${opts?.currency}?`,
-      "confirm.save": "Save",
-      "account.cancel": "Cancel",
-    };
-    return map[k] || k;
-  },
-}));
-
 // Mock confirm context used for delete flow
 const mockConfirm = vi.fn();
 vi.mock("../../../contexts/confirm", () => ({
@@ -71,7 +53,7 @@ describe("ExchangeRatesList", () => {
     render(<ExchangeRatesList />);
 
     expect(
-      await screen.findByText(/No custom exchange rates configured\./i),
+      await screen.findByText(/No currencies in use/i),
     ).toBeInTheDocument();
   });
 
@@ -84,7 +66,7 @@ describe("ExchangeRatesList", () => {
     render(<ExchangeRatesList />);
 
     // should show both currencies in alphabetical order: ABC then EUR
-    const rows = await screen.findAllByText(/custom/i);
+    const rows = await screen.findAllByText(/Custom/i);
     expect(rows.length).toBeGreaterThanOrEqual(2);
 
     const abc = screen.getByText("ABC");

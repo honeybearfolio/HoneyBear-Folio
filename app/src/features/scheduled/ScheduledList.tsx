@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useConfirm } from "../../contexts/confirm";
 import { useToast } from "../../contexts/toast";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../contexts/number-format";
 import { useFormatNumber, getDatePickerFormat } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
@@ -87,6 +87,7 @@ interface TickerSuggestion {
 }
 
 export default function ScheduledList() {
+  const { t } = useTranslation();
   const [schedules, setSchedules] = useState<ScheduleRecord[]>([]);
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [isEditing, setIsEditing] = useState(false);

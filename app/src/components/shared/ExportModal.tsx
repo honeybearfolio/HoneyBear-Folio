@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import CustomSelect from "../ui/CustomSelect";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import "../../styles/Modal.css";
 import "../../styles/ExportModal.css";
 import { formatNumberForExport, getDatePickerFormat } from "../../utils/format";
@@ -70,6 +70,7 @@ interface ExportModalProps {
 }
 
 export default function ExportModal({ onClose }: ExportModalProps) {
+  const { t } = useTranslation();
   const [format, setFormat] = useState("json");
   const [exporting, setExporting] = useState(false);
   // Toast API (safe noop provided by useToast when provider missing)

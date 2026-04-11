@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, type LucideIcon } from "lucide-react";
 import "../../styles/Modal.css";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 
 type ModalSize =
   | "sm"
@@ -86,6 +86,7 @@ export function ModalHeader({
   title,
   icon: Icon,
 }: ModalHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="modal-header">
       <h2 className="modal-title">

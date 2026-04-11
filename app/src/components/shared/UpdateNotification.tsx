@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { Download, RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import "../../styles/Modal.css";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { getDevSetting } from "../../config/dev-settings";
 
 interface UpdateEvent {
@@ -21,6 +21,7 @@ interface UpdateInfo {
 }
 
 export default function UpdateNotification() {
+  const { t } = useTranslation();
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [downloading, setDownloading] = useState(false);

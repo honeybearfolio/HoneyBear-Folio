@@ -4,28 +4,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import ChatSetup from "../../../features/chat/ChatSetup";
 
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => {
-    const map: Record<string, string> = {
-      "chat.setup.title": "Set up AI Assistant",
-      "chat.setup.description": "Select an Ollama model",
-      "chat.setup.step_connect": "Connect",
-      "chat.setup.step_model": "Choose Model",
-      "chat.setup.step_ready": "Ready",
-      "chat.ollama_url": "Ollama URL",
-      "chat.test_connection": "Test connection",
-      "chat.connection_error": "Cannot connect to Ollama",
-      "chat.model": "Model",
-      "chat.setup.no_models": "No models found",
-      "chat.setup.select_model": "Select a model",
-      "chat.setup.get_started": "Get Started",
-      "chat.setup.install_hint":
-        "Don't have Ollama? Visit ollama.com to install it.",
-    };
-    return map[key] ?? key;
-  },
-}));
-
 describe("ChatSetup", () => {
   const onComplete = vi.fn();
 
@@ -102,7 +80,7 @@ describe("ChatSetup", () => {
     fireEvent.click(screen.getByText("Test connection"));
 
     await waitFor(() => {
-      expect(screen.getByText("Cannot connect to Ollama")).toBeInTheDocument();
+      expect(screen.getByText(/Cannot connect to Ollama/)).toBeInTheDocument();
     });
   });
 
@@ -139,7 +117,7 @@ describe("ChatSetup", () => {
     render(<ChatSetup onComplete={onComplete} />);
 
     await waitFor(() => {
-      expect(screen.getByText("No models found")).toBeInTheDocument();
+      expect(screen.getByText(/No models found/)).toBeInTheDocument();
     });
   });
 

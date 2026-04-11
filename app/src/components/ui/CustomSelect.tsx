@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 
 interface SelectOption {
   value: string | number;
@@ -39,6 +39,7 @@ export default function CustomSelect({
   className = "",
   "data-testid": dataTestId,
 }: CustomSelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);

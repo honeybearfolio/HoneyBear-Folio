@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { rust } from "../../api/tauri-client";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import { STORAGE_KEYS } from "../../constants/app";
 import ChatSetup from "./ChatSetup";
 import CustomSelect from "../../components/ui/CustomSelect";
@@ -44,6 +44,7 @@ function ReasoningBlock({
   thinking,
   defaultExpanded = false,
 }: ReasoningBlockProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(defaultExpanded);
   if (!thinking) return null;
   return (
@@ -70,6 +71,7 @@ interface ToolCallBadgeProps {
 }
 
 function ToolCallBadge({ toolName }: ToolCallBadgeProps) {
+  const { t } = useTranslation();
   const displayName = TOOL_DISPLAY_NAMES[toolName] || toolName;
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 rounded-full text-xs font-medium">
@@ -96,6 +98,7 @@ interface MessageBubbleProps {
 }
 
 function MessageBubble({ message, toolCalls }: MessageBubbleProps) {
+  const { t } = useTranslation();
   const isUser = message.role === "user";
   const isTool = message.role === "tool";
   const [expanded, setExpanded] = useState(false);
@@ -200,6 +203,7 @@ interface StreamingSegment {
 }
 
 export default function ChatView() {
+  const { t } = useTranslation();
   const [configured, setConfigured] = useState<boolean | null>(null); // null = loading
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvo, setActiveConvo] = useState<Conversation | null>(null);

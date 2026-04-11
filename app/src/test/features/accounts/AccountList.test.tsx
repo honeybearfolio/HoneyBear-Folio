@@ -3,8 +3,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import AccountList from "../../../features/accounts/AccountList";
 
-vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
-
 // Mock dependencies
 vi.mock("lucide-react", () => ({
   GripVertical: () => <span data-testid="grip-icon">::</span>,
@@ -123,8 +121,8 @@ describe("AccountList", () => {
       ).not.toBeNull();
     });
     const portal = document.querySelector(".account-list-menu-portal");
-    expect(portal!.textContent).toContain("account.action.rename");
-    expect(portal!.textContent).toContain("account.action.delete");
+    expect(portal!.textContent).toContain("Rename");
+    expect(portal!.textContent).toContain("Delete");
   });
 
   it("clicking Rename in context menu shows an inline input", async () => {
@@ -154,7 +152,7 @@ describe("AccountList", () => {
       document
         .querySelector(".account-list-menu-portal")!
         .querySelectorAll("button"),
-    ).find((b) => b.textContent?.includes("account.action.rename"));
+    ).find((b) => b.textContent?.includes("Rename"));
     fireEvent.click(renameBtn!);
 
     const input = await screen.findByRole("textbox");
@@ -193,7 +191,7 @@ describe("AccountList", () => {
       document
         .querySelector(".account-list-menu-portal")!
         .querySelectorAll("button"),
-    ).find((b) => b.textContent?.includes("account.action.delete"));
+    ).find((b) => b.textContent?.includes("Delete"));
     fireEvent.click(deleteBtn!);
 
     expect(onDeleteAccount).toHaveBeenCalledWith("1");

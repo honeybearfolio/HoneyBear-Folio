@@ -2,6 +2,9 @@ import "@testing-library/jest-dom";
 import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 
+// Initialize i18next with real translations so useTranslation() works in tests.
+import "../i18n/i18n";
+
 // Cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {
   cleanup();

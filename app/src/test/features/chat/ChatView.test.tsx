@@ -16,42 +16,6 @@ vi.mock("react-markdown", () => ({
 
 vi.mock("remark-gfm", () => ({ default: () => {} }));
 
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => {
-    const map: Record<string, string> = {
-      "chat.setup.title": "Set up AI Assistant",
-      "chat.setup.description": "Select an Ollama model",
-      "chat.setup.step_connect": "Connect",
-      "chat.setup.step_model": "Choose Model",
-      "chat.setup.step_ready": "Ready",
-      "chat.ollama_url": "Ollama URL",
-      "chat.test_connection": "Test connection",
-      "chat.connection_error": "Cannot connect to Ollama",
-      "chat.model": "Model",
-      "chat.setup.no_models": "No models found",
-      "chat.setup.select_model": "Select a model",
-      "chat.setup.get_started": "Get Started",
-      "chat.setup.install_hint":
-        "Don't have Ollama? Visit ollama.com to install it.",
-      "chat.new_conversation": "New Chat",
-      "chat.no_conversations": "No conversations yet",
-      "chat.input_placeholder": "Type a message...",
-      "chat.send": "Send",
-      "chat.stop": "Stop generating",
-      "chat.welcome": "Ask me anything about your finances",
-      "chat.thinking": "Thinking...",
-      "chat.reasoning": "Reasoning",
-      "chat.tool_call": "Queried {tool}",
-      "chat.rename_conversation": "Rename conversation",
-      "chat.delete_conversation": "Delete conversation",
-      "chat.think": "Thinking",
-      "chat.think_tooltip": "Enable extended thinking",
-      "nav.ai_assistant": "AI Assistant",
-    };
-    return map[key] ?? key;
-  },
-}));
-
 vi.mock("../../../components/ui/CustomSelect", () => ({
   default: ({
     onChange,
@@ -134,7 +98,7 @@ describe("ChatView", () => {
     render(<ChatView />);
     await waitFor(() => {
       expect(
-        screen.getByText("Ask me anything about your finances"),
+        screen.getByText(/Ask me anything about your finances/),
       ).toBeInTheDocument();
     });
   });

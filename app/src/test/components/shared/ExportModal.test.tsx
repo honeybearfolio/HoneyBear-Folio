@@ -2,26 +2,6 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ExportModal from "../../../components/shared/ExportModal";
 
-// Mock i18n
-vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string) => {
-    const translations: Record<string, string> = {
-      "export.title": "Export Data",
-      "export.select_format": "Select format",
-      "export.format.json": "JSON",
-      "export.format.csv": "CSV",
-      "export.format.xlsx": "Excel",
-      "export.format.pdf": "PDF",
-      "export.select_location_export": "Export",
-      "export.exporting": "Exporting...",
-      "account.cancel": "Cancel",
-      "export.success_saved": "Export successful",
-      "export.failed": "Export failed",
-    };
-    return translations[key] || key;
-  },
-}));
-
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
 vi.mock("@tauri-apps/api/core", () => ({
@@ -117,7 +97,7 @@ describe("ExportModal", () => {
   it("fetches accounts and transactions on export", async () => {
     render(<ExportModal {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("Export"));
+    fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith("get_accounts");
@@ -128,7 +108,7 @@ describe("ExportModal", () => {
   it("opens save dialog with JSON filter for JSON format", async () => {
     render(<ExportModal {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("Export"));
+    fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
       expect(mockSave).toHaveBeenCalledWith(
@@ -144,7 +124,7 @@ describe("ExportModal", () => {
 
     render(<ExportModal {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("Export"));
+    fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
       expect(mockSave).toHaveBeenCalled();
@@ -176,7 +156,7 @@ describe("ExportModal", () => {
     render(<ExportModal {...defaultProps} />);
 
     fireEvent.click(screen.getByText("Excel"));
-    fireEvent.click(screen.getByText("Export"));
+    fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith(
@@ -192,21 +172,21 @@ describe("ExportModal", () => {
   it("allows selecting PDF format", () => {
     render(<ExportModal {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("PDF"));
-    const pdfButton = screen.getByText("PDF").closest("button");
+    fireEvent.click(screen.getByText("PDF Report"));
+    const pdfButton = screen.getByText("PDF Report").closest("button");
     expect(pdfButton).toHaveClass("format-button-active");
   });
 
   it("opens save dialog with PDF filter for PDF format", async () => {
     render(<ExportModal {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("PDF"));
-    fireEvent.click(screen.getByText("Export"));
+    fireEvent.click(screen.getByText("PDF Report"));
+    fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
       expect(mockSave).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: [{ name: "PDF", extensions: ["pdf"] }],
+          filters: [{ name: "PDF Report", extensions: ["pdf"] }],
         }),
       );
     });
@@ -216,8 +196,8 @@ describe("ExportModal", () => {
     mockSave.mockResolvedValue("/path/to/export.pdf");
     render(<ExportModal {...defaultProps} />);
 
-    fireEvent.click(screen.getByText("PDF"));
-    fireEvent.click(screen.getByText("Export"));
+    fireEvent.click(screen.getByText("PDF Report"));
+    fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith(

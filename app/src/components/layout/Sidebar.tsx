@@ -29,7 +29,7 @@ import {
   Bot,
 } from "lucide-react";
 import { computeNetWorth } from "../../utils/networth";
-import { t } from "../../i18n/i18n";
+import { useTranslation } from "react-i18next";
 import "../../styles/Sidebar.css";
 import { useFormatNumber } from "../../utils/format";
 import { usePrivacy } from "../../contexts/privacy";
@@ -94,6 +94,7 @@ export default function Sidebar({
   activeSession,
   onSwitchSession,
 }: SidebarProps) {
+  const { t } = useTranslation();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);

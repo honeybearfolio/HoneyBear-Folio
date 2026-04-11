@@ -8,7 +8,7 @@ import {
   ModalBody,
   ModalFooter,
 } from "../../components/ui/Modal";
-import { t } from "../../i18n/i18n"; // Assuming translation hook/function exists
+import { useTranslation } from "react-i18next";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { useCustomRate } from "../../hooks/useCustomRate";
@@ -34,6 +34,7 @@ export default function AccountModal({
   account = null,
   isEditing = false,
 }: AccountModalProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState(account?.name || "");
   const [balanceStr, setBalanceStr] = useState("");
   const [currency, setCurrency] = useState(account?.currency || "");
