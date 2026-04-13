@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, type LucideIcon } from "lucide-react";
 import "../../styles/Modal.css";
@@ -23,12 +23,23 @@ interface ModalProps {
   className?: string;
 }
 
+const FOCUSABLE_SELECTORS = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
 export function Modal({
   children,
   onClose,
   size = "md",
   className = "",
 }: ModalProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -43,6 +54,53 @@ export function Modal({
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  // Focus trap: move focus into the modal and keep it there
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    const getFocusable = () =>
+      Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
+
+    // Focus the first focusable element, or the container itself as fallback
+    const focusable = getFocusable();
+    if (focusable.length > 0) {
+      focusable[0].focus();
+    } else {
+      container.focus();
+    }
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    container.addEventListener("keydown", handleTab);
+    return () => {
+      container.removeEventListener("keydown", handleTab);
+      previouslyFocused?.focus();
     };
   }, []);
 
@@ -62,9 +120,11 @@ export function Modal({
   return createPortal(
     <div className="modal-overlay">
       <div
+        ref={containerRef}
         className={`modal-container w-full ${sizeClasses[size] || "max-w-md"} ${className}`}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
       >
         {children}
       </div>

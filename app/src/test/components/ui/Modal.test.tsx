@@ -44,4 +44,69 @@ describe("Modal Component", () => {
     );
     expect(document.body.style.overflow).toBe("hidden");
   });
+
+  it("moves focus to the first focusable element when opened", () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <button data-testid="btn-one">First</button>
+        <button data-testid="btn-two">Second</button>
+      </Modal>,
+    );
+    expect(document.activeElement).toBe(screen.getByTestId("btn-one"));
+  });
+
+  it("focuses the dialog container when there are no focusable children", () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <p>No buttons here</p>
+      </Modal>,
+    );
+    expect(document.activeElement).toBe(screen.getByRole("dialog"));
+  });
+
+  it("wraps Tab from the last focusable element back to the first", () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <button data-testid="btn-one">First</button>
+        <button data-testid="btn-two">Second</button>
+      </Modal>,
+    );
+    const first = screen.getByTestId("btn-one");
+    const last = screen.getByTestId("btn-two");
+    last.focus();
+    fireEvent.keyDown(last, { key: "Tab", shiftKey: false });
+    expect(document.activeElement).toBe(first);
+  });
+
+  it("wraps Shift+Tab from the first focusable element back to the last", () => {
+    render(
+      <Modal onClose={vi.fn()}>
+        <button data-testid="btn-one">First</button>
+        <button data-testid="btn-two">Second</button>
+      </Modal>,
+    );
+    const first = screen.getByTestId("btn-one");
+    const last = screen.getByTestId("btn-two");
+    first.focus();
+    fireEvent.keyDown(first, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it("restores focus to the previously focused element when the modal closes", () => {
+    const trigger = document.createElement("button");
+    trigger.textContent = "Open modal";
+    document.body.appendChild(trigger);
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    const { unmount } = render(
+      <Modal onClose={vi.fn()}>
+        <button>Inside</button>
+      </Modal>,
+    );
+
+    unmount();
+    expect(document.activeElement).toBe(trigger);
+    document.body.removeChild(trigger);
+  });
 });
