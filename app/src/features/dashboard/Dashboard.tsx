@@ -18,6 +18,7 @@ import {
   ArcElement,
   BarElement,
 } from "chart.js";
+import type { ChartOptions, ChartData, TooltipItem } from "chart.js";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
 import "../../styles/Dashboard.css";
 import { computeNetWorth } from "../../utils/networth";
@@ -155,9 +156,7 @@ export default function Dashboard({
   useEffect(() => {
     const fetchQuotes = async () => {
       if (transactions.length === 0) return;
-      const { currentHoldings } = buildHoldingsFromTransactions(
-        transactions as any,
-      );
+      const { currentHoldings } = buildHoldingsFromTransactions(transactions);
       if (currentHoldings.length === 0) {
         setQuotes([]);
         return;
@@ -651,7 +650,7 @@ export default function Dashboard({
       const accTxs = filteredTransactions.filter(
         (t) => t.account_id === acc.id,
       );
-      const { currentHoldings } = buildHoldingsFromTransactions(accTxs as any);
+      const { currentHoldings } = buildHoldingsFromTransactions(accTxs);
 
       if (currentHoldings.length > 0) {
         accKindLower = "brokerage";
@@ -992,7 +991,7 @@ export default function Dashboard({
     t,
   ]);
 
-  const doughnutOptions = useMemo(
+  const doughnutOptions: ChartOptions<"doughnut"> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
@@ -1024,9 +1023,12 @@ export default function Dashboard({
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context: any) {
-              const value = context.dataset.originalData
-                ? context.dataset.originalData[context.dataIndex]
+            label: function (context: TooltipItem<"doughnut">) {
+              const dataset = context.dataset as typeof context.dataset & {
+                originalData?: number[];
+              };
+              const value = dataset.originalData
+                ? dataset.originalData[context.dataIndex]
                 : context.raw;
 
               let label = context.label || "";
@@ -1034,14 +1036,14 @@ export default function Dashboard({
                 label += ": ";
               }
               if (value !== null && value !== undefined) {
-                label += formatNumber(value, {
+                label += formatNumber(Number(value), {
                   style: "currency",
                   ignorePrivacy: true,
                 });
               }
               return label;
             },
-            labelColor: function (context: any) {
+            labelColor: function (context: TooltipItem<"doughnut">) {
               const dataset = context.dataset;
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
@@ -1063,8 +1065,8 @@ export default function Dashboard({
                   : bg;
 
               return {
-                borderColor: border,
-                backgroundColor,
+                borderColor: String(border),
+                backgroundColor: String(backgroundColor),
                 borderWidth: 2,
               };
             },
@@ -1075,7 +1077,7 @@ export default function Dashboard({
     [isDark, formatNumber, chartColors],
   );
 
-  const expensesOptions = useMemo(
+  const expensesOptions: ChartOptions<"doughnut"> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
@@ -1107,8 +1109,8 @@ export default function Dashboard({
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context: any) {
-              const value = context.raw ?? context.parsed ?? 0;
+            label: function (context: TooltipItem<"doughnut">) {
+              const value = context.raw ?? 0;
 
               let label = context.label || "";
               if (label) label += ": ";
@@ -1118,7 +1120,7 @@ export default function Dashboard({
               });
               return label;
             },
-            labelColor: function (context: any) {
+            labelColor: function (context: TooltipItem<"doughnut">) {
               const dataset = context.dataset;
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
@@ -1136,8 +1138,8 @@ export default function Dashboard({
                   : bg;
 
               return {
-                borderColor: border,
-                backgroundColor,
+                borderColor: String(border),
+                backgroundColor: String(backgroundColor),
                 borderWidth: 2,
               };
             },
@@ -1148,7 +1150,7 @@ export default function Dashboard({
     [isDark, formatNumber, chartColors],
   );
 
-  const barOptions = useMemo(() => {
+  const barOptions: ChartOptions<"bar"> = useMemo(() => {
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -1184,7 +1186,7 @@ export default function Dashboard({
             size: 12,
           },
           callbacks: {
-            label: function (context: any) {
+            label: function (context: TooltipItem<"bar">) {
               let label = context.dataset.label || "";
               if (label) {
                 label += ": ";
@@ -1244,7 +1246,7 @@ export default function Dashboard({
     };
   }, [formatNumber, chartColors]);
 
-  const options = useMemo(
+  const options: ChartOptions<"line"> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
@@ -1273,7 +1275,7 @@ export default function Dashboard({
           },
           displayColors: false,
           callbacks: {
-            label: function (context: any) {
+            label: function (context: TooltipItem<"line">) {
               let label = context.dataset.label || "";
               if (label) {
                 label += ": ";
@@ -1281,14 +1283,17 @@ export default function Dashboard({
               if (context.parsed.y !== null) {
                 // If this dataset represents an individual account, prefer
                 // showing the value in the account's native currency when available.
-                if (context.dataset && context.dataset.accountCurrency) {
+                const ds = context.dataset as typeof context.dataset & {
+                  accountCurrency?: string;
+                  originalData?: number[];
+                };
+                if (ds.accountCurrency) {
                   const nativeVal =
-                    context.dataset.originalData &&
-                    context.dataset.originalData[context.dataIndex];
+                    ds.originalData && ds.originalData[context.dataIndex];
                   if (nativeVal !== undefined && nativeVal !== null) {
                     label += formatNumber(nativeVal, {
                       style: "currency",
-                      currency: context.dataset.accountCurrency,
+                      currency: ds.accountCurrency,
                       ignorePrivacy: true,
                     });
                   } else {
@@ -1481,9 +1486,14 @@ export default function Dashboard({
                 </div>
                 <div className="account-filter-list">
                   {accounts.map((acc) => {
-                    const ds = (chartData?.datasets as any[])?.find(
-                      (d: any) => d.accountId === acc.id,
-                    );
+                    const ds = (
+                      chartData?.datasets as Array<
+                        (typeof chartData.datasets)[number] & {
+                          accountId?: string | number;
+                          _color?: string;
+                        }
+                      >
+                    )?.find((d) => d.accountId === acc.id);
                     const color = ds?._color || "rgb(148, 163, 184)";
                     return (
                       <label key={acc.id} className="account-filter-item">
@@ -1574,7 +1584,7 @@ export default function Dashboard({
           <div className="chart-wrapper">
             <div className="chart-body">
               {chartData ? (
-                <Line options={options as any} data={chartData!} />
+                <Line options={options} data={chartData!} />
               ) : (
                 <div className="loading-container">
                   <div className="loading-content">
@@ -1629,10 +1639,7 @@ export default function Dashboard({
               </div>
               <div className="chart-body">
                 {incomeVsExpensesData ? (
-                  <Bar
-                    options={barOptions as any}
-                    data={incomeVsExpensesData}
-                  />
+                  <Bar options={barOptions} data={incomeVsExpensesData} />
                 ) : (
                   <div className="loading-container">
                     <div className="loading-content">
@@ -1682,10 +1689,7 @@ export default function Dashboard({
               </div>
               <div className="chart-body">
                 {doughnutData ? (
-                  <Doughnut
-                    options={doughnutOptions as any}
-                    data={doughnutData!}
-                  />
+                  <Doughnut options={doughnutOptions} data={doughnutData!} />
                 ) : (
                   <div className="loading-container">
                     <div className="loading-content">
@@ -1745,8 +1749,8 @@ export default function Dashboard({
                   </div>
                 ) : (
                   <Doughnut
-                    options={expensesOptions as any}
-                    data={expensesByCategoryData as any}
+                    options={expensesOptions}
+                    data={expensesByCategoryData as ChartData<"doughnut">}
                   />
                 )}
               </div>

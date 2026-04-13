@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { listen } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { rust } from "../../api/tauri-client";
 import { useTranslation } from "react-i18next";
 import { STORAGE_KEYS } from "../../constants/app";
@@ -256,7 +256,7 @@ export default function ChatView() {
   useEffect(() => {
     if (!configured) return;
 
-    const unlisteners: any[] = [];
+    const unlisteners: UnlistenFn[] = [];
     // Each segment represents one model round: { thinking: string, content: string }
     let segments: StreamingSegment[] = [{ thinking: "", content: "" }];
 
