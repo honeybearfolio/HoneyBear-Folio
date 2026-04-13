@@ -39,12 +39,6 @@ interface Transaction {
   [key: string]: unknown;
 }
 
-interface Account {
-  id: number;
-  name: string;
-  [key: string]: unknown;
-}
-
 interface DailyPrice {
   date: string;
   price: number;
@@ -188,8 +182,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       setExporting(true);
 
       // 1. Fetch Data
-      const accounts = (await rust.get_accounts()) as Account[];
-      const transactions = (await rust.get_all_transactions()) as Transaction[];
+      const accounts = await rust.get_accounts();
+      const transactions = await rust.get_all_transactions();
 
       // 2. Prepare Data based on format
       let content: string | undefined;
@@ -198,16 +192,14 @@ export default function ExportModal({ onClose }: ExportModalProps) {
 
       if (format === "json") {
         // Replace transaction account IDs with account names for easier interoperability
-        const transactionsWithAccountNames = transactions.map(
-          (tx: Transaction) => {
-            const acc = accounts.find((a: Account) => a.id === tx.account_id);
-            const { account_id, ...rest } = tx;
-            return {
-              ...rest,
-              account: acc ? acc.name : account_id,
-            };
-          },
-        );
+        const transactionsWithAccountNames = transactions.map((tx) => {
+          const acc = accounts.find((a) => a.id === tx.account_id);
+          const { account_id, ...rest } = tx;
+          return {
+            ...rest,
+            account: acc ? acc.name : account_id,
+          };
+        });
 
         const data = {
           accounts,
@@ -232,8 +224,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
           t("import.field.fee"),
           t("import.field.currency"),
         ];
-        const rows = transactions.map((t: Transaction) => {
-          const acc = accounts.find((a: Account) => a.id === t.account_id);
+        const rows = transactions.map((t) => {
+          const acc = accounts.find((a) => a.id === t.account_id);
           const values = [
             t.date,
             acc ? acc.name : t.account_id,
@@ -289,8 +281,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
           return Number.isNaN(n) ? v : n;
         };
 
-        const txData = transactions.map((tx: Transaction) => {
-          const acc = accounts.find((a: Account) => a.id === tx.account_id);
+        const txData = transactions.map((tx) => {
+          const acc = accounts.find((a) => a.id === tx.account_id);
           return {
             [t("import.field.date")]: tx.date,
             [t("import.field.account")]: acc ? acc.name : tx.account_id,
