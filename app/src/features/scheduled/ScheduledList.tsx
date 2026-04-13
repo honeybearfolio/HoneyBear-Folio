@@ -326,7 +326,7 @@ export default function ScheduledList() {
         });
         showToast(t("scheduled.updated_success"), { type: "success" });
       } else {
-        await rust.create_scheduled_transaction({ args: payload });
+        await rust.create_scheduled_transaction({ args: { ...payload } });
         showToast(t("scheduled.created_success"), { type: "success" });
       }
       resetForm();
