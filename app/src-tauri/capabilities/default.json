@@ -15,7 +15,7 @@
     "shell:allow-open",
     {
       "identifier": "fs:scope",
-      "allow": ["**"]
+      "allow": ["$APPDATA/**", "$DOCUMENTS/**", "$DOWNLOAD/**", "$DESKTOP/**"]
     }
   ]
 }
