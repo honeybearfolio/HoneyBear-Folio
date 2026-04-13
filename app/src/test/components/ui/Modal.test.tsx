@@ -96,17 +96,44 @@ describe("Modal Component", () => {
     const trigger = document.createElement("button");
     trigger.textContent = "Open modal";
     document.body.appendChild(trigger);
-    trigger.focus();
-    expect(document.activeElement).toBe(trigger);
+    try {
+      trigger.focus();
+      expect(document.activeElement).toBe(trigger);
 
-    const { unmount } = render(
-      <Modal onClose={vi.fn()}>
-        <button>Inside</button>
-      </Modal>,
-    );
+      const { unmount } = render(
+        <Modal onClose={vi.fn()}>
+          <button>Inside</button>
+        </Modal>,
+      );
 
-    unmount();
-    expect(document.activeElement).toBe(trigger);
-    document.body.removeChild(trigger);
+      unmount();
+      expect(document.activeElement).toBe(trigger);
+    } finally {
+      document.body.removeChild(trigger);
+    }
+  });
+
+  it("redirects focus back into the modal when focus escapes by non-Tab means", () => {
+    const outsideButton = document.createElement("button");
+    outsideButton.textContent = "Outside";
+    document.body.appendChild(outsideButton);
+    try {
+      render(
+        <Modal onClose={vi.fn()}>
+          <button data-testid="inside-btn">Inside</button>
+        </Modal>,
+      );
+
+      // Programmatically move focus outside the modal
+      outsideButton.focus();
+      outsideButton.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+
+      // Focus should have been redirected back into the modal
+      expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(
+        true,
+      );
+    } finally {
+      document.body.removeChild(outsideButton);
+    }
   });
 });

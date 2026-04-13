@@ -97,9 +97,23 @@ export function Modal({
       }
     };
 
+    // Redirect focus back into the modal if it escapes through non-Tab means
+    const handleFocusIn = (e: FocusEvent) => {
+      if (!container.contains(e.target as Node)) {
+        const focusable = getFocusable();
+        if (focusable.length > 0) {
+          focusable[0].focus();
+        } else {
+          container.focus();
+        }
+      }
+    };
+
     container.addEventListener("keydown", handleTab);
+    document.addEventListener("focusin", handleFocusIn);
     return () => {
       container.removeEventListener("keydown", handleTab);
+      document.removeEventListener("focusin", handleFocusIn);
       previouslyFocused?.focus();
     };
   }, []);
