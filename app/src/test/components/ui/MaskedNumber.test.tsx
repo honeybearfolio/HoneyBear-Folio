@@ -47,41 +47,24 @@ describe("MaskedNumber", () => {
     }
   });
 
-  it("reveals value on hover when privacy mode is on", () => {
+  it("does not reveal value on hover when privacy mode is on", () => {
     vi.mocked(usePrivacy).mockReturnValue({
       isPrivacyMode: true,
       togglePrivacyMode: vi.fn(),
     });
 
-    // When privacy is on, formatNumber is called twice.
-    // Once for display (implied that regular formatNumber respects privacy context externally, but here we mock it)
-    // Wait, useFormatNumber in real code reads privacy context.
-    // In our component:
-    // const formatNumber = useFormatNumber();
-    // const formattedValue = formatNumber(value, options);
-    // const unmaskedValue = formatNumber(value, { ...options, ignorePrivacy: true });
-
-    // So we need to mock formatNumber implementation behavior or return values based on calls.
-    mockFormatNumber.mockImplementation(
-      (val: number, opts?: Record<string, unknown>) => {
-        if (opts?.ignorePrivacy) return "$1,234.56";
-        return "****";
-      },
-    );
+    mockFormatNumber.mockReturnValue("****");
 
     render(<MaskedNumber value={1234.56} options={{ style: "currency" }} />);
 
     const el = screen.getByText("****");
     expect(el).toBeInTheDocument();
     expect(el).not.toHaveAttribute("title"); // Should not have tooltip
-    expect(el).toHaveClass("cursor-help");
-    expect(el).toHaveClass("cursor-pointer");
 
-    // Simulate hover
+    // Hover should NOT reveal the value
     fireEvent.mouseEnter(el);
-    expect(el).toHaveTextContent("$1,234.56");
+    expect(el).toHaveTextContent("****");
 
-    // Simulate mouse leave
     fireEvent.mouseLeave(el);
     expect(el).toHaveTextContent("****");
   });
@@ -106,17 +89,12 @@ describe("MaskedNumber", () => {
     expect(el).toHaveTextContent("123");
   });
 
-  it("combines className with cursor-help when privacy mode is on", () => {
+  it("combines className with privacy mode span (no hover cursor classes)", () => {
     vi.mocked(usePrivacy).mockReturnValue({
       isPrivacyMode: true,
       togglePrivacyMode: vi.fn(),
     });
-    mockFormatNumber.mockImplementation(
-      (val: number, opts?: Record<string, unknown>) => {
-        if (opts?.ignorePrivacy) return "123";
-        return "***";
-      },
-    );
+    mockFormatNumber.mockReturnValue("***");
 
     render(
       <MaskedNumber
@@ -128,11 +106,12 @@ describe("MaskedNumber", () => {
 
     const el = screen.getByTestId("masked-number");
     expect(el).toHaveClass("text-blue-500");
-    expect(el).toHaveClass("cursor-help");
-    expect(el).toHaveClass("cursor-pointer");
+    expect(el).not.toHaveClass("cursor-help");
+    expect(el).not.toHaveClass("cursor-pointer");
     expect(el).toHaveTextContent("***");
 
+    // Hover should NOT reveal the value
     fireEvent.mouseEnter(el);
-    expect(el).toHaveTextContent("123");
+    expect(el).toHaveTextContent("***");
   });
 });

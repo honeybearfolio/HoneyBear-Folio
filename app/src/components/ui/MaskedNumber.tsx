@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useFormatNumber } from "../../utils/format";
 import { usePrivacy } from "../../contexts/privacy";
 
@@ -16,23 +15,13 @@ export default function MaskedNumber({
 }: MaskedNumberProps) {
   const formatNumber = useFormatNumber();
   const { isPrivacyMode } = usePrivacy();
-  const [isHovered, setIsHovered] = useState(false);
 
   const formattedValue = formatNumber(value, options);
 
   if (isPrivacyMode) {
-    const unmaskedValue = formatNumber(value, {
-      ...options,
-      ignorePrivacy: true,
-    });
     return (
-      <span
-        className={`cursor-help cursor-pointer ${className || ""}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        {...props}
-      >
-        {isHovered ? unmaskedValue : formattedValue}
+      <span className={`${className || ""}`} {...props}>
+        {formattedValue}
       </span>
     );
   }
