@@ -313,21 +313,15 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   // Defined with useCallback so the same stable function references are always
   // passed to both addEventListener and removeEventListener, preventing
   // handler accumulation across effect cleanup/re-run cycles.
-  const handleWindowError = useCallback(
-    (event: ErrorEvent) => {
-      console.error("Window error:", event.error || event.message, event);
-      setGlobalError(event.error || event.message || "Unknown error");
-    },
-    [],
-  );
+  const handleWindowError = useCallback((event: ErrorEvent) => {
+    console.error("Window error:", event.error || event.message, event);
+    setGlobalError(event.error || event.message || "Unknown error");
+  }, []);
 
-  const handleRejection = useCallback(
-    (event: PromiseRejectionEvent) => {
-      console.error("Unhandled rejection:", event.reason || event);
-      setGlobalError(event.reason || "Unhandled promise rejection");
-    },
-    [],
-  );
+  const handleRejection = useCallback((event: PromiseRejectionEvent) => {
+    console.error("Unhandled rejection:", event.reason || event);
+    setGlobalError(event.reason || "Unhandled promise rejection");
+  }, []);
 
   useEffect(() => {
     window.addEventListener("error", handleWindowError);
