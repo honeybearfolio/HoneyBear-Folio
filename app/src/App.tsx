@@ -309,18 +309,27 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   // Global error overlay state
   const [globalError, setGlobalError] = useState<string | Error | null>(null);
 
-  // Install global handlers to catch uncaught errors and promise rejections
-  useEffect(() => {
-    function handleWindowError(event: ErrorEvent) {
+  // Install global handlers to catch uncaught errors and promise rejections.
+  // Defined with useCallback so the same stable function references are always
+  // passed to both addEventListener and removeEventListener, preventing
+  // handler accumulation across effect cleanup/re-run cycles.
+  const handleWindowError = useCallback(
+    (event: ErrorEvent) => {
       console.error("Window error:", event.error || event.message, event);
       setGlobalError(event.error || event.message || "Unknown error");
-    }
+    },
+    [],
+  );
 
-    function handleRejection(event: PromiseRejectionEvent) {
+  const handleRejection = useCallback(
+    (event: PromiseRejectionEvent) => {
       console.error("Unhandled rejection:", event.reason || event);
       setGlobalError(event.reason || "Unhandled promise rejection");
-    }
+    },
+    [],
+  );
 
+  useEffect(() => {
     window.addEventListener("error", handleWindowError);
     window.addEventListener("unhandledrejection", handleRejection);
 
@@ -328,7 +337,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       window.removeEventListener("error", handleWindowError);
       window.removeEventListener("unhandledrejection", handleRejection);
     };
-  }, []);
+  }, [handleWindowError, handleRejection]);
 
   return (
     <ErrorBoundary>
