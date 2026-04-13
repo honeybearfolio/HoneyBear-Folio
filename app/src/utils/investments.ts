@@ -6,7 +6,7 @@ interface InvestmentTransaction {
   shares?: number;
   price_per_share?: number;
   fee?: number;
-  account_id: number;
+  account_id: string | number;
   [key: string]: unknown;
 }
 

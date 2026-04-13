@@ -6,6 +6,12 @@ import {
   Title,
   LinearScale,
 } from "chart.js";
+import type {
+  ChartOptions,
+  ChartData,
+  TooltipItem,
+  ScriptableContext,
+} from "chart.js";
 import { SankeyController, Flow } from "chartjs-chart-sankey";
 import { Chart } from "react-chartjs-2";
 import { useFormatNumber } from "../../utils/format";
@@ -274,8 +280,10 @@ export default function SankeyDiagram({
         {
           label: t("dashboard.cash_flow"),
           data: flows,
-          colorFrom: (c: any) => getColor(c.dataset.data[c.dataIndex].from),
-          colorTo: (c: any) => getColor(c.dataset.data[c.dataIndex].to),
+          colorFrom: (c: ScriptableContext<"sankey">) =>
+            getColor(c.dataset.data[c.dataIndex].from),
+          colorTo: (c: ScriptableContext<"sankey">) =>
+            getColor(c.dataset.data[c.dataIndex].to),
           colorMode: "gradient",
           labels: labels,
           priority: priorityMap,
@@ -305,7 +313,7 @@ export default function SankeyDiagram({
     t,
   ]);
 
-  const options = {
+  const options: ChartOptions<"sankey"> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -327,9 +335,17 @@ export default function SankeyDiagram({
           size: 12,
         },
         callbacks: {
-          label: function (context: any) {
-            const item = context.raw;
-            const labels = context.chart.data.datasets[0].labels;
+          label: function (context: TooltipItem<"sankey">) {
+            const item = context.raw as {
+              from: string;
+              to: string;
+              flow: number;
+            };
+            const ds = context.chart.data
+              .datasets[0] as (typeof context.chart.data.datasets)[0] & {
+              labels?: Record<string, string>;
+            };
+            const labels = ds.labels ?? {};
             const fromLabel = labels[item.from] || item.from;
             const toLabel = labels[item.to] || item.to;
             return `${fromLabel} -> ${toLabel}: ${formatNumber(item.flow, { style: "currency", ignorePrivacy: true })}`;
@@ -360,8 +376,8 @@ export default function SankeyDiagram({
     <Chart
       key={isDark ? "dark" : "light"}
       type="sankey"
-      data={data as any}
-      options={options as any}
+      data={data as ChartData<"sankey">}
+      options={options}
     />
   );
 }
