@@ -71,6 +71,9 @@ interface Transaction {
   ticker?: string;
   shares?: number;
   currency?: string;
+  price_per_share?: number;
+  fee?: number;
+  [key: string]: unknown;
 }
 
 interface Quote {
@@ -1487,12 +1490,11 @@ export default function Dashboard({
                 <div className="account-filter-list">
                   {accounts.map((acc) => {
                     const ds = (
-                      chartData?.datasets as Array<
-                        (typeof chartData.datasets)[number] & {
-                          accountId?: string | number;
-                          _color?: string;
-                        }
-                      >
+                      chartData?.datasets as Array<{
+                        accountId?: string | number;
+                        _color?: string;
+                        [key: string]: unknown;
+                      }>
                     )?.find((d) => d.accountId === acc.id);
                     const color = ds?._color || "rgb(148, 163, 184)";
                     return (

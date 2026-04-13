@@ -354,7 +354,7 @@ export default function ChatView() {
     }).then((u) => unlisteners.push(u));
 
     return () => {
-      unlisteners.forEach((u) => u.then?.((fn: () => void) => fn()) || u());
+      unlisteners.forEach((u) => u());
     };
   }, [configured, activeConvo]);
 
