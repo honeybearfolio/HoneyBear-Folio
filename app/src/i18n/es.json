@@ -490,6 +490,7 @@
   "settings.sidebar.rules": "Reglas",
   "settings.sidebar.scheduled": "Programado",
   "settings.sidebar.all_transactions": "Todas las transacciones",
+  "settings.sidebar.ai_assistant": "Asistente IA",
   "settings.currency": "Moneda",
   "settings.date_format": "Formato de fecha",
   "settings.example": "Ejemplo: {example}",
