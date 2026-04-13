@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useConfirmStore } from "../../stores/confirm";
 import { useTranslation } from "react-i18next";
 import "../../styles/Modal.css";
@@ -56,6 +57,18 @@ function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const isDestructive = kind === "warning" || kind === "error";
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const okRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isDestructive && showCancel && cancelRef.current) {
+      cancelRef.current.focus();
+    } else if (!isDestructive && okRef.current) {
+      okRef.current.focus();
+    }
+  }, [isDestructive, showCancel]);
+
   if (typeof document === "undefined") return null;
 
   const getButtonClass = () => {
@@ -77,11 +90,11 @@ function ConfirmDialog({
       </ModalBody>
       <ModalFooter>
         {showCancel && (
-          <button onClick={onCancel} className="btn-secondary">
+          <button ref={cancelRef} onClick={onCancel} className="btn-secondary">
             {cancelLabel}
           </button>
         )}
-        <button onClick={onConfirm} className={getButtonClass()}>
+        <button ref={okRef} onClick={onConfirm} className={getButtonClass()}>
           {okLabel}
         </button>
       </ModalFooter>

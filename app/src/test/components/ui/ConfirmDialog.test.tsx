@@ -66,4 +66,41 @@ describe("ConfirmDialogContainer", () => {
 
     await waitFor(() => expect(result).toBe(false));
   });
+
+  it("focuses the Cancel button for destructive (warning) dialogs", async () => {
+    render(<ConfirmDialogContainer />);
+
+    act(() => {
+      useConfirmStore
+        .getState()
+        .confirm("Delete this item?", { kind: "warning" });
+    });
+
+    const cancelBtn = await screen.findByRole("button", { name: /cancel/i });
+    await waitFor(() => expect(document.activeElement).toBe(cancelBtn));
+  });
+
+  it("focuses the Cancel button for destructive (error) dialogs", async () => {
+    render(<ConfirmDialogContainer />);
+
+    act(() => {
+      useConfirmStore
+        .getState()
+        .confirm("Delete this item?", { kind: "error" });
+    });
+
+    const cancelBtn = await screen.findByRole("button", { name: /cancel/i });
+    await waitFor(() => expect(document.activeElement).toBe(cancelBtn));
+  });
+
+  it("focuses the OK button for non-destructive (info) dialogs", async () => {
+    render(<ConfirmDialogContainer />);
+
+    act(() => {
+      useConfirmStore.getState().confirm("Proceed?", { kind: "info" });
+    });
+
+    const okBtn = await screen.findByRole("button", { name: "OK" });
+    await waitFor(() => expect(document.activeElement).toBe(okBtn));
+  });
 });
