@@ -25,10 +25,17 @@ interface ModalProps {
 
 const FOCUSABLE_SELECTORS = [
   "a[href]",
+  "area[href]",
   "button:not([disabled])",
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
+  "iframe",
+  "object",
+  "embed",
+  "audio[controls]",
+  "video[controls]",
+  "[contenteditable]:not([contenteditable='false'])",
   '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
 
@@ -80,12 +87,16 @@ export function Modal({
       const focusable = getFocusable();
       if (focusable.length === 0) {
         e.preventDefault();
+        container.focus();
         return;
       }
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       if (e.shiftKey) {
-        if (document.activeElement === first) {
+        if (
+          document.activeElement === first ||
+          document.activeElement === container
+        ) {
           e.preventDefault();
           last.focus();
         }
@@ -109,10 +120,10 @@ export function Modal({
       }
     };
 
-    container.addEventListener("keydown", handleTab);
+    document.addEventListener("keydown", handleTab);
     document.addEventListener("focusin", handleFocusIn);
     return () => {
-      container.removeEventListener("keydown", handleTab);
+      document.removeEventListener("keydown", handleTab);
       document.removeEventListener("focusin", handleFocusIn);
       previouslyFocused?.focus();
     };
