@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useConfirm } from "../../contexts/confirm";
+import { useConfirm } from "../../stores/confirm";
 import { useConfirmStore } from "../../stores/confirm";
 
 interface TestComponentProps {

@@ -16,10 +16,10 @@ const mockSetUiLanguage = vi.fn();
 const mockSetLocale = vi.fn();
 const mockSetCurrency = vi.fn();
 // Mock theme + number-format contexts
-vi.mock("../../../contexts/theme-core", () => ({
+vi.mock("../../../stores/theme", () => ({
   useTheme: () => ({ theme: "system", setTheme: vi.fn() }),
 }));
-vi.mock("../../../contexts/number-format", () => ({
+vi.mock("../../../stores/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
     setLocale: mockSetLocale,
@@ -36,7 +36,7 @@ vi.mock("../../../contexts/number-format", () => ({
 
 // Mock confirm context (used by the reset flow)
 const mockConfirm = vi.fn();
-vi.mock("../../../contexts/confirm", () => ({
+vi.mock("../../../stores/confirm", () => ({
   useConfirm: () => mockConfirm,
 }));
 
@@ -173,7 +173,7 @@ describe("SettingsView", () => {
     const mockConfirmLocal = mockConfirm;
     mockConfirmLocal.mockResolvedValueOnce(false);
 
-    const { useNumberFormat } = await import("../../../contexts/number-format");
+    const { useNumberFormat } = await import("../../../stores/number-format");
     const setters = useNumberFormat();
 
     render(<SettingsView activeSection="general" />);

@@ -4,7 +4,7 @@ import ExchangeRatesList from "../../../components/shared/ExchangeRatesList";
 
 // Mock confirm context used for delete flow
 const mockConfirm = vi.fn();
-vi.mock("../../../contexts/confirm", () => ({
+vi.mock("../../../stores/confirm", () => ({
   useConfirm: () => mockConfirm,
 }));
 

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
-import { useTheme } from "../../contexts/theme-core";
+import { useTheme } from "../../stores/theme";
 import { useThemeStore } from "../../stores/theme";
 
 // Test component to consume hook

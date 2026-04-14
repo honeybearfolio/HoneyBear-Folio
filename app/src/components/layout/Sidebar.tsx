@@ -32,10 +32,10 @@ import { computeNetWorth } from "../../utils/networth";
 import { useTranslation } from "react-i18next";
 import "../../styles/Sidebar.css";
 import { useFormatNumber } from "../../utils/format";
-import { usePrivacy } from "../../contexts/privacy";
+import { usePrivacy } from "../../stores/privacy";
 import MaskedNumber from "../ui/MaskedNumber";
 import { rust } from "../../api/tauri-client";
-import { useConfirm } from "../../contexts/confirm";
+import { useConfirm } from "../../stores/confirm";
 
 interface Account {
   id: string | number;

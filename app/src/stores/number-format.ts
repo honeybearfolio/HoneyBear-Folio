@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { useEffect } from "react";
+import i18n from "../i18n/i18n";
 
 export interface NumberFormatState {
   locale: string;
@@ -72,4 +74,16 @@ export const useNumberFormatStore = create<NumberFormatState>((set) => ({
 
 export function useNumberFormat(): NumberFormatState {
   return useNumberFormatStore();
+}
+
+export function NumberFormatEffects() {
+  const uiLanguage = useNumberFormatStore((s) => s.uiLanguage);
+
+  useEffect(() => {
+    i18n.changeLanguage(uiLanguage).catch((e) => {
+      console.error("Failed to apply UI language:", e);
+    });
+  }, [uiLanguage]);
+
+  return null;
 }
