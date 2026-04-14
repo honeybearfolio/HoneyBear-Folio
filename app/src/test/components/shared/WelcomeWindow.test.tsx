@@ -33,7 +33,7 @@ vi.mock("../../../i18n/i18n", () => ({
 
 // Mock theme context
 const mockSetTheme = vi.fn();
-vi.mock("../../../contexts/theme-core", () => ({
+vi.mock("../../../stores/theme", () => ({
   useTheme: () => ({ theme: "system", setTheme: mockSetTheme }),
 }));
 
@@ -43,7 +43,7 @@ const mockSetCurrency = vi.fn();
 const mockSetDateFormat = vi.fn();
 const mockSetFirstDayOfWeek = vi.fn();
 const mockSetUiLanguage = vi.fn();
-vi.mock("../../../contexts/number-format", () => ({
+vi.mock("../../../stores/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
     setLocale: mockSetLocale,

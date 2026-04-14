@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Sidebar from "../../../components/layout/Sidebar";
-import { usePrivacy } from "../../../contexts/privacy";
+import { usePrivacy } from "../../../stores/privacy";
 
 // Mock dependencies
 vi.mock("../../../utils/format", () => ({
@@ -11,10 +11,10 @@ vi.mock("../../../utils/format", () => ({
 vi.mock("../../../utils/networth", () => ({
   computeNetWorth: () => 12345.67,
 }));
-vi.mock("../../../contexts/privacy", () => ({
+vi.mock("../../../stores/privacy", () => ({
   usePrivacy: vi.fn(),
 }));
-vi.mock("../../../contexts/confirm", () => ({
+vi.mock("../../../stores/confirm", () => ({
   useConfirm: () => vi.fn().mockResolvedValue(true),
 }));
 vi.mock("../../../api/tauri-client", () => ({

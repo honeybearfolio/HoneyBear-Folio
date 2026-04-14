@@ -1,5 +1,5 @@
 import { useFormatNumber } from "../../utils/format";
-import { usePrivacy } from "../../contexts/privacy";
+import { usePrivacy } from "../../stores/privacy";
 
 interface MaskedNumberProps extends React.HTMLAttributes<HTMLSpanElement> {
   value: number | string | undefined;

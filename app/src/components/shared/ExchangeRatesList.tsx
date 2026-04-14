@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import { Pencil, Trash2, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useConfirm } from "../../contexts/confirm";
+import { useConfirm } from "../../stores/confirm";
 import "../../styles/Settings.css";
 
 interface ExchangeRate {

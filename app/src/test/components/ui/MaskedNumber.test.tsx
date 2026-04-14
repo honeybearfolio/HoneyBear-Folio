@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import MaskedNumber from "../../../components/ui/MaskedNumber";
-import { usePrivacy } from "../../../contexts/privacy";
+import { usePrivacy } from "../../../stores/privacy";
 import { useFormatNumber } from "../../../utils/format";
 
 // Mock hooks
-vi.mock("../../../contexts/privacy", () => ({
+vi.mock("../../../stores/privacy", () => ({
   usePrivacy: vi.fn(),
 }));
 

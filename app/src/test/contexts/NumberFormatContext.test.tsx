@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useTranslation } from "react-i18next";
-import { NumberFormatEffects } from "../../contexts/NumberFormatContext";
+import { NumberFormatEffects } from "../../stores/number-format";
 import { useNumberFormatStore } from "../../stores/number-format";
-import { useNumberFormat } from "../../contexts/number-format";
+import { useNumberFormat } from "../../stores/number-format";
 import i18n from "../../i18n/i18n";
 
 // Test component to consume hook

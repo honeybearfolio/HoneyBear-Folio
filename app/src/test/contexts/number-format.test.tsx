@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
-import { useNumberFormat } from "../../contexts/number-format";
+import { useNumberFormat } from "../../stores/number-format";
 import { useNumberFormatStore } from "../../stores/number-format";
 
 // Test component to consume hook

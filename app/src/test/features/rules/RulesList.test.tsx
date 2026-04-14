@@ -19,7 +19,7 @@ vi.mock("../../../utils/format", () => ({
 
 // Provide a lightweight mock for the number-format context so components
 // that call `useNumberFormat()` don't need the real provider in every test.
-vi.mock("../../../contexts/number-format", () => ({
+vi.mock("../../../stores/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
     setLocale: () => {},
@@ -36,7 +36,7 @@ vi.mock("../../../contexts/number-format", () => ({
 
 // Mock confirm context
 const mockConfirm = vi.fn();
-vi.mock("../../../contexts/confirm", () => ({
+vi.mock("../../../stores/confirm", () => ({
   useConfirm: () => mockConfirm,
 }));
 

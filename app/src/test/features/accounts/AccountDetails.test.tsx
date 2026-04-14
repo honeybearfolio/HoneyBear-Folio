@@ -3,8 +3,8 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import AccountDetails from "../../../features/accounts/AccountDetails";
 import { invoke } from "@tauri-apps/api/core";
 import * as formatInteractions from "../../../utils/format";
-import * as confirmHook from "../../../contexts/confirm";
-import * as numberFormatContext from "../../../contexts/number-format";
+import * as confirmHook from "../../../stores/confirm";
+import * as numberFormatContext from "../../../stores/number-format";
 import * as customRateHook from "../../../hooks/useCustomRate";
 
 // Mocks
@@ -15,11 +15,11 @@ vi.mock("../../../utils/format", () => ({
   getDatePickerFormat: vi.fn(() => "yyyy-MM-dd"),
 }));
 
-vi.mock("../../../contexts/confirm", () => ({
+vi.mock("../../../stores/confirm", () => ({
   useConfirm: vi.fn(),
 }));
 
-vi.mock("../../../contexts/number-format", () => ({
+vi.mock("../../../stores/number-format", () => ({
   useNumberFormat: vi.fn(),
 }));
 

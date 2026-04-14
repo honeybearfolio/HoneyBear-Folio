@@ -28,7 +28,7 @@ import {
   getDatePickerFormat,
 } from "../../utils/format";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
-import { useNumberFormat } from "../../contexts/number-format";
+import { useNumberFormat } from "../../stores/number-format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { useTranslation } from "react-i18next";
 

@@ -13,7 +13,7 @@ vi.mock("../../../utils/format", () => ({
 }));
 
 // Mock number-format context used by formatting hooks/components
-vi.mock("../../../contexts/number-format", () => ({
+vi.mock("../../../stores/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
     setLocale: () => {},

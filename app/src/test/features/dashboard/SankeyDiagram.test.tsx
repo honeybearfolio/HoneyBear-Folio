@@ -25,7 +25,7 @@ vi.mock("../../../utils/format", () => ({
 
 // Provide a light NumberFormat context mock so the component can call
 // `useNumberFormat()` without needing the provider in this unit test.
-vi.mock("../../../contexts/number-format", () => ({
+vi.mock("../../../stores/number-format", () => ({
   useNumberFormat: () => ({
     locale: "en-US",
     setLocale: () => {},

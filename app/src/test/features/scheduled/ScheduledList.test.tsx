@@ -44,7 +44,7 @@ vi.mock("lucide-react", () => ({
 const mockConfirm = vi.fn();
 const mockShowToast = vi.fn();
 
-vi.mock("../../../contexts/confirm", () => ({
+vi.mock("../../../stores/confirm", () => ({
   useConfirm: () => mockConfirm,
 }));
 

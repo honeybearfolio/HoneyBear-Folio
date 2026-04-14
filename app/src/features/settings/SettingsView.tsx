@@ -8,8 +8,8 @@ import {
   Bug,
 } from "lucide-react";
 import "../../styles/Settings.css";
-import { useNumberFormat } from "../../contexts/number-format";
-import { useTheme } from "../../contexts/theme-core";
+import { useNumberFormat } from "../../stores/number-format";
+import { useTheme } from "../../stores/theme";
 import { formatNumberWithLocale } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
@@ -25,7 +25,7 @@ import { formatDateForUI } from "../../utils/format";
 import { IS_RELEASE, APP_VERSION, APP_COMMIT } from "../../utils/version";
 
 import { useCustomRate } from "../../hooks/useCustomRate";
-import { useConfirm } from "../../contexts/confirm";
+import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../contexts/toast";
 import CONTRIBUTORS from "../../config/contributors";
 import THIRD_PARTY_LICENSES from "../../config/licenses";
