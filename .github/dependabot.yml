@@ -9,10 +9,9 @@ updates:
       - "dependencies"
       - "automerge"
     groups:
-      actions-minor-patch:
-        update-types:
-          - "minor"
-          - "patch"
+      actions-all-updates:
+        patterns:
+          - "*"
 
   # Maintain dependencies for npm (Bun uses package.json, so npm ecosystem works)
   - package-ecosystem: "npm"
@@ -23,10 +22,9 @@ updates:
       - "dependencies"
       - "automerge"
     groups:
-      npm-minor-patch:
-        update-types:
-          - "minor"
-          - "patch"
+      npm-all-updates:
+        patterns:
+          - "*"
 
   # Maintain dependencies for Rust (Cargo)
   - package-ecosystem: "cargo"
@@ -37,7 +35,6 @@ updates:
       - "dependencies"
       - "automerge"
     groups:
-      cargo-minor-patch:
-        update-types:
-          - "minor"
-          - "patch"
+      cargo-all-updates:
+        patterns:
+          - "*"
