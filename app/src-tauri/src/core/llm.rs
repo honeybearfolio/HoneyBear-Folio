@@ -95,6 +95,48 @@ fn default_ollama_url() -> String {
     "http://localhost:11434".to_string()
 }
 
+fn validate_ollama_base_url(base_url: &str) -> Result<reqwest::Url, String> {
+    let trimmed = base_url.trim();
+    if trimmed.is_empty() {
+        return Err("Ollama URL cannot be empty.".to_string());
+    }
+
+    let parsed = reqwest::Url::parse(trimmed).map_err(|_| {
+        "Invalid Ollama URL. Please provide a valid absolute URL (for example: http://localhost:11434)."
+            .to_string()
+    })?;
+
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err(
+            "Invalid Ollama URL scheme. Only http:// or https:// URLs are allowed.".to_string(),
+        );
+    }
+
+    if parsed.host_str().is_none() {
+        return Err("Invalid Ollama URL host.".to_string());
+    }
+
+    if !matches!(parsed.path(), "" | "/")
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+    {
+        return Err(
+            "Invalid Ollama URL. Provide only the server base URL (for example: http://localhost:11434)."
+                .to_string(),
+        );
+    }
+
+    Ok(parsed)
+}
+
+fn ollama_api_url(base_url: &str, endpoint: &str) -> Result<String, String> {
+    let mut parsed = validate_ollama_base_url(base_url)?;
+    parsed.set_path(endpoint);
+    Ok(parsed.to_string())
+}
+
 #[tauri::command]
 pub fn get_llm_settings(app_handle: AppHandle) -> Result<LlmSettings, String> {
     let settings = db_init::read_settings(&app_handle)?;
@@ -110,8 +152,9 @@ pub fn set_llm_settings(
     ollama_url: String,
     ollama_model: String,
 ) -> Result<(), String> {
+    let normalized_ollama_url = validate_ollama_base_url(&ollama_url)?.to_string();
     let mut settings = db_init::read_settings(&app_handle)?;
-    settings.ollama_url = Some(ollama_url);
+    settings.ollama_url = Some(normalized_ollama_url);
     settings.ollama_model = Some(ollama_model);
     db_init::write_settings(&app_handle, &settings)?;
     Ok(())
@@ -121,7 +164,7 @@ pub fn set_llm_settings(
 pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel>, String> {
     let settings = db_init::read_settings(&app_handle)?;
     let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
-    let url = format!("{}/api/tags", base_url.trim_end_matches('/'));
+    let url = ollama_api_url(&base_url, "/api/tags")?;
 
     let resp = reqwest::get(&url)
         .await
@@ -150,7 +193,10 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
 pub async fn check_ollama_connection(app_handle: AppHandle) -> Result<bool, String> {
     let settings = db_init::read_settings(&app_handle)?;
     let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
-    let url = format!("{}/api/tags", base_url.trim_end_matches('/'));
+    let url = match ollama_api_url(&base_url, "/api/tags") {
+        Ok(url) => url,
+        Err(_) => return Ok(false),
+    };
 
     match reqwest::get(&url).await {
         Ok(resp) => Ok(resp.status().is_success()),
@@ -655,7 +701,9 @@ pub async fn llm_chat(
     #[allow(unused_variables)] think: Option<bool>,
 ) -> Result<(), String> {
     let settings = db_init::read_settings(&app_handle)?;
-    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
+    let base_url =
+        validate_ollama_base_url(&settings.ollama_url.unwrap_or_else(default_ollama_url))?
+            .to_string();
     let model = settings
         .ollama_model
         .filter(|m| !m.is_empty())
@@ -745,7 +793,7 @@ async fn run_chat_loop(
     think: bool,
 ) -> Result<(), String> {
     let client = reqwest::Client::new();
-    let url = format!("{}/api/chat", base_url.trim_end_matches('/'));
+    let url = ollama_api_url(base_url, "/api/chat")?;
 
     // Allow up to 10 rounds of tool calls to prevent infinite loops
     for round in 0..10 {
@@ -1010,4 +1058,36 @@ async fn run_chat_loop(
     }
 
     Err("Too many tool call rounds — aborting to prevent infinite loop.".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ollama_api_url, validate_ollama_base_url};
+
+    #[test]
+    fn validate_ollama_base_url_accepts_http_and_https_hosts() {
+        assert!(validate_ollama_base_url("http://localhost:11434").is_ok());
+        assert!(validate_ollama_base_url("https://example.com").is_ok());
+    }
+
+    #[test]
+    fn validate_ollama_base_url_rejects_invalid_scheme_or_missing_host() {
+        assert!(validate_ollama_base_url("ftp://localhost:11434").is_err());
+        let missing_host_err = validate_ollama_base_url("http:///api/tags").unwrap_err();
+        assert!(missing_host_err.contains("host"));
+        assert!(validate_ollama_base_url("localhost:11434").is_err());
+    }
+
+    #[test]
+    fn validate_ollama_base_url_rejects_non_base_urls() {
+        assert!(validate_ollama_base_url("http://localhost:11434/api/tags").is_err());
+        assert!(validate_ollama_base_url("http://localhost:11434?x=1").is_err());
+        assert!(validate_ollama_base_url("http://user:pass@localhost:11434").is_err());
+    }
+
+    #[test]
+    fn ollama_api_url_builds_expected_endpoint_url() {
+        let url = ollama_api_url("http://localhost:11434", "/api/tags").unwrap();
+        assert_eq!(url, "http://localhost:11434/api/tags");
+    }
 }
