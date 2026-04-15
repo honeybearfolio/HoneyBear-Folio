@@ -1073,7 +1073,8 @@ mod tests {
     #[test]
     fn validate_ollama_base_url_rejects_invalid_scheme_or_missing_host() {
         assert!(validate_ollama_base_url("ftp://localhost:11434").is_err());
-        assert!(validate_ollama_base_url("http:///api/tags").is_err());
+        let missing_host_err = validate_ollama_base_url("http:///api/tags").unwrap_err();
+        assert!(missing_host_err.contains("host"));
         assert!(validate_ollama_base_url("localhost:11434").is_err());
     }
 
