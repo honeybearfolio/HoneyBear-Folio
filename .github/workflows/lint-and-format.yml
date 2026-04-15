@@ -52,7 +52,6 @@ jobs:
       if: steps.changed.outputs.app == 'true'
       working-directory: ./app
       run: bun run lint -- --fix
-      continue-on-error: true
 
     - name: Install System Dependencies
       if: steps.changed.outputs.app == 'true'

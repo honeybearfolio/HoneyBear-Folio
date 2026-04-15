@@ -5,15 +5,39 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    labels:
+      - "dependencies"
+      - "automerge"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain dependencies for npm (Bun uses package.json, so npm ecosystem works)
   - package-ecosystem: "npm"
     directory: "/app"
     schedule:
       interval: "weekly"
+    labels:
+      - "dependencies"
+      - "automerge"
+    groups:
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain dependencies for Rust (Cargo)
   - package-ecosystem: "cargo"
     directory: "/app/src-tauri"
     schedule:
       interval: "weekly"
+    labels:
+      - "dependencies"
+      - "automerge"
+    groups:
+      cargo-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
