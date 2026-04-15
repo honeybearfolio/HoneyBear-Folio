@@ -28,24 +28,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
 
-    - name: Install dependencies (Rust)
-      if: matrix.language == 'rust'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libwebkit2gtk-4.1-dev \
-          build-essential \
-          curl \
-          wget \
-          file \
-          libssl-dev \
-          libgtk-3-dev \
-          libayatana-appindicator3-dev \
-          librsvg2-dev
-
-    - name: Install Rust
-      if: matrix.language == 'rust'
-      uses: dtolnay/rust-toolchain@stable
-
     # Initialize CodeQL
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
@@ -56,15 +38,7 @@ jobs:
 
     # Autobuild attempts to build any compiled languages
     - name: Autobuild
-      if: matrix.language != 'rust'
       uses: github/codeql-action/autobuild@v4
-
-    # Manual build for Rust to ensure we are in the correct directory
-    - name: Manual Build (Rust)
-      if: matrix.language == 'rust'
-      working-directory: app/src-tauri
-      run: |
-        cargo build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4

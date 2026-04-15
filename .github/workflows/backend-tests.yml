@@ -32,6 +32,8 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
@@ -41,3 +43,18 @@ jobs:
       - name: Run tests
         working-directory: app/src-tauri
         run: cargo test
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Generate coverage report
+        working-directory: app/src-tauri
+        run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+
+      - name: Upload backend coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: app/src-tauri/lcov.info
+          if-no-files-found: error
