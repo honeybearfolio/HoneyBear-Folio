@@ -269,6 +269,7 @@ export default function SettingsView({
   const [dbPath, setDbPath] = useState("");
   const { checkAndPrompt, dialog } = useCustomRate();
   const confirm = useConfirm();
+  const { showToast } = useToast();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
   const { tagColors, setTagColor, resetAll: resetTagColors } = useTagColors();
   const [categories, setCategories] = useState<string[]>([]);
