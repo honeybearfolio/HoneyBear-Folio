@@ -88,7 +88,7 @@ pub async fn get_stock_quotes_with_client(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.clone() {
+    for ticker in tickers.iter().cloned() {
         let client = client.clone();
         let base_url = base_url.clone();
         tasks.push(tokio::spawn(async move {
@@ -130,18 +130,18 @@ pub async fn get_stock_quotes_with_client(
                                         }
                                     },
                                     Err(e) => {
-                                        println!("Failed to parse JSON for {}: {}", ticker, e);
+                                        log::warn!("Failed to parse JSON for {}: {}", ticker, e);
                                     }
                                 }
                             },
-                            Err(e) => println!("Failed to get text for {}: {}", ticker, e),
+                            Err(e) => log::warn!("Failed to get text for {}: {}", ticker, e),
                         }
                     } else {
-                        println!("Request failed for {}: {}", ticker, resp.status());
+                        log::warn!("Request failed for {}: {}", ticker, resp.status());
                     }
                 },
                 Err(e) => {
-                    println!("Request error for {}: {}", ticker, e);
+                    log::warn!("Request error for {}: {}", ticker, e);
                 }
             }
             None
@@ -220,7 +220,7 @@ pub async fn get_stock_quotes_with_client_and_db(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.clone() {
+    for ticker in tickers.iter().cloned() {
         let client = client.clone();
         let base_url = base_url.clone();
         tasks.push(tokio::spawn(async move {
@@ -262,18 +262,18 @@ pub async fn get_stock_quotes_with_client_and_db(
                                         }
                                     },
                                     Err(e) => {
-                                        println!("Failed to parse JSON for {}: {}", ticker, e);
+                                        log::warn!("Failed to parse JSON for {}: {}", ticker, e);
                                     }
                                 }
                             },
-                            Err(e) => println!("Failed to get text for {}: {}", ticker, e),
+                            Err(e) => log::warn!("Failed to get text for {}: {}", ticker, e),
                         }
                     } else {
-                        println!("Request failed for {}: {}", ticker, resp.status());
+                        log::warn!("Request failed for {}: {}", ticker, resp.status());
                     }
                 },
                 Err(e) => {
-                    println!("Request error for {}: {}", ticker, e);
+                    log::warn!("Request error for {}: {}", ticker, e);
                 }
             }
             None
@@ -397,7 +397,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
             .map_err(|e| e.to_string())?;
 
         if !res.status().is_success() {
-            println!("Failed to fetch history for {}: {}", ticker, res.status());
+            log::warn!("Failed to fetch history for {}: {}", ticker, res.status());
             continue;
         }
 

@@ -11,6 +11,7 @@ dependencies = [
  "futures-core",
  "httpmock",
  "image",
+ "log",
  "printpdf",
  "proptest",
  "rand 0.10.1",

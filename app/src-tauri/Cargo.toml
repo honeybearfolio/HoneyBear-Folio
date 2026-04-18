@@ -62,6 +62,7 @@ rust_xlsxwriter = "0.94.0"
 printpdf = { version = "0.9", features = ["images", "png"] }
 image = "0.25.10"
 rand = "0.10"
+log = "0.4"
 
 [dev-dependencies]
 tempfile = "3"

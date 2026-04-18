@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { rust } from "./api/tauri-client";
 import Sidebar from "./components/layout/Sidebar";
@@ -125,6 +125,8 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [marketValues, setMarketValues] = useState<Record<string, number>>({});
+  const lastMarketFetchRef = useRef<number>(0);
+  const MARKET_FETCH_COOLDOWN_MS = 60_000;
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("general");
   const [sidebarVisibility, setSidebarVisibility] = useState<
@@ -211,7 +213,15 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
     }
   }
 
-  async function fetchMarketValues(currentAccounts: Account[] = []) {
+  async function fetchMarketValues(
+    currentAccounts: Account[] = [],
+    force = false,
+  ) {
+    const now = Date.now();
+    if (!force && now - lastMarketFetchRef.current < MARKET_FETCH_COOLDOWN_MS) {
+      return;
+    }
+    lastMarketFetchRef.current = now;
     try {
       const appCurrency =
         localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
@@ -228,7 +238,9 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   useEffect(() => {
     const loadData = async () => {
       const accs = await fetchAccounts();
-      await fetchMarketValues(accs);
+      // Force market fetch on first load (refreshTrigger === 0); subsequent
+      // account refreshes reuse cached values unless the cooldown has elapsed.
+      await fetchMarketValues(accs, refreshTrigger === 0);
     };
     loadData();
   }, [refreshTrigger]);
