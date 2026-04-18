@@ -182,7 +182,11 @@ pub async fn get_stock_quotes_with_client(
     if !missing_tickers.is_empty() {
         crate::db_init::with_db_lock(&db_path, || {
             let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
-            let placeholders: String = missing_tickers.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let placeholders: String = missing_tickers
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
             let query = format!(
                 "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({})",
                 placeholders
@@ -190,10 +194,9 @@ pub async fn get_stock_quotes_with_client(
             let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
             let rows = stmt
-                .query_map(
-                    rusqlite::params_from_iter(missing_tickers.iter()),
-                    |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?)),
-                )
+                .query_map(rusqlite::params_from_iter(missing_tickers.iter()), |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+                })
                 .map_err(|e| e.to_string())?;
 
             for row in rows {
@@ -319,7 +322,11 @@ pub async fn get_stock_quotes_with_client_and_db(
     if !missing_tickers.is_empty() {
         crate::db_init::with_db_lock(db_path, || {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-            let placeholders: String = missing_tickers.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let placeholders: String = missing_tickers
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
             let query = format!(
                 "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({})",
                 placeholders
@@ -327,10 +334,9 @@ pub async fn get_stock_quotes_with_client_and_db(
             let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
             let rows = stmt
-                .query_map(
-                    rusqlite::params_from_iter(missing_tickers.iter()),
-                    |row| Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?)),
-                )
+                .query_map(rusqlite::params_from_iter(missing_tickers.iter()), |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+                })
                 .map_err(|e| e.to_string())?;
 
             for row in rows {
