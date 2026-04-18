@@ -3,6 +3,7 @@ import { rust } from "../../api/tauri-client";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
+import { ErrorState } from "../../components/ui/Skeleton";
 import {
   buildHoldingsFromTransactions,
   mergeHoldingsWithQuotes,
@@ -252,31 +253,12 @@ export default function InvestmentDashboard() {
           </div>
         </div>
       ) : error ? (
-        <div className="bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-900/20 dark:to-red-900/20 text-rose-700 dark:text-rose-300 p-6 rounded-2xl border-2 border-rose-200 dark:border-rose-800 font-medium shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="bg-rose-200 dark:bg-rose-800 p-2 rounded-full">
-              <svg
-                className="w-6 h-6 text-rose-700 dark:text-rose-300"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <div>
-              <div className="font-bold">{t("investment.error_loading")}</div>
-              <div className="text-sm text-rose-600 dark:text-rose-400">
-                {error}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ErrorState
+          title={t("investment.error_loading")}
+          message={error}
+          onRetry={fetchData}
+          retryLabel={t("error.retry")}
+        />
       ) : holdings.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-16">
           <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-2xl mb-4">

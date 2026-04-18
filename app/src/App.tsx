@@ -15,6 +15,7 @@ import SessionPicker from "./features/session/SessionPicker";
 import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
 import { ToastContainer } from "./components/ui/Toast";
+import { useToast } from "./stores/toast";
 import { ConfirmDialogContainer } from "./components/ui/ConfirmDialog";
 import ErrorBoundary from "./components/layout/ErrorBoundary";
 import { NumberFormatEffects } from "./stores/number-format";
@@ -116,9 +117,25 @@ interface MainAppProps {
 
 function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const { t } = useTranslation();
-  const [sidebarWidth, setSidebarWidth] = useState<number>(
-    APP_DEFAULTS.SIDEBAR_WIDTH,
-  );
+  const { showToast } = useToast();
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH);
+      if (stored) {
+        const parsed = parseFloat(stored);
+        if (
+          !Number.isNaN(parsed) &&
+          parsed >= APP_DEFAULTS.SIDEBAR_MIN_WIDTH &&
+          parsed <= APP_DEFAULTS.SIDEBAR_MAX_WIDTH
+        ) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return APP_DEFAULTS.SIDEBAR_WIDTH;
+  });
   const [isResizing, setIsResizing] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -158,6 +175,12 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const stopResizing = useCallback(() => {
     setIsResizing(false);
   }, []);
+
+  useEffect(() => {
+    if (!isResizing) {
+      localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, String(sidebarWidth));
+    }
+  }, [isResizing, sidebarWidth]);
 
   const resize = useCallback(
     (mouseMoveEvent: MouseEvent) => {
@@ -209,6 +232,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       return accs;
     } catch (e) {
       console.error("Failed to fetch accounts:", e);
+      showToast(t("error.failed_to_load"), { type: "error" });
       return [];
     }
   }
@@ -232,6 +256,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       setMarketValues(values);
     } catch (e) {
       console.error("Failed to fetch market values:", e);
+      showToast(t("error.failed_to_load"), { type: "error" });
     }
   }
 

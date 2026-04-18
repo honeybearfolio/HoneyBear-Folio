@@ -27,6 +27,7 @@ import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
 import "../../styles/Dashboard.css";
+import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import {
   createDefaultScheduledForm,
   getAccountName,
@@ -90,6 +91,8 @@ export default function ScheduledList() {
   const { t } = useTranslation();
   const [schedules, setSchedules] = useState<ScheduleRecord[]>([]);
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState(() =>
     createDefaultScheduledForm(),
@@ -114,6 +117,7 @@ export default function ScheduledList() {
   useEffect(() => {
     let mounted = true;
     (async () => {
+      setLoading(true);
       try {
         const [scheds, accs] = await Promise.all([
           rust.get_scheduled_transactions(),
@@ -122,9 +126,13 @@ export default function ScheduledList() {
         if (mounted) {
           setSchedules(scheds as ScheduleRecord[]);
           setAccounts(accs as AccountRecord[]);
+          setFetchError(null);
         }
       } catch (e) {
         console.error("Failed to fetch scheduled transactions:", e);
+        if (mounted) setFetchError(String(e));
+      } finally {
+        if (mounted) setLoading(false);
       }
     })();
     return () => {
@@ -170,6 +178,7 @@ export default function ScheduledList() {
       setSchedules(r);
     } catch (e) {
       console.error("Failed to fetch scheduled transactions:", e);
+      showToast(t("error.failed_to_load"), { type: "error" });
     }
   }
 
@@ -380,6 +389,33 @@ export default function ScheduledList() {
     value: i,
     label: t(key),
   }));
+
+  if (loading) {
+    return <ListSkeleton title={t("scheduled.title")} />;
+  }
+
+  if (fetchError && schedules.length === 0) {
+    return (
+      <div className="page-container rules-container">
+        <div className="hb-header-container mb-large">
+          <div>
+            <h1 className="hb-header-title">{t("scheduled.title")}</h1>
+            <p className="hb-header-subtitle">{t("scheduled.subtitle")}</p>
+          </div>
+        </div>
+        <ErrorState
+          title={t("error.failed_to_load")}
+          message={fetchError}
+          onRetry={() => {
+            setFetchError(null);
+            setLoading(true);
+            fetchSchedules().finally(() => setLoading(false));
+          }}
+          retryLabel={t("error.retry")}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container rules-container animate-in fade-in duration-500">

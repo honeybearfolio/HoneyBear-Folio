@@ -35,6 +35,7 @@ import NumberInput from "../../components/ui/NumberInput";
 import CustomSelect from "../../components/ui/CustomSelect";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { useTranslation } from "react-i18next";
+import { useToast } from "../../stores/toast";
 import { CURRENCIES } from "../../utils/currencies";
 import { useCustomRate } from "../../hooks/useCustomRate";
 import useTagColors from "../../hooks/useTagColors";
@@ -169,6 +170,7 @@ export default function AccountDetails({
     PendingOccurrence[]
   >([]);
   const confirm = useConfirm();
+  const { showToast } = useToast();
   const { checkAndPrompt, dialog } = useCustomRate();
   const { getTagClasses } = useTagColors();
 
@@ -534,6 +536,7 @@ export default function AccountDetails({
       setTransactions(txs);
     } catch (e) {
       console.error("Failed to fetch transactions:", e);
+      showToast(t("error.failed_to_load"), { type: "error" });
     }
   }
 
@@ -566,6 +569,7 @@ export default function AccountDetails({
       onUpdate();
     } catch (e) {
       console.error("Failed to apply scheduled occurrence:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 
@@ -578,6 +582,7 @@ export default function AccountDetails({
       await fetchPendingOccurrences();
     } catch (e) {
       console.error("Failed to skip scheduled occurrence:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 
@@ -683,6 +688,7 @@ export default function AccountDetails({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to rename account:", e);
+      showToast(t("error.failed_to_rename"), { type: "error" });
     }
   }
 
@@ -704,6 +710,7 @@ export default function AccountDetails({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to delete account:", e);
+      showToast(t("error.failed_to_delete"), { type: "error" });
     }
   }
 
@@ -782,6 +789,7 @@ export default function AccountDetails({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to create transaction:", e);
+      showToast(t("error.failed_to_save"), { type: "error" });
     }
   }
 
@@ -852,6 +860,7 @@ export default function AccountDetails({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to update transaction:", e);
+      showToast(t("error.failed_to_save"), { type: "error" });
     }
   }
 
@@ -870,6 +879,7 @@ export default function AccountDetails({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to delete transaction:", e);
+      showToast(t("error.failed_to_delete"), { type: "error" });
     }
   }
 
@@ -895,6 +905,7 @@ export default function AccountDetails({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to duplicate transaction:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 

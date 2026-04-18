@@ -167,8 +167,14 @@
   "error.account_exists": "An account named \"{name}\" already exists.",
   "error.check_console": "Check the developer console for details.",
   "error.copy": "Copy",
+  "error.failed_to_delete": "Failed to delete. Please try again.",
+  "error.failed_to_load": "Failed to load data. Please try again.",
+  "error.failed_to_rename": "Failed to rename. Please try again.",
+  "error.failed_to_save": "Failed to save. Please try again.",
   "error.no_account_mapping": "Please indicate the account column in the mapping",
+  "error.operation_failed": "Operation failed. Please try again.",
   "error.reload": "Reload",
+  "error.retry": "Retry",
   "error.show_details": "Show details",
   "error.something_went_wrong": "Something went wrong rendering this view.",
 
@@ -348,7 +354,11 @@
   "investment.table.value": "Value",
   "investment.title": "Investment Dashboard",
 
+  "loading.calculating": "Running calculations...",
   "loading.loading_data": "Loading data...",
+  "loading.loading_rules": "Loading rules...",
+  "loading.loading_scheduled": "Loading scheduled transactions...",
+  "loading.loading_transactions": "Loading transactions...",
 
   "modal.close": "Close",
 

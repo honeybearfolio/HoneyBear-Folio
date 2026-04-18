@@ -269,6 +269,7 @@ export default function SettingsView({
   const [dbPath, setDbPath] = useState("");
   const { checkAndPrompt, dialog } = useCustomRate();
   const confirm = useConfirm();
+  const { showToast } = useToast();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
   const { tagColors, setTagColor, resetAll: resetTagColors } = useTagColors();
   const [categories, setCategories] = useState<string[]>([]);
@@ -335,6 +336,7 @@ export default function SettingsView({
       await open(url);
     } catch (e) {
       console.error("Failed to open external URL:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 
@@ -352,6 +354,7 @@ export default function SettingsView({
       }
     } catch (e) {
       console.error("Failed to select DB file:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 
@@ -392,6 +395,7 @@ export default function SettingsView({
       }
     } catch (e) {
       console.error("Failed to reset defaults:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 

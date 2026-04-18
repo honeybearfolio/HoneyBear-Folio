@@ -30,6 +30,7 @@ import {
 import { buildHoldingsFromTransactions } from "../../utils/investments";
 import { useNumberFormat } from "../../stores/number-format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
+import { DashboardSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { useTranslation } from "react-i18next";
 
 ChartJS.register(
@@ -106,6 +107,8 @@ export default function Dashboard({
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState<Account[]>(propAccounts);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [dailyPrices, setDailyPrices] = useState<
     Record<string, DailyPriceData>
   >({});
@@ -138,6 +141,8 @@ export default function Dashboard({
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const txs = (await rust.get_all_transactions()) as Transaction[];
         setTransactions(txs);
@@ -151,6 +156,9 @@ export default function Dashboard({
         }
       } catch (e) {
         console.error("Failed to fetch data:", e);
+        setError(String(e));
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -1364,6 +1372,54 @@ export default function Dashboard({
     }),
     [formatNumber, chartColors],
   );
+
+  const retryFetch = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    const doFetch = async () => {
+      try {
+        const txs = (await rust.get_all_transactions()) as Transaction[];
+        setTransactions(txs);
+        if (propAccounts && propAccounts.length > 0) {
+          setAccounts(propAccounts);
+        } else {
+          const accs = (await rust.get_accounts()) as Account[];
+          setAccounts(accs);
+        }
+      } catch (e) {
+        console.error("Failed to fetch data:", e);
+        setError(String(e));
+      } finally {
+        setLoading(false);
+      }
+    };
+    doFetch();
+  }, [propAccounts]);
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="page-container dashboard-container">
+        <div className="hb-header-container">
+          <div>
+            <h2 className="hb-header-title">{t("nav.dashboard")}</h2>
+            <p className="hb-header-subtitle">
+              {t("dashboard.subtitle.overview")}
+            </p>
+          </div>
+        </div>
+        <ErrorState
+          title={t("error.failed_to_load")}
+          message={error}
+          onRetry={retryFetch}
+          retryLabel={t("error.retry")}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container dashboard-container">

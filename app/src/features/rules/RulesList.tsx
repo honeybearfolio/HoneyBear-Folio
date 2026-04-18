@@ -3,11 +3,13 @@ import { createPortal } from "react-dom";
 import { rust } from "../../api/tauri-client";
 import { Plus, Trash2, Edit, Save, GripVertical, X } from "lucide-react";
 import { useConfirm } from "../../stores/confirm";
+import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
 import "../../styles/Dashboard.css";
+import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import {
   createDefaultRuleFormState,
   DEFAULT_RULE_ACTION,
@@ -35,6 +37,8 @@ interface RuleRecord {
 export default function RulesList() {
   const { t } = useTranslation();
   const [rules, setRules] = useState<RuleRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formState, setFormState] = useState(() =>
@@ -50,24 +54,34 @@ export default function RulesList() {
   useNumberFormat();
 
   const confirm = useConfirm();
+  const { showToast } = useToast();
 
   async function fetchRules() {
     try {
       const r = (await rust.get_rules()) as RuleRecord[];
       setRules(r);
+      setFetchError(null);
     } catch (e) {
       console.error("Failed to fetch rules:", e);
+      showToast(t("error.failed_to_load"), { type: "error" });
     }
   }
 
   useEffect(() => {
     let mounted = true;
     (async () => {
+      setLoading(true);
       try {
         const r = (await rust.get_rules()) as RuleRecord[];
-        if (mounted) setRules(r);
+        if (mounted) {
+          setRules(r);
+          setFetchError(null);
+        }
       } catch (e) {
         console.error("Failed to fetch rules:", e);
+        if (mounted) setFetchError(String(e));
+      } finally {
+        if (mounted) setLoading(false);
       }
     })();
     return () => {
@@ -130,6 +144,7 @@ export default function RulesList() {
         if (formState.id === id) resetForm();
       } catch (e) {
         console.error("Failed to delete rule:", e);
+        showToast(t("error.failed_to_delete"), { type: "error" });
         fetchRules();
       }
     }
@@ -160,6 +175,7 @@ export default function RulesList() {
       fetchRules();
     } catch (e) {
       console.error("Failed to save rule:", e);
+      showToast(t("error.failed_to_save"), { type: "error" });
     }
   }
 
@@ -262,6 +278,7 @@ export default function RulesList() {
       });
     } catch (err) {
       console.error("Failed to reorder rules:", err);
+      showToast(t("error.failed_to_save"), { type: "error" });
       fetchRules();
     }
   };
@@ -362,6 +379,33 @@ export default function RulesList() {
   function formatAction(action: RuleAction) {
     const fieldLabel = t(`rules.field.${action.field}`) || action.field;
     return `${fieldLabel} = "${action.value}"`;
+  }
+
+  if (loading) {
+    return <ListSkeleton title={t("rules.title")} />;
+  }
+
+  if (fetchError && rules.length === 0) {
+    return (
+      <div className="page-container rules-container">
+        <div className="hb-header-container mb-large">
+          <div>
+            <h1 className="hb-header-title">{t("rules.title")}</h1>
+            <p className="hb-header-subtitle">{t("rules.subtitle")}</p>
+          </div>
+        </div>
+        <ErrorState
+          title={t("error.failed_to_load")}
+          message={fetchError}
+          onRetry={() => {
+            setFetchError(null);
+            setLoading(true);
+            fetchRules().finally(() => setLoading(false));
+          }}
+          retryLabel={t("error.retry")}
+        />
+      </div>
+    );
   }
 
   return (
@@ -753,6 +797,9 @@ export default function RulesList() {
                               });
                             } catch (err) {
                               console.error("Failed to reorder rules:", err);
+                              showToast(t("error.failed_to_save"), {
+                                type: "error",
+                              });
                               fetchRules();
                             }
                           })();

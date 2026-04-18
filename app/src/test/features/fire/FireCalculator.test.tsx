@@ -153,15 +153,16 @@ describe("FireCalculator", () => {
   it("renders with default values and loads data", async () => {
     renderWithContext(<FireCalculator />);
 
-    expect(screen.getByText("Current Net Worth")).toBeInTheDocument();
+    // Wait for the async fetch to complete and content to render
+    await waitFor(() => {
+      expect(screen.getByText("Current Net Worth")).toBeInTheDocument();
+    });
 
     // Check for chart
     expect(screen.getByTestId("fire-chart")).toBeInTheDocument();
 
-    // Wait for the async fetch to complete (loading state might trigger updates)
-    await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith("get_accounts");
-    });
+    // Verify the data fetch was called
+    expect(invoke).toHaveBeenCalledWith("get_accounts");
   });
 
   it("calculates FIRE number based on expenses", async () => {
