@@ -1,5 +1,6 @@
 export const STORAGE_KEYS = {
   SIDEBAR_VISIBILITY: "hb_sidebar_visibility",
+  SIDEBAR_WIDTH: "hb_sidebar_width",
   CURRENCY: "hb_currency",
   FONT_SIZE: "hb_font_size",
   NUMBER_FORMAT: "hb_number_format",

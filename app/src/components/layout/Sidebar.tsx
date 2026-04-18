@@ -36,6 +36,7 @@ import { usePrivacy } from "../../stores/privacy";
 import MaskedNumber from "../ui/MaskedNumber";
 import { rust } from "../../api/tauri-client";
 import { useConfirm } from "../../stores/confirm";
+import { useToast } from "../../stores/toast";
 
 interface Account {
   id: string | number;
@@ -208,6 +209,7 @@ export default function Sidebar({
   };
 
   const confirm = useConfirm();
+  const { showToast } = useToast();
 
   async function handleRenameAccount(id: string | number, newName: string) {
     try {
@@ -215,6 +217,7 @@ export default function Sidebar({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to rename account:", e);
+      showToast(t("error.failed_to_rename"), { type: "error" });
     }
   }
 
@@ -235,6 +238,7 @@ export default function Sidebar({
       if (onUpdate) onUpdate();
     } catch (e) {
       console.error("Failed to delete account:", e);
+      showToast(t("error.failed_to_delete"), { type: "error" });
     }
   }
 

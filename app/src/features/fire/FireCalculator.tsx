@@ -30,6 +30,11 @@ import {
   computeNetWorthMarketValues,
 } from "../../utils/investments";
 import NumberInput from "../../components/ui/NumberInput";
+import {
+  ErrorState,
+  SkeletonCard,
+  SkeletonChart,
+} from "../../components/ui/Skeleton";
 import { FIRE_DEFAULTS } from "../../constants/app";
 import {
   Chart as ChartJS,
@@ -153,6 +158,7 @@ export default function FireCalculator() {
   );
 
   const [loading, setLoading] = useState(!savedState);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const chartColors = useChartColors();
 
   // Track which fields the user has manually edited during the session so
@@ -280,6 +286,7 @@ export default function FireCalculator() {
       setLoading(false);
     } catch (e) {
       console.error("Failed to fetch data:", e);
+      setFetchError(String(e));
       setLoading(false);
     }
   }
@@ -609,6 +616,52 @@ export default function FireCalculator() {
   const fireAge = yearsToFire ? currentAge + yearsToFire : null;
 
   const formatNumber = useFormatNumber();
+
+  if (loading) {
+    return (
+      <div className="page-container fire-calculator-container animate-pulse">
+        <header className="hb-header-container">
+          <div>
+            <h1 className="hb-header-title">{t("fire.title")}</h1>
+            <p className="hb-header-subtitle">{t("fire.subtitle")}</p>
+          </div>
+        </header>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <SkeletonCard className="lg:col-span-1" />
+          <div className="lg:col-span-3 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+            <SkeletonChart />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="page-container fire-calculator-container">
+        <header className="hb-header-container">
+          <div>
+            <h1 className="hb-header-title">{t("fire.title")}</h1>
+            <p className="hb-header-subtitle">{t("fire.subtitle")}</p>
+          </div>
+        </header>
+        <ErrorState
+          title={t("error.failed_to_load")}
+          message={fetchError}
+          onRetry={() => {
+            setFetchError(null);
+            fetchData();
+          }}
+          retryLabel={t("error.retry")}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container fire-calculator-container">

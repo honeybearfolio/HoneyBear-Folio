@@ -167,8 +167,14 @@
   "error.account_exists": "Ya existe una cuenta llamada \"{name}\".",
   "error.check_console": "Revisa la consola del desarrollador para más detalles.",
   "error.copy": "Copiar",
+  "error.failed_to_delete": "No se pudo eliminar. Inténtalo de nuevo.",
+  "error.failed_to_load": "No se pudieron cargar los datos. Inténtalo de nuevo.",
+  "error.failed_to_rename": "No se pudo renombrar. Inténtalo de nuevo.",
+  "error.failed_to_save": "No se pudo guardar. Inténtalo de nuevo.",
   "error.no_account_mapping": "Por favor indica la columna de cuenta en el mapeo",
+  "error.operation_failed": "La operación falló. Inténtalo de nuevo.",
   "error.reload": "Recargar",
+  "error.retry": "Reintentar",
   "error.show_details": "Mostrar detalles",
   "error.something_went_wrong": "Algo salió mal al renderizar esta vista.",
 
@@ -348,7 +354,11 @@
   "investment.table.value": "Valor",
   "investment.title": "Panel de inversiones",
 
+  "loading.calculating": "Ejecutando cálculos...",
   "loading.loading_data": "Cargando datos...",
+  "loading.loading_rules": "Cargando reglas...",
+  "loading.loading_scheduled": "Cargando transacciones programadas...",
+  "loading.loading_transactions": "Cargando transacciones...",
 
   "modal.close": "Cerrar",
 

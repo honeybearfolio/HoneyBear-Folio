@@ -3,6 +3,7 @@ import { rust } from "../../api/tauri-client";
 import { Pencil, Trash2, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "../../stores/confirm";
+import { useToast } from "../../stores/toast";
 import "../../styles/Settings.css";
 
 interface ExchangeRate {
@@ -29,6 +30,7 @@ export default function ExchangeRatesList({
   const [editingCurrency, setEditingCurrency] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const confirm = useConfirm();
+  const { showToast } = useToast();
 
   const loadRates = useCallback(async () => {
     setLoading(true);
@@ -45,10 +47,11 @@ export default function ExchangeRatesList({
       setRates(result);
     } catch (e) {
       console.error("Failed to load exchange rates:", e);
+      showToast(t("error.failed_to_load"), { type: "error" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast, t]);
 
   useEffect(() => {
     loadRates();
@@ -76,6 +79,7 @@ export default function ExchangeRatesList({
       onRateChange?.();
     } catch (e) {
       console.error("Failed to update rate:", e);
+      showToast(t("error.failed_to_save"), { type: "error" });
     }
   };
 
@@ -92,6 +96,7 @@ export default function ExchangeRatesList({
       onRateChange?.();
     } catch (e) {
       console.error("Failed to delete rate:", e);
+      showToast(t("error.failed_to_delete"), { type: "error" });
     }
   };
 

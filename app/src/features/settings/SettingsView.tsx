@@ -335,6 +335,7 @@ export default function SettingsView({
       await open(url);
     } catch (e) {
       console.error("Failed to open external URL:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 
@@ -352,6 +353,7 @@ export default function SettingsView({
       }
     } catch (e) {
       console.error("Failed to select DB file:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 
@@ -392,6 +394,7 @@ export default function SettingsView({
       }
     } catch (e) {
       console.error("Failed to reset defaults:", e);
+      showToast(t("error.operation_failed"), { type: "error" });
     }
   }
 
