@@ -147,7 +147,26 @@ export default function AccountList({
   }, []);
 
   return (
-    <div className="space-y-1" onDragOver={handleDragOver} onDrop={handleDrop}>
+    <div
+      className="space-y-1"
+      role="listbox"
+      aria-label={t("account.list")}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          const currentIndex = accounts.findIndex((a) => a.id === selectedId);
+          const nextIndex =
+            e.key === "ArrowDown"
+              ? Math.min(currentIndex + 1, accounts.length - 1)
+              : Math.max(currentIndex - 1, 0);
+          if (nextIndex >= 0 && nextIndex < accounts.length) {
+            onSelectAccount(accounts[nextIndex].id);
+          }
+        }
+      }}
+    >
       {accounts.map((account, index) => {
         const cashBalance = Number(account.balance);
         const marketValue =
@@ -216,12 +235,15 @@ export default function AccountList({
                   onKeyDown={(e) => {
                     if (e.key === "Escape") setRenamingId(null);
                   }}
+                  aria-label={t("account.action.rename")}
                   className="flex-1 min-w-0 bg-transparent border-b border-brand-400 outline-none text-sm font-medium"
                 />
               </form>
             ) : (
               <button
                 onClick={() => onSelectAccount(account.id)}
+                role="option"
+                aria-selected={selectedId === account.id}
                 className={`sidebar-nav-item justify-between group w-full ${
                   selectedId === account.id
                     ? "sidebar-nav-item-active"
@@ -230,7 +252,10 @@ export default function AccountList({
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   {isDraggable && (
-                    <GripVertical className="w-4 h-4 text-slate-500 cursor-grab active:cursor-grabbing shrink-0" />
+                    <GripVertical
+                      className="w-4 h-4 text-slate-500 cursor-grab active:cursor-grabbing shrink-0"
+                      aria-hidden="true"
+                    />
                   )}
                   {!isDraggable && (
                     <Icon
@@ -285,6 +310,8 @@ export default function AccountList({
               createPortal(
                 <div
                   className="fixed z-50 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in account-list-menu-portal"
+                  role="menu"
+                  aria-label={t("account.context_menu")}
                   style={{
                     top: `${menuCoords.y}px`,
                     left: `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`,

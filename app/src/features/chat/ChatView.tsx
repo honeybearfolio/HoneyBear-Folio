@@ -628,12 +628,14 @@ export default function ChatView() {
                       <button
                         onClick={(e) => handleStartRename(convo, e)}
                         title={t("chat.rename_conversation")}
+                        aria-label={t("chat.rename_conversation")}
                       >
                         <Pencil className="w-3 h-3" />
                       </button>
                       <button
                         onClick={(e) => handleDeleteConversation(convo, e)}
                         title={t("chat.delete_conversation")}
+                        aria-label={t("chat.delete_conversation")}
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -755,6 +757,7 @@ export default function ChatView() {
                 onClick={handleStop}
                 className="chat-stop-btn"
                 title={t("chat.stop")}
+                aria-label={t("chat.stop")}
               >
                 <Square className="w-3.5 h-3.5" />
               </button>
@@ -763,6 +766,7 @@ export default function ChatView() {
                 onClick={handleSend}
                 disabled={!input.trim()}
                 className="chat-send-btn"
+                aria-label={t("chat.send")}
               >
                 <Send className="w-4 h-4" />
               </button>

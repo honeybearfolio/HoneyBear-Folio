@@ -233,6 +233,7 @@ export default function InvestmentDashboard() {
           onClick={fetchData}
           className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-xl transition-all duration-200 shadow-sm border border-transparent hover:border-brand-100 dark:hover:border-brand-800"
           title={t("investment.refresh_data")}
+          aria-label={t("investment.refresh_data")}
         >
           <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
         </button>

@@ -1068,6 +1068,11 @@ export default function ScheduledList() {
                             ? t("scheduled.enabled")
                             : t("scheduled.disabled")
                         }
+                        aria-label={
+                          sched.enabled
+                            ? t("scheduled.enabled")
+                            : t("scheduled.disabled")
+                        }
                       >
                         {sched.enabled ? (
                           <ToggleRight size={18} className="text-brand-500" />
@@ -1079,6 +1084,7 @@ export default function ScheduledList() {
                         onClick={() => handleEdit(sched)}
                         className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 hover:text-brand-500 cursor-pointer"
                         title={t("scheduled.update")}
+                        aria-label={t("scheduled.update")}
                       >
                         <Edit size={16} />
                       </button>
@@ -1086,6 +1092,7 @@ export default function ScheduledList() {
                         onClick={() => handleDelete(sched.id)}
                         className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors text-slate-400 hover:text-rose-500 cursor-pointer"
                         title={t("scheduled.delete")}
+                        aria-label={t("scheduled.delete")}
                       >
                         <Trash2 size={16} />
                       </button>

@@ -1011,6 +1011,7 @@ export default function AccountDetails({
                   type="submit"
                   className="p-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
                   title={t("account.save_name")}
+                  aria-label={t("account.save_name")}
                 >
                   <Check className="w-5 h-5" />
                 </button>
@@ -1022,6 +1023,7 @@ export default function AccountDetails({
                   }}
                   className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-rose-500 transition-colors"
                   title={t("account.cancel")}
+                  aria-label={t("account.cancel")}
                 >
                   <X className="w-5 h-5" />
                 </button>

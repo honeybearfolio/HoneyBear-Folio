@@ -28,4 +28,18 @@ describe("Switch", () => {
     rerender(<Switch checked={true} onChange={() => {}} />);
     expect(screen.getByRole("switch")).toHaveAttribute("aria-checked", "true");
   });
+
+  it("renders aria-label when provided", () => {
+    render(
+      <Switch
+        checked={false}
+        onChange={() => {}}
+        aria-label="Toggle feature"
+      />,
+    );
+    expect(screen.getByRole("switch")).toHaveAttribute(
+      "aria-label",
+      "Toggle feature",
+    );
+  });
 });
