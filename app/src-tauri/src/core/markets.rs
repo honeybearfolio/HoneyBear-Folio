@@ -502,7 +502,7 @@ pub fn get_daily_stock_prices_from_path(
     db_path: &std::path::Path,
     ticker: String,
 ) -> Result<Vec<DailyPrice>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn

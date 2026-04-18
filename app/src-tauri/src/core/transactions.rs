@@ -139,7 +139,7 @@ pub fn create_transaction_db(
 
 /// Retrieves all transactions for a specific account, ordered by date descending.
 pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Transaction>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions WHERE account_id = ?1 ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
@@ -699,7 +699,7 @@ pub fn update_investment_transaction_db(
 
 /// Deletes a transaction, reverts its account balance, and removes any linked transfer counterpart.
 pub fn delete_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
