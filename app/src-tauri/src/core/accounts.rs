@@ -327,12 +327,11 @@ pub async fn get_accounts(
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     let target = target_currency.unwrap_or_else(|| "USD".to_string());
 
-    let db_path_clone = db_path.clone();
-    let target_clone = target.clone();
-
-    // Use spawn_blocking for DB operations
-    let summary = tauri::async_runtime::spawn_blocking(move || {
-        get_accounts_summary_db(&db_path_clone, &target_clone)
+    // Move db_path and target into spawn_blocking, return them with the result
+    // to avoid cloning (PathBuf and String can be large).
+    let (summary, db_path, target) = tauri::async_runtime::spawn_blocking(move || {
+        let result = get_accounts_summary_db(&db_path, &target);
+        result.map(|s| (s, db_path, target))
     })
     .await
     .map_err(|e| e.to_string())??;

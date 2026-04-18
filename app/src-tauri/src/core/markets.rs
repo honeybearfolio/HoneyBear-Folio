@@ -88,7 +88,8 @@ pub async fn get_stock_quotes_with_client(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.clone() {
+    for ticker in tickers.iter() {
+        let ticker = ticker.clone();
         let client = client.clone();
         let base_url = base_url.clone();
         tasks.push(tokio::spawn(async move {
@@ -130,18 +131,18 @@ pub async fn get_stock_quotes_with_client(
                                         }
                                     },
                                     Err(e) => {
-                                        println!("Failed to parse JSON for {}: {}", ticker, e);
+                                        log::warn!("Failed to parse JSON for {}: {}", ticker, e);
                                     }
                                 }
                             },
-                            Err(e) => println!("Failed to get text for {}: {}", ticker, e),
+                            Err(e) => log::warn!("Failed to get text for {}: {}", ticker, e),
                         }
                     } else {
-                        println!("Request failed for {}: {}", ticker, resp.status());
+                        log::warn!("Request failed for {}: {}", ticker, resp.status());
                     }
                 },
                 Err(e) => {
-                    println!("Request error for {}: {}", ticker, e);
+                    log::warn!("Request error for {}: {}", ticker, e);
                 }
             }
             None
@@ -182,23 +183,32 @@ pub async fn get_stock_quotes_with_client(
     if !missing_tickers.is_empty() {
         crate::db_init::with_db_lock(&db_path, || {
             let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
-            let mut stmt = conn
-                .prepare("SELECT ticker, price FROM stock_prices WHERE ticker = ?1 COLLATE NOCASE")
+            let placeholders: String = missing_tickers
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
+            let query = format!(
+                "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({})",
+                placeholders
+            );
+            let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
+
+            let rows = stmt
+                .query_map(rusqlite::params_from_iter(missing_tickers.iter()), |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+                })
                 .map_err(|e| e.to_string())?;
 
-            for ticker in &missing_tickers {
-                let res: Result<(String, f64), _> =
-                    stmt.query_row(params![ticker], |row| Ok((row.get(0)?, row.get(1)?)));
-
-                if let Ok((symbol, price)) = res {
-                    quotes.push(YahooQuote {
-                        symbol,
-                        price,
-                        change_percent: 0.0,
-                        currency: None,
-                        quote_type: None,
-                    });
-                }
+            for row in rows {
+                let (symbol, price) = row.map_err(|e| e.to_string())?;
+                quotes.push(YahooQuote {
+                    symbol,
+                    price,
+                    change_percent: 0.0,
+                    currency: None,
+                    quote_type: None,
+                });
             }
 
             Ok(())
@@ -220,7 +230,8 @@ pub async fn get_stock_quotes_with_client_and_db(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.clone() {
+    for ticker in tickers.iter() {
+        let ticker = ticker.clone();
         let client = client.clone();
         let base_url = base_url.clone();
         tasks.push(tokio::spawn(async move {
@@ -262,18 +273,18 @@ pub async fn get_stock_quotes_with_client_and_db(
                                         }
                                     },
                                     Err(e) => {
-                                        println!("Failed to parse JSON for {}: {}", ticker, e);
+                                        log::warn!("Failed to parse JSON for {}: {}", ticker, e);
                                     }
                                 }
                             },
-                            Err(e) => println!("Failed to get text for {}: {}", ticker, e),
+                            Err(e) => log::warn!("Failed to get text for {}: {}", ticker, e),
                         }
                     } else {
-                        println!("Request failed for {}: {}", ticker, resp.status());
+                        log::warn!("Request failed for {}: {}", ticker, resp.status());
                     }
                 },
                 Err(e) => {
-                    println!("Request error for {}: {}", ticker, e);
+                    log::warn!("Request error for {}: {}", ticker, e);
                 }
             }
             None
@@ -313,23 +324,32 @@ pub async fn get_stock_quotes_with_client_and_db(
     if !missing_tickers.is_empty() {
         crate::db_init::with_db_lock(db_path, || {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-            let mut stmt = conn
-                .prepare("SELECT ticker, price FROM stock_prices WHERE ticker = ?1 COLLATE NOCASE")
+            let placeholders: String = missing_tickers
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(",");
+            let query = format!(
+                "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({})",
+                placeholders
+            );
+            let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
+
+            let rows = stmt
+                .query_map(rusqlite::params_from_iter(missing_tickers.iter()), |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
+                })
                 .map_err(|e| e.to_string())?;
 
-            for ticker in &missing_tickers {
-                let res: Result<(String, f64), _> =
-                    stmt.query_row(params![ticker], |row| Ok((row.get(0)?, row.get(1)?)));
-
-                if let Ok((symbol, price)) = res {
-                    quotes.push(YahooQuote {
-                        symbol,
-                        price,
-                        change_percent: 0.0,
-                        currency: None,
-                        quote_type: None,
-                    });
-                }
+            for row in rows {
+                let (symbol, price) = row.map_err(|e| e.to_string())?;
+                quotes.push(YahooQuote {
+                    symbol,
+                    price,
+                    change_percent: 0.0,
+                    currency: None,
+                    quote_type: None,
+                });
             }
 
             Ok(())
@@ -397,7 +417,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
             .map_err(|e| e.to_string())?;
 
         if !res.status().is_success() {
-            println!("Failed to fetch history for {}: {}", ticker, res.status());
+            log::warn!("Failed to fetch history for {}: {}", ticker, res.status());
             continue;
         }
 

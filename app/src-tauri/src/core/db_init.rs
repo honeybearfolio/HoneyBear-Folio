@@ -140,6 +140,16 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
     with_db_lock(&db_path, || {
         let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
 
+        // SQLite performance pragmas
+        conn.execute_batch(
+            "PRAGMA journal_mode = WAL;
+             PRAGMA synchronous = NORMAL;
+             PRAGMA cache_size = -64000;
+             PRAGMA temp_store = MEMORY;
+             PRAGMA foreign_keys = ON;",
+        )
+        .map_err(|e| e.to_string())?;
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY,
@@ -170,22 +180,17 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
-        // Ensure we have a column to link transfer pairs so updates/deletes can keep both sides in sync
+        // Migrate transactions: check all needed columns in a single PRAGMA call
         {
             let mut stmt = conn
                 .prepare("PRAGMA table_info(transactions)")
                 .map_err(|e| e.to_string())?;
-            let mut has_linked = false;
             let col_iter = stmt
                 .query_map([], |row| row.get::<_, String>(1))
                 .map_err(|e| e.to_string())?;
-            for name in col_iter.flatten() {
-                if name == "linked_tx_id" {
-                    has_linked = true;
-                    break;
-                }
-            }
-            if !has_linked {
+            let cols: std::collections::HashSet<String> = col_iter.flatten().collect();
+
+            if !cols.contains("linked_tx_id") {
                 match conn.execute(
                     "ALTER TABLE transactions ADD COLUMN linked_tx_id INTEGER",
                     [],
@@ -199,24 +204,7 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
                     }
                 }
             }
-        }
-
-        // Ensure we have a column for currency (multi-currency support)
-        {
-            let mut stmt = conn
-                .prepare("PRAGMA table_info(transactions)")
-                .map_err(|e| e.to_string())?;
-            let mut has_currency = false;
-            let col_iter = stmt
-                .query_map([], |row| row.get::<_, String>(1))
-                .map_err(|e| e.to_string())?;
-            for name in col_iter.flatten() {
-                if name == "currency" {
-                    has_currency = true;
-                    break;
-                }
-            }
-            if !has_currency {
+            if !cols.contains("currency") {
                 match conn.execute("ALTER TABLE transactions ADD COLUMN currency TEXT", []) {
                     Ok(_) => {}
                     Err(e) => {
@@ -229,22 +217,17 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
             }
         }
 
-        // Ensure we have a column for currency in accounts
+        // Migrate accounts: check currency column
         {
             let mut stmt = conn
                 .prepare("PRAGMA table_info(accounts)")
                 .map_err(|e| e.to_string())?;
-            let mut has_currency = false;
             let col_iter = stmt
                 .query_map([], |row| row.get::<_, String>(1))
                 .map_err(|e| e.to_string())?;
-            for name in col_iter.flatten() {
-                if name == "currency" {
-                    has_currency = true;
-                    break;
-                }
-            }
-            if !has_currency {
+            let cols: std::collections::HashSet<String> = col_iter.flatten().collect();
+
+            if !cols.contains("currency") {
                 match conn.execute("ALTER TABLE accounts ADD COLUMN currency TEXT", []) {
                     Ok(_) => {}
                     Err(e) => {
@@ -401,6 +384,16 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
 
         // Migration: Add thinking column to chat_messages
         let _ = conn.execute("ALTER TABLE chat_messages ADD COLUMN thinking TEXT", []);
+
+        // Performance indexes
+        conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
+             CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
+             CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+             CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_id ON chat_messages(conversation_id);
+             CREATE INDEX IF NOT EXISTS idx_scheduled_transactions_account_id ON scheduled_transactions(account_id);",
+        )
+        .map_err(|e| e.to_string())?;
 
         Ok(())
     })
