@@ -88,7 +88,8 @@ pub async fn get_stock_quotes_with_client(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.iter().cloned() {
+    for ticker in tickers.iter() {
+        let ticker = ticker.clone();
         let client = client.clone();
         let base_url = base_url.clone();
         tasks.push(tokio::spawn(async move {
@@ -229,7 +230,8 @@ pub async fn get_stock_quotes_with_client_and_db(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.iter().cloned() {
+    for ticker in tickers.iter() {
+        let ticker = ticker.clone();
         let client = client.clone();
         let base_url = base_url.clone();
         tasks.push(tokio::spawn(async move {
