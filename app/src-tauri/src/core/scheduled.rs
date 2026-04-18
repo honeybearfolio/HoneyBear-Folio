@@ -332,6 +332,7 @@ const SELECT_COLUMNS: &str = "id, account_id, payee, amount, category, notes, cu
      occurrences_count, last_applied_date, transaction_type, ticker, \
      shares, price_per_share, fee, is_buy";
 
+/// Retrieves all scheduled transactions ordered by ID.
 pub fn get_scheduled_transactions_db(
     db_path: &PathBuf,
 ) -> Result<Vec<ScheduledTransaction>, String> {
@@ -381,6 +382,7 @@ pub struct CreateScheduledTransactionArgs {
     pub is_buy: Option<bool>,
 }
 
+/// Inserts a new scheduled transaction with recurrence rules and returns its ID.
 pub fn create_scheduled_transaction_db(
     db_path: &PathBuf,
     args: CreateScheduledTransactionArgs,
@@ -461,6 +463,7 @@ pub struct UpdateScheduledTransactionArgs {
     pub is_buy: Option<bool>,
 }
 
+/// Updates an existing scheduled transaction's parameters and recurrence rules.
 pub fn update_scheduled_transaction_db(
     db_path: &PathBuf,
     args: UpdateScheduledTransactionArgs,
@@ -519,6 +522,7 @@ pub fn update_scheduled_transaction_db(
     })
 }
 
+/// Deletes a scheduled transaction by ID.
 pub fn delete_scheduled_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -712,6 +716,7 @@ pub fn skip_scheduled_occurrence_db(
 // Tauri commands
 // ---------------------------------------------------------------------------
 
+/// Tauri command: retrieves all scheduled transactions.
 #[tauri::command]
 pub fn get_scheduled_transactions(
     app_handle: AppHandle,
@@ -720,6 +725,7 @@ pub fn get_scheduled_transactions(
     get_scheduled_transactions_db(&db_path)
 }
 
+/// Tauri command: creates a new scheduled transaction.
 #[tauri::command]
 pub fn create_scheduled_transaction(
     app_handle: AppHandle,
@@ -729,6 +735,7 @@ pub fn create_scheduled_transaction(
     create_scheduled_transaction_db(&db_path, args)
 }
 
+/// Tauri command: updates an existing scheduled transaction.
 #[tauri::command]
 pub fn update_scheduled_transaction(
     app_handle: AppHandle,
@@ -738,12 +745,14 @@ pub fn update_scheduled_transaction(
     update_scheduled_transaction_db(&db_path, args)
 }
 
+/// Tauri command: deletes a scheduled transaction by ID.
 #[tauri::command]
 pub fn delete_scheduled_transaction(app_handle: AppHandle, id: i32) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     delete_scheduled_transaction_db(&db_path, id)
 }
 
+/// Tauri command: retrieves pending (missed + upcoming) scheduled occurrences.
 #[tauri::command]
 pub fn get_pending_occurrences(
     app_handle: AppHandle,
@@ -754,6 +763,7 @@ pub fn get_pending_occurrences(
     get_pending_occurrences_db(&db_path, account_id, &today)
 }
 
+/// Tauri command: applies a scheduled occurrence, creating a real transaction.
 #[tauri::command]
 pub fn apply_scheduled_occurrence(
     app_handle: AppHandle,
@@ -764,6 +774,7 @@ pub fn apply_scheduled_occurrence(
     apply_scheduled_occurrence_db(&db_path, scheduled_tx_id, &apply_date)
 }
 
+/// Tauri command: skips a scheduled occurrence without creating a transaction.
 #[tauri::command]
 pub fn skip_scheduled_occurrence(
     app_handle: AppHandle,
