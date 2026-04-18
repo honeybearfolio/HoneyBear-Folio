@@ -15,6 +15,7 @@ pub struct ReadXlsxResult {
     pub data: Vec<Vec<Value>>, // Array of arrays (rows)
 }
 
+/// Tauri command: reads the first sheet of an Excel file from raw bytes and returns rows as JSON arrays.
 #[tauri::command]
 pub fn read_xlsx(data: Vec<u8>) -> Result<ReadXlsxResult, String> {
     let cursor = Cursor::new(data);
@@ -65,6 +66,7 @@ pub fn read_xlsx(data: Vec<u8>) -> Result<ReadXlsxResult, String> {
     Ok(ReadXlsxResult { data: rows })
 }
 
+/// Tauri command: writes the given sheets with their data to an Excel file at `file_path`.
 #[tauri::command]
 pub fn write_xlsx(file_path: String, sheets: Vec<SheetData>) -> Result<(), String> {
     let mut workbook = Workbook::new();

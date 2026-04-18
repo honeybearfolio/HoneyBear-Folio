@@ -2,6 +2,7 @@ use crate::models::{DailyPrice, YahooChartResponse, YahooQuote, YahooSearchQuote
 use chrono::{NaiveDate, TimeZone, Utc};
 use rusqlite::{params, Connection, OptionalExtension};
 
+/// Searches Yahoo Finance for ticker symbols matching the given query.
 pub async fn search_ticker_with_client(
     client: reqwest::Client,
     base_url: String,
@@ -22,7 +23,7 @@ pub async fn search_ticker_with_client(
     Ok(response.quotes)
 }
 
-// Search helper that enriches results with currency info using get_stock_quotes
+/// Searches for tickers and enriches results with currency information from quotes.
 #[tauri::command]
 pub async fn search_ticker(
     app_handle: tauri::AppHandle,
@@ -59,6 +60,7 @@ pub async fn search_ticker(
     Ok(quotes)
 }
 
+/// Fetches current stock quotes for the given list of ticker symbols.
 #[tauri::command]
 pub async fn get_stock_quotes(
     app_handle: tauri::AppHandle,
@@ -76,6 +78,7 @@ pub async fn get_stock_quotes(
     .await
 }
 
+/// Queries the Yahoo Finance API for stock quotes, fetching tickers in parallel batches.
 pub async fn get_stock_quotes_with_client(
     client: reqwest::Client,
     base_url: String,
@@ -218,6 +221,7 @@ pub async fn get_stock_quotes_with_client(
     Ok(quotes)
 }
 
+/// Fetches stock quotes from Yahoo Finance and caches them in the database.
 pub async fn get_stock_quotes_with_client_and_db(
     client: reqwest::Client,
     base_url: String,
@@ -359,6 +363,7 @@ pub async fn get_stock_quotes_with_client_and_db(
     Ok(quotes)
 }
 
+/// Updates daily stock price history in the database from Yahoo Finance data.
 pub async fn update_daily_stock_prices_with_client_and_base(
     db_path: &std::path::Path,
     client: &reqwest::Client,
@@ -468,6 +473,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
     Ok(())
 }
 
+/// Updates daily stock prices from Yahoo Finance for the given tickers.
 #[tauri::command]
 pub async fn update_daily_stock_prices(
     app_handle: tauri::AppHandle,
@@ -491,6 +497,7 @@ pub async fn update_daily_stock_prices(
     .await
 }
 
+/// Reads daily price history for a ticker from the database at the given path.
 pub fn get_daily_stock_prices_from_path(
     db_path: &std::path::Path,
     ticker: String,
@@ -519,6 +526,7 @@ pub fn get_daily_stock_prices_from_path(
     })
 }
 
+/// Retrieves daily price history for a given ticker symbol.
 #[tauri::command]
 pub fn get_daily_stock_prices(
     app_handle: tauri::AppHandle,
@@ -528,6 +536,7 @@ pub fn get_daily_stock_prices(
     get_daily_stock_prices_from_path(std::path::Path::new(&db_path), ticker)
 }
 
+/// Verifies whether a currency pair is available on Yahoo Finance.
 #[tauri::command]
 pub async fn check_currency_availability(
     app_handle: tauri::AppHandle,
