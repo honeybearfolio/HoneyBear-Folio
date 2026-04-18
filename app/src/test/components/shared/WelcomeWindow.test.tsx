@@ -69,7 +69,7 @@ vi.mock("../../../utils/currencies", () => ({
 
 // Mock format utility
 vi.mock("../../../utils/format", () => ({
-  formatDateForUI: (date: string, format: string) => format,
+  formatDateForUI: (_date: string, format: string) => format,
 }));
 
 // Mock CustomSelect to expose options/change easily and return distinct testids per control

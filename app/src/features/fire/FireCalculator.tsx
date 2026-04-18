@@ -30,6 +30,7 @@ import {
   computeNetWorthMarketValues,
 } from "../../utils/investments";
 import NumberInput from "../../components/ui/NumberInput";
+import { FIRE_DEFAULTS } from "../../constants/app";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -113,36 +114,42 @@ export default function FireCalculator() {
   }, []);
 
   const [currentNetWorth, setCurrentNetWorth] = useState(
-    savedState?.currentNetWorth ?? 0,
+    savedState?.currentNetWorth ?? FIRE_DEFAULTS.CURRENT_NET_WORTH,
   );
   const [annualExpenses, setAnnualExpenses] = useState(
-    savedState?.annualExpenses ?? 40000,
+    savedState?.annualExpenses ?? FIRE_DEFAULTS.ANNUAL_EXPENSES,
   );
   const [expectedReturn, setExpectedReturn] = useState(
-    savedState?.expectedReturn ?? 7,
+    savedState?.expectedReturn ?? FIRE_DEFAULTS.EXPECTED_RETURN,
   );
   const [withdrawalRate, setWithdrawalRate] = useState(
-    savedState?.withdrawalRate ?? 4,
+    savedState?.withdrawalRate ?? FIRE_DEFAULTS.WITHDRAWAL_RATE,
   );
   const [annualSavings, setAnnualSavings] = useState(
-    savedState?.annualSavings ?? 20000,
+    savedState?.annualSavings ?? FIRE_DEFAULTS.ANNUAL_SAVINGS,
   );
   // New fields
-  const [inflation, setInflation] = useState(savedState?.inflation ?? 2);
-  const [currentAge, setCurrentAge] = useState(savedState?.currentAge ?? 30);
+  const [inflation, setInflation] = useState(
+    savedState?.inflation ?? FIRE_DEFAULTS.INFLATION,
+  );
+  const [currentAge, setCurrentAge] = useState(
+    savedState?.currentAge ?? FIRE_DEFAULTS.CURRENT_AGE,
+  );
   const [retirementAge, setRetirementAge] = useState(
-    savedState?.retirementAge ?? 65,
+    savedState?.retirementAge ?? FIRE_DEFAULTS.RETIREMENT_AGE,
   );
   const [retirementDuration, setRetirementDuration] = useState(
-    savedState?.retirementDuration ?? 30,
+    savedState?.retirementDuration ?? FIRE_DEFAULTS.RETIREMENT_DURATION,
   );
   // Advanced Monte Carlo parameters
   const [showAdvanced, setShowAdvanced] = useState(
-    savedState?.showAdvanced ?? false,
+    savedState?.showAdvanced ?? FIRE_DEFAULTS.SHOW_ADVANCED,
   );
-  const [volatility, setVolatility] = useState(savedState?.volatility ?? 15);
+  const [volatility, setVolatility] = useState(
+    savedState?.volatility ?? FIRE_DEFAULTS.VOLATILITY,
+  );
   const [simulationCount, setSimulationCount] = useState(
-    savedState?.simulationCount ?? 1000,
+    savedState?.simulationCount ?? FIRE_DEFAULTS.SIMULATION_COUNT,
   );
 
   const [loading, setLoading] = useState(!savedState);

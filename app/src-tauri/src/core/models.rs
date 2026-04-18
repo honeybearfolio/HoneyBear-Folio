@@ -79,6 +79,7 @@ pub struct Account {
     pub exchange_rate: f64,
 }
 
+/// Returns the default exchange rate value of `1.0`.
 pub fn default_exchange_rate() -> f64 {
     1.0
 }

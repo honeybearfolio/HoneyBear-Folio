@@ -140,6 +140,8 @@ fn to_numeric(value: &Value) -> Option<f64> {
     }
 }
 
+/// Computes total net worth by summing each account's balance plus its market value,
+/// multiplied by the account's exchange rate.
 pub fn compute_net_worth_logic(
     accounts: &[Account],
     market_values: &HashMap<String, Value>,
@@ -157,6 +159,8 @@ pub fn compute_net_worth_logic(
         .sum()
 }
 
+/// Extracts stock holdings from transactions, computing total shares and cost basis per ticker.
+/// Transactions are processed chronologically; sells reduce shares using average cost basis.
 pub fn build_holdings_from_transactions_logic(transactions: &[Transaction]) -> HoldingsResult {
     let mut txs = transactions.to_vec();
     txs.sort_by(|a, b| a.date.cmp(&b.date));
@@ -210,6 +214,8 @@ pub fn build_holdings_from_transactions_logic(transactions: &[Transaction]) -> H
     }
 }
 
+/// Merges holdings with stock quotes to compute current value and ROI for each holding.
+/// Results are sorted by current value in descending order.
 pub fn merge_holdings_with_quotes_logic(
     holdings: &[Holding],
     quotes: &[YahooQuote],
@@ -249,6 +255,7 @@ pub fn merge_holdings_with_quotes_logic(
     merged
 }
 
+/// Calculates total portfolio value and total cost basis from enriched holdings.
 pub fn compute_portfolio_totals_logic(holdings: &[HoldingWithQuote]) -> PortfolioTotals {
     PortfolioTotals {
         total_value: holdings.iter().map(|h| h.current_value).sum(),
@@ -256,6 +263,8 @@ pub fn compute_portfolio_totals_logic(holdings: &[HoldingWithQuote]) -> Portfoli
     }
 }
 
+/// Computes the market value of holdings per account from transactions and current quotes.
+/// Returns a map of account ID to total market value.
 pub fn compute_net_worth_market_values_logic(
     transactions: &[Transaction],
     quotes: &[YahooQuote],
@@ -305,6 +314,7 @@ fn random_normal(mean: f64, std_dev: f64) -> f64 {
     z0 * std_dev + mean
 }
 
+/// Projects FIRE number and years to financial independence using deterministic real-return growth.
 pub fn calculate_deterministic_projection_logic(
     input: &DeterministicProjectionInput,
 ) -> DeterministicProjectionOutput {
@@ -337,6 +347,7 @@ pub fn calculate_deterministic_projection_logic(
     }
 }
 
+/// Runs Monte Carlo simulations for retirement scenarios, returning percentile bands and success rate.
 pub fn run_monte_carlo_simulation_logic(input: &MonteCarloInput) -> MonteCarloOutput {
     let years_to_retirement = (input.retirement_age - input.current_age).max(0);
     let total_years = years_to_retirement + input.retirement_duration;
@@ -440,6 +451,8 @@ fn get_rate(exchange_rates: &HashMap<String, ExchangeRateSeries>, pair: &str, da
     1.0
 }
 
+/// Aggregates all financial data into a comprehensive report with income, expenses,
+/// savings rate, portfolio summary, category breakdowns, and monthly trends.
 pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
     let mut account_map = HashMap::new();
     for a in &input.accounts {
@@ -756,6 +769,7 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
     })
 }
 
+/// Tauri command: computes net worth.
 #[tauri::command]
 pub fn compute_net_worth(
     accounts: Vec<Account>,
@@ -764,6 +778,7 @@ pub fn compute_net_worth(
     Ok(compute_net_worth_logic(&accounts, &market_values))
 }
 
+/// Tauri command: builds holdings from transactions.
 #[tauri::command]
 pub fn build_holdings_from_transactions(
     transactions: Vec<Transaction>,
@@ -771,6 +786,7 @@ pub fn build_holdings_from_transactions(
     Ok(build_holdings_from_transactions_logic(&transactions))
 }
 
+/// Tauri command: merges holdings with quotes.
 #[tauri::command]
 pub fn merge_holdings_with_quotes(
     holdings: Vec<Holding>,
@@ -779,6 +795,7 @@ pub fn merge_holdings_with_quotes(
     Ok(merge_holdings_with_quotes_logic(&holdings, &quotes))
 }
 
+/// Tauri command: computes portfolio totals.
 #[tauri::command]
 pub fn compute_portfolio_totals(
     holdings: Vec<HoldingWithQuote>,
@@ -786,6 +803,7 @@ pub fn compute_portfolio_totals(
     Ok(compute_portfolio_totals_logic(&holdings))
 }
 
+/// Tauri command: computes market values per account.
 #[tauri::command]
 pub fn compute_net_worth_market_values(
     transactions: Vec<Transaction>,
@@ -797,6 +815,7 @@ pub fn compute_net_worth_market_values(
     ))
 }
 
+/// Tauri command: calculates deterministic FIRE projection.
 #[tauri::command]
 pub fn calculate_deterministic_projection(
     input: DeterministicProjectionInput,
@@ -804,16 +823,19 @@ pub fn calculate_deterministic_projection(
     Ok(calculate_deterministic_projection_logic(&input))
 }
 
+/// Tauri command: runs Monte Carlo retirement simulation.
 #[tauri::command]
 pub fn run_monte_carlo_simulation(input: MonteCarloInput) -> Result<MonteCarloOutput, String> {
     Ok(run_monte_carlo_simulation_logic(&input))
 }
 
+/// Tauri command: computes full financial report data.
 #[tauri::command]
 pub fn compute_report_data(input: ReportComputeInput) -> Result<Value, String> {
     Ok(compute_report_data_logic(&input))
 }
 
+/// Extracts unique ticker symbols from a slice of transactions.
 pub fn collect_tickers(transactions: &[Transaction]) -> Vec<String> {
     let mut set = HashSet::new();
     for tx in transactions {

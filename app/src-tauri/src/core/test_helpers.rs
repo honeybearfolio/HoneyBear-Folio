@@ -4,10 +4,12 @@ use std::path::{Path, PathBuf};
 
 // Test-only helpers to allow testing settings and init_db logic without an AppHandle
 
+/// Returns the settings file path for the given directory.
 pub(crate) fn settings_file_path_for_dir(dir: &Path) -> PathBuf {
     dir.join("settings.json")
 }
 
+/// Writes application settings to the given directory.
 pub(crate) fn write_settings_to_dir(
     dir: &Path,
     settings: &crate::AppSettings,
@@ -18,6 +20,7 @@ pub(crate) fn write_settings_to_dir(
     Ok(())
 }
 
+/// Reads application settings from the given directory, returning defaults if absent.
 pub(crate) fn read_settings_from_dir(dir: &Path) -> Result<crate::AppSettings, String> {
     let settings_path = settings_file_path_for_dir(dir);
     if settings_path.exists() {
@@ -29,6 +32,7 @@ pub(crate) fn read_settings_from_dir(dir: &Path) -> Result<crate::AppSettings, S
     }
 }
 
+/// Returns the database file path for the given directory, using settings override if configured.
 pub(crate) fn get_db_path_for_dir(dir: &Path) -> Result<PathBuf, String> {
     // If the user has configured an override, use it
     if let Ok(settings) = read_settings_from_dir(dir) {
@@ -52,6 +56,7 @@ pub(crate) fn get_db_path_for_dir(dir: &Path) -> Result<PathBuf, String> {
     Ok(app_dir.join("honeybear.db"))
 }
 
+/// Initializes the database schema at the given path for testing.
 pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
     // Ensure parent dir exists
     if let Some(parent) = db_path.parent() {
@@ -197,6 +202,7 @@ pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Creates a test account in the database at the specified directory.
 pub(crate) fn create_account_in_dir(
     dir: &Path,
     name: String,
@@ -207,6 +213,7 @@ pub(crate) fn create_account_in_dir(
     crate::create_account_db(&db_path, name, balance, None, None)
 }
 
+/// Creates a test transaction in the database at the specified directory.
 pub(crate) fn create_transaction_in_dir(
     dir: &Path,
     account_id: i32,

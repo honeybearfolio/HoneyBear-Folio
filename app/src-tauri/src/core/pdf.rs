@@ -2130,6 +2130,8 @@ fn draw_transactions_pages(
 
 // ── Public entry point ──────────────────────────────────────────────
 
+/// Generates a multi-page PDF report containing summary, net worth, income/expenses,
+/// holdings, and transaction sections. Returns the raw PDF bytes.
 pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
     let mut doc = PdfDocument::new("HoneyBear Folio Report");
 
@@ -2195,6 +2197,7 @@ pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
     Ok(buf)
 }
 
+/// Tauri command: generates a PDF report and writes it to the specified file path.
 #[tauri::command]
 pub fn generate_pdf_report(file_path: String, data: ReportData) -> Result<(), String> {
     let pdf_bytes = generate_report(&data)?;
