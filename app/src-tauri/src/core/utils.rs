@@ -3,6 +3,7 @@ use rusqlite::Connection;
 use std::collections::HashMap;
 use tauri::AppHandle;
 
+/// Loads all custom exchange rates from the database into a `HashMap<currency, rate>`.
 pub fn get_custom_rates_map(db_path: &std::path::PathBuf) -> Result<HashMap<String, f64>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -24,6 +25,8 @@ pub fn get_custom_rates_map(db_path: &std::path::PathBuf) -> Result<HashMap<Stri
     })
 }
 
+/// Calculates account balances by aggregating transactions and converting currencies
+/// using market and custom exchange rates.
 pub fn calculate_account_balances(
     mut accounts: Vec<Account>,
     raw_data: Vec<(i32, String, f64)>,
@@ -106,6 +109,7 @@ pub fn calculate_account_balances(
 use rusqlite::params;
 use std::path::PathBuf;
 
+/// Stores a custom exchange rate for a currency pair in the database.
 pub fn set_custom_exchange_rate_db(
     db_path: &PathBuf,
     currency: String,
@@ -123,6 +127,7 @@ pub fn set_custom_exchange_rate_db(
     })
 }
 
+/// Retrieves a custom exchange rate for the given currency from the database.
 pub fn get_custom_exchange_rate_db(
     db_path: &PathBuf,
     currency: String,
@@ -144,7 +149,7 @@ pub fn get_custom_exchange_rate_db(
     })
 }
 
-// System theme detection moved here
+/// Detects and returns the system theme preference (`"dark"` or `"light"`).
 #[tauri::command]
 pub fn get_system_theme() -> Result<String, String> {
     // Return "dark" or "light" based on heuristics per-platform. Keep implementation small and robust.
@@ -281,6 +286,7 @@ pub fn get_system_theme() -> Result<String, String> {
     }
 }
 
+/// Tauri command: stores a custom exchange rate for a currency pair.
 #[tauri::command]
 pub fn set_custom_exchange_rate(
     app_handle: AppHandle,
@@ -291,6 +297,7 @@ pub fn set_custom_exchange_rate(
     set_custom_exchange_rate_db(&db_path, currency, rate)
 }
 
+/// Tauri command: retrieves a custom exchange rate for the given currency.
 #[tauri::command]
 pub fn get_custom_exchange_rate(
     app_handle: AppHandle,
@@ -397,6 +404,7 @@ pub fn delete_custom_exchange_rate_db(db_path: &PathBuf, currency: String) -> Re
     })
 }
 
+/// Tauri command: removes a custom exchange rate for the given currency.
 #[tauri::command]
 pub fn delete_custom_exchange_rate(app_handle: AppHandle, currency: String) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;

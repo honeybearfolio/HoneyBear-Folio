@@ -64,6 +64,7 @@ pub fn upsert_recent_public(settings: &mut AppSettings, path: &str, name: Option
 
 // ── Tauri commands ──────────────────────────────────────────────
 
+/// Returns an enriched list of recent database files with existence and size metadata.
 #[tauri::command]
 pub fn get_recent_sessions(app_handle: AppHandle) -> Result<Vec<RecentDb>, String> {
     let settings = read_settings(&app_handle)?;
@@ -71,6 +72,7 @@ pub fn get_recent_sessions(app_handle: AppHandle) -> Result<Vec<RecentDb>, Strin
     Ok(enriched)
 }
 
+/// Returns the currently active database session, if one is set.
 #[tauri::command]
 pub fn get_active_session(app_handle: AppHandle) -> Result<Option<RecentDb>, String> {
     let settings = read_settings(&app_handle)?;
@@ -94,6 +96,7 @@ pub fn get_active_session(app_handle: AppHandle) -> Result<Option<RecentDb>, Str
     }
 }
 
+/// Creates a new database file at the given path and sets it as the active session.
 #[tauri::command]
 pub fn create_session(app_handle: AppHandle, path: String) -> Result<RecentDb, String> {
     let pb = PathBuf::from(&path);
@@ -119,6 +122,7 @@ pub fn create_session(app_handle: AppHandle, path: String) -> Result<RecentDb, S
     Ok(enrich_recent_db(settings.recent_dbs.first().unwrap()))
 }
 
+/// Opens and validates an existing database file, setting it as the active session.
 #[tauri::command]
 pub fn open_session(app_handle: AppHandle, path: String) -> Result<RecentDb, String> {
     let pb = PathBuf::from(&path);
@@ -152,6 +156,7 @@ pub fn open_session(app_handle: AppHandle, path: String) -> Result<RecentDb, Str
     Ok(enrich_recent_db(settings.recent_dbs.first().unwrap()))
 }
 
+/// Removes a database from the recent sessions list.
 #[tauri::command]
 pub fn remove_recent_session(app_handle: AppHandle, path: String) -> Result<(), String> {
     let mut settings = read_settings(&app_handle)?;
@@ -160,6 +165,7 @@ pub fn remove_recent_session(app_handle: AppHandle, path: String) -> Result<(), 
     Ok(())
 }
 
+/// Renames the display name of a recent database session.
 #[tauri::command]
 pub fn rename_session(app_handle: AppHandle, path: String, new_name: String) -> Result<(), String> {
     let mut settings = read_settings(&app_handle)?;

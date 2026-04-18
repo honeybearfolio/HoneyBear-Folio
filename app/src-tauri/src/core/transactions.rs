@@ -19,6 +19,8 @@ pub struct CreateTransactionArgs {
     pub currency: Option<String>,
 }
 
+/// Creates a transaction, applying rules and auto-detecting transfers between accounts.
+/// If the payee matches another account name, a linked counter-transaction is created.
 pub fn create_transaction_db(
     db_path: &PathBuf,
     args: CreateTransactionArgs,
@@ -135,6 +137,7 @@ pub fn create_transaction_db(
     })
 }
 
+/// Retrieves all transactions for a specific account, ordered by date descending.
 pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Transaction>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -168,6 +171,7 @@ pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Tra
     })
 }
 
+/// Retrieves all transactions across all accounts, ordered by date descending.
 pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -202,6 +206,7 @@ pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, St
 }
 
 // Payees and categories helpers moved from `lib.rs` here
+/// Returns a sorted list of distinct payee names from all transactions.
 pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -222,6 +227,7 @@ pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
     })
 }
 
+/// Returns a sorted list of distinct category names, excluding "Transfer".
 pub fn get_categories_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -256,6 +262,7 @@ pub struct CreateInvestmentTransactionArgs {
     pub category: Option<String>,
 }
 
+/// Creates an investment transaction (buy/sell), applying rules and updating account balance.
 pub fn create_investment_transaction_db(
     db_path: &PathBuf,
     args: CreateInvestmentTransactionArgs,
@@ -385,6 +392,8 @@ pub struct UpdateTransactionArgs {
     pub currency: Option<String>,
 }
 
+/// Updates an existing transaction and adjusts account balances accordingly.
+/// Also syncs any linked transfer counter-transaction.
 pub fn update_transaction_db(
     db_path: &PathBuf,
     args: UpdateTransactionArgs,
@@ -556,6 +565,7 @@ pub struct UpdateInvestmentTransactionArgs {
     pub currency: Option<String>,
 }
 
+/// Updates an investment transaction and adjusts account balances accordingly.
 pub fn update_investment_transaction_db(
     db_path: &PathBuf,
     args: UpdateInvestmentTransactionArgs,
@@ -687,6 +697,7 @@ pub fn update_investment_transaction_db(
     })
 }
 
+/// Deletes a transaction, reverts its account balance, and removes any linked transfer counterpart.
 pub fn delete_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     crate::db_init::with_db_lock(db_path, || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -760,6 +771,7 @@ pub fn delete_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     })
 }
 
+/// Tauri command: creates a new transaction.
 #[tauri::command]
 pub fn create_transaction(
     app_handle: AppHandle,
@@ -769,6 +781,7 @@ pub fn create_transaction(
     create_transaction_db(&db_path, args)
 }
 
+/// Tauri command: retrieves transactions for a specific account.
 #[tauri::command]
 pub fn get_transactions(
     app_handle: AppHandle,
@@ -778,12 +791,14 @@ pub fn get_transactions(
     get_transactions_db(&db_path, account_id)
 }
 
+/// Tauri command: retrieves all transactions across all accounts.
 #[tauri::command]
 pub fn get_all_transactions(app_handle: AppHandle) -> Result<Vec<Transaction>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     get_all_transactions_db(&db_path)
 }
 
+/// Tauri command: creates a new investment transaction.
 #[tauri::command]
 pub fn create_investment_transaction(
     app_handle: AppHandle,
@@ -793,6 +808,7 @@ pub fn create_investment_transaction(
     create_investment_transaction_db(&db_path, args)
 }
 
+/// Tauri command: updates an existing transaction.
 #[tauri::command]
 pub fn update_transaction(
     app_handle: AppHandle,
@@ -802,6 +818,7 @@ pub fn update_transaction(
     update_transaction_db(&db_path, args)
 }
 
+/// Tauri command: updates an existing investment transaction.
 #[tauri::command]
 pub fn update_investment_transaction(
     app_handle: AppHandle,
@@ -811,18 +828,21 @@ pub fn update_investment_transaction(
     update_investment_transaction_db(&db_path, args)
 }
 
+/// Tauri command: deletes a transaction by ID.
 #[tauri::command]
 pub fn delete_transaction(app_handle: AppHandle, id: i32) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     delete_transaction_db(&db_path, id)
 }
 
+/// Tauri command: returns distinct payee names.
 #[tauri::command]
 pub fn get_payees(app_handle: AppHandle) -> Result<Vec<String>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     get_payees_db(&db_path)
 }
 
+/// Tauri command: returns distinct category names.
 #[tauri::command]
 pub fn get_categories(app_handle: AppHandle) -> Result<Vec<String>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;

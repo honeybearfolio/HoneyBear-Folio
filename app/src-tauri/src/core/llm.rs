@@ -137,6 +137,7 @@ fn ollama_api_url(base_url: &str, endpoint: &str) -> Result<String, String> {
     Ok(parsed.to_string())
 }
 
+/// Retrieves the current Ollama URL and model settings.
 #[tauri::command]
 pub fn get_llm_settings(app_handle: AppHandle) -> Result<LlmSettings, String> {
     let settings = db_init::read_settings(&app_handle)?;
@@ -146,6 +147,7 @@ pub fn get_llm_settings(app_handle: AppHandle) -> Result<LlmSettings, String> {
     })
 }
 
+/// Sets and validates the Ollama server URL and model configuration.
 #[tauri::command]
 pub fn set_llm_settings(
     app_handle: AppHandle,
@@ -160,6 +162,7 @@ pub fn set_llm_settings(
     Ok(())
 }
 
+/// Fetches the list of available models from the configured Ollama server.
 #[tauri::command]
 pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel>, String> {
     let settings = db_init::read_settings(&app_handle)?;
@@ -189,6 +192,7 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
     Ok(models)
 }
 
+/// Validates that the Ollama server is reachable at the configured URL.
 #[tauri::command]
 pub async fn check_ollama_connection(app_handle: AppHandle) -> Result<bool, String> {
     let settings = db_init::read_settings(&app_handle)?;
@@ -206,12 +210,14 @@ pub async fn check_ollama_connection(app_handle: AppHandle) -> Result<bool, Stri
 
 // ── Conversation CRUD ───────────────────────────────────────────────
 
+/// Retrieves all chat conversations.
 #[tauri::command]
 pub fn get_conversations(app_handle: AppHandle) -> Result<Vec<Conversation>, String> {
     let db_path = db_init::get_db_path(&app_handle)?;
     get_conversations_db(&db_path)
 }
 
+/// Queries all conversations from the database, ordered by most recent first.
 pub fn get_conversations_db(db_path: &PathBuf) -> Result<Vec<Conversation>, String> {
     db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -235,12 +241,14 @@ pub fn get_conversations_db(db_path: &PathBuf) -> Result<Vec<Conversation>, Stri
     })
 }
 
+/// Creates a new chat conversation with the given title.
 #[tauri::command]
 pub fn create_conversation(app_handle: AppHandle, title: String) -> Result<Conversation, String> {
     let db_path = db_init::get_db_path(&app_handle)?;
     create_conversation_db(&db_path, title)
 }
 
+/// Inserts a new conversation into the database and returns it.
 pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conversation, String> {
     db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -260,6 +268,7 @@ pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conver
     })
 }
 
+/// Deletes a conversation and all its associated messages.
 #[tauri::command]
 pub fn delete_conversation(app_handle: AppHandle, conversation_id: i64) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
@@ -276,6 +285,7 @@ pub fn delete_conversation(app_handle: AppHandle, conversation_id: i64) -> Resul
     })
 }
 
+/// Updates the title of an existing conversation.
 #[tauri::command]
 pub fn rename_conversation(
     app_handle: AppHandle,
@@ -295,6 +305,7 @@ pub fn rename_conversation(
     })
 }
 
+/// Fetches all messages for a given conversation.
 #[tauri::command]
 pub fn get_conversation_messages(
     app_handle: AppHandle,
@@ -304,6 +315,7 @@ pub fn get_conversation_messages(
     get_conversation_messages_db(&db_path, conversation_id)
 }
 
+/// Queries all messages for a conversation from the database, ordered chronologically.
 pub fn get_conversation_messages_db(
     db_path: &PathBuf,
     conversation_id: i64,
@@ -364,6 +376,7 @@ fn save_message_db(
     })
 }
 
+/// Deletes all conversations and their messages from the database.
 #[tauri::command]
 pub fn delete_all_conversations(app_handle: AppHandle) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
@@ -671,6 +684,7 @@ struct OllamaFunctionCall {
     arguments: Value,
 }
 
+/// Marks a conversation's LLM chat stream as cancelled.
 #[tauri::command]
 pub async fn cancel_llm_chat(conversation_id: i64) -> Result<(), String> {
     CANCELLED
@@ -693,6 +707,7 @@ fn clear_cancelled(conversation_id: i64) {
     }
 }
 
+/// Streams an LLM response from the Ollama backend for the given conversation.
 #[tauri::command]
 pub async fn llm_chat(
     app_handle: AppHandle,

@@ -73,6 +73,10 @@ fn acquire_db_lock(db_path: &Path) -> Result<DbLockGuard, String> {
     })
 }
 
+/// Acquires a per-path reentrant lock before executing `operation`.
+///
+/// The lock is per database path, so operations on different databases can run concurrently.
+/// Re-entrant calls on the same thread skip the mutex and only decrement the depth on drop.
 pub fn with_db_lock<T, F>(db_path: &Path, operation: F) -> Result<T, String>
 where
     F: FnOnce() -> Result<T, String>,
@@ -81,6 +85,7 @@ where
     operation()
 }
 
+/// Returns the path to `settings.json` in the app data directory, creating the directory if needed.
 pub fn settings_file_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     let app_dir = app_handle
         .path()
@@ -92,6 +97,7 @@ pub fn settings_file_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     Ok(app_dir.join("settings.json"))
 }
 
+/// Loads application settings from `settings.json`, returning defaults if the file does not exist.
 pub fn read_settings(app_handle: &AppHandle) -> Result<AppSettings, String> {
     let settings_path = settings_file_path(app_handle)?;
     if settings_path.exists() {
@@ -103,6 +109,7 @@ pub fn read_settings(app_handle: &AppHandle) -> Result<AppSettings, String> {
     }
 }
 
+/// Persists the given `AppSettings` to `settings.json`.
 pub fn write_settings(app_handle: &AppHandle, settings: &AppSettings) -> Result<(), String> {
     let settings_path = settings_file_path(app_handle)?;
     let json = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
@@ -110,6 +117,7 @@ pub fn write_settings(app_handle: &AppHandle, settings: &AppSettings) -> Result<
     Ok(())
 }
 
+/// Returns the database file path, using the custom path from settings if set, otherwise the default.
 pub fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     // If the user has configured an override, use it
     if let Ok(settings) = read_settings(app_handle) {
@@ -135,6 +143,7 @@ pub fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     Ok(app_dir.join("honeybear.db"))
 }
 
+/// Creates all database tables and indexes, and runs schema migrations for new columns.
 pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
     let db_path = get_db_path(app_handle)?;
     with_db_lock(&db_path, || {
@@ -399,6 +408,7 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
     })
 }
 
+/// Tauri command: sets a custom database path in settings and initializes the database there.
 #[tauri::command]
 pub fn set_db_path(app_handle: AppHandle, path: String) -> Result<(), String> {
     let mut settings = read_settings(&app_handle)?;
@@ -421,6 +431,7 @@ pub fn set_db_path(app_handle: AppHandle, path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Tauri command: clears the custom database path so the default location is used.
 #[tauri::command]
 pub fn reset_db_path(app_handle: AppHandle) -> Result<(), String> {
     let mut settings = read_settings(&app_handle)?;
@@ -432,6 +443,7 @@ pub fn reset_db_path(app_handle: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Tauri command: returns the current database file path as a string.
 #[tauri::command]
 pub fn get_db_path_command(app_handle: AppHandle) -> Result<String, String> {
     let pb = get_db_path(&app_handle)?;

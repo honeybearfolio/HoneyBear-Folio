@@ -123,6 +123,7 @@ fn apply_action_legacy(transaction: &mut Transaction, field: &str, value: &str) 
     }
 }
 
+/// Retrieves all rules ordered by priority descending, then by ID.
 pub fn get_rules_db(db_path: &PathBuf) -> Result<Vec<Rule>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -175,6 +176,7 @@ pub struct CreateRuleDbParams {
     pub actions: Vec<RuleAction>,
 }
 
+/// Inserts a new transaction rule and returns its ID.
 pub fn create_rule_db(db_path: &PathBuf, params: CreateRuleDbParams) -> Result<i32, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -216,6 +218,7 @@ pub struct UpdateRuleDbParams {
     pub actions: Vec<RuleAction>,
 }
 
+/// Updates a rule's priority, conditions, and actions.
 pub fn update_rule_db(db_path: &PathBuf, params: UpdateRuleDbParams) -> Result<(), String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -244,6 +247,7 @@ pub fn update_rule_db(db_path: &PathBuf, params: UpdateRuleDbParams) -> Result<(
     })
 }
 
+/// Deletes a rule by ID.
 pub fn delete_rule_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -255,6 +259,8 @@ pub fn delete_rule_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     })
 }
 
+/// Updates the priority ordering of rules based on the provided ID list.
+/// The first ID in the list receives the highest priority.
 pub fn update_rules_order_db(db_path: &PathBuf, rule_ids: Vec<i32>) -> Result<(), String> {
     crate::db_init::with_db_lock(db_path, || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -277,6 +283,7 @@ pub fn update_rules_order_db(db_path: &PathBuf, rule_ids: Vec<i32>) -> Result<()
     })
 }
 
+/// Tauri command: retrieves all rules.
 #[tauri::command]
 pub fn get_rules(app_handle: AppHandle) -> Result<Vec<Rule>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
@@ -295,6 +302,7 @@ pub struct CreateRuleArgs {
     pub actions: Option<Vec<RuleAction>>,
 }
 
+/// Tauri command: creates a new rule.
 #[tauri::command]
 pub fn create_rule(app_handle: AppHandle, args: CreateRuleArgs) -> Result<i32, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
@@ -324,6 +332,7 @@ pub struct UpdateRuleArgs {
     pub actions: Option<Vec<RuleAction>>,
 }
 
+/// Tauri command: updates an existing rule.
 #[tauri::command]
 pub fn update_rule(app_handle: AppHandle, args: UpdateRuleArgs) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
@@ -341,12 +350,14 @@ pub fn update_rule(app_handle: AppHandle, args: UpdateRuleArgs) -> Result<(), St
     update_rule_db(&db_path, params)
 }
 
+/// Tauri command: deletes a rule by ID.
 #[tauri::command]
 pub fn delete_rule(app_handle: AppHandle, id: i32) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     delete_rule_db(&db_path, id)
 }
 
+/// Tauri command: updates the priority ordering of rules.
 #[tauri::command]
 pub fn update_rules_order(app_handle: AppHandle, rule_ids: Vec<i32>) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;

@@ -12,6 +12,8 @@ pub struct InitialTransactionDetails {
     pub category: String,
 }
 
+/// Creates a new account in the database with the given name, balance, and currency.
+/// If the balance is non-zero, an opening transaction is also inserted.
 pub fn create_account_db(
     db_path: &PathBuf,
     name: String,
@@ -93,6 +95,7 @@ pub fn create_account_db(
     })
 }
 
+/// Renames an account by ID. Enforces case-insensitive name uniqueness.
 pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result<Account, String> {
     crate::db_init::with_db_lock(db_path, || {
         let new_trim = new_name.trim().to_string();
@@ -144,6 +147,7 @@ pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result
     })
 }
 
+/// Updates an account's name and currency. Enforces case-insensitive name uniqueness.
 pub fn update_account_db(
     db_path: &PathBuf,
     id: i32,
@@ -200,6 +204,7 @@ pub fn update_account_db(
     })
 }
 
+/// Deletes an account and all of its associated transactions.
 pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     crate::db_init::with_db_lock(db_path, || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -223,6 +228,7 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     })
 }
 
+/// Retrieves all accounts from the database.
 pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -251,6 +257,7 @@ pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
     })
 }
 
+/// Fetches all accounts together with transaction amounts grouped by account and currency.
 pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<AccountsSummary, String> {
     crate::db_init::with_db_lock(db_path, || {
         let accounts = get_accounts_db(db_path)?;
@@ -284,6 +291,7 @@ pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<Accoun
     })
 }
 
+/// Tauri command: creates a new account.
 #[tauri::command]
 pub fn create_account(
     app_handle: AppHandle,
@@ -296,12 +304,14 @@ pub fn create_account(
     create_account_db(&db_path, name, balance, currency, initial_transaction)
 }
 
+/// Tauri command: renames an existing account.
 #[tauri::command]
 pub fn rename_account(app_handle: AppHandle, id: i32, new_name: String) -> Result<Account, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     rename_account_db(&db_path, id, new_name)
 }
 
+/// Tauri command: updates an account's name and currency.
 #[tauri::command]
 pub fn update_account(
     app_handle: AppHandle,
@@ -313,12 +323,14 @@ pub fn update_account(
     update_account_db(&db_path, id, name, currency)
 }
 
+/// Tauri command: deletes an account and its transactions.
 #[tauri::command]
 pub fn delete_account(app_handle: AppHandle, id: i32) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     delete_account_db(&db_path, id)
 }
 
+/// Tauri command: fetches all accounts with balances converted using exchange rates and market data.
 #[tauri::command]
 pub async fn get_accounts(
     app_handle: AppHandle,
