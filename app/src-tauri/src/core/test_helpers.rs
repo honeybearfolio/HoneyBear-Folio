@@ -62,6 +62,16 @@ pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
 
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
+    // SQLite performance pragmas (mirrors init_db in db_init.rs)
+    conn.execute_batch(
+        "PRAGMA journal_mode = WAL;
+         PRAGMA synchronous = NORMAL;
+         PRAGMA cache_size = -64000;
+         PRAGMA temp_store = MEMORY;
+         PRAGMA foreign_keys = ON;",
+    )
+    .map_err(|e| e.to_string())?;
+
     conn.execute(
         "CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY,
@@ -93,30 +103,17 @@ pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
 
-    // Ensure we have columns added for migrations so tests using older DBs still work
+    // Migrate transactions: check all needed columns in a single PRAGMA call
     {
         let mut stmt = conn
             .prepare("PRAGMA table_info(transactions)")
             .map_err(|e| e.to_string())?;
-        let mut has_linked = false;
-        let mut has_currency = false;
         let col_iter = stmt
             .query_map([], |row| row.get::<_, String>(1))
             .map_err(|e| e.to_string())?;
-        for name in col_iter.flatten() {
-            if name == "linked_tx_id" {
-                has_linked = true;
-            }
-            if name == "currency" {
-                has_currency = true;
-            }
-            if has_linked && has_currency {
-                break;
-            }
-        }
+        let cols: std::collections::HashSet<String> = col_iter.flatten().collect();
 
-        if !has_linked {
-            // Safe to ALTER TABLE to add the nullable column. Concurrent runs may attempt this simultaneously; ignore duplicate-column errors.
+        if !cols.contains("linked_tx_id") {
             match conn.execute(
                 "ALTER TABLE transactions ADD COLUMN linked_tx_id INTEGER",
                 [],
@@ -131,8 +128,7 @@ pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
             }
         }
 
-        if !has_currency {
-            // Safe to ALTER TABLE to add the nullable column. Concurrent runs may attempt this simultaneously; ignore duplicate-column errors.
+        if !cols.contains("currency") {
             match conn.execute("ALTER TABLE transactions ADD COLUMN currency TEXT", []) {
                 Ok(_) => {}
                 Err(e) => {
@@ -145,22 +141,17 @@ pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
         }
     }
 
-    // Ensure we have a column for currency in accounts
+    // Migrate accounts: check currency column
     {
         let mut stmt = conn
             .prepare("PRAGMA table_info(accounts)")
             .map_err(|e| e.to_string())?;
-        let mut has_currency = false;
         let col_iter = stmt
             .query_map([], |row| row.get::<_, String>(1))
             .map_err(|e| e.to_string())?;
-        for name in col_iter.flatten() {
-            if name == "currency" {
-                has_currency = true;
-                break;
-            }
-        }
-        if !has_currency {
+        let cols: std::collections::HashSet<String> = col_iter.flatten().collect();
+
+        if !cols.contains("currency") {
             match conn.execute("ALTER TABLE accounts ADD COLUMN currency TEXT", []) {
                 Ok(_) => {}
                 Err(e) => {
@@ -192,6 +183,14 @@ pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
             PRIMARY KEY (ticker, date)
         )",
         [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    // Performance indexes (mirrors init_db in db_init.rs)
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
+         CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
+         CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);",
     )
     .map_err(|e| e.to_string())?;
 
