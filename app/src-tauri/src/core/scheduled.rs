@@ -524,7 +524,7 @@ pub fn update_scheduled_transaction_db(
 
 /// Deletes a scheduled transaction by ID.
 pub fn delete_scheduled_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute(
             "DELETE FROM scheduled_transactions WHERE id = ?1",
@@ -631,7 +631,7 @@ pub fn apply_scheduled_occurrence_db(
     scheduled_tx_id: i32,
     apply_date: &str,
 ) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         // Fetch the scheduled transaction
@@ -699,7 +699,7 @@ pub fn skip_scheduled_occurrence_db(
     scheduled_tx_id: i32,
     skip_date: &str,
 ) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         conn.execute(

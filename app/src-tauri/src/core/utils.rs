@@ -115,7 +115,7 @@ pub fn set_custom_exchange_rate_db(
     currency: String,
     rate: f64,
 ) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute(
             "INSERT OR REPLACE INTO custom_exchange_rates (currency, rate) VALUES (?1, ?2)",
@@ -132,7 +132,7 @@ pub fn get_custom_exchange_rate_db(
     db_path: &PathBuf,
     currency: String,
 ) -> Result<Option<f64>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn
@@ -393,7 +393,7 @@ fn get_account_currencies(db_path: &PathBuf) -> Result<Vec<String>, String> {
 
 /// Delete a custom exchange rate from the database
 pub fn delete_custom_exchange_rate_db(db_path: &PathBuf, currency: String) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute(
             "DELETE FROM custom_exchange_rates WHERE currency = ?1",

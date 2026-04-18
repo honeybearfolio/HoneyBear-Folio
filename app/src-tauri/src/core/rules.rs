@@ -249,7 +249,7 @@ pub fn update_rule_db(db_path: &PathBuf, params: UpdateRuleDbParams) -> Result<(
 
 /// Deletes a rule by ID.
 pub fn delete_rule_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         conn.execute("DELETE FROM rules WHERE id = ?1", params![id])

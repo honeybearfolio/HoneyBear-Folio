@@ -272,8 +272,9 @@ pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conver
 #[tauri::command]
 pub fn delete_conversation(app_handle: AppHandle, conversation_id: i64) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
-    db_init::with_db_lock(&db_path, || {
-        let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let db_ref = db_path.as_path();
+    db_init::with_db_lock(db_ref, move || {
+        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
         conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| e.to_string())?;
         conn.execute(
@@ -293,8 +294,9 @@ pub fn rename_conversation(
     title: String,
 ) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
-    db_init::with_db_lock(&db_path, || {
-        let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let db_ref = db_path.as_path();
+    db_init::with_db_lock(db_ref, move || {
+        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE chat_conversations SET title = ?1, updated_at = ?2 WHERE id = ?3",
@@ -320,7 +322,7 @@ pub fn get_conversation_messages_db(
     db_path: &PathBuf,
     conversation_id: i64,
 ) -> Result<Vec<ChatMessage>, String> {
-    db_init::with_db_lock(db_path, || {
+    db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
             .prepare(
@@ -356,7 +358,7 @@ fn save_message_db(
     tool_call_id: Option<&str>,
     thinking: Option<&str>,
 ) -> Result<i64, String> {
-    db_init::with_db_lock(db_path, || {
+    db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
         conn.execute(

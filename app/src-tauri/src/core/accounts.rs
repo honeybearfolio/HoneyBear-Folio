@@ -154,7 +154,7 @@ pub fn update_account_db(
     name: String,
     currency: Option<String>,
 ) -> Result<Account, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let name_trimmed = name.trim().to_string();
         if name_trimmed.is_empty() {
             return Err("Account name cannot be empty or whitespace-only".to_string());
@@ -206,7 +206,7 @@ pub fn update_account_db(
 
 /// Deletes an account and all of its associated transactions.
 pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
