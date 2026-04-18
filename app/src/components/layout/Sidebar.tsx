@@ -260,6 +260,7 @@ export default function Sidebar({
             onClick={onClose}
             className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer"
             title={t("app.hide_sidebar")}
+            aria-label={t("app.hide_sidebar")}
           >
             <PanelLeftClose className="w-5 h-5" />
           </button>
@@ -277,6 +278,11 @@ export default function Sidebar({
                 onClick={togglePrivacyMode}
                 className="text-slate-400 hover:text-white transition-colors p-1 rounded-md hover:bg-slate-700/50"
                 title={
+                  isPrivacyMode
+                    ? t("sidebar.show_values")
+                    : t("sidebar.hide_values")
+                }
+                aria-label={
                   isPrivacyMode
                     ? t("sidebar.show_values")
                     : t("sidebar.hide_values")
@@ -515,6 +521,9 @@ export default function Sidebar({
                       onClick={() => setShowSortMenu(!showSortMenu)}
                       className="sidebar-add-button"
                       title={t("sort.sort_by")}
+                      aria-label={t("sort.sort_by")}
+                      aria-haspopup="true"
+                      aria-expanded={showSortMenu}
                     >
                       <ArrowUpDown className="w-3.5 h-3.5" />
                     </button>
@@ -585,6 +594,7 @@ export default function Sidebar({
                   <button
                     onClick={() => setShowAccountModal(true)}
                     className="sidebar-add-button"
+                    aria-label={t("account.new_account")}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -614,6 +624,7 @@ export default function Sidebar({
             onClick={onSwitchSession}
             className="w-full flex items-center gap-2 px-3 py-1.5 mb-1 text-xs text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
             title={t("session.switch_session")}
+            aria-label={t("session.switch_session")}
           >
             <RefreshCw className="w-3 h-3" />
             <span className="truncate">{activeSession.name}</span>

@@ -106,4 +106,55 @@ describe("CustomSelect", () => {
     );
     expect(screen.getByText("Select something")).toBeInTheDocument();
   });
+
+  it("renders aria-label on trigger button when provided", () => {
+    render(
+      <CustomSelect
+        value=""
+        onChange={() => {}}
+        options={options}
+        placeholder="Select something"
+        aria-label="Choose option"
+      />,
+    );
+    const trigger = screen.getByRole("button", { name: "Choose option" });
+    expect(trigger).toHaveAttribute("aria-label", "Choose option");
+  });
+
+  it("renders aria-label on search input when menu is open", async () => {
+    render(
+      <CustomSelect
+        value=""
+        onChange={() => {}}
+        options={options}
+        placeholder="Select something"
+      />,
+    );
+    fireEvent.click(screen.getByText("Select something"));
+    const searchInput = screen.getByRole("textbox");
+    expect(searchInput).toHaveAttribute("aria-label");
+  });
+
+  it("supports Home and End keys for navigation", async () => {
+    const handleChange = vi.fn();
+    render(
+      <CustomSelect
+        value=""
+        onChange={handleChange}
+        options={options}
+        placeholder="Select something"
+      />,
+    );
+
+    const trigger = screen.getByText("Select something");
+    fireEvent.click(trigger);
+
+    const searchInput = screen.getByRole("textbox");
+
+    // Press End to go to last option
+    fireEvent.keyDown(searchInput, { key: "End" });
+    // Press Enter to select the last option
+    fireEvent.keyDown(searchInput, { key: "Enter" });
+    expect(handleChange).toHaveBeenCalledWith("opt3");
+  });
 });

@@ -408,6 +408,7 @@ export default function RulesList() {
             <button
               onClick={resetForm}
               className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              aria-label={t("rules.close_form")}
             >
               <X size={18} />
             </button>
@@ -529,6 +530,7 @@ export default function RulesList() {
                         onClick={() => removeCondition(index)}
                         className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                         title={t("rules.remove_condition")}
+                        aria-label={t("rules.remove_condition")}
                       >
                         <X size={16} />
                       </button>
@@ -611,6 +613,7 @@ export default function RulesList() {
                           onClick={() => removeAction(index)}
                           className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                           title={t("rules.remove_action")}
+                          aria-label={t("rules.remove_action")}
                         >
                           <X size={16} />
                         </button>
@@ -719,11 +722,45 @@ export default function RulesList() {
                     setMenuOpenId(rule.id);
                   }}
                 >
-                  <td className="px-4 py-2.5 text-slate-400 dark:text-slate-600 cursor-move">
-                    <GripVertical
-                      size={16}
-                      className="opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing"
-                    />
+                  <td className="px-4 py-2.5 text-slate-400 dark:text-slate-600">
+                    <button
+                      type="button"
+                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                      aria-label={t("rules.reorder")}
+                      aria-roledescription={t("a11y.sortable")}
+                      onKeyDown={(e) => {
+                        if (
+                          !isEditing &&
+                          (e.key === "ArrowUp" || e.key === "ArrowDown") &&
+                          e.altKey
+                        ) {
+                          e.preventDefault();
+                          const dir = e.key === "ArrowUp" ? -1 : 1;
+                          const newIndex = index + dir;
+                          if (newIndex < 0 || newIndex >= rules.length) return;
+                          setRules((current) =>
+                            reorderRules(current, rule.id, newIndex),
+                          );
+                          (async () => {
+                            try {
+                              const reordered = reorderRules(
+                                rules,
+                                rule.id,
+                                newIndex,
+                              );
+                              await rust.update_rules_order({
+                                ruleIds: reordered.map((r: RuleRecord) => r.id),
+                              });
+                            } catch (err) {
+                              console.error("Failed to reorder rules:", err);
+                              fetchRules();
+                            }
+                          })();
+                        }
+                      }}
+                    >
+                      <GripVertical size={16} />
+                    </button>
                   </td>
                   <td className="px-4 py-2.5 text-slate-800 dark:text-slate-200">
                     <div className="flex flex-wrap gap-1">
@@ -764,6 +801,7 @@ export default function RulesList() {
                         onClick={() => handleEdit(rule)}
                         className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 hover:text-brand-500 cursor-pointer"
                         title={t("rules.edit")}
+                        aria-label={t("rules.edit")}
                       >
                         <Edit size={16} />
                       </button>
@@ -771,6 +809,7 @@ export default function RulesList() {
                         onClick={() => handleDelete(rule.id)}
                         className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors text-slate-400 hover:text-rose-500 cursor-pointer"
                         title={t("rules.delete")}
+                        aria-label={t("rules.delete")}
                       >
                         <Trash2 size={16} />
                       </button>

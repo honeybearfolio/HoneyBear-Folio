@@ -27,6 +27,7 @@ interface CustomSelectProps {
   className?: string;
   icon?: React.ComponentType<{ size?: number; className?: string }>;
   "data-testid"?: string;
+  "aria-label"?: string;
 }
 
 export default function CustomSelect({
@@ -38,6 +39,7 @@ export default function CustomSelect({
   openUpward = false,
   className = "",
   "data-testid": dataTestId,
+  "aria-label": ariaLabel,
 }: CustomSelectProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -183,6 +185,13 @@ export default function CustomSelect({
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setHighlighted((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      if (open && filteredOptions.length > 0) setHighlighted(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      if (open && filteredOptions.length > 0)
+        setHighlighted(filteredOptions.length - 1);
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (open && highlighted >= 0 && filteredOptions[highlighted]) {
@@ -220,6 +229,7 @@ export default function CustomSelect({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={ariaLabel}
         data-testid={dataTestId}
         className={`px-3 py-2 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 ${fullWidth ? "w-full" : ""} text-left flex items-center justify-between custom-select-trigger`}
         onClick={toggle}
@@ -262,6 +272,7 @@ export default function CustomSelect({
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={t("customselect.search_placeholder")}
+                aria-label={t("customselect.search_placeholder")}
                 className="form-input !px-2 !py-1 !rounded-md"
               />
             </li>

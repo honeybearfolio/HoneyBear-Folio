@@ -720,6 +720,7 @@ export default function SettingsView({
                           [key]: val,
                         })
                       }
+                      aria-label={label}
                     />
                   </div>
                 ))}

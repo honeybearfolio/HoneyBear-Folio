@@ -53,13 +53,15 @@ describe("MaskedNumber", () => {
       togglePrivacyMode: vi.fn(),
     });
 
-    mockFormatNumber.mockReturnValue("****");
+    mockFormatNumber.mockImplementation((_val, opts) => {
+      if (opts?.ignorePrivacy) return "$1,234.56";
+      return "****";
+    });
 
     render(<MaskedNumber value={1234.56} options={{ style: "currency" }} />);
 
     const el = screen.getByText("****");
     expect(el).toBeInTheDocument();
-    expect(el).not.toHaveAttribute("title"); // Should not have tooltip
 
     // Hover should NOT reveal the value
     fireEvent.mouseEnter(el);
@@ -94,7 +96,10 @@ describe("MaskedNumber", () => {
       isPrivacyMode: true,
       togglePrivacyMode: vi.fn(),
     });
-    mockFormatNumber.mockReturnValue("***");
+    mockFormatNumber.mockImplementation((_val, opts) => {
+      if (opts?.ignorePrivacy) return "123";
+      return "***";
+    });
 
     render(
       <MaskedNumber
@@ -106,12 +111,38 @@ describe("MaskedNumber", () => {
 
     const el = screen.getByTestId("masked-number");
     expect(el).toHaveClass("text-blue-500");
-    expect(el).not.toHaveClass("cursor-help");
-    expect(el).not.toHaveClass("cursor-pointer");
     expect(el).toHaveTextContent("***");
+  });
 
-    // Hover should NOT reveal the value
-    fireEvent.mouseEnter(el);
-    expect(el).toHaveTextContent("***");
+  it("shows peek button with keyboard toggle in privacy mode", () => {
+    vi.mocked(usePrivacy).mockReturnValue({
+      isPrivacyMode: true,
+      togglePrivacyMode: vi.fn(),
+    });
+    mockFormatNumber.mockImplementation((_val, opts) => {
+      if (opts?.ignorePrivacy) return "$1,234.56";
+      return "$•••••••";
+    });
+
+    render(
+      <MaskedNumber
+        value={1234.56}
+        options={{ style: "currency" }}
+        data-testid="masked-peek"
+      />,
+    );
+
+    // Should find a peek button
+    const peekBtn = screen.getByRole("button");
+    expect(peekBtn).toBeInTheDocument();
+    expect(peekBtn).toHaveAttribute("aria-label");
+
+    // Keyboard toggle: press Enter to reveal
+    fireEvent.keyDown(peekBtn, { key: "Enter" });
+    expect(screen.getByText("$1,234.56")).toBeInTheDocument();
+
+    // Press Enter again to hide
+    fireEvent.keyDown(peekBtn, { key: "Enter" });
+    expect(screen.getByText("$•••••••")).toBeInTheDocument();
   });
 });
