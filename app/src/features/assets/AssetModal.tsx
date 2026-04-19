@@ -81,8 +81,8 @@ export default function AssetModal({
   }));
 
   const currencyOptions = CURRENCIES.map((c) => ({
-    value: c,
-    label: c,
+    value: c.code,
+    label: `${c.code} (${c.symbol}) – ${c.name}`,
   }));
 
   return (
@@ -156,13 +156,13 @@ export default function AssetModal({
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
           >
-            {t("common.cancel")}
+            {t("assets.cancel")}
           </button>
           <button
             type="submit"
             className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors cursor-pointer"
           >
-            {isEditing ? t("common.save") : t("assets.add_asset")}
+            {isEditing ? t("assets.save") : t("assets.add_asset")}
           </button>
         </ModalFooter>
       </form>

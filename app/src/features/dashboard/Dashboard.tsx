@@ -59,6 +59,7 @@ import type {
 export default function Dashboard({
   accounts: propAccounts = [],
   marketValues = {},
+  totalAssetsValue = 0,
 }: DashboardProps) {
   const { t } = useTranslation();
   const [accounts, setAccounts] = useState<Account[]>(propAccounts);
@@ -453,6 +454,7 @@ export default function Dashboard({
         filteredMarketValues as unknown as Parameters<
           typeof computeNetWorth
         >[1],
+        totalAssetsValue,
       );
       totalData[totalData.length - 1] = currentTotal;
     }
@@ -565,6 +567,7 @@ export default function Dashboard({
     getPrice,
     chartColors,
     t,
+    totalAssetsValue,
   ]);
 
   const doughnutData = useMemo(() => {
@@ -1342,8 +1345,9 @@ export default function Dashboard({
         filteredMarketValues as unknown as Parameters<
           typeof computeNetWorth
         >[1],
+        totalAssetsValue,
       ),
-    [filteredAccounts, filteredMarketValues],
+    [filteredAccounts, filteredMarketValues, totalAssetsValue],
   );
 
   if (loading) {

@@ -459,7 +459,11 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
                 onChangeSidebarVisibility={setSidebarVisibility}
               />
             ) : selectedAccountId === "dashboard" ? (
-              <Dashboard accounts={accounts} marketValues={marketValues} />
+              <Dashboard
+                accounts={accounts}
+                marketValues={marketValues}
+                totalAssetsValue={totalAssetsValue}
+              />
             ) : selectedAccountId === "investment-dashboard" ? (
               <InvestmentDashboard />
             ) : selectedAccountId === "fire-calculator" ? (

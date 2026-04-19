@@ -257,45 +257,16 @@ pub fn get_total_assets_value_db(
 
 // ── Tauri commands ──────────────────────────────────────────────────
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateAssetArgs {
-    pub name: String,
-    pub category: String,
-    pub currency: Option<String>,
-    pub notes: Option<String>,
-}
-
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateAssetArgs {
-    pub id: i32,
-    pub name: String,
-    pub category: String,
-    pub currency: Option<String>,
-    pub notes: Option<String>,
-}
-
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateValuationArgs {
-    pub asset_id: i32,
-    pub date: String,
-    pub value: f64,
-}
-
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateValuationArgs {
-    pub id: i32,
-    pub date: String,
-    pub value: f64,
-}
-
 #[tauri::command]
-pub fn create_asset(app_handle: AppHandle, args: CreateAssetArgs) -> Result<Asset, String> {
+pub fn create_asset(
+    app_handle: AppHandle,
+    name: String,
+    category: String,
+    currency: Option<String>,
+    notes: Option<String>,
+) -> Result<Asset, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    create_asset_db(&db_path, args.name, args.category, args.currency, args.notes)
+    create_asset_db(&db_path, name, category, currency, notes)
 }
 
 #[tauri::command]
@@ -308,16 +279,16 @@ pub fn get_assets(
 }
 
 #[tauri::command]
-pub fn update_asset(app_handle: AppHandle, args: UpdateAssetArgs) -> Result<(), String> {
+pub fn update_asset(
+    app_handle: AppHandle,
+    id: i32,
+    name: String,
+    category: String,
+    currency: Option<String>,
+    notes: Option<String>,
+) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    update_asset_db(
-        &db_path,
-        args.id,
-        args.name,
-        args.category,
-        args.currency,
-        args.notes,
-    )
+    update_asset_db(&db_path, id, name, category, currency, notes)
 }
 
 #[tauri::command]
@@ -329,10 +300,12 @@ pub fn delete_asset(app_handle: AppHandle, id: i32) -> Result<(), String> {
 #[tauri::command]
 pub fn create_valuation(
     app_handle: AppHandle,
-    args: CreateValuationArgs,
+    asset_id: i32,
+    date: String,
+    value: f64,
 ) -> Result<AssetValuation, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    create_valuation_db(&db_path, args.asset_id, args.date, args.value)
+    create_valuation_db(&db_path, asset_id, date, value)
 }
 
 #[tauri::command]
@@ -345,9 +318,14 @@ pub fn get_valuations(
 }
 
 #[tauri::command]
-pub fn update_valuation(app_handle: AppHandle, args: UpdateValuationArgs) -> Result<(), String> {
+pub fn update_valuation(
+    app_handle: AppHandle,
+    id: i32,
+    date: String,
+    value: f64,
+) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    update_valuation_db(&db_path, args.id, args.date, args.value)
+    update_valuation_db(&db_path, id, date, value)
 }
 
 #[tauri::command]

@@ -45,4 +45,5 @@ export interface DailyPriceData {
 export interface DashboardProps {
   accounts?: Account[];
   marketValues?: Record<string, number>;
+  totalAssetsValue?: number;
 }

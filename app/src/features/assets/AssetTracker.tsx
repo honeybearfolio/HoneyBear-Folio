@@ -6,6 +6,7 @@ import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
+import { useFormatNumber } from "../../utils/format";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import AssetModal from "./AssetModal";
 import ValuationModal from "./ValuationModal";
@@ -22,7 +23,8 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export default function AssetTracker() {
   const { t } = useTranslation();
-  const { formatNumber, currency: appCurrency } = useNumberFormat();
+  const { currency: appCurrency } = useNumberFormat();
+  const formatNumber = useFormatNumber();
   const confirm = useConfirm();
   const { showToast } = useToast();
 
@@ -34,12 +36,25 @@ export default function AssetTracker() {
   const [editingAsset, setEditingAsset] = useState<AssetWithLatestValue | null>(
     null,
   );
-  const [expandedAssetId, setExpandedAssetId] = useState<number | null>(null);
-  const [valuations, setValuations] = useState<AssetValuation[]>([]);
+  const [expandedAssetIds, setExpandedAssetIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [valuationsMap, setValuationsMap] = useState<
+    Record<number, AssetValuation[]>
+  >({});
   const [showValuationModal, setShowValuationModal] = useState(false);
   const [editingValuation, setEditingValuation] =
     useState<AssetValuation | null>(null);
   const [valuationAssetId, setValuationAssetId] = useState<number | null>(null);
+
+  const fetchValuations = useCallback(async (assetId: number) => {
+    try {
+      const data = await rust.get_valuations({ assetId });
+      setValuationsMap((prev) => ({ ...prev, [assetId]: data }));
+    } catch (e) {
+      console.error("Failed to fetch valuations:", e);
+    }
+  }, []);
 
   const fetchAssets = useCallback(async () => {
     try {
@@ -48,11 +63,14 @@ export default function AssetTracker() {
       });
       setAssets(data);
       setFetchError(null);
+      // Auto-expand all assets and fetch their valuations
+      setExpandedAssetIds(new Set(data.map((a) => a.id)));
+      await Promise.all(data.map((a) => fetchValuations(a.id)));
     } catch (e) {
       console.error("Failed to fetch assets:", e);
       setFetchError(String(e));
     }
-  }, [appCurrency]);
+  }, [appCurrency, fetchValuations]);
 
   useEffect(() => {
     let mounted = true;
@@ -65,6 +83,15 @@ export default function AssetTracker() {
         if (mounted) {
           setAssets(data);
           setFetchError(null);
+          setExpandedAssetIds(new Set(data.map((a) => a.id)));
+          await Promise.all(
+            data.map(async (a) => {
+              const vals = await rust.get_valuations({ assetId: a.id });
+              if (mounted) {
+                setValuationsMap((prev) => ({ ...prev, [a.id]: vals }));
+              }
+            }),
+          );
         }
       } catch (e) {
         if (mounted) setFetchError(String(e));
@@ -77,56 +104,51 @@ export default function AssetTracker() {
     };
   }, [appCurrency]);
 
-  const fetchValuations = useCallback(async (assetId: number) => {
-    try {
-      const data = await rust.get_valuations({ assetId });
-      setValuations(data);
-    } catch (e) {
-      console.error("Failed to fetch valuations:", e);
-    }
-  }, []);
-
   const handleExpand = useCallback(
     async (assetId: number) => {
-      if (expandedAssetId === assetId) {
-        setExpandedAssetId(null);
-        setValuations([]);
-      } else {
-        setExpandedAssetId(assetId);
-        await fetchValuations(assetId);
-      }
+      setExpandedAssetIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(assetId)) {
+          next.delete(assetId);
+        } else {
+          next.add(assetId);
+          fetchValuations(assetId);
+        }
+        return next;
+      });
     },
-    [expandedAssetId, fetchValuations],
+    [fetchValuations],
   );
 
   const handleDeleteAsset = useCallback(
     async (asset: AssetWithLatestValue) => {
       const confirmed = await confirm(
         t("assets.confirm_delete", { name: asset.name }),
-        t("common.delete"),
+        { kind: "warning", okLabel: t("confirm.delete") },
       );
       if (!confirmed) return;
       try {
         await rust.delete_asset({ id: asset.id });
         showToast(t("assets.deleted"), { type: "success" });
-        if (expandedAssetId === asset.id) {
-          setExpandedAssetId(null);
-          setValuations([]);
-        }
+        setExpandedAssetIds((prev) => {
+          const next = new Set(prev);
+          next.delete(asset.id);
+          return next;
+        });
         await fetchAssets();
       } catch (e) {
         showToast(String(e), { type: "error" });
       }
     },
-    [confirm, t, showToast, fetchAssets, expandedAssetId],
+    [confirm, t, showToast, fetchAssets],
   );
 
   const handleDeleteValuation = useCallback(
     async (valuation: AssetValuation) => {
-      const confirmed = await confirm(
-        t("assets.confirm_delete_valuation"),
-        t("common.delete"),
-      );
+      const confirmed = await confirm(t("assets.confirm_delete_valuation"), {
+        kind: "warning",
+        okLabel: t("confirm.delete"),
+      });
       if (!confirmed) return;
       try {
         await rust.delete_valuation({ id: valuation.id });
@@ -149,7 +171,7 @@ export default function AssetTracker() {
   const handleValuationSaved = useCallback(async () => {
     setShowValuationModal(false);
     setEditingValuation(null);
-    if (valuationAssetId) {
+    if (valuationAssetId != null) {
       await fetchValuations(valuationAssetId);
     }
     await fetchAssets();
@@ -184,7 +206,10 @@ export default function AssetTracker() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {t("assets.total_value")}:{" "}
             <span className="font-semibold text-brand-600 dark:text-brand-400">
-              {formatNumber(totalValue, appCurrency)}
+              {formatNumber(totalValue, {
+                style: "currency",
+                currency: appCurrency,
+              })}
             </span>
           </p>
         </div>
@@ -236,7 +261,7 @@ export default function AssetTracker() {
                     {asset.latest_value != null
                       ? formatNumber(
                           asset.latest_value * (asset.exchange_rate ?? 1),
-                          appCurrency,
+                          { style: "currency", currency: appCurrency },
                         )
                       : "—"}
                   </p>
@@ -253,14 +278,14 @@ export default function AssetTracker() {
                       setShowAssetModal(true);
                     }}
                     className="p-1.5 text-slate-400 hover:text-brand-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                    title={t("common.edit")}
+                    title={t("assets.edit")}
                   >
                     <Edit size={15} />
                   </button>
                   <button
                     onClick={() => handleDeleteAsset(asset)}
                     className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                    title={t("common.delete")}
+                    title={t("assets.delete")}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -269,7 +294,7 @@ export default function AssetTracker() {
                     className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={t("assets.show_valuations")}
                   >
-                    {expandedAssetId === asset.id ? (
+                    {expandedAssetIds.has(asset.id) ? (
                       <ChevronUp size={15} />
                     ) : (
                       <ChevronDown size={15} />
@@ -279,7 +304,7 @@ export default function AssetTracker() {
               </div>
 
               {/* Expanded valuations */}
-              {expandedAssetId === asset.id && (
+              {expandedAssetIds.has(asset.id) && (
                 <div className="border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-5 py-3">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -297,13 +322,13 @@ export default function AssetTracker() {
                       {t("assets.add_valuation")}
                     </button>
                   </div>
-                  {valuations.length === 0 ? (
+                  {(valuationsMap[asset.id] ?? []).length === 0 ? (
                     <p className="text-sm text-slate-400 py-2">
                       {t("assets.no_valuations")}
                     </p>
                   ) : (
                     <div className="space-y-1.5">
-                      {valuations.map((v) => (
+                      {(valuationsMap[asset.id] ?? []).map((v) => (
                         <div
                           key={v.id}
                           className="flex items-center gap-3 text-sm py-1.5 px-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50"
@@ -312,10 +337,10 @@ export default function AssetTracker() {
                             {v.date}
                           </span>
                           <span className="font-medium text-slate-700 dark:text-slate-200 flex-1">
-                            {formatNumber(
-                              v.value,
-                              asset.currency || appCurrency,
-                            )}
+                            {formatNumber(v.value, {
+                              style: "currency",
+                              currency: asset.currency || appCurrency,
+                            })}
                           </span>
                           <button
                             onClick={() => {
@@ -324,14 +349,14 @@ export default function AssetTracker() {
                               setShowValuationModal(true);
                             }}
                             className="p-1 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
-                            title={t("common.edit")}
+                            title={t("assets.edit")}
                           >
                             <Edit size={13} />
                           </button>
                           <button
                             onClick={() => handleDeleteValuation(v)}
                             className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
-                            title={t("common.delete")}
+                            title={t("assets.delete")}
                           >
                             <Trash2 size={13} />
                           </button>
