@@ -116,7 +116,7 @@ export default function AssetModal({
               <CustomSelect
                 options={categoryOptions}
                 value={category}
-                onChange={(v) => setCategory(v)}
+                onChange={(v) => setCategory(String(v))}
               />
             </div>
 
@@ -131,7 +131,7 @@ export default function AssetModal({
                   ...currencyOptions,
                 ]}
                 value={currency}
-                onChange={(v) => setCurrency(v)}
+                onChange={(v) => setCurrency(String(v))}
               />
             </div>
 

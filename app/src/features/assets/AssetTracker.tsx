@@ -194,6 +194,7 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
   if (fetchError)
     return (
       <ErrorState
+        title={t("error.operation_failed")}
         message={fetchError}
         onRetry={() => {
           setFetchError(null);
