@@ -12,6 +12,7 @@ import ScheduledList from "./features/scheduled/ScheduledList";
 import ChatView from "./features/chat/ChatView";
 import SettingsView from "./features/settings/SettingsView";
 import SessionPicker from "./features/session/SessionPicker";
+import AssetTracker from "./features/assets/AssetTracker";
 import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
 import { ToastContainer } from "./components/ui/Toast";
@@ -142,6 +143,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [marketValues, setMarketValues] = useState<Record<string, number>>({});
+  const [totalAssetsValue, setTotalAssetsValue] = useState(0);
   const lastMarketFetchRef = useRef<number>(0);
   const MARKET_FETCH_COOLDOWN_MS = 60_000;
   const [settingsSection, setSettingsSection] =
@@ -266,6 +268,16 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       // Force market fetch on first load (refreshTrigger === 0); subsequent
       // account refreshes reuse cached values unless the cooldown has elapsed.
       await fetchMarketValues(accs, refreshTrigger === 0);
+      // Fetch total value of tracked assets for net worth
+      try {
+        const appCurrency = localStorage.getItem("hb_currency") || "USD";
+        const val = await rust.get_total_assets_value({
+          targetCurrency: appCurrency,
+        });
+        setTotalAssetsValue(val);
+      } catch {
+        // Non-critical: if assets fail to load, net worth just excludes them
+      }
     };
     loadData();
   }, [refreshTrigger]);
@@ -301,6 +313,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const totalBalance = computeNetWorth(
     accounts as { id: number; balance?: unknown; exchange_rate?: number }[],
     marketValues,
+    totalAssetsValue,
   );
 
   const totalCashBalance = accounts.reduce((sum, acc) => {
@@ -400,6 +413,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
                   }[]
                 }
                 marketValues={marketValues}
+                totalAssetsValue={totalAssetsValue}
                 selectedId={selectedAccountId}
                 onSelectAccount={(id: string | number) =>
                   setSelectedAccountId(String(id))
@@ -456,6 +470,8 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
               <ScheduledList />
             ) : selectedAccountId === "chat" ? (
               <ChatView />
+            ) : selectedAccountId === "asset-tracker" ? (
+              <AssetTracker />
             ) : selectedAccount ? (
               <AccountDetails
                 key={selectedAccount.id}

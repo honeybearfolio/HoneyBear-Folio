@@ -233,3 +233,33 @@ export interface XlsxSheet {
   name: string;
   data: Record<string, unknown>[];
 }
+
+// ---------------------------------------------------------------------------
+// Assets
+// ---------------------------------------------------------------------------
+
+export interface Asset {
+  id: number;
+  name: string;
+  category: string;
+  currency?: string;
+  notes?: string;
+}
+
+export interface AssetValuation {
+  id: number;
+  asset_id: number;
+  date: string;
+  value: number;
+}
+
+export interface AssetWithLatestValue {
+  id: number;
+  name: string;
+  category: string;
+  currency?: string;
+  notes?: string;
+  latest_value?: number;
+  latest_date?: string;
+  exchange_rate: number;
+}

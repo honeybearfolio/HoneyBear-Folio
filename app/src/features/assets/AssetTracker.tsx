@@ -1,0 +1,374 @@
+import { useState, useEffect, useCallback } from "react";
+import { rust } from "../../api/tauri-client";
+import type { AssetWithLatestValue, AssetValuation } from "../../api/types";
+import { Plus, Trash2, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import { useConfirm } from "../../stores/confirm";
+import { useToast } from "../../stores/toast";
+import { useTranslation } from "react-i18next";
+import { useNumberFormat } from "../../stores/number-format";
+import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
+import AssetModal from "./AssetModal";
+import ValuationModal from "./ValuationModal";
+import "../../styles/Dashboard.css";
+
+const CATEGORY_ICONS: Record<string, string> = {
+  real_estate: "🏠",
+  vehicle: "🚗",
+  jewelry: "💎",
+  art: "🎨",
+  collectible: "🏺",
+  other: "📦",
+};
+
+export default function AssetTracker() {
+  const { t } = useTranslation();
+  const { formatNumber, currency: appCurrency } = useNumberFormat();
+  const confirm = useConfirm();
+  const { showToast } = useToast();
+
+  const [assets, setAssets] = useState<AssetWithLatestValue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const [showAssetModal, setShowAssetModal] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<AssetWithLatestValue | null>(
+    null,
+  );
+  const [expandedAssetId, setExpandedAssetId] = useState<number | null>(null);
+  const [valuations, setValuations] = useState<AssetValuation[]>([]);
+  const [showValuationModal, setShowValuationModal] = useState(false);
+  const [editingValuation, setEditingValuation] =
+    useState<AssetValuation | null>(null);
+  const [valuationAssetId, setValuationAssetId] = useState<number | null>(null);
+
+  const fetchAssets = useCallback(async () => {
+    try {
+      const data = await rust.get_assets({
+        targetCurrency: appCurrency || "USD",
+      });
+      setAssets(data);
+      setFetchError(null);
+    } catch (e) {
+      console.error("Failed to fetch assets:", e);
+      setFetchError(String(e));
+    }
+  }, [appCurrency]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await rust.get_assets({
+          targetCurrency: appCurrency || "USD",
+        });
+        if (mounted) {
+          setAssets(data);
+          setFetchError(null);
+        }
+      } catch (e) {
+        if (mounted) setFetchError(String(e));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [appCurrency]);
+
+  const fetchValuations = useCallback(async (assetId: number) => {
+    try {
+      const data = await rust.get_valuations({ assetId });
+      setValuations(data);
+    } catch (e) {
+      console.error("Failed to fetch valuations:", e);
+    }
+  }, []);
+
+  const handleExpand = useCallback(
+    async (assetId: number) => {
+      if (expandedAssetId === assetId) {
+        setExpandedAssetId(null);
+        setValuations([]);
+      } else {
+        setExpandedAssetId(assetId);
+        await fetchValuations(assetId);
+      }
+    },
+    [expandedAssetId, fetchValuations],
+  );
+
+  const handleDeleteAsset = useCallback(
+    async (asset: AssetWithLatestValue) => {
+      const confirmed = await confirm(
+        t("assets.confirm_delete", { name: asset.name }),
+        t("common.delete"),
+      );
+      if (!confirmed) return;
+      try {
+        await rust.delete_asset({ id: asset.id });
+        showToast(t("assets.deleted"), { type: "success" });
+        if (expandedAssetId === asset.id) {
+          setExpandedAssetId(null);
+          setValuations([]);
+        }
+        await fetchAssets();
+      } catch (e) {
+        showToast(String(e), { type: "error" });
+      }
+    },
+    [confirm, t, showToast, fetchAssets, expandedAssetId],
+  );
+
+  const handleDeleteValuation = useCallback(
+    async (valuation: AssetValuation) => {
+      const confirmed = await confirm(
+        t("assets.confirm_delete_valuation"),
+        t("common.delete"),
+      );
+      if (!confirmed) return;
+      try {
+        await rust.delete_valuation({ id: valuation.id });
+        showToast(t("assets.valuation_deleted"), { type: "success" });
+        await fetchValuations(valuation.asset_id);
+        await fetchAssets();
+      } catch (e) {
+        showToast(String(e), { type: "error" });
+      }
+    },
+    [confirm, t, showToast, fetchValuations, fetchAssets],
+  );
+
+  const handleAssetSaved = useCallback(async () => {
+    setShowAssetModal(false);
+    setEditingAsset(null);
+    await fetchAssets();
+  }, [fetchAssets]);
+
+  const handleValuationSaved = useCallback(async () => {
+    setShowValuationModal(false);
+    setEditingValuation(null);
+    if (valuationAssetId) {
+      await fetchValuations(valuationAssetId);
+    }
+    await fetchAssets();
+  }, [fetchAssets, fetchValuations, valuationAssetId]);
+
+  const totalValue = assets.reduce(
+    (sum, a) => sum + (a.latest_value ?? 0) * (a.exchange_rate ?? 1),
+    0,
+  );
+
+  if (loading) return <ListSkeleton />;
+  if (fetchError)
+    return (
+      <ErrorState
+        message={fetchError}
+        onRetry={() => {
+          setFetchError(null);
+          setLoading(true);
+          fetchAssets().finally(() => setLoading(false));
+        }}
+      />
+    );
+
+  return (
+    <div className="space-y-6 p-4 md:p-8 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+            {t("assets.title")}
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            {t("assets.total_value")}:{" "}
+            <span className="font-semibold text-brand-600 dark:text-brand-400">
+              {formatNumber(totalValue, appCurrency)}
+            </span>
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setEditingAsset(null);
+            setShowAssetModal(true);
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors font-medium text-sm cursor-pointer"
+        >
+          <Plus size={16} />
+          {t("assets.add_asset")}
+        </button>
+      </div>
+
+      {/* Asset List */}
+      {assets.length === 0 ? (
+        <div className="text-center py-16 text-slate-400 dark:text-slate-500">
+          <p className="text-lg">{t("assets.empty")}</p>
+          <p className="text-sm mt-1">{t("assets.empty_hint")}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {assets.map((asset) => (
+            <div
+              key={asset.id}
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+            >
+              {/* Asset row */}
+              <div className="flex items-center gap-4 px-5 py-4">
+                <span
+                  className="text-2xl"
+                  role="img"
+                  aria-label={asset.category}
+                >
+                  {CATEGORY_ICONS[asset.category] || CATEGORY_ICONS.other}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                    {asset.name}
+                  </h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">
+                    {t(`assets.category.${asset.category}`)}
+                    {asset.currency && ` · ${asset.currency}`}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-slate-800 dark:text-slate-100">
+                    {asset.latest_value != null
+                      ? formatNumber(
+                          asset.latest_value * (asset.exchange_rate ?? 1),
+                          appCurrency,
+                        )
+                      : "—"}
+                  </p>
+                  {asset.latest_date && (
+                    <p className="text-xs text-slate-400">
+                      {asset.latest_date}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setEditingAsset(asset);
+                      setShowAssetModal(true);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    title={t("common.edit")}
+                  >
+                    <Edit size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAsset(asset)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    title={t("common.delete")}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleExpand(asset.id)}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    title={t("assets.show_valuations")}
+                  >
+                    {expandedAssetId === asset.id ? (
+                      <ChevronUp size={15} />
+                    ) : (
+                      <ChevronDown size={15} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded valuations */}
+              {expandedAssetId === asset.id && (
+                <div className="border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-5 py-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                      {t("assets.valuations")}
+                    </h4>
+                    <button
+                      onClick={() => {
+                        setValuationAssetId(asset.id);
+                        setEditingValuation(null);
+                        setShowValuationModal(true);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded-md transition-colors cursor-pointer"
+                    >
+                      <Plus size={12} />
+                      {t("assets.add_valuation")}
+                    </button>
+                  </div>
+                  {valuations.length === 0 ? (
+                    <p className="text-sm text-slate-400 py-2">
+                      {t("assets.no_valuations")}
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {valuations.map((v) => (
+                        <div
+                          key={v.id}
+                          className="flex items-center gap-3 text-sm py-1.5 px-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                        >
+                          <span className="text-slate-500 dark:text-slate-400 w-28 shrink-0">
+                            {v.date}
+                          </span>
+                          <span className="font-medium text-slate-700 dark:text-slate-200 flex-1">
+                            {formatNumber(
+                              v.value,
+                              asset.currency || appCurrency,
+                            )}
+                          </span>
+                          <button
+                            onClick={() => {
+                              setValuationAssetId(asset.id);
+                              setEditingValuation(v);
+                              setShowValuationModal(true);
+                            }}
+                            className="p-1 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
+                            title={t("common.edit")}
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteValuation(v)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                            title={t("common.delete")}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modals */}
+      {showAssetModal && (
+        <AssetModal
+          asset={editingAsset}
+          onClose={() => {
+            setShowAssetModal(false);
+            setEditingAsset(null);
+          }}
+          onSaved={handleAssetSaved}
+        />
+      )}
+
+      {showValuationModal && valuationAssetId != null && (
+        <ValuationModal
+          assetId={valuationAssetId}
+          valuation={editingValuation}
+          onClose={() => {
+            setShowValuationModal(false);
+            setEditingValuation(null);
+          }}
+          onSaved={handleValuationSaved}
+        />
+      )}
+    </div>
+  );
+}

@@ -27,6 +27,7 @@ import {
   ArrowLeft,
   RefreshCw,
   Bot,
+  Gem,
 } from "lucide-react";
 import { computeNetWorth } from "../../utils/networth";
 import { useTranslation } from "react-i18next";
@@ -71,6 +72,7 @@ interface SortConfig {
 interface SidebarProps {
   accounts: Account[];
   marketValues: Record<string | number, number>;
+  totalAssetsValue?: number;
   selectedId: string | number;
   onSelectAccount: (id: string | number) => void;
   onUpdate: () => void;
@@ -85,6 +87,7 @@ interface SidebarProps {
 export default function Sidebar({
   accounts,
   marketValues,
+  totalAssetsValue = 0,
   selectedId,
   onSelectAccount,
   onUpdate,
@@ -104,6 +107,7 @@ export default function Sidebar({
   const totalBalance = computeNetWorth(
     accounts as { id: number; balance?: unknown; exchange_rate?: number }[],
     marketValues,
+    totalAssetsValue,
   );
   const formatNumber = useFormatNumber();
   const formattedTotalBalance = formatNumber(totalBalance, {
@@ -424,6 +428,22 @@ export default function Sidebar({
                       className={`sidebar-nav-icon ${selectedId === "investment-dashboard" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                     />
                     <span className="font-medium">{t("nav.investments")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.assets !== false && (
+                  <button
+                    onClick={() => handleSelect("asset-tracker")}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "asset-tracker"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <Gem
+                      className={`sidebar-nav-icon ${selectedId === "asset-tracker" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.assets")}</span>
                   </button>
                 )}
 

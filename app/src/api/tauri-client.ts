@@ -1,6 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   Account,
+  Asset,
+  AssetValuation,
+  AssetWithLatestValue,
   ChatMessage,
   Conversation,
   DailyPrice,
@@ -335,4 +338,52 @@ export const rust = {
 
   delete_all_conversations: (): Promise<void> =>
     callRust("delete_all_conversations"),
+
+  // ---------------------------------------------------------------------------
+  // Assets
+  // ---------------------------------------------------------------------------
+
+  create_asset: (args: {
+    name: string;
+    category: string;
+    currency?: string;
+    notes?: string;
+  }): Promise<Asset> => callRust("create_asset", args),
+
+  get_assets: (args?: {
+    targetCurrency?: string;
+  }): Promise<AssetWithLatestValue[]> => callRust("get_assets", args),
+
+  update_asset: (args: {
+    id: number;
+    name: string;
+    category: string;
+    currency?: string;
+    notes?: string;
+  }): Promise<void> => callRust("update_asset", args),
+
+  delete_asset: (args: { id: number }): Promise<void> =>
+    callRust("delete_asset", args),
+
+  create_valuation: (args: {
+    assetId: number;
+    date: string;
+    value: number;
+  }): Promise<AssetValuation> => callRust("create_valuation", args),
+
+  get_valuations: (args: { assetId: number }): Promise<AssetValuation[]> =>
+    callRust("get_valuations", args),
+
+  update_valuation: (args: {
+    id: number;
+    date: string;
+    value: number;
+  }): Promise<void> => callRust("update_valuation", args),
+
+  delete_valuation: (args: { id: number }): Promise<void> =>
+    callRust("delete_valuation", args),
+
+  get_total_assets_value: (args?: {
+    targetCurrency?: string;
+  }): Promise<number> => callRust("get_total_assets_value", args),
 };
