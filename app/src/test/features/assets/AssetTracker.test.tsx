@@ -147,4 +147,86 @@ describe("AssetTracker", () => {
       expect(screen.getByText("Name")).toBeInTheDocument();
     });
   });
+
+  it("calls onUpdate after saving a valuation", async () => {
+    const onUpdate = vi.fn();
+    mockedInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "get_assets") return MOCK_ASSETS;
+      if (cmd === "get_valuations") return [];
+      if (cmd === "create_valuation")
+        return { id: 99, asset_id: 1, date: "2024-07-01", value: 400000 };
+      return undefined;
+    });
+
+    render(<AssetTracker onUpdate={onUpdate} />);
+    await waitFor(() => expect(screen.getByText("House")).toBeInTheDocument());
+
+    // Open the add valuation modal for the first asset
+    const addValuationButtons = screen.getAllByText("Add Valuation");
+    fireEvent.click(addValuationButtons[0]);
+
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText("0.00")).toBeInTheDocument(),
+    );
+
+    // Fill in value and submit
+    fireEvent.change(screen.getByPlaceholderText("0.00"), {
+      target: { value: "400000" },
+    });
+    fireEvent.submit(screen.getByPlaceholderText("0.00").closest("form")!);
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+  });
+
+  it("calls onUpdate after deleting a valuation", async () => {
+    const onUpdate = vi.fn();
+    const mockValuations = [
+      { id: 1, asset_id: 1, date: "2024-06-01", value: 350000 },
+    ];
+    mockedInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "get_assets") return MOCK_ASSETS;
+      if (cmd === "get_valuations") return mockValuations;
+      if (cmd === "delete_valuation") return undefined;
+      return undefined;
+    });
+    mockConfirm.mockResolvedValue(true);
+
+    render(<AssetTracker onUpdate={onUpdate} />);
+    await waitFor(() => expect(screen.getByText("House")).toBeInTheDocument());
+
+    // Assets are auto-expanded; wait for the valuation delete button
+    await waitFor(() =>
+      expect(screen.getAllByTitle("Delete").length).toBeGreaterThan(0),
+    );
+    const deleteButtons = screen.getAllByTitle("Delete");
+    fireEvent.click(deleteButtons[0]);
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+  });
+
+  it("calls onUpdate after saving an asset", async () => {
+    const onUpdate = vi.fn();
+    mockedInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "get_assets") return MOCK_ASSETS;
+      if (cmd === "get_valuations") return [];
+      if (cmd === "create_asset")
+        return { id: 3, name: "Boat", category: "other", currency: "USD" };
+      return undefined;
+    });
+
+    render(<AssetTracker onUpdate={onUpdate} />);
+    await waitFor(() => expect(screen.getByText("House")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText("Add Asset"));
+    await waitFor(() => expect(screen.getByText("Name")).toBeInTheDocument());
+
+    fireEvent.change(screen.getByPlaceholderText("e.g. Primary Residence"), {
+      target: { value: "Boat" },
+    });
+    fireEvent.submit(
+      screen.getByPlaceholderText("e.g. Primary Residence").closest("form")!,
+    );
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+  });
 });

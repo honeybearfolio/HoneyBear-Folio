@@ -21,7 +21,11 @@ const CATEGORY_ICONS: Record<string, string> = {
   other: "📦",
 };
 
-export default function AssetTracker() {
+interface AssetTrackerProps {
+  onUpdate?: () => void;
+}
+
+export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
   const { t } = useTranslation();
   const { currency: appCurrency } = useNumberFormat();
   const formatNumber = useFormatNumber();
@@ -136,11 +140,12 @@ export default function AssetTracker() {
           return next;
         });
         await fetchAssets();
+        onUpdate?.();
       } catch (e) {
         showToast(String(e), { type: "error" });
       }
     },
-    [confirm, t, showToast, fetchAssets],
+    [confirm, t, showToast, fetchAssets, onUpdate],
   );
 
   const handleDeleteValuation = useCallback(
@@ -155,18 +160,20 @@ export default function AssetTracker() {
         showToast(t("assets.valuation_deleted"), { type: "success" });
         await fetchValuations(valuation.asset_id);
         await fetchAssets();
+        onUpdate?.();
       } catch (e) {
         showToast(String(e), { type: "error" });
       }
     },
-    [confirm, t, showToast, fetchValuations, fetchAssets],
+    [confirm, t, showToast, fetchValuations, fetchAssets, onUpdate],
   );
 
   const handleAssetSaved = useCallback(async () => {
     setShowAssetModal(false);
     setEditingAsset(null);
     await fetchAssets();
-  }, [fetchAssets]);
+    onUpdate?.();
+  }, [fetchAssets, onUpdate]);
 
   const handleValuationSaved = useCallback(async () => {
     setShowValuationModal(false);
@@ -175,7 +182,8 @@ export default function AssetTracker() {
       await fetchValuations(valuationAssetId);
     }
     await fetchAssets();
-  }, [fetchAssets, fetchValuations, valuationAssetId]);
+    onUpdate?.();
+  }, [fetchAssets, fetchValuations, onUpdate, valuationAssetId]);
 
   const totalValue = assets.reduce(
     (sum, a) => sum + (a.latest_value ?? 0) * (a.exchange_rate ?? 1),

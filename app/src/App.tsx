@@ -475,7 +475,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
             ) : selectedAccountId === "chat" ? (
               <ChatView />
             ) : selectedAccountId === "asset-tracker" ? (
-              <AssetTracker />
+              <AssetTracker onUpdate={handleAccountUpdate} />
             ) : selectedAccount ? (
               <AccountDetails
                 key={selectedAccount.id}
