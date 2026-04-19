@@ -1,8 +1,8 @@
-use crate::tests::common::setup_db;
 use crate::core::assets::{
     create_asset_db, create_valuation_db, delete_asset_db, delete_valuation_db, get_assets_db,
     get_total_assets_value_db, get_valuations_db, update_asset_db, update_valuation_db,
 };
+use crate::tests::common::setup_db;
 
 #[test]
 fn test_create_and_get_asset() {
@@ -103,14 +103,7 @@ fn test_create_and_get_valuations() {
 #[test]
 fn test_update_valuation() {
     let (_dir, db_path) = setup_db();
-    create_asset_db(
-        &db_path,
-        "Art".to_string(),
-        "art".to_string(),
-        None,
-        None,
-    )
-    .unwrap();
+    create_asset_db(&db_path, "Art".to_string(), "art".to_string(), None, None).unwrap();
     let asset_id = get_assets_db(&db_path, None).unwrap()[0].id;
 
     create_valuation_db(&db_path, asset_id, "2024-01-01".to_string(), 5000.0).unwrap();

@@ -144,8 +144,11 @@ pub fn delete_asset_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         // Delete valuations first (cascade may not be enforced in all SQLite builds)
-        conn.execute("DELETE FROM asset_valuations WHERE asset_id = ?1", params![id])
-            .map_err(|e| e.to_string())?;
+        conn.execute(
+            "DELETE FROM asset_valuations WHERE asset_id = ?1",
+            params![id],
+        )
+        .map_err(|e| e.to_string())?;
         let rows = conn
             .execute("DELETE FROM assets WHERE id = ?1", params![id])
             .map_err(|e| e.to_string())?;
@@ -181,10 +184,7 @@ pub fn create_valuation_db(
     })
 }
 
-pub fn get_valuations_db(
-    db_path: &PathBuf,
-    asset_id: i32,
-) -> Result<Vec<AssetValuation>, String> {
+pub fn get_valuations_db(db_path: &PathBuf, asset_id: i32) -> Result<Vec<AssetValuation>, String> {
     crate::db_init::with_db_lock(db_path, || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
@@ -309,10 +309,7 @@ pub fn create_valuation(
 }
 
 #[tauri::command]
-pub fn get_valuations(
-    app_handle: AppHandle,
-    asset_id: i32,
-) -> Result<Vec<AssetValuation>, String> {
+pub fn get_valuations(app_handle: AppHandle, asset_id: i32) -> Result<Vec<AssetValuation>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     get_valuations_db(&db_path, asset_id)
 }
