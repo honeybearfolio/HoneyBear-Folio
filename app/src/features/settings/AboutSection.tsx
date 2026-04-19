@@ -118,9 +118,7 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
       </div>
 
       <div className="about-section">
-        <h4 className="about-section-title">
-          {t("about.third_party")}
-        </h4>
+        <h4 className="about-section-title">{t("about.third_party")}</h4>
         {showAllLicenses && (
           <ul className="about-license-list">
             {THIRD_PARTY_LICENSES.map((l) => (
@@ -135,9 +133,7 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
                 >
                   {l.name}
                 </a>
-                <span className="about-license-meta">
-                  ({l.license})
-                </span>
+                <span className="about-license-meta">({l.license})</span>
               </li>
             ))}
           </ul>
@@ -170,12 +166,9 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
       <div className="about-divider" />
 
       <div className="about-section">
-        <h4 className="about-section-title">
-          {t("about.contributors")}
-        </h4>
+        <h4 className="about-section-title">{t("about.contributors")}</h4>
         {CONTRIBUTORS.map((c) => {
-          const profileUrl =
-            c.github || `https://github.com/${c.username}`;
+          const profileUrl = c.github || `https://github.com/${c.username}`;
           const avatarUrl = `https://avatars.githubusercontent.com/${c.username}?s=120&v=4`;
           return (
             <a
@@ -193,12 +186,8 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
                 className="about-contributor-avatar"
               />
               <div className="about-contributor-info">
-                <span className="about-contributor-name">
-                  {c.username}
-                </span>
-                <span className="about-contributor-role">
-                  {t(c.roleKey)}
-                </span>
+                <span className="about-contributor-name">{c.username}</span>
+                <span className="about-contributor-role">{t(c.roleKey)}</span>
               </div>
             </a>
           );

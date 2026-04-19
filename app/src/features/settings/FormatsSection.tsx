@@ -72,9 +72,7 @@ export default function FormatsSection({
               aria-hidden="true"
             />
           </span>
-          <label className="settings-label">
-            {t("settings.currency")}
-          </label>
+          <label className="settings-label">{t("settings.currency")}</label>
         </div>
       </div>
       <div className="relative settings-select">
@@ -159,9 +157,7 @@ export default function FormatsSection({
               aria-hidden="true"
             />
           </span>
-          <label className="settings-label">
-            {t("settings.date_format")}
-          </label>
+          <label className="settings-label">{t("settings.date_format")}</label>
         </div>
       </div>
       <div className="relative settings-select">

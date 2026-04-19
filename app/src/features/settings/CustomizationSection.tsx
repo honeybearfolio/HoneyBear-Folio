@@ -68,9 +68,7 @@ export default function CustomizationSection({
                 aria-hidden="true"
               />
             </span>
-            <label className="settings-label">
-              {t("settings.theme")}
-            </label>
+            <label className="settings-label">{t("settings.theme")}</label>
           </div>
         </div>
 
@@ -122,9 +120,7 @@ export default function CustomizationSection({
                 aria-hidden="true"
               />
             </span>
-            <label className="settings-label">
-              {t("settings.font_size")}
-            </label>
+            <label className="settings-label">{t("settings.font_size")}</label>
           </div>
           <div className="text-sm text-slate-500">
             {Math.round(fontSize * 100)}%
@@ -235,9 +231,7 @@ export default function CustomizationSection({
               aria-hidden="true"
             />
           </span>
-          <label className="settings-label">
-            {t("settings.tag_colors")}
-          </label>
+          <label className="settings-label">{t("settings.tag_colors")}</label>
         </div>
       </div>
 
@@ -273,8 +267,7 @@ export default function CustomizationSection({
                     className={`w-5 h-5 rounded-full border-2 transition-transform ${getColorDot(colorKey)} ${
                       tagColors[cat] === colorKey ||
                       (!tagColors[cat] &&
-                        ((cat === "Transfer" &&
-                          colorKey === "purple") ||
+                        ((cat === "Transfer" && colorKey === "purple") ||
                           (cat !== "Transfer" && colorKey === "slate")))
                         ? "border-slate-900 dark:border-white scale-110"
                         : "border-transparent hover:scale-110"

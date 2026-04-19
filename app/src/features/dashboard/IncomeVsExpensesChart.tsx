@@ -16,9 +16,7 @@ export default function IncomeVsExpensesChart({
   return (
     <div className="chart-card chart-card-full">
       <div className="chart-header">
-        <h3 className="chart-title">
-          {t("dashboard.income_vs_expenses")}
-        </h3>
+        <h3 className="chart-title">{t("dashboard.income_vs_expenses")}</h3>
         <p className="chart-subtitle">
           {t("dashboard.subtitle.monthly_income_vs_expenses")}
         </p>
@@ -30,9 +28,7 @@ export default function IncomeVsExpensesChart({
           <div className="loading-container">
             <div className="loading-content">
               <div className="loading-spinner"></div>
-              <span className="loading-text">
-                {t("loading.loading_data")}
-              </span>
+              <span className="loading-text">{t("loading.loading_data")}</span>
             </div>
           </div>
         )}

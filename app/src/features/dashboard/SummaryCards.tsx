@@ -25,9 +25,7 @@ export default function SummaryCards({
         </p>
       </div>
       <div className="summary-card">
-        <h3 className="summary-card-title">
-          {t("dashboard.total_accounts")}
-        </h3>
+        <h3 className="summary-card-title">{t("dashboard.total_accounts")}</h3>
         <p className="summary-card-value">{totalAccounts}</p>
       </div>
       <div className="summary-card">

@@ -2,14 +2,8 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import { rust } from "../../api/tauri-client";
-import {
-  Search,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
-import {
-  useParseNumber,
-} from "../../utils/format";
+import { Search, ArrowUp, ArrowDown } from "lucide-react";
+import { useParseNumber } from "../../utils/format";
 import { useNumberFormat } from "../../stores/number-format";
 import { useConfirm } from "../../stores/confirm";
 import { useTranslation } from "react-i18next";
@@ -1111,4 +1105,3 @@ export default function AccountDetails({
     </div>
   );
 }
-

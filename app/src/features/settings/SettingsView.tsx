@@ -208,16 +208,18 @@ export default function SettingsView({
             />
           )}
 
-          {activeSection === "customization" && sidebarVisibility && onChangeSidebarVisibility && (
-            <CustomizationSection
-              sidebarVisibility={sidebarVisibility}
-              onChangeSidebarVisibility={onChangeSidebarVisibility}
-              showTooltip={showTooltip}
-              hideTooltip={hideTooltip}
-              fontSize={fontSize}
-              setFontSize={setFontSize}
-            />
-          )}
+          {activeSection === "customization" &&
+            sidebarVisibility &&
+            onChangeSidebarVisibility && (
+              <CustomizationSection
+                sidebarVisibility={sidebarVisibility}
+                onChangeSidebarVisibility={onChangeSidebarVisibility}
+                showTooltip={showTooltip}
+                hideTooltip={hideTooltip}
+                fontSize={fontSize}
+                setFontSize={setFontSize}
+              />
+            )}
 
           {activeSection === "formats" && (
             <FormatsSection

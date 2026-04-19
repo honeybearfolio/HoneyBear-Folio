@@ -44,9 +44,7 @@ export default function GeneralSection({
               aria-hidden="true"
             />
           </span>
-          <label className="settings-label">
-            {t("settings.language")}
-          </label>
+          <label className="settings-label">{t("settings.language")}</label>
         </div>
       </div>
       <div className="relative settings-select">
@@ -130,10 +128,7 @@ export default function GeneralSection({
       </div>
       <ExchangeRatesList />
 
-      <LlmSettingsSection
-        showTooltip={showTooltip}
-        hideTooltip={hideTooltip}
-      />
+      <LlmSettingsSection showTooltip={showTooltip} hideTooltip={hideTooltip} />
     </>
   );
 }

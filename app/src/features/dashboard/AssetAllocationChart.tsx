@@ -28,9 +28,7 @@ export default function AssetAllocationChart({
           <div className="loading-container">
             <div className="loading-content">
               <div className="loading-spinner"></div>
-              <span className="loading-text">
-                {t("loading.loading_data")}
-              </span>
+              <span className="loading-text">{t("loading.loading_data")}</span>
             </div>
           </div>
         )}

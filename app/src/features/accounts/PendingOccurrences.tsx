@@ -22,7 +22,10 @@ interface PendingOccurrencesProps {
   setMenuOpenId: (v: string | number | null) => void;
   menuCoords: MenuCoords | null;
   setMenuCoords: (v: MenuCoords | null) => void;
-  handleApplyOccurrence: (occ: PendingOccurrenceType, useToday: boolean) => void;
+  handleApplyOccurrence: (
+    occ: PendingOccurrenceType,
+    useToday: boolean,
+  ) => void;
   handleSkipOccurrence: (occ: PendingOccurrenceType) => void;
   filteredTransactions: Transaction[];
 }
@@ -45,9 +48,8 @@ export default function PendingOccurrences({
 
   if (pendingOccurrences.length === 0) return null;
 
-  const colSpan = account.id === "all"
-    ? !hasInvestment ? 7 : 11
-    : !hasInvestment ? 6 : 10;
+  const colSpan =
+    account.id === "all" ? (!hasInvestment ? 7 : 11) : !hasInvestment ? 6 : 10;
 
   return (
     <>
@@ -108,17 +110,13 @@ export default function PendingOccurrences({
                 {occ.category}
               </span>
             ) : (
-              <span className="text-slate-300 dark:text-slate-600">
-                -
-              </span>
+              <span className="text-slate-300 dark:text-slate-600">-</span>
             )}
           </td>
 
           <td className="px-6 py-3 text-sm text-slate-400 dark:text-slate-500 max-w-xs truncate">
             {occ.notes || (
-              <span className="text-slate-300 dark:text-slate-600">
-                -
-              </span>
+              <span className="text-slate-300 dark:text-slate-600">-</span>
             )}
           </td>
 
@@ -171,8 +169,7 @@ export default function PendingOccurrences({
                 }
               }}
               className={`p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 ${
-                menuOpenId ===
-                `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`
+                menuOpenId === `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`
                   ? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                   : ""
               }`}
@@ -180,8 +177,7 @@ export default function PendingOccurrences({
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            {menuOpenId ===
-              `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}` &&
+            {menuOpenId === `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}` &&
               menuCoords &&
               createPortal(
                 <div
@@ -195,10 +191,7 @@ export default function PendingOccurrences({
                       menuCoords.x !== undefined
                         ? `${Math.min(menuCoords.x, window.innerWidth - 224 - 8)}px`
                         : `${Math.min(
-                            Math.max(
-                              (menuCoords.right ?? 0) - 224,
-                              8,
-                            ),
+                            Math.max((menuCoords.right ?? 0) - 224, 8),
                             window.innerWidth - 224 - 8,
                           )}px`,
                   }}

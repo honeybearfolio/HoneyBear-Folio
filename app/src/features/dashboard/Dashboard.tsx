@@ -1453,7 +1453,9 @@ export default function Dashboard({
         ) : (
           <>
             <IncomeVsExpensesChart
-              incomeVsExpensesData={incomeVsExpensesData as ChartData<"bar"> | null}
+              incomeVsExpensesData={
+                incomeVsExpensesData as ChartData<"bar"> | null
+              }
               barOptions={barOptions}
             />
 

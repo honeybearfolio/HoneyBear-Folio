@@ -1,11 +1,6 @@
 import DatePicker from "react-datepicker";
 import type { Day } from "date-fns";
-import {
-  Plus,
-  Check,
-  ArrowDownLeft,
-  ArrowUpRight,
-} from "lucide-react";
+import { Plus, Check, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import NumberInput from "../../components/ui/NumberInput";
 import CustomSelect from "../../components/ui/CustomSelect";
 import AutocompleteInput from "./AutocompleteInput";
@@ -164,9 +159,7 @@ export default function TransactionForm({
         <form onSubmit={handleAddTransaction} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="form-label">
-                {t("account.field.date")}
-              </label>
+              <label className="form-label">{t("account.field.date")}</label>
               <DatePicker
                 selected={date ? new Date(date) : null}
                 onChange={(d: Date | null) =>
@@ -214,9 +207,7 @@ export default function TransactionForm({
             </div>
 
             <div className="relative">
-              <label className="form-label">
-                {t("import.field.ticker")}
-              </label>
+              <label className="form-label">{t("import.field.ticker")}</label>
               <input
                 type="text"
                 required
@@ -275,9 +266,7 @@ export default function TransactionForm({
             </div>
 
             <div>
-              <label className="form-label">
-                {t("import.field.shares")}
-              </label>
+              <label className="form-label">{t("import.field.shares")}</label>
               <NumberInput
                 value={shares}
                 onChange={(num) => handleSharesChange(num)}
@@ -326,9 +315,7 @@ export default function TransactionForm({
             </div>
 
             <div>
-              <label className="form-label">
-                {t("import.field.currency")}
-              </label>
+              <label className="form-label">{t("import.field.currency")}</label>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <CustomSelect
@@ -359,9 +346,7 @@ export default function TransactionForm({
         <form onSubmit={handleAddTransaction} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="form-label">
-                {t("account.field.date")}
-              </label>
+              <label className="form-label">{t("account.field.date")}</label>
               <DatePicker
                 selected={date ? new Date(date) : null}
                 onChange={(d: Date | null) =>
@@ -377,9 +362,7 @@ export default function TransactionForm({
             </div>
 
             <div>
-              <label className="form-label">
-                {t("import.field.payee")}
-              </label>
+              <label className="form-label">{t("import.field.payee")}</label>
               <AutocompleteInput
                 suggestions={payeeSuggestions}
                 placeholder={t("account.placeholder.payee")}
@@ -390,9 +373,7 @@ export default function TransactionForm({
             </div>
 
             <div>
-              <label className="form-label">
-                {t("import.field.category")}
-              </label>
+              <label className="form-label">{t("import.field.category")}</label>
               <AutocompleteInput
                 suggestions={categorySuggestions}
                 placeholder={t("import.field.category")}
@@ -408,9 +389,7 @@ export default function TransactionForm({
             </div>
 
             <div>
-              <label className="form-label">
-                {t("import.field.notes")}
-              </label>
+              <label className="form-label">{t("import.field.notes")}</label>
               <input
                 type="text"
                 placeholder={t("account.notes_placeholder")}
@@ -423,9 +402,7 @@ export default function TransactionForm({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="form-label">
-                {t("import.field.amount")}
-              </label>
+              <label className="form-label">{t("import.field.amount")}</label>
               <input
                 type="text"
                 inputMode="decimal"
@@ -442,9 +419,7 @@ export default function TransactionForm({
             </div>
 
             <div>
-              <label className="form-label">
-                {t("import.field.currency")}
-              </label>
+              <label className="form-label">{t("import.field.currency")}</label>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <CustomSelect

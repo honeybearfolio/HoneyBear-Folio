@@ -200,9 +200,7 @@ export default function AccountHeader({
                 className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center gap-2 px-3 sm:px-5 py-3 rounded-xl font-semibold text-sm shadow-sm transition-colors"
               >
                 <X className="w-5 h-5" />
-                <span className="hidden sm:inline">
-                  {t("account.cancel")}
-                </span>
+                <span className="hidden sm:inline">{t("account.cancel")}</span>
               </button>
             ))}
         </div>

@@ -1,9 +1,7 @@
 import { useState, useMemo } from "react";
 import { ArrowRightLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type {
-  AutocompleteInputProps,
-} from "./account-details-types";
+import type { AutocompleteInputProps } from "./account-details-types";
 
 export default function AutocompleteInput({
   value,

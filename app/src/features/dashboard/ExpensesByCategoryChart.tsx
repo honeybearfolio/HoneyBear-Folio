@@ -16,9 +16,7 @@ export default function ExpensesByCategoryChart({
   return (
     <div className="chart-card">
       <div className="chart-header">
-        <h3 className="chart-title">
-          {t("dashboard.expenses_by_category")}
-        </h3>
+        <h3 className="chart-title">{t("dashboard.expenses_by_category")}</h3>
         <p className="chart-subtitle">
           {t("dashboard.subtitle.where_your_money_goes")}
         </p>
@@ -28,9 +26,7 @@ export default function ExpensesByCategoryChart({
           <div className="loading-container">
             <div className="loading-content">
               <div className="loading-spinner"></div>
-              <span className="loading-text">
-                {t("loading.loading_data")}
-              </span>
+              <span className="loading-text">{t("loading.loading_data")}</span>
             </div>
           </div>
         ) : expensesByCategoryData.empty ? (
