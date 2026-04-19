@@ -1,4 +1,6 @@
 import { useState } from "react";
+import DatePicker from "react-datepicker";
+import type { Day } from "date-fns";
 import { rust } from "../../api/tauri-client";
 import {
   Modal,
@@ -8,9 +10,11 @@ import {
 } from "../../components/ui/Modal";
 import { useTranslation } from "react-i18next";
 import { useToast } from "../../stores/toast";
-import { useParseNumber } from "../../utils/format";
+import { useParseNumber, getDatePickerFormat } from "../../utils/format";
+import { useNumberFormat } from "../../stores/number-format";
 import type { AssetValuation } from "../../api/types";
 import "../../styles/Modal.css";
+import "../../styles/datepicker.css";
 
 interface ValuationModalProps {
   assetId: number;
@@ -28,6 +32,7 @@ export default function ValuationModal({
   const { t } = useTranslation();
   const { showToast } = useToast();
   const parseNumber = useParseNumber();
+  const { dateFormat, firstDayOfWeek } = useNumberFormat();
   const isEditing = !!valuation;
 
   const [date, setDate] = useState(
@@ -76,11 +81,17 @@ export default function ValuationModal({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 {t("assets.field.date")}
               </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+              <DatePicker
+                selected={date ? new Date(date) : null}
+                onChange={(d: Date | null) =>
+                  setDate(d ? d.toISOString().split("T")[0] : "")
+                }
+                dateFormat={getDatePickerFormat(dateFormat)}
+                calendarStartDay={firstDayOfWeek as Day}
+                shouldCloseOnSelect={false}
+                required
+                portalId="datepicker-portal"
+                className="form-input"
               />
             </div>
 
