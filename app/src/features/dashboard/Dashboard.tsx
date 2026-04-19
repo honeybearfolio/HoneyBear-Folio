@@ -1,10 +1,7 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import type { Day } from "date-fns";
 import "../../styles/datepicker.css";
-import { Calendar, Filter, ChevronDown } from "lucide-react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,17 +16,11 @@ import {
   BarElement,
 } from "chart.js";
 import type { ChartOptions, ChartData, TooltipItem } from "chart.js";
-import { Line, Doughnut, Bar } from "react-chartjs-2";
 import "../../styles/Dashboard.css";
 import { computeNetWorth } from "../../utils/networth";
-import {
-  useFormatNumber,
-  useFormatDate,
-  getDatePickerFormat,
-} from "../../utils/format";
+import { useFormatNumber, useFormatDate } from "../../utils/format";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
 import { useNumberFormat } from "../../stores/number-format";
-import MaskedNumber from "../../components/ui/MaskedNumber";
 import { DashboardSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { useTranslation } from "react-i18next";
 
@@ -46,59 +37,24 @@ ChartJS.register(
   BarElement,
 );
 
-// useIsDark moved to a shared hook at src/hooks/useIsDark.js
 import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
 import SankeyDiagram from "./SankeyDiagram";
-
-interface Account {
-  id: string | number;
-  name: string;
-  balance: number;
-  currency?: string;
-  kind?: string;
-  exchange_rate?: number;
-}
-
-interface Transaction {
-  id?: string | number;
-  amount: number;
-  category?: string;
-  account_id: string | number;
-  date: string;
-  payee?: string;
-  notes?: string;
-  tags?: string;
-  ticker?: string;
-  shares?: number;
-  currency?: string;
-  price_per_share?: number;
-  fee?: number;
-  [key: string]: unknown;
-}
-
-interface Quote {
-  ticker: string;
-  price: number;
-  symbol: string;
-  regularMarketPrice: number;
-  quoteType?: string | null;
-}
-
-interface DailyPriceEntry {
-  date: string;
-  price: number;
-}
-
-interface DailyPriceData {
-  list: DailyPriceEntry[];
-  map: Record<string, number>;
-}
-
-interface DashboardProps {
-  accounts?: Account[];
-  marketValues?: Record<string, number>;
-}
+import TimeRangeSelector from "./TimeRangeSelector";
+import AccountFilterPopover from "./AccountFilterPopover";
+import SummaryCards from "./SummaryCards";
+import NetWorthChart from "./NetWorthChart";
+import AssetAllocationChart from "./AssetAllocationChart";
+import ExpensesByCategoryChart from "./ExpensesByCategoryChart";
+import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
+import type {
+  Account,
+  Transaction,
+  Quote,
+  DailyPriceEntry,
+  DailyPriceData,
+  DashboardProps,
+} from "./dashboard-types";
 
 export default function Dashboard({
   accounts: propAccounts = [],
@@ -338,23 +294,6 @@ export default function Dashboard({
     }
     return mv;
   }, [marketValues, selectedAccountIds]);
-
-  // Popover state for account filter
-  const [showAccountFilter, setShowAccountFilter] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
-
-  // Close popover on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setShowAccountFilter(false);
-      }
-    };
-    if (showAccountFilter) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showAccountFilter]);
 
   const chartData = useMemo(() => {
     // Require accounts and at least one transaction to render the net worth evolution chart
@@ -1396,6 +1335,17 @@ export default function Dashboard({
     doFetch();
   }, [propAccounts]);
 
+  const currentNetWorth = useMemo(
+    () =>
+      computeNetWorth(
+        filteredAccounts as unknown as Parameters<typeof computeNetWorth>[0],
+        filteredMarketValues as unknown as Parameters<
+          typeof computeNetWorth
+        >[1],
+      ),
+    [filteredAccounts, filteredMarketValues],
+  );
+
   if (loading) {
     return <DashboardSkeleton />;
   }
@@ -1432,230 +1382,47 @@ export default function Dashboard({
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 min-w-0 flex-shrink">
-          <div className="time-range-selector min-w-0">
-            {["1M", "3M", "6M", "1Y", "YTD", "ALL", "CUSTOM"].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`time-range-button whitespace-nowrap ${
-                  timeRange === range
-                    ? "time-range-button-active"
-                    : "time-range-button-inactive"
-                }`}
-              >
-                {range === "CUSTOM" ? t("dashboard.custom") : range}
-              </button>
-            ))}
-          </div>
+          <TimeRangeSelector
+            timeRange={timeRange}
+            setTimeRange={setTimeRange}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+            setCustomStartDate={setCustomStartDate}
+            setCustomEndDate={setCustomEndDate}
+            dateFormat={dateFormat}
+            firstDayOfWeek={firstDayOfWeek}
+          />
 
-          {timeRange === "CUSTOM" && (
-            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-              <div className="flex items-center gap-2 px-2">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <DatePicker
-                  selected={customStartDate}
-                  onChange={(date: Date | null) => {
-                    setCustomStartDate(date!);
-                    if (date && customEndDate && date > customEndDate) {
-                      setCustomEndDate(date);
-                    }
-                  }}
-                  selectsStart
-                  startDate={customStartDate}
-                  endDate={customEndDate}
-                  maxDate={new Date()}
-                  showPopperArrow={false}
-                  portalId="datepicker-portal"
-                  popperPlacement="bottom-start"
-                  dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek as Day}
-                  className="w-24 bg-transparent text-xs font-medium focus:outline-none text-slate-700 dark:text-slate-200"
-                />
-              </div>
-              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-              <div className="flex items-center gap-2 px-2">
-                <DatePicker
-                  selected={customEndDate}
-                  onChange={(date: Date | null) => setCustomEndDate(date!)}
-                  selectsEnd
-                  startDate={customStartDate}
-                  endDate={customEndDate}
-                  minDate={customStartDate}
-                  maxDate={new Date()}
-                  showPopperArrow={false}
-                  portalId="datepicker-portal"
-                  popperPlacement="bottom-start"
-                  dateFormat={getDatePickerFormat(dateFormat)}
-                  calendarStartDay={firstDayOfWeek as Day}
-                  className="w-24 bg-transparent text-xs font-medium focus:outline-none text-slate-700 dark:text-slate-200"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Account filter popover */}
-          <div className="relative" ref={filterRef}>
-            <button
-              onClick={() => setShowAccountFilter((v) => !v)}
-              className={`account-filter-trigger ${
-                selectedAccountIds.size < accounts.length
-                  ? "account-filter-trigger-active"
-                  : ""
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">
-                {t("dashboard.accounts_filter")}
-              </span>
-              {selectedAccountIds.size < accounts.length && (
-                <span className="account-filter-badge">
-                  {selectedAccountIds.size}/{accounts.length}
-                </span>
-              )}
-              <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform ${
-                  showAccountFilter ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {showAccountFilter && (
-              <div className="account-filter-popover">
-                <div className="account-filter-header">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    {t("dashboard.accounts_filter")}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="toggle-all text-xs"
-                      onClick={() => setAllAccountsVisibility(true)}
-                    >
-                      {t("dashboard.show_all")}
-                    </button>
-                    <span className="text-slate-300 dark:text-slate-600">
-                      |
-                    </span>
-                    <button
-                      className="toggle-all text-xs"
-                      onClick={() => setAllAccountsVisibility(false)}
-                    >
-                      {t("dashboard.hide_all")}
-                    </button>
-                  </div>
-                </div>
-                <div className="account-filter-list">
-                  {accounts.map((acc) => {
-                    const ds = (
-                      chartData?.datasets as Array<{
-                        accountId?: string | number;
-                        _color?: string;
-                        [key: string]: unknown;
-                      }>
-                    )?.find((d) => d.accountId === acc.id);
-                    const color = ds?._color || "rgb(148, 163, 184)";
-                    return (
-                      <label key={acc.id} className="account-filter-item">
-                        <input
-                          type="checkbox"
-                          className="account-checkbox"
-                          checked={!!toggledAccounts[acc.id]}
-                          onChange={() => toggleAccountVisibility(acc.id)}
-                          aria-label={acc.name}
-                          style={
-                            {
-                              ["--hb-account-color" as string]: color,
-                            } as React.CSSProperties
-                          }
-                        />
-                        <span
-                          className="account-dot w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: color }}
-                        />
-                        <span className="account-name truncate">
-                          {acc.name}
-                        </span>
-                        <span className="account-balance ml-auto text-slate-500 dark:text-slate-400 text-xs">
-                          <MaskedNumber
-                            value={
-                              marketValues && marketValues[acc.id] !== undefined
-                                ? (acc.balance || 0) + marketValues[acc.id]
-                                : acc.balance || 0
-                            }
-                            options={{
-                              style: "currency",
-                              currency: acc.currency || appCurrency,
-                            }}
-                          />
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          <AccountFilterPopover
+            accounts={accounts}
+            toggledAccounts={toggledAccounts}
+            selectedAccountIds={selectedAccountIds}
+            toggleAccountVisibility={toggleAccountVisibility}
+            setAllAccountsVisibility={setAllAccountsVisibility}
+            marketValues={marketValues}
+            appCurrency={appCurrency}
+            chartDatasets={
+              chartData?.datasets as Array<{
+                accountId?: string | number;
+                _color?: string;
+                [key: string]: unknown;
+              }>
+            }
+          />
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-cards-grid">
-        <div className="summary-card">
-          <h3 className="summary-card-title">
-            {t("dashboard.current_net_worth")}
-          </h3>
-          <p className="summary-card-value">
-            <MaskedNumber
-              value={computeNetWorth(
-                filteredAccounts as unknown as Parameters<
-                  typeof computeNetWorth
-                >[0],
-                filteredMarketValues as unknown as Parameters<
-                  typeof computeNetWorth
-                >[1],
-              )}
-              options={{ style: "currency" }}
-            />
-          </p>
-        </div>
-        <div className="summary-card">
-          <h3 className="summary-card-title">
-            {t("dashboard.total_accounts")}
-          </h3>
-          <p className="summary-card-value">{filteredAccounts.length}</p>
-        </div>
-        <div className="summary-card">
-          <h3 className="summary-card-title">
-            {t("dashboard.total_transactions")}
-          </h3>
-          <p className="summary-card-value">{filteredTransactions.length}</p>
-        </div>
-      </div>
+      <SummaryCards
+        netWorth={currentNetWorth}
+        totalAccounts={filteredAccounts.length}
+        totalTransactions={filteredTransactions.length}
+      />
 
       {filteredTransactions.length === 0 ? null : (
-        <div className="chart-container">
-          <div className="chart-header">
-            <h3 className="chart-title">{t("dashboard.networth_evolution")}</h3>
-            <p className="chart-subtitle">
-              {t("dashboard.subtitle.networth_growth")}
-            </p>
-          </div>
-          <div className="chart-wrapper">
-            <div className="chart-body">
-              {chartData ? (
-                <Line options={options} data={chartData!} />
-              ) : (
-                <div className="loading-container">
-                  <div className="loading-content">
-                    <div className="loading-spinner"></div>
-                    <span className="loading-text">
-                      {t("loading.loading_data")}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <NetWorthChart
+          chartData={chartData as ChartData<"line"> | null}
+          options={options}
+        />
       )}
 
       <div className="charts-grid">
@@ -1685,31 +1452,10 @@ export default function Dashboard({
           </div>
         ) : (
           <>
-            {/* Income vs Expenses */}
-            <div className="chart-card chart-card-full">
-              <div className="chart-header">
-                <h3 className="chart-title">
-                  {t("dashboard.income_vs_expenses")}
-                </h3>
-                <p className="chart-subtitle">
-                  {t("dashboard.subtitle.monthly_income_vs_expenses")}
-                </p>
-              </div>
-              <div className="chart-body">
-                {incomeVsExpensesData ? (
-                  <Bar options={barOptions} data={incomeVsExpensesData} />
-                ) : (
-                  <div className="loading-container">
-                    <div className="loading-content">
-                      <div className="loading-spinner"></div>
-                      <span className="loading-text">
-                        {t("loading.loading_data")}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <IncomeVsExpensesChart
+              incomeVsExpensesData={incomeVsExpensesData as ChartData<"bar"> | null}
+              barOptions={barOptions}
+            />
 
             {/* Cash Flow Sankey */}
             <div
@@ -1735,84 +1481,19 @@ export default function Dashboard({
               </div>
             </div>
 
-            {/* Asset Allocation */}
-            <div className="chart-card">
-              <div className="chart-header">
-                <h3 className="chart-title">
-                  {t("dashboard.asset_allocation")}
-                </h3>
-                <p className="chart-subtitle">
-                  {t("dashboard.subtitle.distribution_of_assets")}
-                </p>
-              </div>
-              <div className="chart-body">
-                {doughnutData ? (
-                  <Doughnut options={doughnutOptions} data={doughnutData!} />
-                ) : (
-                  <div className="loading-container">
-                    <div className="loading-content">
-                      <div className="loading-spinner"></div>
-                      <span className="loading-text">
-                        {t("loading.loading_data")}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <AssetAllocationChart
+              doughnutData={doughnutData as ChartData<"doughnut"> | null}
+              doughnutOptions={doughnutOptions}
+            />
 
-            {/* Expenses by Category */}
-            <div className="chart-card">
-              <div className="chart-header">
-                <h3 className="chart-title">
-                  {t("dashboard.expenses_by_category")}
-                </h3>
-                <p className="chart-subtitle">
-                  {t("dashboard.subtitle.where_your_money_goes")}
-                </p>
-              </div>
-              <div className="chart-body">
-                {expensesByCategoryData === null ? (
-                  <div className="loading-container">
-                    <div className="loading-content">
-                      <div className="loading-spinner"></div>
-                      <span className="loading-text">
-                        {t("loading.loading_data")}
-                      </span>
-                    </div>
-                  </div>
-                ) : expensesByCategoryData.empty ? (
-                  <div className="col-span-full flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-8">
-                    <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl mb-3">
-                      <svg
-                        className="w-12 h-12 text-slate-300 dark:text-slate-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m4 4v-4m-6 8h6a2 2 0 002-2V7a2 2 0 00-2-2h-6l-2 2v11a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      {t("dashboard.no_expenses_title")}
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
-                      {t("dashboard.no_expenses_body")}
-                    </p>
-                  </div>
-                ) : (
-                  <Doughnut
-                    options={expensesOptions}
-                    data={expensesByCategoryData as ChartData<"doughnut">}
-                  />
-                )}
-              </div>
-            </div>
+            <ExpensesByCategoryChart
+              expensesByCategoryData={
+                expensesByCategoryData as
+                  | (ChartData<"doughnut"> & { empty?: boolean })
+                  | null
+              }
+              expensesOptions={expensesOptions}
+            />
           </>
         )}
       </div>
