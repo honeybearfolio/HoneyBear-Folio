@@ -53,10 +53,8 @@ pub fn get_assets_db(
                 })
                 .map_err(|e| e.to_string())?;
             let mut map = HashMap::new();
-            for row in rows {
-                if let Ok((currency, rate)) = row {
-                    map.insert(currency, rate);
-                }
+            for (currency, rate) in rows.flatten() {
+                map.insert(currency, rate);
             }
             // Ensure target currency has rate 1.0
             map.insert(target.to_string(), 1.0);

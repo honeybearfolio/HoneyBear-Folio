@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import AssetTracker from "../../../features/assets/AssetTracker";
@@ -8,6 +7,7 @@ vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (v: unknown) => (v == null ? "" : String(v)),
   useParseNumber: () => (s: string) => Number(s),
   formatNumberForExport: (v: unknown) => String(v ?? ""),
+  getDatePickerFormat: () => "yyyy-MM-dd",
 }));
 
 vi.mock("../../../stores/number-format", () => ({
