@@ -184,6 +184,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       // 1. Fetch Data
       const accounts = await rust.get_accounts();
       const transactions = await rust.get_all_transactions();
+      const assets = await rust.get_assets();
 
       // 2. Prepare Data based on format
       let content: string | undefined;
@@ -204,6 +205,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         const data = {
           accounts,
           transactions: transactionsWithAccountNames,
+          assets: assets.map(({ exchange_rate: _er, ...rest }) => rest),
           exportDate: new Date().toISOString(),
         };
         content = JSON.stringify(data, null, 2);
@@ -298,9 +300,19 @@ export default function ExportModal({ onClose }: ExportModalProps) {
           };
         });
 
+        const assetData = assets.map((a) => ({
+          [t("assets.field.name")]: a.name,
+          [t("assets.field.category")]: t(`assets.category.${a.category}`),
+          [t("assets.field.currency")]: a.currency || "",
+          [t("assets.field.value")]: coerceNumber(a.latest_value),
+          [t("assets.field.date")]: a.latest_date || "",
+          [t("assets.field.notes")]: a.notes || "",
+        }));
+
         const sheets: { name: string; data: Record<string, unknown>[] }[] = [
           { name: "Transactions", data: txData },
           { name: "Accounts", data: accounts as Record<string, unknown>[] },
+          { name: t("assets.title"), data: assetData },
         ];
 
         await rust.write_xlsx({ filePath, sheets });

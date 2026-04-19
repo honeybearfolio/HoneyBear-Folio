@@ -164,6 +164,7 @@ describe("SettingsView", () => {
         scheduled: true,
         all: true,
         chat: true,
+        assets: true,
       });
       expect(invoke).toHaveBeenCalledWith("reset_db_path");
     });
@@ -195,6 +196,8 @@ describe("SettingsView", () => {
       rules: true,
       scheduled: true,
       all: true,
+      chat: true,
+      assets: true,
     };
     render(
       <SettingsView

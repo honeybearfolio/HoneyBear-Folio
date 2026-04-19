@@ -50,6 +50,20 @@ describe("ExportModal", () => {
           { account_id: 1, date: "2024-01-15", amount: 100, payee: "Store" },
         ]);
       }
+      if (cmd === "get_assets") {
+        return Promise.resolve([
+          {
+            id: 1,
+            name: "House",
+            category: "real_estate",
+            currency: "USD",
+            notes: null,
+            latest_value: 350000,
+            latest_date: "2024-06-01",
+            exchange_rate: 1.0,
+          },
+        ]);
+      }
       if (cmd === "compute_report_data") {
         return Promise.resolve({
           date_range_start: "2024-01-01",

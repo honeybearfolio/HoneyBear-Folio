@@ -184,6 +184,10 @@ export default function CustomizationSection({
             label: t("settings.sidebar.scheduled"),
           },
           {
+            key: "assets",
+            label: t("settings.sidebar.assets"),
+          },
+          {
             key: "chat",
             label: t("settings.sidebar.ai_assistant"),
           },

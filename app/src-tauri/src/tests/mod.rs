@@ -18,3 +18,5 @@ pub mod transactions;
 pub mod calculations;
 
 pub mod session;
+
+pub mod assets;

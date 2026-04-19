@@ -52,4 +52,19 @@ describe("computeNetWorth", () => {
     const marketValues = { 1: "invalid" } as any;
     expect(computeNetWorth(accounts, marketValues)).toBe(100);
   });
+
+  it("includes totalAssetsValue in net worth", () => {
+    const accounts = [{ id: 1, balance: 100 }];
+    expect(computeNetWorth(accounts, {}, 5000)).toBe(5100);
+  });
+
+  it("handles non-finite totalAssetsValue gracefully", () => {
+    const accounts = [{ id: 1, balance: 100 }];
+    expect(computeNetWorth(accounts, {}, NaN)).toBe(100);
+    expect(computeNetWorth(accounts, {}, Infinity)).toBe(100);
+  });
+
+  it("returns totalAssetsValue when accounts is invalid", () => {
+    expect(computeNetWorth(undefined as any, {}, 500)).toBe(500);
+  });
 });

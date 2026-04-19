@@ -394,13 +394,40 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
         // Migration: Add thinking column to chat_messages
         let _ = conn.execute("ALTER TABLE chat_messages ADD COLUMN thinking TEXT", []);
 
+        // Asset tracking tables
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS assets (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'other',
+            currency TEXT,
+            notes TEXT
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS asset_valuations (
+            id INTEGER PRIMARY KEY,
+            asset_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            value REAL NOT NULL,
+            FOREIGN KEY(asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         // Performance indexes
         conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
              CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
              CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
              CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_id ON chat_messages(conversation_id);
-             CREATE INDEX IF NOT EXISTS idx_scheduled_transactions_account_id ON scheduled_transactions(account_id);",
+             CREATE INDEX IF NOT EXISTS idx_scheduled_transactions_account_id ON scheduled_transactions(account_id);
+             CREATE INDEX IF NOT EXISTS idx_asset_valuations_asset_id ON asset_valuations(asset_id);
+             CREATE INDEX IF NOT EXISTS idx_asset_valuations_date ON asset_valuations(date);",
         )
         .map_err(|e| e.to_string())?;
 

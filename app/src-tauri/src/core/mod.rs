@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod assets;
 pub mod calculations;
 pub mod db_init;
 pub mod io;

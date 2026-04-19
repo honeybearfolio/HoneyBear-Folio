@@ -16,9 +16,10 @@ function toNumeric(value: unknown): number {
 export function computeNetWorth(
   accounts: NetWorthAccount[] = [],
   marketValues: Record<number, number> = {},
+  totalAssetsValue = 0,
 ): number {
-  if (!Array.isArray(accounts)) return 0;
-  return accounts.reduce((sum: number, acc) => {
+  if (!Array.isArray(accounts)) return totalAssetsValue || 0;
+  const accountsTotal = accounts.reduce((sum: number, acc) => {
     if (!acc) return sum;
 
     const balanceNumeric = toNumeric(acc.balance);
@@ -34,6 +35,9 @@ export function computeNetWorth(
         rate
     );
   }, 0);
+  return (
+    accountsTotal + (Number.isFinite(totalAssetsValue) ? totalAssetsValue : 0)
+  );
 }
 
 export default computeNetWorth;

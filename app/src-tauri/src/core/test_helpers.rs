@@ -199,6 +199,46 @@ pub(crate) fn init_db_at_path(db_path: &Path) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
 
+    // Asset tracking tables (mirrors init_db in db_init.rs)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS assets (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'other',
+            currency TEXT,
+            notes TEXT
+        )",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS asset_valuations (
+            id INTEGER PRIMARY KEY,
+            asset_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            value REAL NOT NULL,
+            FOREIGN KEY(asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        )",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS custom_exchange_rates (
+            currency TEXT PRIMARY KEY,
+            rate REAL NOT NULL
+        )",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS idx_asset_valuations_asset_id ON asset_valuations(asset_id);
+         CREATE INDEX IF NOT EXISTS idx_asset_valuations_date ON asset_valuations(date);",
+    )
+    .map_err(|e| e.to_string())?;
+
     Ok(())
 }
 

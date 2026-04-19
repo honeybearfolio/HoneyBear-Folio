@@ -218,6 +218,38 @@ pub struct ScheduledOccurrence {
     pub is_buy: Option<bool>,
 }
 
+// ── Asset tracking data structures ───────────────────────────────────
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Asset {
+    pub id: i32,
+    pub name: String,
+    pub category: String,
+    pub currency: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct AssetValuation {
+    pub id: i32,
+    pub asset_id: i32,
+    pub date: String,
+    pub value: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct AssetWithLatestValue {
+    pub id: i32,
+    pub name: String,
+    pub category: String,
+    pub currency: Option<String>,
+    pub notes: Option<String>,
+    pub latest_value: Option<f64>,
+    pub latest_date: Option<String>,
+    #[serde(default = "default_exchange_rate")]
+    pub exchange_rate: f64,
+}
+
 // ── PDF Report data structures ──────────────────────────────────────
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

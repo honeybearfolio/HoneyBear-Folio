@@ -67,5 +67,38 @@ pub fn setup_db() -> (tempfile::TempDir, PathBuf) {
     )
     .unwrap();
 
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS custom_exchange_rates (
+            currency TEXT PRIMARY KEY,
+            rate REAL NOT NULL
+        )",
+        [],
+    )
+    .unwrap();
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS assets (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'other',
+            currency TEXT,
+            notes TEXT
+        )",
+        [],
+    )
+    .unwrap();
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS asset_valuations (
+            id INTEGER PRIMARY KEY,
+            asset_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            value REAL NOT NULL,
+            FOREIGN KEY(asset_id) REFERENCES assets(id) ON DELETE CASCADE
+        )",
+        [],
+    )
+    .unwrap();
+
     (dir, db_path)
 }

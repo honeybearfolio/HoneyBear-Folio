@@ -1,7 +1,7 @@
 mod core;
 pub use crate::core::{
-    accounts, calculations, db_init, io, llm, markets, models, pdf, rules, scheduled, session,
-    transactions, utils,
+    accounts, assets, calculations, db_init, io, llm, markets, models, pdf, rules, scheduled,
+    session, transactions, utils,
 };
 
 pub use crate::models::{
@@ -50,6 +50,12 @@ pub use crate::scheduled::{
     delete_scheduled_transaction_db, get_pending_occurrences_db, get_scheduled_transactions_db,
     skip_scheduled_occurrence_db, update_scheduled_transaction_db, CreateScheduledTransactionArgs,
     UpdateScheduledTransactionArgs,
+};
+
+// Re-export assets helpers used by tests
+pub use crate::assets::{
+    create_asset_db, create_valuation_db, delete_asset_db, delete_valuation_db, get_assets_db,
+    get_total_assets_value_db, get_valuations_db, update_asset_db, update_valuation_db,
 };
 
 // Re-export markets helpers used by tests
@@ -186,6 +192,15 @@ pub fn run() {
             llm::delete_all_conversations,
             llm::llm_chat,
             llm::cancel_llm_chat,
+            assets::create_asset,
+            assets::get_assets,
+            assets::update_asset,
+            assets::delete_asset,
+            assets::create_valuation,
+            assets::get_valuations,
+            assets::update_valuation,
+            assets::delete_valuation,
+            assets::get_total_assets_value,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
