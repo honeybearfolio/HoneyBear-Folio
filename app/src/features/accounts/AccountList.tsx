@@ -86,7 +86,7 @@ export default function AccountList({
   }, [renamingId]);
 
   const handleDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, accountId: string | number) => {
+    (e: React.DragEvent<HTMLElement>, accountId: string | number) => {
       // Store in both state (for UI) and ref (for reliable access during drag)
       setDraggingId(accountId);
       draggingIdRef.current = accountId;
@@ -99,7 +99,7 @@ export default function AccountList({
     [],
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
     // Setting dropEffect is critical for Windows to show correct cursor
@@ -107,7 +107,7 @@ export default function AccountList({
   }, []);
 
   const handleDragEnter = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
+    (e: React.DragEvent<HTMLElement>, targetIndex: number) => {
       e.preventDefault();
       e.stopPropagation();
       e.dataTransfer.dropEffect = "move";
@@ -136,7 +136,7 @@ export default function AccountList({
     [accounts, onReorder],
   );
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLElement>) => {
     e.preventDefault();
     e.stopPropagation();
   }, []);
@@ -189,8 +189,6 @@ export default function AccountList({
         return (
           <div
             key={account.id}
-            draggable={isDraggable}
-            onDragStart={(e) => handleDragStart(e, account.id)}
             onDragOver={handleDragOver}
             onDragEnter={(e) => handleDragEnter(e, index)}
             onDrop={handleDrop}
@@ -204,7 +202,7 @@ export default function AccountList({
                   }
                 : undefined
             }
-            className={`${isDraggable ? "cursor-move" : ""} block w-full transition-all duration-200 ${isDragging ? "opacity-50" : ""} account-list-menu-container`}
+            className={`block w-full transition-all duration-200 ${isDragging ? "opacity-50" : ""} account-list-menu-container`}
             data-index={index}
           >
             {renamingId === account.id ? (
@@ -241,14 +239,16 @@ export default function AccountList({
               </form>
             ) : (
               <button
+                draggable={isDraggable}
+                onDragStart={(e) => handleDragStart(e, account.id)}
                 onClick={() => onSelectAccount(account.id)}
                 role="option"
                 aria-selected={selectedId === account.id}
-                className={`sidebar-nav-item justify-between group w-full ${
+                className={`sidebar-nav-item justify-between group w-full ${isDraggable ? "cursor-move" : ""} ${
                   selectedId === account.id
                     ? "sidebar-nav-item-active"
                     : "sidebar-nav-item-inactive"
-                } ${isDragging ? "pointer-events-none" : ""}`}
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   {isDraggable && (
