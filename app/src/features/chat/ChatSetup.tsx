@@ -90,10 +90,6 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    checkConnection();
-  }, []);
-
   async function checkConnection() {
     setLoading(true);
     setError(null);
@@ -114,6 +110,10 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
 
   async function handleTestConnection() {
     setLoading(true);

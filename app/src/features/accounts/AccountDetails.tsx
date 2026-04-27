@@ -101,13 +101,6 @@ export default function AccountDetails({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [accountMenuOpen]);
 
-  useEffect(() => {
-    if (isAdding) {
-      const target = account.id === "all" ? addTargetAccount : account;
-      setSelectedCurrency(target?.currency || appCurrency || "USD");
-    }
-  }, [isAdding, account, addTargetAccount, appCurrency]);
-
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [payee, setPayee] = useState("");
@@ -118,6 +111,13 @@ export default function AccountDetails({
   const [selectedCurrency, setSelectedCurrency] = useState(
     () => localStorage.getItem("hb_currency") || "USD",
   );
+
+  useEffect(() => {
+    if (isAdding) {
+      const target = account.id === "all" ? addTargetAccount : account;
+      setSelectedCurrency(target?.currency || appCurrency || "USD");
+    }
+  }, [isAdding, account, addTargetAccount, appCurrency]);
 
   // Brokerage Form State
   const [ticker, setTicker] = useState("");
@@ -511,10 +511,7 @@ export default function AccountDetails({
     }
   }, [editForm.payee, availableAccounts]);
 
-  const tickerTimeoutRef = useMemo(
-    () => ({ current: null as ReturnType<typeof setTimeout> | null }),
-    [],
-  );
+  const tickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTickerChange = (query: string) => {
     if (tickerTimeoutRef.current) clearTimeout(tickerTimeoutRef.current);
