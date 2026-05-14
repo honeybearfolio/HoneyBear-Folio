@@ -52,10 +52,10 @@ describe("AccountList", () => {
 
     const accountA = screen
       .getByText("Account A")
-      .closest('button[draggable="true"]');
+      .closest('div[draggable="true"]');
     const accountB = screen
       .getByText("Account B")
-      .closest('button[draggable="true"]');
+      .closest('div[draggable="true"]');
 
     // Simulate Drag Start on Account A
     fireEvent.dragStart(accountA!, {
