@@ -49,7 +49,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1"
-rusqlite = { version = "0.39.0", features = ["bundled"] }
+rusqlite = { version = "0.40.0", features = ["bundled"] }
 reqwest = { version = "0.13", default-features = false, features = ["json", "cookies", "rustls", "stream"] }
 futures-core = "0.3"
 tokio = { version = "1", features = ["full"] }
@@ -57,7 +57,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-process = "2"
 tauri-plugin-shell = "2"
-calamine = "0.34.0"
+calamine = "0.35.0"
 rust_xlsxwriter = "0.95.0"
 printpdf = { version = "0.9", features = ["images", "png"] }
 image = "0.25.10"
