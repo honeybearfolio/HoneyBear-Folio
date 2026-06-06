@@ -6,6 +6,7 @@ import {
   BookOpen,
   Lightbulb,
   Bug,
+  Coffee,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -263,6 +264,17 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
           >
             <BookOpen className="w-3.5 h-3.5" />
             {t("about.docs")}
+          </a>
+          <a
+            href={EXTERNAL_URLS.BUY_ME_A_COFFEE}
+            className="about-link"
+            onClick={(e) => {
+              e.preventDefault();
+              openExternal(EXTERNAL_URLS.BUY_ME_A_COFFEE);
+            }}
+          >
+            <Coffee className="w-3.5 h-3.5" />
+            {t("about.buy_me_a_coffee")}
           </a>
         </div>
       </div>

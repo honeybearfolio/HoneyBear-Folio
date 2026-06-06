@@ -75,6 +75,7 @@ export const RESETTABLE_STORAGE_KEYS: string[] = [
 export const EXTERNAL_URLS: Record<string, string> = {
   GITHUB_REPO: "https://github.com/HoneyBearFolio/HoneyBear-Folio",
   WEBSITE: "https://honeybearfolio.github.io",
+  BUY_ME_A_COFFEE: "https://buymeacoffee.com/bernatbc",
 };
 
 EXTERNAL_URLS.DOCS = `${EXTERNAL_URLS.WEBSITE}/docs`;

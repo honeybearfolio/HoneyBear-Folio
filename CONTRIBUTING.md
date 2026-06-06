@@ -8,6 +8,7 @@ Thanks for your interest in contributing.
 - Suggest enhancements (describe the user goal and any UX constraints)
 - Improve docs (README, import/export notes, troubleshooting)
 - Submit pull requests (bug fixes, refactors, features)
+- Financialy supporting the project by buying me a coffee: [https://buymeacoffee.com/bernatbc](https://buymeacoffee.com/bernatbc)
 
 ## Development setup
 
