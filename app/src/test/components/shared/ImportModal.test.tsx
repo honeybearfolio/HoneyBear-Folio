@@ -133,7 +133,7 @@ describe("ImportModal", () => {
       readAsText(blob: Blob) {
         blob.text().then((text) => {
           this.result = text;
-          this.onload?.({ target: this } as ProgressEvent<FileReader>);
+          this.onload?.({ target: this } as unknown as ProgressEvent<FileReader>);
         });
       }
       readAsArrayBuffer() {}
@@ -209,7 +209,7 @@ describe("ImportModal", () => {
       readAsText(blob: Blob) {
         blob.text().then((text) => {
           this.result = text;
-          this.onload?.({ target: this } as ProgressEvent<FileReader>);
+          this.onload?.({ target: this } as unknown as ProgressEvent<FileReader>);
         });
       }
       readAsArrayBuffer() {}
