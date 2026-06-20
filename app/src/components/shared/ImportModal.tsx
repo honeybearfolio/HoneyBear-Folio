@@ -16,10 +16,17 @@ import type {
   FieldMapping,
   ImportProgress,
   ImportError,
-  Account,
 } from "./import-types";
 import FileDropZone from "./FileDropZone";
 import ColumnMappingStep from "./ColumnMappingStep";
+import {
+  extractAccountsFromHoneyBearJson,
+  importAccounts,
+  parseAccountFromRow,
+  pickAccountSheet,
+  pickTransactionSheet,
+  type ExportAccount,
+} from "../../utils/accounts-io";
 import {
   extractAssetsFromHoneyBearJson,
   importAssets,
@@ -29,7 +36,7 @@ import {
   rowsFromSheetData,
   type ExportAsset,
 } from "../../utils/assets-io";
-import type { AssetWithLatestValue } from "../../api/types";
+import type { Account, AssetWithLatestValue } from "../../api/types";
 
 export default function ImportModal({
   onClose,
@@ -61,7 +68,6 @@ export default function ImportModal({
     success: 0,
     failed: 0,
   });
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [previewRows, setPreviewRows] = useState<Record<string, unknown>[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -181,25 +187,21 @@ export default function ImportModal({
           }
         } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
           try {
-            // Send file bytes to Rust/calamine
             const arrayBuffer = e.target!.result as ArrayBuffer;
             const bytes = Array.from(new Uint8Array(arrayBuffer));
             const result = (await rust.read_xlsx({ data: bytes })) as {
               data: unknown[][];
+              sheets?: { name: string; data: unknown[][] }[];
             };
-            const json = result.data; // Array of arrays
 
-            if (json.length > 0) {
-              const headers = json[0] as string[];
-              const rows = json.slice(1).map((row: unknown[]) => {
-                const obj: Record<string, unknown> = {};
-                headers.forEach((header: string, index: number) => {
-                  obj[header] = row[index] !== undefined ? row[index] : "";
-                });
-                return obj;
-              });
+            const sheets = result.sheets ?? [
+              { name: "Sheet1", data: result.data },
+            ];
+            const transactionSheet = pickTransactionSheet(sheets);
 
-              const strHeaders = headers.map(String);
+            if (transactionSheet?.data?.length) {
+              const rows = rowsFromSheetData(transactionSheet.data);
+              const strHeaders = Object.keys(rows[0] ?? {});
               setColumns(strHeaders);
               setPreviewRows(rows.slice(0, 5));
               autoMapColumns(strHeaders);
@@ -254,12 +256,6 @@ export default function ImportModal({
   );
 
   useEffect(() => {
-    // Fetch accounts on mount
-    rust
-      .get_accounts()
-      .then((data) => setAccounts(data as Account[]))
-      .catch(console.error);
-
     // Prevent background from scrolling while modal is open
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -382,7 +378,9 @@ export default function ImportModal({
       const data = e.target!.result;
       let allRows: Record<string, unknown>[] = [];
       let jsonAssets: ExportAsset[] = [];
+      let jsonAccounts: ExportAccount[] = [];
       let xlsxAssetRows: Record<string, unknown>[] = [];
+      let xlsxAccounts: ExportAccount[] = [];
 
       if (file!.name.endsWith(".csv")) {
         Papa.parse(data as string, {
@@ -390,7 +388,7 @@ export default function ImportModal({
           skipEmptyLines: true,
           complete: (results: { data: Record<string, unknown>[] }) => {
             allRows = results.data;
-            processRows(allRows, jsonAssets);
+            processRows(allRows, jsonAssets, jsonAccounts);
           },
         });
       } else if (file!.name.endsWith(".json")) {
@@ -410,11 +408,12 @@ export default function ImportModal({
           }
 
           jsonAssets = extractAssetsFromHoneyBearJson(parsed);
+          jsonAccounts = extractAccountsFromHoneyBearJson(parsed);
         } catch (e) {
           console.error("Failed to parse JSON import file:", e);
           allRows = [];
         }
-        processRows(allRows, jsonAssets);
+        processRows(allRows, jsonAssets, jsonAccounts);
       } else if (file!.name.endsWith(".xlsx") || file!.name.endsWith(".xls")) {
         try {
           const arrayBuffer = e.target!.result as ArrayBuffer;
@@ -427,16 +426,17 @@ export default function ImportModal({
           const sheets = result.sheets ?? [
             { name: "Sheet1", data: result.data },
           ];
-          const transactionSheet =
-            sheets.find((sheet) => {
-              const headers = (sheet.data[0] as unknown[] | undefined)?.map(
-                (h) => String(h ?? ""),
-              );
-              return headers ? !isAssetRow(headers) : false;
-            }) ?? sheets[0];
+          const transactionSheet = pickTransactionSheet(sheets);
 
           if (transactionSheet?.data?.length) {
             allRows = rowsFromSheetData(transactionSheet.data);
+          }
+
+          const accountSheet = pickAccountSheet(sheets);
+          if (accountSheet?.data?.length) {
+            xlsxAccounts = rowsFromSheetData(accountSheet.data)
+              .map(parseAccountFromRow)
+              .filter((account): account is ExportAccount => account !== null);
           }
 
           const assetSheet = sheets.find(
@@ -459,7 +459,11 @@ export default function ImportModal({
         const xlsxAssets = xlsxAssetRows
           .map(parseAssetFromRow)
           .filter((asset): asset is ExportAsset => asset !== null);
-        processRows(allRows, [...jsonAssets, ...xlsxAssets]);
+        processRows(
+          allRows,
+          [...jsonAssets, ...xlsxAssets],
+          [...jsonAccounts, ...xlsxAccounts],
+        );
       }
     };
 
@@ -473,6 +477,7 @@ export default function ImportModal({
   const processRows = async (
     rows: Record<string, unknown>[],
     assetsToImport: ExportAsset[] = [],
+    accountsToImport: ExportAccount[] = [],
   ) => {
     let successCount = 0;
     let failCount = 0;
@@ -499,9 +504,28 @@ export default function ImportModal({
       }
     }
 
-    // Keep a single mutable copy of accounts for the whole import so we don't
-    // repeatedly create duplicates due to async React state updates.
-    let localAccounts: Account[] = [...accounts];
+    let accountImportSummary = {
+      imported: 0,
+      skipped: 0,
+      errors: [] as string[],
+    };
+
+    // Fetch fresh accounts from DB so we don't rely on stale React state.
+    let localAccounts: Account[] = await rust.get_accounts();
+
+    if (accountsToImport.length > 0) {
+      try {
+        const importResult = await importAccounts(
+          rust,
+          accountsToImport,
+          localAccounts,
+        );
+        accountImportSummary = importResult;
+        localAccounts = [...localAccounts, ...importResult.created];
+      } catch (e) {
+        accountImportSummary.errors.push(String(e));
+      }
+    }
 
     // Group rows by account identifier to determine account type before creation
     const rowsByAccount = new Map<
@@ -548,7 +572,7 @@ export default function ImportModal({
 
     for (const [, group] of rowsByAccount) {
       const { identifier, rows: groupRows } = group;
-      let accountId: number | null = null;
+      let accountId: number | string | null = null;
 
       if (identifier !== null) {
         if (typeof identifier === "number") {
@@ -617,8 +641,8 @@ export default function ImportModal({
                 kind,
               });
               // push to local cache (we'll update React state after the import completes)
-              localAccounts.push(created as Account);
-              match = created as Account;
+              localAccounts.push(created);
+              match = created;
             } catch (e) {
               console.error("Failed to create account for import:", e);
               // Fail all rows for this account
@@ -754,31 +778,38 @@ export default function ImportModal({
       }
     }
 
-    // Update React state to include any accounts we created during the import
-    setAccounts(localAccounts);
-
     setImporting(false);
     setImportErrorsState(importErrors);
 
     if (showToast) {
+      const accountMsg =
+        accountImportSummary.imported > 0
+          ? `${accountImportSummary.imported} accounts, `
+          : "";
       const assetMsg =
         assetImportSummary.imported > 0
           ? `, ${assetImportSummary.imported} assets imported`
           : "";
-      if (failCount > 0 || assetImportSummary.errors.length > 0) {
+      const hasErrors =
+        failCount > 0 ||
+        assetImportSummary.errors.length > 0 ||
+        accountImportSummary.errors.length > 0;
+      if (hasErrors) {
         showToast(
-          `Import completed: ${successCount} transactions succeeded, ${failCount} failed${assetMsg}`,
+          `Import completed: ${accountMsg}${successCount} transactions succeeded, ${failCount} failed${assetMsg}`,
           { type: "error" },
         );
         console.error(
           "Import errors:",
           importErrors,
           assetImportSummary.errors,
+          accountImportSummary.errors,
         );
       } else {
-        showToast(`${successCount} transactions imported${assetMsg}`, {
-          type: "success",
-        });
+        showToast(
+          `${accountMsg}${successCount} transactions imported${assetMsg}`,
+          { type: "success" },
+        );
       }
     }
 
