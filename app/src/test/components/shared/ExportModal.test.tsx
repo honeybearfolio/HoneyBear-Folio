@@ -64,6 +64,12 @@ describe("ExportModal", () => {
           },
         ]);
       }
+      if (cmd === "get_valuations") {
+        return Promise.resolve([
+          { id: 1, asset_id: 1, date: "2024-01-01", value: 300000 },
+          { id: 2, asset_id: 1, date: "2024-06-01", value: 350000 },
+        ]);
+      }
       if (cmd === "compute_report_data") {
         return Promise.resolve({
           date_range_start: "2024-01-01",
@@ -108,7 +114,7 @@ describe("ExportModal", () => {
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
 
-  it("fetches accounts and transactions on export", async () => {
+  it("fetches accounts, transactions, and assets on export", async () => {
     render(<ExportModal {...defaultProps} />);
 
     fireEvent.click(screen.getByText("Select Location & Export"));
@@ -116,7 +122,38 @@ describe("ExportModal", () => {
     await waitFor(() => {
       expect(mockInvoke).toHaveBeenCalledWith("get_accounts");
       expect(mockInvoke).toHaveBeenCalledWith("get_all_transactions");
+      expect(mockInvoke).toHaveBeenCalledWith("get_assets");
+      expect(mockInvoke).toHaveBeenCalledWith("get_valuations", {
+        assetId: 1,
+      });
     });
+  });
+
+  it("includes assets with valuations in JSON export", async () => {
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("Select Location & Export"));
+
+    await waitFor(() => {
+      expect(mockWriteTextFile).toHaveBeenCalled();
+    });
+
+    const [, content] = mockWriteTextFile.mock.calls[0] as [string, string];
+    const parsed = JSON.parse(content);
+    expect(parsed.assets).toEqual([
+      {
+        name: "House",
+        category: "real_estate",
+        currency: "USD",
+        notes: null,
+        valuations: [
+          { date: "2024-01-01", value: 300000 },
+          { date: "2024-06-01", value: 350000 },
+        ],
+        latest_value: 350000,
+        latest_date: "2024-06-01",
+      },
+    ]);
   });
 
   it("opens save dialog with JSON filter for JSON format", async () => {
@@ -165,7 +202,7 @@ describe("ExportModal", () => {
     expect(xlsxButton).toHaveClass("format-button-active");
   });
 
-  it("calls write_xlsx for Excel format", async () => {
+  it("calls write_xlsx with assets sheet for Excel format", async () => {
     mockSave.mockResolvedValue("/path/to/export.xlsx");
     render(<ExportModal {...defaultProps} />);
 
@@ -177,7 +214,11 @@ describe("ExportModal", () => {
         "write_xlsx",
         expect.objectContaining({
           filePath: "/path/to/export.xlsx",
-          sheets: expect.any(Array),
+          sheets: expect.arrayContaining([
+            expect.objectContaining({ name: "Transactions" }),
+            expect.objectContaining({ name: "Accounts" }),
+            expect.objectContaining({ name: "Assets" }),
+          ]),
         }),
       );
     });

@@ -225,8 +225,14 @@ export interface ChatMessage {
 // XLSX import/export
 // ---------------------------------------------------------------------------
 
+export interface XlsxSheetRows {
+  name: string;
+  data: unknown[][];
+}
+
 export interface XlsxReadResult {
   data: unknown[][];
+  sheets?: XlsxSheetRows[];
 }
 
 export interface XlsxSheet {

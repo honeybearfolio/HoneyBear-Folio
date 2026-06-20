@@ -11,59 +11,75 @@ pub struct SheetData {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ReadXlsxResult {
-    pub data: Vec<Vec<Value>>, // Array of arrays (rows)
+pub struct XlsxSheetRows {
+    pub name: String,
+    pub data: Vec<Vec<Value>>,
 }
 
-/// Tauri command: reads the first sheet of an Excel file from raw bytes and returns rows as JSON arrays.
+#[derive(Debug, Serialize)]
+pub struct ReadXlsxResult {
+    pub data: Vec<Vec<Value>>, // First sheet rows (backward compatibility)
+    pub sheets: Vec<XlsxSheetRows>,
+}
+
+fn cell_to_value(cell: &Data) -> Value {
+    match cell {
+        Data::Int(i) => Value::Number(i.to_owned().into()),
+        Data::Float(f) => serde_json::Number::from_f64(f.to_owned())
+            .map(Value::Number)
+            .unwrap_or(Value::Null),
+        Data::String(s) => Value::String(s.clone()),
+        Data::Bool(b) => Value::Bool(b.to_owned()),
+        Data::DateTime(d) => Value::Number(
+            serde_json::Number::from_f64(d.as_f64().to_owned())
+                .unwrap_or(serde_json::Number::from(0)),
+        ),
+        Data::Error(_) => Value::Null,
+        Data::Empty => Value::Null,
+        Data::DateTimeIso(d) => Value::String(d.clone()),
+        Data::DurationIso(d) => Value::String(d.clone()),
+    }
+}
+
+fn read_sheet_rows(workbook: &mut Xlsx<Cursor<Vec<u8>>>, sheet_name: &str) -> Result<Vec<Vec<Value>>, String> {
+    let range = workbook
+        .worksheet_range(sheet_name)
+        .map_err(|e: calamine::XlsxError| e.to_string())?;
+
+    let mut rows: Vec<Vec<Value>> = Vec::new();
+    for row in range.rows() {
+        rows.push(row.iter().map(cell_to_value).collect());
+    }
+    Ok(rows)
+}
+
+/// Tauri command: reads all sheets of an Excel file from raw bytes and returns rows as JSON arrays.
 #[tauri::command]
 pub fn read_xlsx(data: Vec<u8>) -> Result<ReadXlsxResult, String> {
     let cursor = Cursor::new(data);
     let mut workbook: Xlsx<_> =
         open_workbook_from_rs(cursor).map_err(|e: calamine::XlsxError| e.to_string())?;
 
-    // Read the first sheet
-    let sheets = workbook.sheet_names().to_owned();
-    if sheets.is_empty() {
+    let sheet_names = workbook.sheet_names().to_owned();
+    if sheet_names.is_empty() {
         return Err("No sheets found in workbook".to_string());
     }
 
-    let first_sheet_name = &sheets[0];
-
-    let range = workbook
-        .worksheet_range(first_sheet_name)
-        .map_err(|e: calamine::XlsxError| e.to_string())?;
-
-    let mut rows: Vec<Vec<Value>> = Vec::new();
-
-    for row in range.rows() {
-        let mut json_row: Vec<Value> = Vec::new();
-        for cell in row {
-            let val = match cell {
-                Data::Int(i) => Value::Number(i.to_owned().into()),
-                Data::Float(f) => {
-                    // Handle potential special float values if needed, though serde_json handles usual ones
-                    serde_json::Number::from_f64(f.to_owned())
-                        .map(Value::Number)
-                        .unwrap_or(Value::Null)
-                }
-                Data::String(s) => Value::String(s.clone()),
-                Data::Bool(b) => Value::Bool(b.to_owned()),
-                Data::DateTime(d) => Value::Number(
-                    serde_json::Number::from_f64(d.as_f64().to_owned())
-                        .unwrap_or(serde_json::Number::from(0)),
-                ), // Excel serial date
-                Data::Error(_) => Value::Null,
-                Data::Empty => Value::Null,
-                Data::DateTimeIso(d) => Value::String(d.clone()),
-                Data::DurationIso(d) => Value::String(d.clone()),
-            };
-            json_row.push(val);
-        }
-        rows.push(json_row);
+    let mut sheets: Vec<XlsxSheetRows> = Vec::new();
+    for sheet_name in &sheet_names {
+        let rows = read_sheet_rows(&mut workbook, sheet_name)?;
+        sheets.push(XlsxSheetRows {
+            name: sheet_name.clone(),
+            data: rows,
+        });
     }
 
-    Ok(ReadXlsxResult { data: rows })
+    let data = sheets
+        .first()
+        .map(|s| s.data.clone())
+        .unwrap_or_default();
+
+    Ok(ReadXlsxResult { data, sheets })
 }
 
 /// Tauri command: writes the given sheets with their data to an Excel file at `file_path`.
