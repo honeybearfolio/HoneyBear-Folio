@@ -40,13 +40,21 @@ vi.mock("../../../components/ui/Modal", () => {
 describe("ImportModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvoke.mockImplementation((cmd: string) => {
+    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
       if (cmd === "get_accounts") {
         return Promise.resolve([
           { id: 1, name: "Checking", balance: 0, kind: "cash" },
         ]);
       }
       if (cmd === "get_assets") return Promise.resolve([]);
+      if (cmd === "create_account") {
+        return Promise.resolve({
+          id: 2,
+          name: args?.name ?? "Account",
+          balance: args?.balance ?? 0,
+          kind: args?.kind ?? "cash",
+        });
+      }
       if (cmd === "create_asset") {
         return Promise.resolve({
           id: 99,
@@ -255,6 +263,150 @@ describe("ImportModal", () => {
         assetId: 99,
         date: "2024-06-01",
         value: 350000,
+      });
+      expect(onImportComplete).toHaveBeenCalled();
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("imports accounts from HoneyBear JSON export", async () => {
+    const onImportComplete = vi.fn();
+    const exportPayload = {
+      accounts: [
+        { id: 1, name: "Checking", balance: 0, kind: "cash" },
+        { id: 2, name: "Savings", balance: 5000, kind: "cash", currency: "USD" },
+      ],
+      transactions: [
+        {
+          date: "2024-01-15",
+          payee: "Store",
+          amount: 100,
+          account: "Checking",
+        },
+      ],
+      assets: [],
+    };
+
+    const file = new File([JSON.stringify(exportPayload)], "accounts.json", {
+      type: "application/json",
+    });
+
+    class MockFileReader {
+      result: string | ArrayBuffer | null = null;
+      onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
+      readAsText(blob: Blob) {
+        blob.text().then((text) => {
+          this.result = text;
+          this.onload?.({
+            target: this,
+          } as unknown as ProgressEvent<FileReader>);
+        });
+      }
+      readAsArrayBuffer() {}
+    }
+
+    vi.stubGlobal("FileReader", MockFileReader);
+
+    render(
+      <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
+    );
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
+    );
+
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText("accounts.json")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Next"));
+    fireEvent.click(screen.getByText("Start Import"));
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("create_account", {
+        name: "Savings",
+        balance: 5000,
+        kind: "cash",
+        currency: "USD",
+      });
+      expect(onImportComplete).toHaveBeenCalled();
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("imports accounts without transactions from HoneyBear JSON export", async () => {
+    const onImportComplete = vi.fn();
+    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "get_accounts") return Promise.resolve([]);
+      if (cmd === "get_assets") return Promise.resolve([]);
+      if (cmd === "create_account") {
+        return Promise.resolve({
+          id: 3,
+          name: args?.name ?? "Account",
+          balance: args?.balance ?? 0,
+          kind: args?.kind ?? "cash",
+        });
+      }
+      return Promise.resolve([]);
+    });
+
+    const exportPayload = {
+      accounts: [{ name: "Vacation Fund", balance: 1200, kind: "cash" }],
+      transactions: [],
+      assets: [],
+    };
+
+    const file = new File([JSON.stringify(exportPayload)], "accounts-only.json", {
+      type: "application/json",
+    });
+
+    class MockFileReader {
+      result: string | ArrayBuffer | null = null;
+      onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
+      readAsText(blob: Blob) {
+        blob.text().then((text) => {
+          this.result = text;
+          this.onload?.({
+            target: this,
+          } as unknown as ProgressEvent<FileReader>);
+        });
+      }
+      readAsArrayBuffer() {}
+    }
+
+    vi.stubGlobal("FileReader", MockFileReader);
+
+    render(
+      <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
+    );
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
+    );
+
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText("accounts-only.json")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("Next"));
+    fireEvent.click(screen.getByText("Start Import"));
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("create_account", {
+        name: "Vacation Fund",
+        balance: 1200,
+        kind: "cash",
+        currency: undefined,
       });
       expect(onImportComplete).toHaveBeenCalled();
     });
