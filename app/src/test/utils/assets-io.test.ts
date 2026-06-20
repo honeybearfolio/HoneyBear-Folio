@@ -63,9 +63,7 @@ describe("assets-io", () => {
     });
 
     expect(asset?.category).toBe("vehicle");
-    expect(asset?.valuations).toEqual([
-      { date: "2024-03-15", value: 25000 },
-    ]);
+    expect(asset?.valuations).toEqual([{ date: "2024-03-15", value: 25000 }]);
   });
 
   it("parses legacy JSON assets with id and exchange_rate", () => {

@@ -480,10 +480,15 @@ export default function ImportModal({
 
     setProgress({ current: 0, total: rows.length, success: 0, failed: 0 });
 
-    let assetImportSummary = { imported: 0, skipped: 0, errors: [] as string[] };
+    let assetImportSummary = {
+      imported: 0,
+      skipped: 0,
+      errors: [] as string[],
+    };
     if (assetsToImport.length > 0) {
       try {
-        const existingAssets = (await rust.get_assets()) as AssetWithLatestValue[];
+        const existingAssets =
+          (await rust.get_assets()) as AssetWithLatestValue[];
         assetImportSummary = await importAssets(
           rust,
           assetsToImport,
@@ -765,12 +770,15 @@ export default function ImportModal({
           `Import completed: ${successCount} transactions succeeded, ${failCount} failed${assetMsg}`,
           { type: "error" },
         );
-        console.error("Import errors:", importErrors, assetImportSummary.errors);
-      } else {
-        showToast(
-          `${successCount} transactions imported${assetMsg}`,
-          { type: "success" },
+        console.error(
+          "Import errors:",
+          importErrors,
+          assetImportSummary.errors,
         );
+      } else {
+        showToast(`${successCount} transactions imported${assetMsg}`, {
+          type: "success",
+        });
       }
     }
 

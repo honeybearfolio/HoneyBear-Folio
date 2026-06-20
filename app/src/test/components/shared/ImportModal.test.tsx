@@ -5,7 +5,9 @@ import ImportModal from "../../../components/shared/ImportModal";
 
 // Mock Tauri/Event
 const mockInvoke = vi.fn();
-vi.mock("@tauri-apps/api/core", () => ({ invoke: (...args: unknown[]) => mockInvoke(...args) }));
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (...args: unknown[]) => mockInvoke(...args),
+}));
 vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
 
 // Mock Toast
@@ -40,14 +42,25 @@ describe("ImportModal", () => {
     vi.clearAllMocks();
     mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_accounts") {
-        return Promise.resolve([{ id: 1, name: "Checking", balance: 0, kind: "cash" }]);
+        return Promise.resolve([
+          { id: 1, name: "Checking", balance: 0, kind: "cash" },
+        ]);
       }
       if (cmd === "get_assets") return Promise.resolve([]);
       if (cmd === "create_asset") {
-        return Promise.resolve({ id: 99, name: "House", category: "real_estate" });
+        return Promise.resolve({
+          id: 99,
+          name: "House",
+          category: "real_estate",
+        });
       }
       if (cmd === "create_valuation") {
-        return Promise.resolve({ id: 1, asset_id: 99, date: "2024-06-01", value: 350000 });
+        return Promise.resolve({
+          id: 1,
+          asset_id: 99,
+          date: "2024-06-01",
+          value: 350000,
+        });
       }
       if (cmd === "create_transaction") return Promise.resolve({});
       return Promise.resolve([]);
@@ -57,7 +70,9 @@ describe("ImportModal", () => {
   it("renders upload interface initially", async () => {
     render(<ImportModal onClose={vi.fn()} onImportComplete={vi.fn()} />);
 
-    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith("get_accounts"));
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
+    );
 
     expect(screen.getByText("Import Transactions")).toBeInTheDocument();
     expect(
@@ -68,7 +83,9 @@ describe("ImportModal", () => {
   it("handles file selection", async () => {
     render(<ImportModal onClose={vi.fn()} onImportComplete={vi.fn()} />);
 
-    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith("get_accounts"));
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
+    );
 
     expect(
       screen.getByText("Supports .csv, .xlsx, .xls, .json"),
@@ -102,9 +119,13 @@ describe("ImportModal", () => {
       exportDate: "2024-06-01T00:00:00.000Z",
     };
 
-    const file = new File([JSON.stringify(exportPayload)], "legacy-export.json", {
-      type: "application/json",
-    });
+    const file = new File(
+      [JSON.stringify(exportPayload)],
+      "legacy-export.json",
+      {
+        type: "application/json",
+      },
+    );
 
     class MockFileReader {
       result: string | ArrayBuffer | null = null;
@@ -120,10 +141,16 @@ describe("ImportModal", () => {
 
     vi.stubGlobal("FileReader", MockFileReader);
 
-    render(<ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />);
-    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith("get_accounts"));
+    render(
+      <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
+    );
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
+    );
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => {
@@ -190,10 +217,16 @@ describe("ImportModal", () => {
 
     vi.stubGlobal("FileReader", MockFileReader);
 
-    render(<ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />);
-    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith("get_accounts"));
+    render(
+      <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
+    );
+    await waitFor(() =>
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
+    );
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => {

@@ -37,10 +37,10 @@ export const LEGACY_ASSET_CATEGORY_LABELS: Record<string, AssetCategory> = {
   inmueble: "real_estate",
   vehicle: "vehicle",
   vehiculo: "vehicle",
-  "vehículo": "vehicle",
+  vehículo: "vehicle",
   jewelry: "jewelry",
   joyeria: "jewelry",
-  "joyería": "jewelry",
+  joyería: "jewelry",
   art: "art",
   arte: "art",
   collectible: "collectible",
@@ -132,7 +132,10 @@ export function isAssetSheetName(name: string): boolean {
   return ASSET_SHEET_NAMES.has(normalizeKey(name));
 }
 
-function headerMatchesAlias(header: string, aliases: readonly string[]): boolean {
+function headerMatchesAlias(
+  header: string,
+  aliases: readonly string[],
+): boolean {
   const normalized = normalizeKey(header);
   return aliases.some((alias) => normalizeKey(alias) === normalized);
 }
@@ -170,10 +173,7 @@ function parseNumericValue(raw: unknown): number | null {
   return isNaN(parsed) ? null : parsed;
 }
 
-function getField(
-  row: Record<string, unknown>,
-  ...keys: string[]
-): unknown {
+function getField(row: Record<string, unknown>, ...keys: string[]): unknown {
   for (const key of keys) {
     if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
       return row[key];
@@ -228,7 +228,9 @@ export function parseAssetFromRow(
   };
 }
 
-function parseValuationsFromJson(record: Record<string, unknown>): ExportValuation[] {
+function parseValuationsFromJson(
+  record: Record<string, unknown>,
+): ExportValuation[] {
   const valuations: ExportValuation[] = [];
 
   if (Array.isArray(record.valuations)) {
@@ -296,14 +298,18 @@ export function toLegacyJsonAsset(asset: ExportAsset): Record<string, unknown> {
   };
 }
 
-export function rowsFromSheetData(data: unknown[][]): Record<string, unknown>[] {
+export function rowsFromSheetData(
+  data: unknown[][],
+): Record<string, unknown>[] {
   if (!data.length) return [];
   const headers = (data[0] as unknown[]).map((h) => String(h ?? ""));
   return data.slice(1).map((row) => {
     const obj: Record<string, unknown> = {};
     headers.forEach((header, index) => {
       obj[header] =
-        (row as unknown[])[index] !== undefined ? (row as unknown[])[index] : "";
+        (row as unknown[])[index] !== undefined
+          ? (row as unknown[])[index]
+          : "";
     });
     return obj;
   });

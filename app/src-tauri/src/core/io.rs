@@ -41,7 +41,10 @@ fn cell_to_value(cell: &Data) -> Value {
     }
 }
 
-fn read_sheet_rows(workbook: &mut Xlsx<Cursor<Vec<u8>>>, sheet_name: &str) -> Result<Vec<Vec<Value>>, String> {
+fn read_sheet_rows(
+    workbook: &mut Xlsx<Cursor<Vec<u8>>>,
+    sheet_name: &str,
+) -> Result<Vec<Vec<Value>>, String> {
     let range = workbook
         .worksheet_range(sheet_name)
         .map_err(|e: calamine::XlsxError| e.to_string())?;
@@ -74,10 +77,7 @@ pub fn read_xlsx(data: Vec<u8>) -> Result<ReadXlsxResult, String> {
         });
     }
 
-    let data = sheets
-        .first()
-        .map(|s| s.data.clone())
-        .unwrap_or_default();
+    let data = sheets.first().map(|s| s.data.clone()).unwrap_or_default();
 
     Ok(ReadXlsxResult { data, sheets })
 }
