@@ -640,10 +640,7 @@ fn build_system_prompt(db_path: &PathBuf) -> String {
                         .latest_value
                         .map(|v| format!("{v:.2}"))
                         .unwrap_or_else(|| "no valuation".to_string());
-                    let date_str = a
-                        .latest_date
-                        .as_deref()
-                        .unwrap_or("unknown");
+                    let date_str = a.latest_date.as_deref().unwrap_or("unknown");
                     format!(
                         "- {} (ID: {}, category: {}, latest value: {} {}, as of {})",
                         a.name,

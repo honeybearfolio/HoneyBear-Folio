@@ -47,7 +47,10 @@ pub fn tool_get_total_assets_value(db_path: &PathBuf, arguments: &Value) -> Resu
 }
 
 /// Reads cached stock prices from the database (used when network quotes are unavailable).
-pub fn get_cached_quotes_db(db_path: &PathBuf, tickers: &[String]) -> Result<Vec<YahooQuote>, String> {
+pub fn get_cached_quotes_db(
+    db_path: &PathBuf,
+    tickers: &[String],
+) -> Result<Vec<YahooQuote>, String> {
     if tickers.is_empty() {
         return Ok(Vec::new());
     }
@@ -126,14 +129,11 @@ pub fn compute_net_worth_snapshot_with_quotes(
     target_currency: &str,
     quotes: &[YahooQuote],
 ) -> Result<Value, String> {
-    let fx_rates: HashMap<String, f64> = quotes
-        .iter()
-        .map(|q| (q.symbol.clone(), q.price))
-        .collect();
+    let fx_rates: HashMap<String, f64> =
+        quotes.iter().map(|q| (q.symbol.clone(), q.price)).collect();
     let accounts = accounts_with_converted_balances(db_path, target_currency, &fx_rates)?;
     let transactions = crate::transactions::get_all_transactions_db(db_path)?;
-    let market_values_f64 =
-        compute_net_worth_market_values_logic(&transactions, quotes);
+    let market_values_f64 = compute_net_worth_market_values_logic(&transactions, quotes);
     let market_values_map = market_values_to_json_map(market_values_f64);
 
     let accounts_total = compute_net_worth_logic(&accounts, &market_values_map);

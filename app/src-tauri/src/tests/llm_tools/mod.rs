@@ -50,8 +50,7 @@ fn test_tool_get_asset_valuations() {
     create_valuation_db(&db_path, asset_id, "2024-01-01".to_string(), 25000.0).unwrap();
     create_valuation_db(&db_path, asset_id, "2024-06-01".to_string(), 22000.0).unwrap();
 
-    let valuations =
-        tool_get_asset_valuations(&db_path, &json!({ "asset_id": asset_id })).unwrap();
+    let valuations = tool_get_asset_valuations(&db_path, &json!({ "asset_id": asset_id })).unwrap();
     let arr = valuations.as_array().unwrap();
     assert_eq!(arr.len(), 2);
 }
@@ -139,15 +138,12 @@ fn test_compute_net_worth_snapshot_with_quotes() {
         quote_type: None,
     }];
 
-    let snapshot =
-        compute_net_worth_snapshot_with_quotes(&db_path, "USD", &quotes).unwrap();
+    let snapshot = compute_net_worth_snapshot_with_quotes(&db_path, "USD", &quotes).unwrap();
 
     assert_eq!(snapshot["target_currency"], "USD");
     assert_eq!(snapshot["tracked_assets_total"].as_f64().unwrap(), 300000.0);
     // Account balance 1000 + 10 shares * $200 market value = 3000
-    let accounts_total = snapshot["accounts_and_investments_total"]
-        .as_f64()
-        .unwrap();
+    let accounts_total = snapshot["accounts_and_investments_total"].as_f64().unwrap();
     assert!((accounts_total - 3000.0).abs() < 0.01);
     assert!((snapshot["total_net_worth"].as_f64().unwrap() - 303000.0).abs() < 0.01);
 }
