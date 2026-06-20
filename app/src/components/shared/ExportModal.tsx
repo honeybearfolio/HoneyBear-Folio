@@ -22,6 +22,12 @@ import { formatNumberForExport, getDatePickerFormat } from "../../utils/format";
 import { useToast } from "../../contexts/toast";
 import { computeReportData } from "../../utils/report";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
+import {
+  ASSET_CATEGORY_LABELS,
+  ASSET_FIELD_LABELS,
+  fetchAssetsForExport,
+  toLegacyJsonAsset,
+} from "../../utils/assets-io";
 
 interface Transaction {
   id?: number;
@@ -184,7 +190,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       // 1. Fetch Data
       const accounts = await rust.get_accounts();
       const transactions = await rust.get_all_transactions();
-      const assets = await rust.get_assets();
+      const assets = await fetchAssetsForExport(rust);
 
       // 2. Prepare Data based on format
       let content: string | undefined;
@@ -205,7 +211,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         const data = {
           accounts,
           transactions: transactionsWithAccountNames,
-          assets: assets.map(({ exchange_rate: _er, ...rest }) => rest),
+          assets: assets.map(toLegacyJsonAsset),
           exportDate: new Date().toISOString(),
         };
         content = JSON.stringify(data, null, 2);
@@ -300,14 +306,24 @@ export default function ExportModal({ onClose }: ExportModalProps) {
           };
         });
 
-        const assetData = assets.map((a) => ({
-          [t("assets.field.name")]: a.name,
-          [t("assets.field.category")]: t(`assets.category.${a.category}`),
-          [t("assets.field.currency")]: a.currency || "",
-          [t("assets.field.value")]: coerceNumber(a.latest_value),
-          [t("assets.field.date")]: a.latest_date || "",
-          [t("assets.field.notes")]: a.notes || "",
-        }));
+        const assetData = assets.map((a) => {
+          const latest = a.valuations.length
+            ? [...a.valuations].sort((x, y) => y.date.localeCompare(x.date))[0]
+            : null;
+          return {
+            [ASSET_FIELD_LABELS.name]: a.name,
+            [ASSET_FIELD_LABELS.category]:
+              ASSET_CATEGORY_LABELS[
+                a.category as keyof typeof ASSET_CATEGORY_LABELS
+              ] ?? a.category,
+            [ASSET_FIELD_LABELS.currency]: a.currency || "",
+            [ASSET_FIELD_LABELS.value]: latest
+              ? coerceNumber(latest.value)
+              : null,
+            [ASSET_FIELD_LABELS.date]: latest?.date || "",
+            [ASSET_FIELD_LABELS.notes]: a.notes || "",
+          };
+        });
 
         const sheets: { name: string; data: Record<string, unknown>[] }[] = [
           { name: "Transactions", data: txData },
