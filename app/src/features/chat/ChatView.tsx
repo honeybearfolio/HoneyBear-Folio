@@ -33,6 +33,11 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
   get_scheduled_transactions: "scheduled transactions",
   get_rules: "rules",
   get_exchange_rates: "exchange rates",
+  get_assets: "assets",
+  get_asset_valuations: "asset valuations",
+  get_total_assets_value: "total assets value",
+  get_portfolio_holdings: "portfolio holdings",
+  get_net_worth: "net worth",
 };
 
 interface ReasoningBlockProps {

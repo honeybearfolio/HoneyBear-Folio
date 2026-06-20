@@ -505,116 +505,96 @@ fn build_tool_definitions() -> Vec<Value> {
                 }
             }
         }),
+        json!({
+            "type": "function",
+            "function": {
+                "name": "get_assets",
+                "description": "List tracked physical assets (real estate, vehicles, jewelry, art, collectibles) with their latest valuation. Categories: real_estate, vehicle, jewelry, art, collectible, other. Returns id, name, category, currency, notes, latest_value, latest_date.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_currency": {
+                            "type": "string",
+                            "description": "Currency for converted values (default USD)"
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
+                "name": "get_asset_valuations",
+                "description": "Get the full valuation history for a tracked asset. Returns dated value records.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "asset_id": {
+                            "type": "integer",
+                            "description": "The asset ID"
+                        }
+                    },
+                    "required": ["asset_id"]
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
+                "name": "get_total_assets_value",
+                "description": "Get the total value of all tracked physical assets (sum of latest valuations per asset).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_currency": {
+                            "type": "string",
+                            "description": "Currency for the total (default USD)"
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
+                "name": "get_portfolio_holdings",
+                "description": "Get investment holdings aggregated from transactions, with current prices, values, and ROI. Uses live stock quotes when available; falls back to cached prices.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_currency": {
+                            "type": "string",
+                            "description": "Reference currency for context (default USD)"
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
+                "name": "get_net_worth",
+                "description": "Get a net worth snapshot: per-account balances and investment market values, plus tracked physical assets total. Uses live stock quotes when available; falls back to cached prices.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_currency": {
+                            "type": "string",
+                            "description": "Currency for all totals (default USD)"
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }),
     ]
 }
 
 // ── Tool Execution ──────────────────────────────────────────────────
-
-fn execute_tool(db_path: &PathBuf, tool_name: &str, arguments: &Value) -> Result<Value, String> {
-    match tool_name {
-        "get_accounts" => {
-            let accounts = crate::accounts::get_accounts_db(db_path)?;
-            serde_json::to_value(&accounts).map_err(|e| e.to_string())
-        }
-        "get_transactions" => {
-            let all = crate::transactions::get_all_transactions_db(db_path)?;
-            let account_id = arguments.get("account_id").and_then(|v| v.as_i64());
-            let category = arguments
-                .get("category")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_lowercase());
-            let payee = arguments
-                .get("payee")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_lowercase());
-            let start_date = arguments.get("start_date").and_then(|v| v.as_str());
-            let end_date = arguments.get("end_date").and_then(|v| v.as_str());
-            let limit = arguments
-                .get("limit")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(100) as usize;
-
-            let filtered: Vec<_> = all
-                .into_iter()
-                .filter(|t| {
-                    if let Some(aid) = account_id {
-                        if t.account_id as i64 != aid {
-                            return false;
-                        }
-                    }
-                    if let Some(ref cat) = category {
-                        if t.category
-                            .as_deref()
-                            .map(|c| c.to_lowercase() != *cat)
-                            .unwrap_or(true)
-                        {
-                            return false;
-                        }
-                    }
-                    if let Some(ref p) = payee {
-                        if !t.payee.to_lowercase().contains(p.as_str()) {
-                            return false;
-                        }
-                    }
-                    if let Some(sd) = start_date {
-                        if t.date.as_str() < sd {
-                            return false;
-                        }
-                    }
-                    if let Some(ed) = end_date {
-                        if t.date.as_str() > ed {
-                            return false;
-                        }
-                    }
-                    true
-                })
-                .take(limit)
-                .collect();
-
-            serde_json::to_value(&filtered).map_err(|e| e.to_string())
-        }
-        "get_categories" => {
-            let cats = crate::transactions::get_categories_db(db_path)?;
-            serde_json::to_value(&cats).map_err(|e| e.to_string())
-        }
-        "get_payees" => {
-            let payees = crate::transactions::get_payees_db(db_path)?;
-            serde_json::to_value(&payees).map_err(|e| e.to_string())
-        }
-        "get_scheduled_transactions" => {
-            let sched = crate::scheduled::get_scheduled_transactions_db(db_path)?;
-            serde_json::to_value(&sched).map_err(|e| e.to_string())
-        }
-        "get_rules" => {
-            let rules = crate::rules::get_rules_db(db_path)?;
-            serde_json::to_value(&rules).map_err(|e| e.to_string())
-        }
-        "get_exchange_rates" => {
-            let rates = get_exchange_rates_db(db_path)?;
-            serde_json::to_value(&rates).map_err(|e| e.to_string())
-        }
-        _ => Err(format!("Unknown tool: {tool_name}")),
-    }
-}
-
-/// Read custom exchange rates directly from the database.
-fn get_exchange_rates_db(db_path: &PathBuf) -> Result<Vec<Value>, String> {
-    db_init::with_db_lock(db_path, || {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-        let mut stmt = conn
-            .prepare("SELECT currency, rate FROM custom_exchange_rates")
-            .map_err(|e| e.to_string())?;
-        let rows = stmt
-            .query_map([], |row| {
-                let currency: String = row.get(0)?;
-                let rate: f64 = row.get(1)?;
-                Ok(json!({ "currency": currency, "rate": rate }))
-            })
-            .map_err(|e| e.to_string())?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(|e| e.to_string())
-    })
-}
+// Implemented in llm_tools.rs
 
 // ── System Prompt ───────────────────────────────────────────────────
 
@@ -627,6 +607,7 @@ fn build_system_prompt(db_path: &PathBuf) -> String {
         "You can only read data — you cannot modify accounts, transactions, or settings.".to_string(),
         "When presenting monetary amounts, format them nicely and include the currency.".to_string(),
         "If the user asks about something you cannot determine from the available tools, let them know.".to_string(),
+        "Use get_net_worth for total wealth; use get_assets / get_asset_valuations for physical assets; use get_portfolio_holdings for investments.".to_string(),
     ];
 
     // Add account context so the LLM knows what accounts exist
@@ -646,6 +627,37 @@ fn build_system_prompt(db_path: &PathBuf) -> String {
             context_parts.push(format!(
                 "\nThe user has the following accounts:\n{}",
                 account_list.join("\n")
+            ));
+        }
+    }
+
+    if let Ok(assets) = crate::assets::get_assets_db(db_path, None) {
+        if !assets.is_empty() {
+            let asset_list: Vec<String> = assets
+                .iter()
+                .map(|a| {
+                    let value_str = a
+                        .latest_value
+                        .map(|v| format!("{v:.2}"))
+                        .unwrap_or_else(|| "no valuation".to_string());
+                    let date_str = a
+                        .latest_date
+                        .as_deref()
+                        .unwrap_or("unknown");
+                    format!(
+                        "- {} (ID: {}, category: {}, latest value: {} {}, as of {})",
+                        a.name,
+                        a.id,
+                        a.category,
+                        value_str,
+                        a.currency.as_deref().unwrap_or("USD"),
+                        date_str
+                    )
+                })
+                .collect();
+            context_parts.push(format!(
+                "\nThe user has the following tracked assets:\n{}",
+                asset_list.join("\n")
             ));
         }
     }
@@ -1013,7 +1025,14 @@ async fn run_chat_loop(
                     },
                 );
 
-                let result = match execute_tool(db_path, tool_name, &tc.function.arguments) {
+                let result = match super::llm_tools::execute_tool(
+                    &client,
+                    db_path,
+                    tool_name,
+                    &tc.function.arguments,
+                )
+                .await
+                {
                     Ok(val) => serde_json::to_string(&val).unwrap_or_default(),
                     Err(e) => format!("Error executing {tool_name}: {e}"),
                 };

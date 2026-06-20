@@ -117,7 +117,7 @@
   "chat.think_tooltip": "Enable extended thinking for more thorough responses",
   "chat.reasoning": "Reasoning",
   "chat.tool_call": "Queried {tool}",
-  "chat.welcome": "Ask me anything about your finances. I can look up accounts, transactions, categories, and more.",
+  "chat.welcome": "Ask me anything about your finances. I can look up accounts, transactions, tracked assets, portfolio, and net worth.",
 
   "custom_rate.message": "Yahoo Finance does not support {currency}. Please enter the exchange rate in USD (Price of 1 {currency} in USD).",
   "custom_rate.title": "Custom Exchange Rate",

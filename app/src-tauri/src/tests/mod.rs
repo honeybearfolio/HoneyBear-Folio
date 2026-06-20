@@ -20,3 +20,5 @@ pub mod calculations;
 pub mod session;
 
 pub mod assets;
+
+pub mod llm_tools;
