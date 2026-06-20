@@ -19,6 +19,7 @@ dependencies = [
  "reqwest",
  "rusqlite",
  "rust_xlsxwriter",
+ "rustls-webpki",
  "serde",
  "serde_json",
  "tauri",

@@ -51,6 +51,7 @@ chrono = { version = "0.4", features = ["serde"] }
 regex = "1"
 rusqlite = { version = "0.40.1", features = ["bundled"] }
 reqwest = { version = "0.13", default-features = false, features = ["json", "cookies", "rustls", "stream"] }
+rustls-webpki = "0.103.13"
 futures-core = "0.3"
 tokio = { version = "1", features = ["full"] }
 tauri-plugin-dialog = "2"
