@@ -16,7 +16,6 @@ import type {
   FieldMapping,
   ImportProgress,
   ImportError,
-  Account,
 } from "./import-types";
 import FileDropZone from "./FileDropZone";
 import ColumnMappingStep from "./ColumnMappingStep";
@@ -37,7 +36,7 @@ import {
   rowsFromSheetData,
   type ExportAsset,
 } from "../../utils/assets-io";
-import type { AssetWithLatestValue } from "../../api/types";
+import type { Account, AssetWithLatestValue } from "../../api/types";
 
 export default function ImportModal({
   onClose,
@@ -69,7 +68,6 @@ export default function ImportModal({
     success: 0,
     failed: 0,
   });
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [previewRows, setPreviewRows] = useState<Record<string, unknown>[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -258,12 +256,6 @@ export default function ImportModal({
   );
 
   useEffect(() => {
-    // Fetch accounts on mount
-    rust
-      .get_accounts()
-      .then((data) => setAccounts(data as Account[]))
-      .catch(console.error);
-
     // Prevent background from scrolling while modal is open
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -519,7 +511,7 @@ export default function ImportModal({
     };
 
     // Fetch fresh accounts from DB so we don't rely on stale React state.
-    let localAccounts: Account[] = (await rust.get_accounts()) as Account[];
+    let localAccounts: Account[] = await rust.get_accounts();
 
     if (accountsToImport.length > 0) {
       try {
@@ -529,7 +521,7 @@ export default function ImportModal({
           localAccounts,
         );
         accountImportSummary = importResult;
-        localAccounts = [...localAccounts, ...(importResult.created as Account[])];
+        localAccounts = [...localAccounts, ...importResult.created];
       } catch (e) {
         accountImportSummary.errors.push(String(e));
       }
@@ -580,7 +572,7 @@ export default function ImportModal({
 
     for (const [, group] of rowsByAccount) {
       const { identifier, rows: groupRows } = group;
-      let accountId: number | null = null;
+      let accountId: number | string | null = null;
 
       if (identifier !== null) {
         if (typeof identifier === "number") {
@@ -649,8 +641,8 @@ export default function ImportModal({
                 kind,
               });
               // push to local cache (we'll update React state after the import completes)
-              localAccounts.push(created as Account);
-              match = created as Account;
+              localAccounts.push(created);
+              match = created;
             } catch (e) {
               console.error("Failed to create account for import:", e);
               // Fail all rows for this account
@@ -785,9 +777,6 @@ export default function ImportModal({
         });
       }
     }
-
-    // Update React state to include any accounts we created during the import
-    setAccounts(localAccounts);
 
     setImporting(false);
     setImportErrorsState(importErrors);

@@ -40,47 +40,45 @@ vi.mock("../../../components/ui/Modal", () => {
 describe("ImportModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "get_accounts") {
-        return Promise.resolve([
-          { id: 1, name: "Checking", balance: 0, kind: "cash" },
-        ]);
-      }
-      if (cmd === "get_assets") return Promise.resolve([]);
-      if (cmd === "create_account") {
-        return Promise.resolve({
-          id: 2,
-          name: args?.name ?? "Account",
-          balance: args?.balance ?? 0,
-          kind: args?.kind ?? "cash",
-        });
-      }
-      if (cmd === "create_asset") {
-        return Promise.resolve({
-          id: 99,
-          name: "House",
-          category: "real_estate",
-        });
-      }
-      if (cmd === "create_valuation") {
-        return Promise.resolve({
-          id: 1,
-          asset_id: 99,
-          date: "2024-06-01",
-          value: 350000,
-        });
-      }
-      if (cmd === "create_transaction") return Promise.resolve({});
-      return Promise.resolve([]);
-    });
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "get_accounts") {
+          return Promise.resolve([
+            { id: 1, name: "Checking", balance: 0, kind: "cash" },
+          ]);
+        }
+        if (cmd === "get_assets") return Promise.resolve([]);
+        if (cmd === "create_account") {
+          return Promise.resolve({
+            id: 2,
+            name: args?.name ?? "Account",
+            balance: args?.balance ?? 0,
+            kind: args?.kind ?? "cash",
+          });
+        }
+        if (cmd === "create_asset") {
+          return Promise.resolve({
+            id: 99,
+            name: "House",
+            category: "real_estate",
+          });
+        }
+        if (cmd === "create_valuation") {
+          return Promise.resolve({
+            id: 1,
+            asset_id: 99,
+            date: "2024-06-01",
+            value: 350000,
+          });
+        }
+        if (cmd === "create_transaction") return Promise.resolve({});
+        return Promise.resolve([]);
+      },
+    );
   });
 
-  it("renders upload interface initially", async () => {
+  it("renders upload interface initially", () => {
     render(<ImportModal onClose={vi.fn()} onImportComplete={vi.fn()} />);
-
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
-    );
 
     expect(screen.getByText("Import Transactions")).toBeInTheDocument();
     expect(
@@ -88,12 +86,8 @@ describe("ImportModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("handles file selection", async () => {
+  it("handles file selection", () => {
     render(<ImportModal onClose={vi.fn()} onImportComplete={vi.fn()} />);
-
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
-    );
 
     expect(
       screen.getByText("Supports .csv, .xlsx, .xls, .json"),
@@ -154,9 +148,6 @@ describe("ImportModal", () => {
     render(
       <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
     );
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
-    );
 
     const input = document.querySelector(
       'input[type="file"]',
@@ -171,6 +162,7 @@ describe("ImportModal", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts");
       expect(mockInvoke).toHaveBeenCalledWith("create_asset", {
         name: "House",
         category: "real_estate",
@@ -232,9 +224,6 @@ describe("ImportModal", () => {
     render(
       <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
     );
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
-    );
 
     const input = document.querySelector(
       'input[type="file"]',
@@ -253,6 +242,7 @@ describe("ImportModal", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts");
       expect(mockInvoke).toHaveBeenCalledWith("create_asset", {
         name: "House",
         category: "real_estate",
@@ -275,7 +265,13 @@ describe("ImportModal", () => {
     const exportPayload = {
       accounts: [
         { id: 1, name: "Checking", balance: 0, kind: "cash" },
-        { id: 2, name: "Savings", balance: 5000, kind: "cash", currency: "USD" },
+        {
+          id: 2,
+          name: "Savings",
+          balance: 5000,
+          kind: "cash",
+          currency: "USD",
+        },
       ],
       transactions: [
         {
@@ -311,9 +307,6 @@ describe("ImportModal", () => {
     render(
       <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
     );
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
-    );
 
     const input = document.querySelector(
       'input[type="file"]',
@@ -328,6 +321,7 @@ describe("ImportModal", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts");
       expect(mockInvoke).toHaveBeenCalledWith("create_account", {
         name: "Savings",
         balance: 5000,
@@ -342,19 +336,21 @@ describe("ImportModal", () => {
 
   it("imports accounts without transactions from HoneyBear JSON export", async () => {
     const onImportComplete = vi.fn();
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "get_accounts") return Promise.resolve([]);
-      if (cmd === "get_assets") return Promise.resolve([]);
-      if (cmd === "create_account") {
-        return Promise.resolve({
-          id: 3,
-          name: args?.name ?? "Account",
-          balance: args?.balance ?? 0,
-          kind: args?.kind ?? "cash",
-        });
-      }
-      return Promise.resolve([]);
-    });
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "get_accounts") return Promise.resolve([]);
+        if (cmd === "get_assets") return Promise.resolve([]);
+        if (cmd === "create_account") {
+          return Promise.resolve({
+            id: 3,
+            name: args?.name ?? "Account",
+            balance: args?.balance ?? 0,
+            kind: args?.kind ?? "cash",
+          });
+        }
+        return Promise.resolve([]);
+      },
+    );
 
     const exportPayload = {
       accounts: [{ name: "Vacation Fund", balance: 1200, kind: "cash" }],
@@ -362,9 +358,13 @@ describe("ImportModal", () => {
       assets: [],
     };
 
-    const file = new File([JSON.stringify(exportPayload)], "accounts-only.json", {
-      type: "application/json",
-    });
+    const file = new File(
+      [JSON.stringify(exportPayload)],
+      "accounts-only.json",
+      {
+        type: "application/json",
+      },
+    );
 
     class MockFileReader {
       result: string | ArrayBuffer | null = null;
@@ -385,9 +385,6 @@ describe("ImportModal", () => {
     render(
       <ImportModal onClose={vi.fn()} onImportComplete={onImportComplete} />,
     );
-    await waitFor(() =>
-      expect(mockInvoke).toHaveBeenCalledWith("get_accounts"),
-    );
 
     const input = document.querySelector(
       'input[type="file"]',
@@ -402,6 +399,7 @@ describe("ImportModal", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("get_accounts");
       expect(mockInvoke).toHaveBeenCalledWith("create_account", {
         name: "Vacation Fund",
         balance: 1200,
