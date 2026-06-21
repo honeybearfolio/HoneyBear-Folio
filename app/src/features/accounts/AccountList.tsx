@@ -157,7 +157,9 @@ export default function AccountList({
       onKeyDown={(e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
           e.preventDefault();
-          const currentIndex = accounts.findIndex((a) => a.id === selectedId);
+          const currentIndex = accounts.findIndex((a) =>
+            sameId(selectedId, a.id),
+          );
           const nextIndex =
             e.key === "ArrowDown"
               ? Math.min(currentIndex + 1, accounts.length - 1)
