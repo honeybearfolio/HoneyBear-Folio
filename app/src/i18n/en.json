@@ -299,6 +299,7 @@
   "import.click_to_upload": "Click to upload CSV, Excel or JSON file",
   "import.drag_or_click": "Drag and drop or click to select file",
   "import.drop_file_here": "Drop file here",
+  "import.error.failed_parse_excel": "Failed to parse Excel file: {error}",
   "import.error.failed_parse_json": "Failed to parse JSON file: {error}",
   "import.error.failed_read_dropped": "Failed to read dropped file: {error}",
   "import.error.no_account_for_row": "No target account specified for imported row",
