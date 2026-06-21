@@ -96,6 +96,25 @@ describe("AccountList", () => {
     expect(onSelectAccount).toHaveBeenCalledWith("1");
   });
 
+  it("arrow key navigation works when selectedId is string and account id is numeric", () => {
+    const numericAccounts = [
+      { id: 1, name: "Checking", balance: 1000, currency: "USD" },
+      { id: 2, name: "Savings", balance: 2000, currency: "USD" },
+    ];
+    const onSelectAccount = vi.fn();
+    render(
+      <AccountList
+        accounts={numericAccounts}
+        onSelectAccount={onSelectAccount}
+        selectedId="1"
+        Icon={() => <span>Icon</span>}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByRole("listbox"), { key: "ArrowDown" });
+    expect(onSelectAccount).toHaveBeenCalledWith(2);
+  });
+
   it("highlights selected account when selectedId is string and account id is numeric", () => {
     const numericAccounts = [
       { id: 1, name: "Checking", balance: 1000, currency: "USD" },

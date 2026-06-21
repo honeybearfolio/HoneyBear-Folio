@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useFormatNumber } from "../../utils/format";
 import { getDatePickerFormat } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
+import { sameId } from "../../utils/ids";
 import type {
   Account,
   AvailableAccount,
@@ -115,8 +116,8 @@ export default function TransactionForm({
             <CustomSelect
               value={addTargetAccount ? addTargetAccount.id : ""}
               onChange={(val) => {
-                const selected = availableAccounts.find(
-                  (a) => String(a.id) === String(val),
+                const selected = availableAccounts.find((a) =>
+                  sameId(a.id, val),
                 );
                 setAddTargetAccount(selected || null);
               }}
