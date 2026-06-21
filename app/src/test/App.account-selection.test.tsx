@@ -10,7 +10,13 @@ vi.mock("../api/tauri-client", () => ({
       file_exists: true,
     }),
     get_accounts: vi.fn().mockResolvedValue([
-      { id: 1, name: "Checking", balance: 1000, kind: "bank", currency: "USD" },
+      {
+        id: 1,
+        name: "Checking",
+        balance: 1000,
+        kind: "bank",
+        currency: "USD",
+      },
     ]),
     get_total_assets_value: vi.fn().mockResolvedValue(0),
     get_system_theme: vi.fn().mockResolvedValue("light"),
