@@ -96,6 +96,24 @@ describe("AccountList", () => {
     expect(onSelectAccount).toHaveBeenCalledWith("1");
   });
 
+  it("highlights selected account when selectedId is string and account id is numeric", () => {
+    const numericAccounts = [
+      { id: 1, name: "Checking", balance: 1000, currency: "USD" },
+      { id: 2, name: "Savings", balance: 2000, currency: "USD" },
+    ];
+    render(
+      <AccountList
+        accounts={numericAccounts}
+        onSelectAccount={vi.fn()}
+        selectedId="1"
+        Icon={() => <span>Icon</span>}
+      />,
+    );
+
+    const checkingButton = screen.getByRole("option", { name: /Checking/i });
+    expect(checkingButton).toHaveClass("sidebar-nav-item-active");
+  });
+
   it("right-clicking an account shows Rename and Delete in a context menu", async () => {
     const onRenameAccount = vi.fn();
     const onDeleteAccount = vi.fn();

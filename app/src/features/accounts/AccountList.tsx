@@ -4,6 +4,7 @@ import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { GripVertical, Edit, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { sameId } from "../../utils/ids";
 
 interface Account {
   id: string | number;
@@ -217,7 +218,7 @@ export default function AccountList({
                   setRenamingId(null);
                 }}
                 className={`sidebar-nav-item justify-between w-full ${
-                  selectedId === account.id
+                  sameId(selectedId, account.id)
                     ? "sidebar-nav-item-active"
                     : "sidebar-nav-item-inactive"
                 }`}
@@ -243,9 +244,9 @@ export default function AccountList({
               <button
                 onClick={() => onSelectAccount(account.id)}
                 role="option"
-                aria-selected={selectedId === account.id}
+                aria-selected={sameId(selectedId, account.id)}
                 className={`sidebar-nav-item justify-between group w-full ${
-                  selectedId === account.id
+                  sameId(selectedId, account.id)
                     ? "sidebar-nav-item-active"
                     : "sidebar-nav-item-inactive"
                 } ${isDragging ? "pointer-events-none" : ""}`}
@@ -260,7 +261,7 @@ export default function AccountList({
                   {!isDraggable && (
                     <Icon
                       className={`sidebar-nav-icon shrink-0 ${
-                        selectedId === account.id
+                        sameId(selectedId, account.id)
                           ? "sidebar-nav-icon-active"
                           : "sidebar-nav-icon-inactive"
                       }`}
@@ -270,7 +271,7 @@ export default function AccountList({
                 </div>
                 <div
                   className={`flex flex-col items-end shrink-0 ml-2 ${
-                    selectedId === account.id
+                    sameId(selectedId, account.id)
                       ? "text-brand-100"
                       : "text-slate-500 group-hover:text-slate-300"
                   }`}
