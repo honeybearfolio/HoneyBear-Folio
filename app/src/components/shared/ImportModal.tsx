@@ -5,7 +5,6 @@ import { Download, FileSpreadsheet } from "lucide-react";
 import "../../styles/Modal.css";
 import "../../styles/Settings.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
-// @ts-expect-error papaparse has no type declarations
 import Papa from "papaparse";
 import { parseNumberWithLocale } from "../../utils/format";
 import { useTranslation } from "react-i18next";
@@ -208,7 +207,11 @@ export default function ImportModal({
             }
           } catch (err: unknown) {
             console.error("Failed to parse XLSX:", err);
-            setParseError("Failed to parse Excel file: " + String(err));
+            setParseError(
+              t("import.error.failed_parse_excel", {
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            );
           }
         }
       };
