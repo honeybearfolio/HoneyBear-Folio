@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { rust } from "./api/tauri-client";
 import Sidebar from "./components/layout/Sidebar";
 import { computeNetWorth } from "./utils/networth";
+import { sameId } from "./utils/ids";
 import AccountDetails from "./features/accounts/AccountDetails";
 import Dashboard from "./features/dashboard/Dashboard";
 import InvestmentDashboard from "./features/investments/InvestmentDashboard";
@@ -343,7 +344,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       totalValue: totalBalance,
     };
   } else {
-    const acc = accounts.find((a) => a.id === selectedAccountId);
+    const acc = accounts.find((a) => sameId(a.id, selectedAccountId));
     if (acc) {
       selectedAccount = {
         ...acc,
