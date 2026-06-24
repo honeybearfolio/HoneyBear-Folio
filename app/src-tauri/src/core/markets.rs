@@ -162,10 +162,8 @@ pub async fn get_stock_quotes_with_client(
     // Update DB with new quotes
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     let db_ref = db_path.as_path();
-    let quote_prices: Vec<(String, f64)> = quotes
-        .iter()
-        .map(|q| (q.symbol.clone(), q.price))
-        .collect();
+    let quote_prices: Vec<(String, f64)> =
+        quotes.iter().map(|q| (q.symbol.clone(), q.price)).collect();
     crate::db_init::with_db_lock(db_ref, move || {
         let mut conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
@@ -310,10 +308,8 @@ pub async fn get_stock_quotes_with_client_and_db(
     }
 
     // Update DB with new quotes
-    let quote_prices: Vec<(String, f64)> = quotes
-        .iter()
-        .map(|q| (q.symbol.clone(), q.price))
-        .collect();
+    let quote_prices: Vec<(String, f64)> =
+        quotes.iter().map(|q| (q.symbol.clone(), q.price)).collect();
     crate::db_init::with_db_lock(db_path, move || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
