@@ -13,7 +13,7 @@ pub fn create_asset_db(
     currency: Option<String>,
     notes: Option<String>,
 ) -> Result<Asset, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let name_trimmed = name.trim().to_string();
         if name_trimmed.is_empty() {
@@ -39,7 +39,7 @@ pub fn get_assets_db(
     db_path: &PathBuf,
     target_currency: Option<&str>,
 ) -> Result<Vec<AssetWithLatestValue>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         // Fetch exchange rates when a target currency is specified
@@ -119,7 +119,7 @@ pub fn update_asset_db(
     currency: Option<String>,
     notes: Option<String>,
 ) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let name_trimmed = name.trim().to_string();
         if name_trimmed.is_empty() {
@@ -139,7 +139,7 @@ pub fn update_asset_db(
 }
 
 pub fn delete_asset_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         // Delete valuations first (cascade may not be enforced in all SQLite builds)
         conn.execute(
@@ -165,7 +165,7 @@ pub fn create_valuation_db(
     date: String,
     value: f64,
 ) -> Result<AssetValuation, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute(
             "INSERT INTO asset_valuations (asset_id, date, value) VALUES (?1, ?2, ?3)",
@@ -183,7 +183,7 @@ pub fn create_valuation_db(
 }
 
 pub fn get_valuations_db(db_path: &PathBuf, asset_id: i32) -> Result<Vec<AssetValuation>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
             .prepare(
@@ -212,7 +212,7 @@ pub fn update_valuation_db(
     date: String,
     value: f64,
 ) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let rows = conn
             .execute(
@@ -228,7 +228,7 @@ pub fn update_valuation_db(
 }
 
 pub fn delete_valuation_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let rows = conn
             .execute("DELETE FROM asset_valuations WHERE id = ?1", params![id])

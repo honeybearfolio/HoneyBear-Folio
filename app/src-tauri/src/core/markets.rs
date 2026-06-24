@@ -161,14 +161,19 @@ pub async fn get_stock_quotes_with_client(
 
     // Update DB with new quotes
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    crate::db_init::with_db_lock(&db_path, || {
-        let mut conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let db_ref = db_path.as_path();
+    let quote_prices: Vec<(String, f64)> = quotes
+        .iter()
+        .map(|q| (q.symbol.clone(), q.price))
+        .collect();
+    crate::db_init::with_db_lock(db_ref, move || {
+        let mut conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
         {
             let mut stmt = tx.prepare("INSERT OR REPLACE INTO stock_prices (ticker, price, last_updated) VALUES (?1, ?2, datetime('now'))").map_err(|e| e.to_string())?;
-            for quote in &quotes {
-                stmt.execute(params![quote.symbol, quote.price])
+            for (symbol, price) in &quote_prices {
+                stmt.execute(params![symbol, price])
                     .map_err(|e| e.to_string())?;
             }
         }
@@ -184,8 +189,8 @@ pub async fn get_stock_quotes_with_client(
         .collect();
 
     if !missing_tickers.is_empty() {
-        crate::db_init::with_db_lock(&db_path, || {
-            let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+        let additional: Vec<YahooQuote> = crate::db_init::with_db_lock(db_ref, move || {
+            let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
             let placeholders: String = missing_tickers
                 .iter()
                 .map(|_| "?")
@@ -203,9 +208,10 @@ pub async fn get_stock_quotes_with_client(
                 })
                 .map_err(|e| e.to_string())?;
 
+            let mut additional = Vec::new();
             for row in rows {
                 let (symbol, price) = row.map_err(|e| e.to_string())?;
-                quotes.push(YahooQuote {
+                additional.push(YahooQuote {
                     symbol,
                     price,
                     change_percent: 0.0,
@@ -214,8 +220,9 @@ pub async fn get_stock_quotes_with_client(
                 });
             }
 
-            Ok(())
+            Ok(additional)
         })?;
+        quotes.extend(additional);
     }
 
     Ok(quotes)
@@ -303,14 +310,18 @@ pub async fn get_stock_quotes_with_client_and_db(
     }
 
     // Update DB with new quotes
-    crate::db_init::with_db_lock(db_path, || {
+    let quote_prices: Vec<(String, f64)> = quotes
+        .iter()
+        .map(|q| (q.symbol.clone(), q.price))
+        .collect();
+    crate::db_init::with_db_lock(db_path, move || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
         {
             let mut stmt = tx.prepare("INSERT OR REPLACE INTO stock_prices (ticker, price, last_updated) VALUES (?1, ?2, datetime('now'))").map_err(|e| e.to_string())?;
-            for quote in &quotes {
-                stmt.execute(params![quote.symbol, quote.price])
+            for (symbol, price) in &quote_prices {
+                stmt.execute(params![symbol, price])
                     .map_err(|e| e.to_string())?;
             }
         }
@@ -326,7 +337,7 @@ pub async fn get_stock_quotes_with_client_and_db(
         .collect();
 
     if !missing_tickers.is_empty() {
-        crate::db_init::with_db_lock(db_path, || {
+        let additional: Vec<YahooQuote> = crate::db_init::with_db_lock(db_path, move || {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
             let placeholders: String = missing_tickers
                 .iter()
@@ -345,9 +356,10 @@ pub async fn get_stock_quotes_with_client_and_db(
                 })
                 .map_err(|e| e.to_string())?;
 
+            let mut additional = Vec::new();
             for row in rows {
                 let (symbol, price) = row.map_err(|e| e.to_string())?;
-                quotes.push(YahooQuote {
+                additional.push(YahooQuote {
                     symbol,
                     price,
                     change_percent: 0.0,
@@ -356,8 +368,9 @@ pub async fn get_stock_quotes_with_client_and_db(
                 });
             }
 
-            Ok(())
+            Ok(additional)
         })?;
+        quotes.extend(additional);
     }
 
     Ok(quotes)
@@ -376,12 +389,13 @@ pub async fn update_daily_stock_prices_with_client_and_base(
 
     for ticker in tickers {
         // 1. Get last date from DB
-        let last_date_str: Option<String> = crate::db_init::with_db_lock(db_path, || {
+        let ticker_for_query = ticker.clone();
+        let last_date_str: Option<String> = crate::db_init::with_db_lock(db_path, move || {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
             let result = conn
                 .query_row(
                     "SELECT MAX(date) FROM daily_stock_prices WHERE ticker = ?1",
-                    params![ticker],
+                    params![ticker_for_query],
                     |row| row.get(0),
                 )
                 .optional()
@@ -437,7 +451,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
                     if let Some(quotes) = &indicators.quote {
                         if let Some(quote) = quotes.first() {
                             if let Some(closes) = &quote.close {
-                                crate::db_init::with_db_lock(db_path, || {
+                                crate::db_init::with_db_lock(db_path, move || {
                                     let mut conn =
                                         Connection::open(db_path).map_err(|e| e.to_string())?;
                                     let tx = conn.transaction().map_err(|e| e.to_string())?;

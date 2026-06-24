@@ -5,7 +5,7 @@ use tauri::AppHandle;
 
 /// Loads all custom exchange rates from the database into a `HashMap<currency, rate>`.
 pub fn get_custom_rates_map(db_path: &std::path::PathBuf) -> Result<HashMap<String, f64>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut map = HashMap::new();
         let mut stmt = conn
@@ -374,7 +374,7 @@ pub fn get_all_exchange_rates(
 
 /// Get all unique currencies used across accounts
 fn get_account_currencies(db_path: &PathBuf) -> Result<Vec<String>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
             .prepare("SELECT DISTINCT currency FROM accounts WHERE currency IS NOT NULL")

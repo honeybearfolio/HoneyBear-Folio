@@ -336,7 +336,7 @@ const SELECT_COLUMNS: &str = "id, account_id, payee, amount, category, notes, cu
 pub fn get_scheduled_transactions_db(
     db_path: &PathBuf,
 ) -> Result<Vec<ScheduledTransaction>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let sql = format!(
             "SELECT {} FROM scheduled_transactions ORDER BY id ASC",
@@ -387,7 +387,7 @@ pub fn create_scheduled_transaction_db(
     db_path: &PathBuf,
     args: CreateScheduledTransactionArgs,
 ) -> Result<i32, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let days_json = args
@@ -468,7 +468,7 @@ pub fn update_scheduled_transaction_db(
     db_path: &PathBuf,
     args: UpdateScheduledTransactionArgs,
 ) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let days_json = args
@@ -542,7 +542,7 @@ pub fn get_pending_occurrences_db(
     account_id: Option<i32>,
     today_str: &str,
 ) -> Result<Vec<ScheduledOccurrence>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let today = NaiveDate::parse_from_str(today_str, "%Y-%m-%d")
             .map_err(|e| format!("Invalid date: {}", e))?;
         let lookahead = today + Duration::days(5);
