@@ -125,7 +125,7 @@ fn apply_action_legacy(transaction: &mut Transaction, field: &str, value: &str) 
 
 /// Retrieves all rules ordered by priority descending, then by ID.
 pub fn get_rules_db(db_path: &PathBuf) -> Result<Vec<Rule>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn
@@ -178,7 +178,7 @@ pub struct CreateRuleDbParams {
 
 /// Inserts a new transaction rule and returns its ID.
 pub fn create_rule_db(db_path: &PathBuf, params: CreateRuleDbParams) -> Result<i32, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let conditions_json =
@@ -220,7 +220,7 @@ pub struct UpdateRuleDbParams {
 
 /// Updates a rule's priority, conditions, and actions.
 pub fn update_rule_db(db_path: &PathBuf, params: UpdateRuleDbParams) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let conditions_json =
@@ -262,7 +262,7 @@ pub fn delete_rule_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
 /// Updates the priority ordering of rules based on the provided ID list.
 /// The first ID in the list receives the highest priority.
 pub fn update_rules_order_db(db_path: &PathBuf, rule_ids: Vec<i32>) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 

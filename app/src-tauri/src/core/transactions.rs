@@ -25,7 +25,7 @@ pub fn create_transaction_db(
     db_path: &PathBuf,
     args: CreateTransactionArgs,
 ) -> Result<Transaction, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         // Apply rules before starting transaction
@@ -173,7 +173,7 @@ pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Tra
 
 /// Retrieves all transactions across all accounts, ordered by date descending.
 pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
@@ -208,7 +208,7 @@ pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, St
 // Payees and categories helpers moved from `lib.rs` here
 /// Returns a sorted list of distinct payee names from all transactions.
 pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn
@@ -229,7 +229,7 @@ pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
 
 /// Returns a sorted list of distinct category names, excluding "Transfer".
 pub fn get_categories_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn.prepare("SELECT DISTINCT category FROM transactions WHERE category IS NOT NULL AND category != 'Transfer' ORDER BY category").map_err(|e| e.to_string())?;
@@ -267,7 +267,7 @@ pub fn create_investment_transaction_db(
     db_path: &PathBuf,
     args: CreateInvestmentTransactionArgs,
 ) -> Result<Transaction, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let CreateInvestmentTransactionArgs {
             account_id,
             date,
@@ -398,7 +398,7 @@ pub fn update_transaction_db(
     db_path: &PathBuf,
     args: UpdateTransactionArgs,
 ) -> Result<Transaction, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let UpdateTransactionArgs {
             id,
             account_id,
@@ -570,7 +570,7 @@ pub fn update_investment_transaction_db(
     db_path: &PathBuf,
     args: UpdateInvestmentTransactionArgs,
 ) -> Result<Transaction, String> {
-    crate::db_init::with_db_lock(db_path, || {
+    crate::db_init::with_db_lock(db_path, move || {
         let UpdateInvestmentTransactionArgs {
             id,
             account_id,

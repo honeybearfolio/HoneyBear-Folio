@@ -219,7 +219,7 @@ pub fn get_conversations(app_handle: AppHandle) -> Result<Vec<Conversation>, Str
 
 /// Queries all conversations from the database, ordered by most recent first.
 pub fn get_conversations_db(db_path: &PathBuf) -> Result<Vec<Conversation>, String> {
-    db_init::with_db_lock(db_path, || {
+    db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
             .prepare(
@@ -250,7 +250,7 @@ pub fn create_conversation(app_handle: AppHandle, title: String) -> Result<Conve
 
 /// Inserts a new conversation into the database and returns it.
 pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conversation, String> {
-    db_init::with_db_lock(db_path, || {
+    db_init::with_db_lock(db_path, move || {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
         conn.execute(
@@ -382,8 +382,9 @@ fn save_message_db(
 #[tauri::command]
 pub fn delete_all_conversations(app_handle: AppHandle) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
-    db_init::with_db_lock(&db_path, || {
-        let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let db_ref = db_path.as_path();
+    db_init::with_db_lock(db_ref, move || {
+        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
         conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| e.to_string())?;
         conn.execute("DELETE FROM chat_conversations", [])
@@ -724,7 +725,7 @@ pub async fn llm_chat(
     app_handle: AppHandle,
     conversation_id: i64,
     user_message: String,
-    #[allow(unused_variables)] think: Option<bool>,
+    think: Option<bool>,
 ) -> Result<(), String> {
     let settings = db_init::read_settings(&app_handle)?;
     let base_url =
