@@ -133,19 +133,26 @@ pub async fn get_stock_quotes_with_client(
                                             }
                                         }
                                     },
-                                    Err(e) => {
-                                        log::warn!("Failed to parse JSON for {}: {}", ticker, e);
+                                    Err(err) => {
+                                        let description = err.to_string();
+                                        log::warn!(
+                                            "Failed to parse JSON for {ticker}: {description}"
+                                        );
                                     }
                                 }
                             },
-                            Err(e) => log::warn!("Failed to get text for {}: {}", ticker, e),
+                            Err(err) => {
+                                let description = err.to_string();
+                                log::warn!("Failed to get text for {ticker}: {description}");
+                            }
                         }
                     } else {
                         log::warn!("Request failed for {}: {}", ticker, resp.status());
                     }
                 },
-                Err(e) => {
-                    log::warn!("Request error for {}: {}", ticker, e);
+                Err(err) => {
+                    let description = err.to_string();
+                    log::warn!("Request error for {ticker}: {description}");
                 }
             }
             None
@@ -164,7 +171,7 @@ pub async fn get_stock_quotes_with_client(
     let db_ref = db_path.as_path();
     let quote_prices: Vec<(String, f64)> =
         quotes.iter().map(|q| (q.symbol.clone(), q.price)).collect();
-    crate::db_init::with_db_lock(db_ref, move || {
+    crate::db_locked!(db_ref, {
         let mut conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -176,7 +183,7 @@ pub async fn get_stock_quotes_with_client(
             }
         }
         tx.commit().map_err(|e| e.to_string())?;
-        Ok(())
+        Ok::<(), String>(())
     })?;
 
     // If we missed some tickers, try to fetch from DB
@@ -187,7 +194,7 @@ pub async fn get_stock_quotes_with_client(
         .collect();
 
     if !missing_tickers.is_empty() {
-        let additional: Vec<YahooQuote> = crate::db_init::with_db_lock(db_ref, move || {
+        let additional: Vec<YahooQuote> = crate::db_locked!(db_ref, {
             let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
             let placeholders: String = missing_tickers
                 .iter()
@@ -218,7 +225,7 @@ pub async fn get_stock_quotes_with_client(
                 });
             }
 
-            Ok(additional)
+            Ok::<Vec<YahooQuote>, String>(additional)
         })?;
         quotes.extend(additional);
     }
@@ -281,19 +288,26 @@ pub async fn get_stock_quotes_with_client_and_db(
                                             }
                                         }
                                     },
-                                    Err(e) => {
-                                        log::warn!("Failed to parse JSON for {}: {}", ticker, e);
+                                    Err(err) => {
+                                        let description = err.to_string();
+                                        log::warn!(
+                                            "Failed to parse JSON for {ticker}: {description}"
+                                        );
                                     }
                                 }
                             },
-                            Err(e) => log::warn!("Failed to get text for {}: {}", ticker, e),
+                            Err(err) => {
+                                let description = err.to_string();
+                                log::warn!("Failed to get text for {ticker}: {description}");
+                            }
                         }
                     } else {
                         log::warn!("Request failed for {}: {}", ticker, resp.status());
                     }
                 },
-                Err(e) => {
-                    log::warn!("Request error for {}: {}", ticker, e);
+                Err(err) => {
+                    let description = err.to_string();
+                    log::warn!("Request error for {ticker}: {description}");
                 }
             }
             None
@@ -310,7 +324,7 @@ pub async fn get_stock_quotes_with_client_and_db(
     // Update DB with new quotes
     let quote_prices: Vec<(String, f64)> =
         quotes.iter().map(|q| (q.symbol.clone(), q.price)).collect();
-    crate::db_init::with_db_lock(db_path, move || {
+    crate::db_locked!(db_path, {
         let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -322,7 +336,7 @@ pub async fn get_stock_quotes_with_client_and_db(
             }
         }
         tx.commit().map_err(|e| e.to_string())?;
-        Ok(())
+        Ok::<(), String>(())
     })?;
 
     // If we missed some tickers, try to fetch from DB
@@ -333,7 +347,7 @@ pub async fn get_stock_quotes_with_client_and_db(
         .collect();
 
     if !missing_tickers.is_empty() {
-        let additional: Vec<YahooQuote> = crate::db_init::with_db_lock(db_path, move || {
+        let additional: Vec<YahooQuote> = crate::db_locked!(db_path, {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
             let placeholders: String = missing_tickers
                 .iter()
@@ -364,7 +378,7 @@ pub async fn get_stock_quotes_with_client_and_db(
                 });
             }
 
-            Ok(additional)
+            Ok::<Vec<YahooQuote>, String>(additional)
         })?;
         quotes.extend(additional);
     }
@@ -386,7 +400,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
     for ticker in tickers {
         // 1. Get last date from DB
         let ticker_for_query = ticker.clone();
-        let last_date_str: Option<String> = crate::db_init::with_db_lock(db_path, move || {
+        let last_date_str: Option<String> = crate::db_locked!(db_path, {
             let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
             let result = conn
                 .query_row(
@@ -397,7 +411,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
                 .optional()
                 .map_err(|e| e.to_string())?
                 .flatten();
-            Ok(result)
+            Ok::<Option<String>, String>(result)
         })?;
 
         let start_timestamp = if let Some(date_str) = last_date_str {
@@ -447,7 +461,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
                     if let Some(quotes) = &indicators.quote {
                         if let Some(quote) = quotes.first() {
                             if let Some(closes) = &quote.close {
-                                crate::db_init::with_db_lock(db_path, move || {
+                                crate::db_locked!(db_path, {
                                     let mut conn =
                                         Connection::open(db_path).map_err(|e| e.to_string())?;
                                     let tx = conn.transaction().map_err(|e| e.to_string())?;
@@ -470,7 +484,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
                                         }
                                     }
                                     tx.commit().map_err(|e: rusqlite::Error| e.to_string())?;
-                                    Ok(())
+                                    Ok::<(), String>(())
                                 })?;
                             }
                         }
@@ -512,7 +526,7 @@ pub fn get_daily_stock_prices_from_path(
     db_path: &std::path::Path,
     ticker: String,
 ) -> Result<Vec<DailyPrice>, String> {
-    crate::db_init::with_db_lock(db_path, move || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn

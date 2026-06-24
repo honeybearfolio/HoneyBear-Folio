@@ -3,7 +3,6 @@ use crate::calculations::{
     compute_net_worth_market_values_logic, compute_portfolio_totals_logic,
     merge_holdings_with_quotes_logic,
 };
-use crate::db_init;
 use crate::markets;
 use crate::models::YahooQuote;
 use rusqlite::Connection;
@@ -55,7 +54,7 @@ pub fn get_cached_quotes_db(
         return Ok(Vec::new());
     }
 
-    db_init::with_db_lock(db_path, || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let placeholders: String = tickers.iter().map(|_| "?").collect::<Vec<_>>().join(",");
         let query = format!(
@@ -210,7 +209,7 @@ pub async fn tool_get_portfolio_holdings(
 
 /// Read custom exchange rates directly from the database.
 pub fn get_exchange_rates_db(db_path: &PathBuf) -> Result<Vec<Value>, String> {
-    db_init::with_db_lock(db_path, || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
             .prepare("SELECT currency, rate FROM custom_exchange_rates")

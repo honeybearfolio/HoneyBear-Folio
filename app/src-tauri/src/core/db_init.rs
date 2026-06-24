@@ -36,7 +36,7 @@ impl Drop for DbLockGuard {
     }
 }
 
-fn acquire_db_lock(db_path: &Path) -> Result<DbLockGuard, String> {
+pub fn acquire_db_lock(db_path: &Path) -> Result<DbLockGuard, String> {
     let key = db_path.to_path_buf();
 
     let is_reentrant = DB_LOCK_DEPTH.with(|depths| {
@@ -83,6 +83,18 @@ where
 {
     let _lock = acquire_db_lock(db_path)?;
     operation()
+}
+
+/// Acquires a per-path database lock and evaluates `body` while the lock is held.
+///
+/// Prefer this over [`with_db_lock`] when the body needs outer variables: CodeQL's
+/// `rust/unused-variable` query does not track implicit closure captures.
+#[macro_export]
+macro_rules! db_locked {
+    ($db_path:expr, $body:expr) => {{
+        let _db_guard = $crate::db_init::acquire_db_lock($db_path)?;
+        $body
+    }};
 }
 
 /// Returns the path to `settings.json` in the app data directory, creating the directory if needed.
@@ -146,8 +158,9 @@ pub fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
 /// Creates all database tables and indexes, and runs schema migrations for new columns.
 pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
     let db_path = get_db_path(app_handle)?;
-    with_db_lock(&db_path, || {
-        let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
+    let db_ref = db_path.as_path();
+    crate::db_locked!(db_ref, {
+        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
 
         // SQLite performance pragmas
         conn.execute_batch(
