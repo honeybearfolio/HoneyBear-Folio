@@ -5,7 +5,7 @@ use tauri::AppHandle;
 
 /// Loads all custom exchange rates from the database into a `HashMap<currency, rate>`.
 pub fn get_custom_rates_map(db_path: &std::path::PathBuf) -> Result<HashMap<String, f64>, String> {
-    crate::db_init::with_db_lock(db_path, move || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut map = HashMap::new();
         let mut stmt = conn
@@ -115,7 +115,7 @@ pub fn set_custom_exchange_rate_db(
     currency: String,
     rate: f64,
 ) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, move || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute(
             "INSERT OR REPLACE INTO custom_exchange_rates (currency, rate) VALUES (?1, ?2)",
@@ -132,7 +132,7 @@ pub fn get_custom_exchange_rate_db(
     db_path: &PathBuf,
     currency: String,
 ) -> Result<Option<f64>, String> {
-    crate::db_init::with_db_lock(db_path, move || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn
@@ -374,7 +374,7 @@ pub fn get_all_exchange_rates(
 
 /// Get all unique currencies used across accounts
 fn get_account_currencies(db_path: &PathBuf) -> Result<Vec<String>, String> {
-    crate::db_init::with_db_lock(db_path, move || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
             .prepare("SELECT DISTINCT currency FROM accounts WHERE currency IS NOT NULL")
@@ -393,7 +393,7 @@ fn get_account_currencies(db_path: &PathBuf) -> Result<Vec<String>, String> {
 
 /// Delete a custom exchange rate from the database
 pub fn delete_custom_exchange_rate_db(db_path: &PathBuf, currency: String) -> Result<(), String> {
-    crate::db_init::with_db_lock(db_path, move || {
+    crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute(
             "DELETE FROM custom_exchange_rates WHERE currency = ?1",
