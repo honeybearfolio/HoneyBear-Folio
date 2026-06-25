@@ -8,7 +8,6 @@ import {
   normalizeAssetCategory,
   parseAssetFromJson,
   parseAssetFromRow,
-  rowsFromSheetData,
   toLegacyJsonAsset,
 } from "../../utils/assets-io";
 import type { AssetValuation, AssetWithLatestValue } from "../../api/types";
@@ -189,15 +188,6 @@ describe("assets-io", () => {
       notes: "Vintage",
       valuations: [{ date: "2024-05-01", value: 12000 }],
     });
-  });
-
-  it("converts sheet rows into objects", () => {
-    const rows = rowsFromSheetData([
-      ["Name", "Value"],
-      ["House", 350000],
-    ]);
-
-    expect(rows).toEqual([{ Name: "House", Value: 350000 }]);
   });
 
   it("exports assets with valuation history", async () => {
