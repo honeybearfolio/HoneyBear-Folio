@@ -10,6 +10,7 @@ import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
 import "../../styles/Dashboard.css";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
+import type { RuleRecord } from "../../api/types";
 import {
   createDefaultRuleFormState,
   DEFAULT_RULE_ACTION,
@@ -20,19 +21,6 @@ import {
   type RuleCondition,
   type RuleAction,
 } from "./rules-helpers";
-
-interface RuleRecord {
-  id: number;
-  priority: number;
-  logic?: string;
-  conditions?: RuleCondition[];
-  actions?: RuleAction[];
-  match_field?: string;
-  match_pattern?: string;
-  action_field?: string;
-  action_value?: string;
-  [key: string]: unknown;
-}
 
 export default function RulesList() {
   const { t } = useTranslation();

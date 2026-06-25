@@ -29,8 +29,8 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+import type { Transaction } from "../../api/types";
 import type {
-  InvestmentTransaction,
   InvestmentQuote,
   ProjectionResult,
   MonteCarloResult,
@@ -130,8 +130,7 @@ export default function FireCalculator() {
     setLoading(true);
     try {
       const accounts = await rust.get_accounts();
-      const transactions =
-        (await rust.get_all_transactions()) as InvestmentTransaction[];
+      const transactions = (await rust.get_all_transactions()) as Transaction[];
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =

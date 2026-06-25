@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { rust } from "../../api/tauri-client";
+import type { StockQuote, Transaction } from "../../api/types";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
@@ -18,22 +19,6 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 // useIsDark moved to a shared hook at src/hooks/useIsDark.js
 import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
-
-interface InvestmentTransaction {
-  date: string;
-  ticker?: string;
-  shares?: number;
-  price_per_share?: number;
-  fee?: number;
-  account_id: number;
-  [key: string]: unknown;
-}
-
-interface InvestmentQuote {
-  symbol: string;
-  regularMarketPrice: number;
-  [key: string]: unknown;
-}
 
 interface Holding {
   ticker: string;
@@ -86,8 +71,7 @@ export default function InvestmentDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      const transactions =
-        (await rust.get_all_transactions()) as InvestmentTransaction[];
+      const transactions = (await rust.get_all_transactions()) as Transaction[];
       const { currentHoldings } = buildHoldingsFromTransactions(transactions);
 
       if (currentHoldings.length === 0) {
@@ -99,7 +83,7 @@ export default function InvestmentDashboard() {
       const tickers = currentHoldings.map((h) => h.ticker);
       const quotes = (await rust.get_stock_quotes({
         tickers,
-      })) as InvestmentQuote[];
+      })) as StockQuote[];
 
       const finalHoldings = mergeHoldingsWithQuotes(currentHoldings, quotes);
       setHoldings(finalHoldings as Holding[]);

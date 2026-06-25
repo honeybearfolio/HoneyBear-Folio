@@ -99,7 +99,7 @@ export default function Sidebar({
 
   // Compute total balance using helper so logic is shared with Dashboard/App
   const totalBalance = computeNetWorth(
-    accounts as { id: number; balance?: unknown; exchange_rate?: number }[],
+    accounts,
     marketValues,
     totalAssetsValue,
   );

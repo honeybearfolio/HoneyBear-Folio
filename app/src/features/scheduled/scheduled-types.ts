@@ -1,4 +1,5 @@
 import { CURRENCIES } from "../../utils/currencies";
+import type { Account } from "../../api/types";
 
 export const currencyOptions = [
   { value: "", label: "—" },
@@ -33,14 +34,9 @@ export interface ScheduleRecord {
   fee?: number;
   is_buy?: boolean;
   occurrences_count?: number;
-  [key: string]: unknown;
 }
 
-export interface AccountRecord {
-  id: number;
-  name: string;
-  [key: string]: unknown;
-}
+export type AccountRecord = Pick<Account, "id" | "name">;
 
 export interface TickerSuggestion {
   symbol: string;

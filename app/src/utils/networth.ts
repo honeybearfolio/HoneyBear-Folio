@@ -1,9 +1,9 @@
-interface NetWorthAccount {
-  id: number;
-  balance?: unknown;
-  exchange_rate?: number;
-  [key: string]: unknown;
-}
+import type { Account } from "../api/types";
+
+/** Minimal account fields required for net-worth aggregation. */
+export type NetWorthAccount = Pick<Account, "id" | "balance" | "exchange_rate">;
+
+export type MarketValueMap = Record<string | number, number>;
 
 function toNumeric(value: unknown): number {
   // Reject booleans explicitly (they can coerce to 1/0) and treat non-numeric strings as invalid
@@ -15,7 +15,7 @@ function toNumeric(value: unknown): number {
 
 export function computeNetWorth(
   accounts: NetWorthAccount[] = [],
-  marketValues: Record<number, number> = {},
+  marketValues: MarketValueMap = {},
   totalAssetsValue = 0,
 ): number {
   if (!Array.isArray(accounts)) return totalAssetsValue || 0;
@@ -23,7 +23,7 @@ export function computeNetWorth(
     if (!acc) return sum;
 
     const balanceNumeric = toNumeric(acc.balance);
-    const mv = toNumeric(marketValues?.[acc.id]);
+    const mv = toNumeric(marketValues[acc.id]);
 
     const rate = acc.exchange_rate || 1.0;
 

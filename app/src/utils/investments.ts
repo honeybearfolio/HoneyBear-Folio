@@ -1,22 +1,24 @@
 // Helpers to compute holdings and portfolio metrics from transactions and quotes
 
-interface InvestmentTransaction {
-  date: string;
-  ticker?: string;
-  shares?: number;
-  price_per_share?: number;
-  fee?: number;
-  account_id: string | number;
-  [key: string]: unknown;
-}
+import type { StockQuote, Transaction } from "../api/types";
 
-interface InvestmentQuote {
-  symbol: string;
-  regularMarketPrice: number;
-  regularMarketChangePercent?: number;
-  quoteType?: string | null;
-  [key: string]: unknown;
-}
+type InvestmentTransaction = Pick<
+  Transaction,
+  | "date"
+  | "ticker"
+  | "shares"
+  | "price_per_share"
+  | "fee"
+  | "account_id"
+  | "category"
+> & {
+  amount?: number;
+};
+
+type InvestmentQuote = Pick<
+  StockQuote,
+  "symbol" | "regularMarketPrice" | "regularMarketChangePercent" | "quoteType"
+>;
 
 interface Holding {
   ticker: string;

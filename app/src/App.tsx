@@ -304,7 +304,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   // Calculate total balance
 
   const totalBalance = computeNetWorth(
-    accounts as { id: number; balance?: unknown; exchange_rate?: number }[],
+    accounts,
     marketValues,
     totalAssetsValue,
   );

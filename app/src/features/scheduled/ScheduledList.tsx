@@ -58,7 +58,7 @@ export default function ScheduledList() {
         ]);
         if (mounted) {
           setSchedules(scheds as ScheduleRecord[]);
-          setAccounts(accs as AccountRecord[]);
+          setAccounts(accs);
           setFetchError(null);
         }
       } catch (e) {

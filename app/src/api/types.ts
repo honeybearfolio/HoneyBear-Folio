@@ -14,7 +14,6 @@ export interface Account {
   currency?: string;
   kind?: string;
   exchange_rate?: number;
-  [key: string]: unknown;
 }
 
 // ---------------------------------------------------------------------------
@@ -36,7 +35,6 @@ export interface Transaction {
   fee?: number;
   currency?: string;
   tags?: string;
-  [key: string]: unknown;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,7 +71,6 @@ export interface StockQuote {
   regularMarketChangePercent?: number;
   quoteType?: string | null;
   currency?: string;
-  [key: string]: unknown;
 }
 
 export interface DailyPrice {
@@ -107,7 +104,6 @@ export interface RuleRecord {
   match_pattern?: string;
   action_field?: string;
   action_value?: string;
-  [key: string]: unknown;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,7 +135,6 @@ export interface ScheduleRecord {
   fee?: number;
   is_buy?: boolean;
   occurrences_count?: number;
-  [key: string]: unknown;
 }
 
 export interface PendingOccurrence {
