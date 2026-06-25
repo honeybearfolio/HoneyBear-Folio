@@ -71,8 +71,7 @@ export default function InvestmentDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      const transactions =
-        (await rust.get_all_transactions()) as Transaction[];
+      const transactions = (await rust.get_all_transactions()) as Transaction[];
       const { currentHoldings } = buildHoldingsFromTransactions(transactions);
 
       if (currentHoldings.length === 0) {

@@ -808,9 +808,7 @@ export default function AccountDetails({
         let bValue: string | number = (b[sortKey] as string | number) ?? "";
 
         // Handle numeric values
-        if (
-          ["amount", "shares", "price_per_share", "fee"].includes(sortKey)
-        ) {
+        if (["amount", "shares", "price_per_share", "fee"].includes(sortKey)) {
           aValue = parseFloat(String(aValue) || "0");
           bValue = parseFloat(String(bValue) || "0");
         } else if (sortConfig.key === "date") {

@@ -1339,11 +1339,7 @@ export default function Dashboard({
 
   const currentNetWorth = useMemo(
     () =>
-      computeNetWorth(
-        filteredAccounts,
-        filteredMarketValues,
-        totalAssetsValue,
-      ),
+      computeNetWorth(filteredAccounts, filteredMarketValues, totalAssetsValue),
     [filteredAccounts, filteredMarketValues, totalAssetsValue],
   );
 
@@ -1402,7 +1398,9 @@ export default function Dashboard({
             setAllAccountsVisibility={setAllAccountsVisibility}
             marketValues={marketValues}
             appCurrency={appCurrency}
-            chartDatasets={chartData?.datasets as AccountChartDataset[] | undefined}
+            chartDatasets={
+              chartData?.datasets as AccountChartDataset[] | undefined
+            }
           />
         </div>
       </div>

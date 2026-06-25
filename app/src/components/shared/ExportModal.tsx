@@ -377,9 +377,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         // Fetch stock quotes if user has investments
         let quotes: unknown[] = [];
         try {
-          const { currentHoldings } = buildHoldingsFromTransactions(
-            transactions,
-          );
+          const { currentHoldings } =
+            buildHoldingsFromTransactions(transactions);
           if (currentHoldings.length > 0) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
             quotes = (await rust.get_stock_quotes({ tickers })) as unknown[];

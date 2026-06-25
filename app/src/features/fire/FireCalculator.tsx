@@ -130,8 +130,7 @@ export default function FireCalculator() {
     setLoading(true);
     try {
       const accounts = await rust.get_accounts();
-      const transactions =
-        (await rust.get_all_transactions()) as Transaction[];
+      const transactions = (await rust.get_all_transactions()) as Transaction[];
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =

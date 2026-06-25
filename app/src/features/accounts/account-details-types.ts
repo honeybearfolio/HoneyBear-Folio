@@ -19,8 +19,10 @@ export interface AutocompleteSuggestion {
   type?: string;
 }
 
-export interface AutocompleteInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
+export interface AutocompleteInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "value" | "onChange"
+> {
   value: string;
   onChange: (value: string) => void;
   suggestions: AutocompleteSuggestion[];
