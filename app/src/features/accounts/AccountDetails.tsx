@@ -30,6 +30,7 @@ import AccountHeader from "./AccountHeader";
 import TransactionForm from "./TransactionForm";
 import PendingOccurrences from "./PendingOccurrences";
 import TransactionRow from "./TransactionRow";
+import { handleAsyncError, logError } from "../../utils/errors";
 
 export default function AccountDetails({
   account,
@@ -375,7 +376,7 @@ export default function AccountDetails({
         })),
       );
     } catch (e) {
-      console.error("Failed to fetch suggestions:", e);
+      logError("Failed to fetch suggestions", e);
     }
   }
 
@@ -402,8 +403,12 @@ export default function AccountDetails({
       }
       setTransactions(txs);
     } catch (e) {
-      console.error("Failed to fetch transactions:", e);
-      showToast(t("error.failed_to_load"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to fetch transactions",
+        error: e,
+        userMessage: t("error.failed_to_load"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -415,7 +420,7 @@ export default function AccountDetails({
       })) as PendingOccurrence[];
       setPendingOccurrences(occs);
     } catch (e) {
-      console.error("Failed to fetch pending occurrences:", e);
+      logError("Failed to fetch pending occurrences", e);
       setPendingOccurrences([]);
     }
   }
@@ -435,8 +440,12 @@ export default function AccountDetails({
       await Promise.all([fetchTransactions(), fetchPendingOccurrences()]);
       onUpdate();
     } catch (e) {
-      console.error("Failed to apply scheduled occurrence:", e);
-      showToast(t("error.operation_failed"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to apply scheduled occurrence",
+        error: e,
+        userMessage: t("error.operation_failed"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -448,8 +457,12 @@ export default function AccountDetails({
       });
       await fetchPendingOccurrences();
     } catch (e) {
-      console.error("Failed to skip scheduled occurrence:", e);
-      showToast(t("error.operation_failed"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to skip scheduled occurrence",
+        error: e,
+        userMessage: t("error.operation_failed"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -528,7 +541,7 @@ export default function AccountDetails({
         setTickerSuggestions(suggestions);
         setShowTickerSuggestions(true);
       } catch (error) {
-        console.error("Error fetching ticker suggestions:", error);
+        logError("Error fetching ticker suggestions", error);
       }
     }, 300);
   };
@@ -551,8 +564,12 @@ export default function AccountDetails({
       setAccountMenuOpen(false);
       if (onUpdate) onUpdate();
     } catch (e) {
-      console.error("Failed to rename account:", e);
-      showToast(t("error.failed_to_rename"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to rename account",
+        error: e,
+        userMessage: t("error.failed_to_rename"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -573,8 +590,12 @@ export default function AccountDetails({
       await rust.delete_account({ id: account.id });
       if (onUpdate) onUpdate();
     } catch (e) {
-      console.error("Failed to delete account:", e);
-      showToast(t("error.failed_to_delete"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to delete account",
+        error: e,
+        userMessage: t("error.failed_to_delete"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -652,8 +673,12 @@ export default function AccountDetails({
       fetchSuggestions();
       if (onUpdate) onUpdate();
     } catch (e) {
-      console.error("Failed to create transaction:", e);
-      showToast(t("error.failed_to_save"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to create transaction",
+        error: e,
+        userMessage: t("error.failed_to_save"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -723,8 +748,12 @@ export default function AccountDetails({
       fetchTransactions();
       if (onUpdate) onUpdate();
     } catch (e) {
-      console.error("Failed to update transaction:", e);
-      showToast(t("error.failed_to_save"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to update transaction",
+        error: e,
+        userMessage: t("error.failed_to_save"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -742,8 +771,12 @@ export default function AccountDetails({
       fetchTransactions();
       if (onUpdate) onUpdate();
     } catch (e) {
-      console.error("Failed to delete transaction:", e);
-      showToast(t("error.failed_to_delete"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to delete transaction",
+        error: e,
+        userMessage: t("error.failed_to_delete"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -768,8 +801,12 @@ export default function AccountDetails({
       fetchTransactions();
       if (onUpdate) onUpdate();
     } catch (e) {
-      console.error("Failed to duplicate transaction:", e);
-      showToast(t("error.operation_failed"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to duplicate transaction",
+        error: e,
+        userMessage: t("error.operation_failed"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 

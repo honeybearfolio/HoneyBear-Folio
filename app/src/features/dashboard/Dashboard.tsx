@@ -23,6 +23,7 @@ import { buildHoldingsFromTransactions } from "../../utils/investments";
 import { useNumberFormat } from "../../stores/number-format";
 import { DashboardSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { useTranslation } from "react-i18next";
+import { handleAsyncError, logError } from "../../utils/errors";
 
 ChartJS.register(
   CategoryScale,
@@ -113,8 +114,12 @@ export default function Dashboard({
           setAccounts(accs);
         }
       } catch (e) {
-        console.error("Failed to fetch data:", e);
-        setError(String(e));
+        handleAsyncError({
+          context: "Failed to fetch dashboard data",
+          error: e,
+          setError,
+          detailFallback: t("error.failed_to_load"),
+        });
       } finally {
         setLoading(false);
       }
@@ -138,7 +143,7 @@ export default function Dashboard({
         })) as Quote[];
         setQuotes(qs);
       } catch (e) {
-        console.error("Failed to fetch quotes:", e);
+        logError("Failed to fetch quotes", e);
       }
     };
     fetchQuotes();
@@ -203,7 +208,7 @@ export default function Dashboard({
         }
         setDailyPrices(pricesMap);
       } catch (e) {
-        console.error("Failed to fetch daily prices:", e);
+        logError("Failed to fetch daily prices", e);
       }
     };
 
@@ -1328,8 +1333,12 @@ export default function Dashboard({
           setAccounts(accs);
         }
       } catch (e) {
-        console.error("Failed to fetch data:", e);
-        setError(String(e));
+        handleAsyncError({
+          context: "Failed to fetch dashboard data",
+          error: e,
+          setError,
+          detailFallback: t("error.failed_to_load"),
+        });
       } finally {
         setLoading(false);
       }

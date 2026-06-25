@@ -21,6 +21,7 @@ import "../../styles/ExportModal.css";
 import { formatNumberForExport, getDatePickerFormat } from "../../utils/format";
 import { useToast } from "../../contexts/toast";
 import { computeReportData } from "../../utils/report";
+import { handleAsyncError, logError } from "../../utils/errors";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
 import {
   ASSET_CATEGORY_LABELS,
@@ -88,7 +89,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
           .filter(Boolean);
         setTransactionDates(dates);
       })
-      .catch(() => {});
+      .catch((e) => {
+        logError("Failed to fetch transaction dates for export", e);
+      });
   }, []);
 
   const dateFormat = localStorage.getItem("hb_dateFormat") || "yyyy-MM-dd";
@@ -341,8 +344,11 @@ export default function ExportModal({ onClose }: ExportModalProps) {
                 dailyPrices = (await rust.get_daily_stock_prices({
                   ticker: pair,
                 })) as DailyPrice[];
-              } catch {
-                // Historical prices may not be available
+              } catch (e) {
+                logError(
+                  `Optional daily prices for ${entry.currency} PDF export`,
+                  e,
+                );
               }
               const map: Record<string, number> = {};
               const list: DailyPrice[] = [];
@@ -370,8 +376,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
               }
             }
           }
-        } catch {
-          // Exchange rates are optional — continue without them
+        } catch (e) {
+          logError("Optional exchange rates fetch for PDF export", e);
         }
 
         // Fetch stock quotes if user has investments
@@ -383,8 +389,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
             quotes = (await rust.get_stock_quotes({ tickers })) as unknown[];
           }
-        } catch {
-          // Quotes are optional
+        } catch (e) {
+          logError("Optional stock quotes fetch for PDF export", e);
         }
 
         const reportLabels = {
@@ -453,43 +459,31 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         await writeTextFile(filePath, content!);
       }
 
-      // Show success toast and close modal
-      try {
-        // Some OS APIs may return a path object; make sure we stringify sensibly
-        const filePathStr =
-          typeof filePath === "string" ? filePath : JSON.stringify(filePath);
+      const filePathStr =
+        typeof filePath === "string" ? filePath : JSON.stringify(filePath);
 
-        if (showToast) {
-          showToast(t("export.success_saved", { path: filePathStr }), {
-            type: "success",
-          });
-        } else {
-          // Fallback when toast system isn't available
-          alert(t("export.success_saved", { path: filePathStr }));
-        }
-
-        onClose();
-      } catch (e) {
-        console.error("Export failed:", e);
-        if (showToast) {
-          showToast(t("export.failed", { error: String(e) }), {
-            type: "error",
-          });
-        } else {
-          alert(t("export.failed", { error: String(e) }));
-        }
-      } finally {
-        setExporting(false);
-      }
-    } catch (e) {
-      console.error("Export failed:", e);
       if (showToast) {
-        showToast(t("export.failed", { error: String(e) }), { type: "error" });
+        showToast(t("export.success_saved", { path: filePathStr }), {
+          type: "success",
+        });
       } else {
-        alert(t("export.failed", { error: String(e) }));
+        alert(t("export.success_saved", { path: filePathStr }));
+      }
+
+      onClose();
+    } catch (e) {
+      handleAsyncError({
+        context: "Export failed",
+        error: e,
+        userMessage: t("error.operation_failed"),
+        toast: showToast
+          ? (message) => showToast(message, { type: "error" })
+          : undefined,
+      });
+      if (!showToast) {
+        alert(t("error.operation_failed"));
       }
     } finally {
-      // Ensure exporting flag is cleared even if an outer error occurs
       setExporting(false);
     }
   };
