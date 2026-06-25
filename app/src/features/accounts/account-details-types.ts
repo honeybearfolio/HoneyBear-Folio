@@ -1,5 +1,7 @@
 import type { InputHTMLAttributes } from "react";
-import type { Account } from "../../api/types";
+import type { Account, RuleAction, RuleCondition } from "../../api/types";
+
+export type { RuleAction, RuleCondition };
 
 /** Real accounts plus the synthetic "all transactions" view. */
 export type AccountDetailsAccount =
@@ -80,17 +82,6 @@ export interface TickerSuggestion {
   exchange?: string;
   typeDisp?: string;
   currency?: string;
-}
-
-export interface RuleCondition {
-  field: string;
-  operator: string;
-  value: string;
-}
-
-export interface RuleAction {
-  field: string;
-  value: string;
 }
 
 export interface Rule {

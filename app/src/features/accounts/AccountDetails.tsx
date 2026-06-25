@@ -18,7 +18,6 @@ import type {
   TransactionEditForm,
   PendingOccurrence,
   TickerSuggestion,
-  RuleCondition,
   RuleAction,
   Rule,
   AvailableAccount,
@@ -26,6 +25,7 @@ import type {
   FormFieldKey,
   SortableTransactionKey,
 } from "./account-details-types";
+import { evaluateRule } from "./account-rules-evaluation";
 import AccountHeader from "./AccountHeader";
 import TransactionForm from "./TransactionForm";
 import PendingOccurrences from "./PendingOccurrences";
@@ -180,89 +180,6 @@ export default function AccountDetails({
     };
 
     const sortedRules = [...rules].sort((a, b) => b.priority - a.priority);
-
-    // Evaluate a single condition against current form values
-    const evaluateCondition = (
-      condition: RuleCondition,
-      values: Record<string, string>,
-    ) => {
-      const fieldValue = values[condition.field];
-      const conditionValue = condition.value;
-      const strFieldValue = String(fieldValue ?? "");
-      const strCondValue = String(conditionValue ?? "");
-      const numFieldValue = parseFloat(fieldValue);
-      const numCondValue = parseFloat(conditionValue);
-
-      switch (condition.operator) {
-        case "equals":
-          return strFieldValue === strCondValue;
-        case "not_equals":
-          return strFieldValue !== strCondValue;
-        case "contains":
-          return strFieldValue
-            .toLowerCase()
-            .includes(strCondValue.toLowerCase());
-        case "not_contains":
-          return !strFieldValue
-            .toLowerCase()
-            .includes(strCondValue.toLowerCase());
-        case "starts_with":
-          return strFieldValue
-            .toLowerCase()
-            .startsWith(strCondValue.toLowerCase());
-        case "ends_with":
-          return strFieldValue
-            .toLowerCase()
-            .endsWith(strCondValue.toLowerCase());
-        case "greater_than":
-          return (
-            !isNaN(numFieldValue) &&
-            !isNaN(numCondValue) &&
-            numFieldValue > numCondValue
-          );
-        case "less_than":
-          return (
-            !isNaN(numFieldValue) &&
-            !isNaN(numCondValue) &&
-            numFieldValue < numCondValue
-          );
-        case "is_empty":
-          return (
-            strFieldValue === "" ||
-            fieldValue === null ||
-            fieldValue === undefined
-          );
-        case "is_not_empty":
-          return (
-            strFieldValue !== "" &&
-            fieldValue !== null &&
-            fieldValue !== undefined
-          );
-        default:
-          return strFieldValue === strCondValue;
-      }
-    };
-
-    // Evaluate all conditions for a rule using the logic operator (and/or)
-    const evaluateRule = (rule: Rule, values: Record<string, string>) => {
-      // Handle new format with conditions array
-      if (rule.conditions && rule.conditions.length > 0) {
-        const logic = rule.logic || "and";
-        if (logic === "and") {
-          return rule.conditions.every((cond: RuleCondition) =>
-            evaluateCondition(cond, values),
-          );
-        } else {
-          return rule.conditions.some((cond: RuleCondition) =>
-            evaluateCondition(cond, values),
-          );
-        }
-      }
-      // Legacy format: single match_field/match_pattern (exact match)
-      return rule.match_field
-        ? values[rule.match_field] === rule.match_pattern
-        : false;
-    };
 
     // Apply all actions for a rule
     const applyRuleActions = (rule: Rule) => {
