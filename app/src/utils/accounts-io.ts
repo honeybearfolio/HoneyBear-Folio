@@ -137,9 +137,8 @@ export function parseAccountFromRow(
   if (!name) return null;
 
   const balance =
-    parseNumericValue(
-      getField(row, "balance", "Balance", "saldo", "Saldo"),
-    ) ?? 0;
+    parseNumericValue(getField(row, "balance", "Balance", "saldo", "Saldo")) ??
+    0;
   const currencyRaw = getField(row, "currency", "Currency", "moneda", "Moneda");
   const kindRaw = getField(row, "kind", "Kind");
 
