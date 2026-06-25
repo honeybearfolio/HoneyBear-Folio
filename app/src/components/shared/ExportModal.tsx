@@ -20,6 +20,7 @@ import "../../styles/Modal.css";
 import "../../styles/ExportModal.css";
 import { formatNumberForExport, getDatePickerFormat } from "../../utils/format";
 import { useToast } from "../../stores/toast";
+import { useNumberFormat } from "../../stores/number-format";
 import { computeReportData } from "../../utils/report";
 import { handleAsyncError, logError } from "../../utils/errors";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
@@ -92,8 +93,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       });
   }, []);
 
-  const dateFormat = localStorage.getItem("hb_dateFormat") || "yyyy-MM-dd";
-  const firstDayOfWeek = Number(localStorage.getItem("hb_firstDayOfWeek") || 1);
+  const { dateFormat, firstDayOfWeek } = useNumberFormat();
 
   // Compute the effective date range for the PDF export
   const pdfDateRange = useMemo(() => {
