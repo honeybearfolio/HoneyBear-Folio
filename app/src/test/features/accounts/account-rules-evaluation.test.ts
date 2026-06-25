@@ -76,9 +76,7 @@ describe("evaluateRule", () => {
   };
 
   it("applies negated conditions when evaluating a rule", () => {
-    expect(
-      evaluateRule(baseRule, { payee: "Starbucks Coffee" }),
-    ).toBe(true);
+    expect(evaluateRule(baseRule, { payee: "Starbucks Coffee" })).toBe(true);
   });
 
   it("does not match when negated condition inner check succeeds", () => {

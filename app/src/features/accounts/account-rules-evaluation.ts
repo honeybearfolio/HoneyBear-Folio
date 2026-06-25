@@ -54,15 +54,11 @@ export function evaluateCondition(
       break;
     case "is_empty":
       matched =
-        strFieldValue === "" ||
-        fieldValue === null ||
-        fieldValue === undefined;
+        strFieldValue === "" || fieldValue === null || fieldValue === undefined;
       break;
     case "is_not_empty":
       matched =
-        strFieldValue !== "" &&
-        fieldValue !== null &&
-        fieldValue !== undefined;
+        strFieldValue !== "" && fieldValue !== null && fieldValue !== undefined;
       break;
     default:
       matched = strFieldValue === strCondValue;
