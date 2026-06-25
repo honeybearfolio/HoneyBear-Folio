@@ -23,7 +23,10 @@ export function logError(context: string, error: unknown): void {
 }
 
 /** Extract a human-readable message from an unknown thrown value. */
-export function toUserMessage(error: unknown, fallback = "Unknown error"): string {
+export function toUserMessage(
+  error: unknown,
+  fallback = "Unknown error",
+): string {
   if (error instanceof Error) {
     return error.message.trim() || fallback;
   }
