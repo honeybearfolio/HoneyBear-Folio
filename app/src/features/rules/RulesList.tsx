@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { rust } from "../../api/tauri-client";
 import { Plus, Trash2, Edit, Save, GripVertical, X } from "lucide-react";
@@ -45,29 +45,32 @@ export default function RulesList() {
   const confirm = useConfirm();
   const { showToast } = useToast();
 
-  async function loadRules(mode: "page" | "refresh" = "refresh") {
-    try {
-      const r = (await rust.get_rules()) as RuleRecord[];
-      setRules(r);
-      setFetchError(null);
-    } catch (e) {
-      if (mode === "page") {
-        handleAsyncError({
-          context: "Failed to fetch rules",
-          error: e,
-          setError: setFetchError,
-          detailFallback: t("error.failed_to_load"),
-        });
-      } else {
-        handleAsyncError({
-          context: "Failed to fetch rules",
-          error: e,
-          userMessage: t("error.failed_to_load"),
-          toast: (message) => showToast(message, { type: "error" }),
-        });
+  const loadRules = useCallback(
+    async (mode: "page" | "refresh" = "refresh") => {
+      try {
+        const r = (await rust.get_rules()) as RuleRecord[];
+        setRules(r);
+        setFetchError(null);
+      } catch (e) {
+        if (mode === "page") {
+          handleAsyncError({
+            context: "Failed to fetch rules",
+            error: e,
+            setError: setFetchError,
+            detailFallback: t("error.failed_to_load"),
+          });
+        } else {
+          handleAsyncError({
+            context: "Failed to fetch rules",
+            error: e,
+            userMessage: t("error.failed_to_load"),
+            toast: (message) => showToast(message, { type: "error" }),
+          });
+        }
       }
-    }
-  }
+    },
+    [showToast, t],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -79,7 +82,7 @@ export default function RulesList() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [loadRules]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

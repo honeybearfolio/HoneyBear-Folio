@@ -125,7 +125,7 @@ export default function Dashboard({
       }
     };
     fetchData();
-  }, [propAccounts]);
+  }, [propAccounts, t]);
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -1344,7 +1344,7 @@ export default function Dashboard({
       }
     };
     doFetch();
-  }, [propAccounts]);
+  }, [propAccounts, t]);
 
   const currentNetWorth = useMemo(
     () =>

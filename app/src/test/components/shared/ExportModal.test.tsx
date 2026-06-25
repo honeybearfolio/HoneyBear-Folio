@@ -7,7 +7,7 @@ import { useNumberFormatStore } from "../../../stores/number-format";
 const { mockGetDatePickerFormat, mockDatePicker } = vi.hoisted(() => ({
   mockGetDatePickerFormat: vi.fn((key: string) => `picker-${key}`),
   mockDatePicker: vi.fn(
-    (props: { dateFormat?: string; calendarStartDay?: number }) => (
+    (_props: { dateFormat?: string; calendarStartDay?: number }) => (
       <input data-testid="datepicker" />
     ),
   ),
@@ -45,9 +45,7 @@ vi.mock("../../../utils/format", () => ({
 
 vi.mock("react-datepicker", () => ({
   default: (props: unknown) =>
-    mockDatePicker(
-      props as { dateFormat?: string; calendarStartDay?: number },
-    ),
+    mockDatePicker(props as { dateFormat?: string; calendarStartDay?: number }),
 }));
 
 vi.mock("../../../components/ui/CustomSelect", () => ({
