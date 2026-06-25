@@ -39,14 +39,14 @@ export const useToastStore = create<ToastState>((set) => ({
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
-export interface ToastContextValue {
+export interface ToastAPI {
   showToast: (
     message: string,
     options?: { type?: ToastType; duration?: number },
   ) => void;
 }
 
-export function useToast(): ToastContextValue {
+export function useToast(): ToastAPI {
   const showToast = useToastStore((s) => s.showToast);
   return { showToast };
 }

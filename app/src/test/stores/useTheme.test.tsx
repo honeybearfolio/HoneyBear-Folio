@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { useTheme } from "../../stores/theme";
 import { useThemeStore } from "../../stores/theme";
 
-// Test component to consume hook
 function TestComponent() {
   const { theme, setTheme } = useTheme();
   return (

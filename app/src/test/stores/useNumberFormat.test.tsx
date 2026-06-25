@@ -6,7 +6,6 @@ import { useNumberFormatStore } from "../../stores/number-format";
 import { useNumberFormat } from "../../stores/number-format";
 import i18n from "../../i18n/i18n";
 
-// Test component to consume hook
 function TestComponent() {
   const {
     locale,
@@ -28,7 +27,7 @@ function TestComponent() {
   );
 }
 
-describe("NumberFormat Zustand store", () => {
+describe("useNumberFormat (Zustand store)", () => {
   beforeEach(async () => {
     localStorage.clear();
     useNumberFormatStore.setState({
@@ -41,12 +40,25 @@ describe("NumberFormat Zustand store", () => {
     await i18n.changeLanguage("en");
   });
 
-  it("uses default values if localStorage is empty", () => {
+  it("returns default values", () => {
     render(<TestComponent />);
-
     expect(screen.getByTestId("locale")).toHaveTextContent("en-US");
     expect(screen.getByTestId("currency")).toHaveTextContent("USD");
     expect(screen.getByTestId("uiLanguage")).toHaveTextContent("en");
+  });
+
+  it("reflects store state changes", () => {
+    useNumberFormatStore.setState({ locale: "de-DE", currency: "EUR" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("locale")).toHaveTextContent("de-DE");
+    expect(screen.getByTestId("currency")).toHaveTextContent("EUR");
+  });
+
+  it("works with different locales", () => {
+    useNumberFormatStore.setState({ locale: "ja-JP", currency: "JPY" });
+    render(<TestComponent />);
+    expect(screen.getByTestId("locale")).toHaveTextContent("ja-JP");
+    expect(screen.getByTestId("currency")).toHaveTextContent("JPY");
   });
 
   it("persists uiLanguage and calls i18n.changeLanguage on change", async () => {

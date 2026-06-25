@@ -62,7 +62,6 @@ export default function ExportModal({ onClose }: ExportModalProps) {
   const { t } = useTranslation();
   const [format, setFormat] = useState("json");
   const [exporting, setExporting] = useState(false);
-  // Toast API (safe noop provided by useToast when provider missing)
   const { showToast } = useToast();
 
   // PDF time range state
@@ -460,13 +459,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       const filePathStr =
         typeof filePath === "string" ? filePath : JSON.stringify(filePath);
 
-      if (showToast) {
-        showToast(t("export.success_saved", { path: filePathStr }), {
-          type: "success",
-        });
-      } else {
-        alert(t("export.success_saved", { path: filePathStr }));
-      }
+      showToast(t("export.success_saved", { path: filePathStr }), {
+        type: "success",
+      });
 
       onClose();
     } catch (e) {
@@ -474,13 +469,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         context: "Export failed",
         error: e,
         userMessage: t("error.operation_failed"),
-        toast: showToast
-          ? (message) => showToast(message, { type: "error" })
-          : undefined,
+        toast: (message) => showToast(message, { type: "error" }),
       });
-      if (!showToast) {
-        alert(t("error.operation_failed"));
-      }
     } finally {
       setExporting(false);
     }

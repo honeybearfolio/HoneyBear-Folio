@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { usePrivacy } from "../../stores/privacy";
 import { usePrivacyStore } from "../../stores/privacy";
 
-// Test component to consume hook
 function TestComponent() {
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
   return (
