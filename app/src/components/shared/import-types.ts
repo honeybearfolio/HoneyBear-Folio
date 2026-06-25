@@ -39,10 +39,3 @@ export interface ImportError {
   row: number;
   error: string;
 }
-
-export interface Account {
-  id: number;
-  name: string;
-  balance: number;
-  kind: string;
-}

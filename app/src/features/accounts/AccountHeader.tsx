@@ -10,14 +10,17 @@ import {
 } from "lucide-react";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { useTranslation } from "react-i18next";
-import type { Account, AvailableAccount } from "./account-details-types";
+import type {
+  AvailableAccount,
+  AccountDetailsAccount,
+} from "./account-details-types";
 
 interface AccountHeaderProps {
-  account: Account;
+  account: AccountDetailsAccount;
   isRenamingAccount: boolean;
   setIsRenamingAccount: (v: boolean) => void;
-  renameValue: string | undefined;
-  setRenameValue: (v: string | undefined) => void;
+  renameValue: string;
+  setRenameValue: (v: string) => void;
   handleRenameAccount: (e: React.FormEvent) => void;
   renameInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;

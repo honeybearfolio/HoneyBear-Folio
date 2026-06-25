@@ -1,10 +1,3 @@
-export interface Account {
-  id: number;
-  kind: string;
-  balance: number;
-  [key: string]: unknown;
-}
-
 export interface InvestmentTransaction {
   date: string;
   ticker?: string;

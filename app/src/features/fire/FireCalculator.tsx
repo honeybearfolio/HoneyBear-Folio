@@ -30,7 +30,6 @@ import {
   Filler,
 } from "chart.js";
 import type {
-  Account,
   InvestmentTransaction,
   InvestmentQuote,
   ProjectionResult,
@@ -130,7 +129,7 @@ export default function FireCalculator() {
   async function fetchData() {
     setLoading(true);
     try {
-      const accounts = (await rust.get_accounts()) as Account[];
+      const accounts = await rust.get_accounts();
       const transactions =
         (await rust.get_all_transactions()) as InvestmentTransaction[];
 
@@ -160,7 +159,7 @@ export default function FireCalculator() {
         quotes,
       );
 
-      const totalBalance = accounts.reduce((sum: number, acc: Account) => {
+      const totalBalance = accounts.reduce((sum, acc) => {
         if (acc.kind === "brokerage") {
           return (
             sum +

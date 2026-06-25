@@ -14,17 +14,14 @@ import CustomSelect from "../../components/ui/CustomSelect";
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { useToast } from "../../contexts/toast";
 import { useParseNumber } from "../../utils/format";
+import type { Account } from "../../api/types";
 
-interface Account {
-  id: string | number;
-  name: string;
-  currency?: string;
-}
+type AccountModalAccount = Pick<Account, "id" | "name" | "currency">;
 
 interface AccountModalProps {
   onClose: () => void;
   onUpdate: () => void;
-  account?: Account | null;
+  account?: AccountModalAccount | null;
   isEditing?: boolean;
 }
 

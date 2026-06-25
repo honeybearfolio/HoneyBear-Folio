@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { Filter, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import MaskedNumber from "../../components/ui/MaskedNumber";
-import type { Account } from "./dashboard-types";
+import type { Account } from "../../api/types";
 
 interface AccountFilterPopoverProps {
   accounts: Account[];

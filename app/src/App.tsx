@@ -33,6 +33,8 @@ import {
   STORAGE_KEYS,
 } from "./constants/app";
 import { fetchMarketValuesForAccounts } from "./utils/market-values";
+import type { Account } from "./api/types";
+import type { AccountDetailsAccount } from "./features/accounts/account-details-types";
 
 function App() {
   // Session management — "picking" shows the session picker, "active" shows the main app
@@ -98,16 +100,6 @@ interface ActiveSession {
   path?: string;
   name?: string;
   file_exists?: boolean;
-}
-
-interface Account {
-  id: string | number;
-  name: string;
-  balance: number;
-  totalValue?: number;
-  currency?: string;
-  kind?: string;
-  exchange_rate?: number;
 }
 
 type SettingsSection = "general" | "customization" | "formats" | "about";
@@ -227,10 +219,10 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
     try {
       const currency =
         localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
-      const accs = (await rust.get_accounts({
+      const accs = await rust.get_accounts({
         targetCurrency: currency,
-      })) as Account[];
-      accs.sort((a: Account, b: Account) => b.balance - a.balance);
+      });
+      accs.sort((a, b) => b.balance - a.balance);
       setAccounts(accs);
       return accs;
     } catch (e) {
@@ -253,7 +245,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       const appCurrency =
         localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
       const values = await fetchMarketValuesForAccounts(
-        currentAccounts as { id: number; currency?: string }[],
+        currentAccounts,
         appCurrency,
       );
       setMarketValues(values);
@@ -323,21 +315,10 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
     return sum + balance * rate;
   }, 0);
 
-  // Derive selectedAccount
-  let selectedAccount = null;
-  if (selectedAccountId === "dashboard") {
-    selectedAccount = { id: "dashboard", name: t("nav.dashboard") };
-  } else if (selectedAccountId === "investment-dashboard") {
-    selectedAccount = {
-      id: "investment-dashboard",
-      name: t("nav.investments"),
-    };
-  } else if (selectedAccountId === "fire-calculator") {
-    selectedAccount = { id: "fire-calculator", name: t("nav.fire_calculator") };
-  } else if (selectedAccountId === "chat") {
-    selectedAccount = { id: "chat", name: t("nav.ai_assistant") };
-  } else if (selectedAccountId === "all") {
-    selectedAccount = {
+  // Account passed to AccountDetails (real accounts or the synthetic "all" view)
+  let accountForDetails: AccountDetailsAccount | null = null;
+  if (selectedAccountId === "all") {
+    accountForDetails = {
       id: "all",
       name: t("nav.all_transactions"),
       balance: totalCashBalance,
@@ -346,7 +327,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   } else {
     const acc = accounts.find((a) => sameId(a.id, selectedAccountId));
     if (acc) {
-      selectedAccount = {
+      accountForDetails = {
         ...acc,
         balance: Number(acc.balance),
         totalValue:
@@ -477,10 +458,10 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
               <ChatView />
             ) : selectedAccountId === "asset-tracker" ? (
               <AssetTracker onUpdate={handleAccountUpdate} />
-            ) : selectedAccount ? (
+            ) : accountForDetails ? (
               <AccountDetails
-                key={selectedAccount.id}
-                account={selectedAccount}
+                key={accountForDetails.id}
+                account={accountForDetails}
                 onUpdate={handleAccountUpdate}
               />
             ) : (

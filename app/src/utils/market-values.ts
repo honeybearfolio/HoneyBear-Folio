@@ -1,4 +1,7 @@
 import { rust } from "../api/tauri-client";
+import type { Account } from "../api/types";
+
+type MarketValueAccount = Pick<Account, "id" | "currency">;
 
 interface Transaction {
   account_id: number;
@@ -10,12 +13,6 @@ interface Transaction {
 interface Quote {
   symbol: string;
   regularMarketPrice: number;
-  currency?: string;
-  [key: string]: unknown;
-}
-
-interface Account {
-  id: number;
   currency?: string;
   [key: string]: unknown;
 }
@@ -140,7 +137,7 @@ function computeMarketValues({
 }
 
 export async function fetchMarketValuesForAccounts(
-  currentAccounts: Account[] = [],
+  currentAccounts: MarketValueAccount[] = [],
   appCurrency: string = "USD",
 ): Promise<MarketValueMap> {
   const transactions = (await rust.get_all_transactions()) as Transaction[];
@@ -149,7 +146,7 @@ export async function fetchMarketValuesForAccounts(
 
   const accountCcyMap: CurrencyMap = {};
   currentAccounts.forEach((acc) => {
-    if (acc.currency) accountCcyMap[acc.id] = acc.currency;
+    if (acc.currency) accountCcyMap[Number(acc.id)] = acc.currency;
   });
 
   const quotes = (await rust.get_stock_quotes({

@@ -13,7 +13,7 @@ import {
   getDatePickerFormat,
 } from "../../utils/format";
 import type {
-  Account,
+  AccountDetailsAccount,
   Transaction,
   AvailableAccount,
   AutocompleteSuggestion,
@@ -23,7 +23,7 @@ import type {
 
 interface TransactionRowProps {
   tx: Transaction;
-  account: Account;
+  account: AccountDetailsAccount;
   hasInvestment: boolean;
   editingId: string | number | null;
   editForm: Record<string, unknown>;

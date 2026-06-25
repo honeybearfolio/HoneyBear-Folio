@@ -38,13 +38,7 @@ import MaskedNumber from "../ui/MaskedNumber";
 import { rust } from "../../api/tauri-client";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
-
-interface Account {
-  id: string | number;
-  name: string;
-  balance: number;
-  kind: string;
-}
+import type { Account } from "../../api/types";
 
 interface SidebarVisibility {
   dashboard?: boolean;

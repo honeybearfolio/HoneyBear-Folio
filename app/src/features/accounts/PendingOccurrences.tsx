@@ -8,7 +8,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useFormatNumber, useFormatDate } from "../../utils/format";
 import type {
-  Account,
+  AccountDetailsAccount,
   PendingOccurrence as PendingOccurrenceType,
   Transaction,
   MenuCoords,
@@ -16,7 +16,7 @@ import type {
 
 interface PendingOccurrencesProps {
   pendingOccurrences: PendingOccurrenceType[];
-  account: Account;
+  account: AccountDetailsAccount;
   hasInvestment: boolean;
   menuOpenId: string | number | null;
   setMenuOpenId: (v: string | number | null) => void;
