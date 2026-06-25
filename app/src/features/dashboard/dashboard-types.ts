@@ -1,11 +1,4 @@
-export interface Account {
-  id: string | number;
-  name: string;
-  balance: number;
-  currency?: string;
-  kind?: string;
-  exchange_rate?: number;
-}
+import type { Account } from "../../api/types";
 
 export interface Transaction {
   id?: string | number;

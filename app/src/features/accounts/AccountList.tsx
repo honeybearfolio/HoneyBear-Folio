@@ -5,13 +5,7 @@ import MaskedNumber from "../../components/ui/MaskedNumber";
 import { GripVertical, Edit, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { sameId } from "../../utils/ids";
-
-interface Account {
-  id: string | number;
-  name: string;
-  balance: number;
-  currency?: string;
-}
+import type { Account } from "../../api/types";
 
 interface AccountListProps {
   accounts: Account[];

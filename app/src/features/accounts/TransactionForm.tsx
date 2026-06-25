@@ -10,14 +10,14 @@ import { getDatePickerFormat } from "../../utils/format";
 import { CURRENCIES } from "../../utils/currencies";
 import { sameId } from "../../utils/ids";
 import type {
-  Account,
+  AccountDetailsAccount,
   AvailableAccount,
   AutocompleteSuggestion,
   TickerSuggestion,
 } from "./account-details-types";
 
 interface TransactionFormProps {
-  account: Account;
+  account: AccountDetailsAccount;
   availableAccounts: AvailableAccount[];
   addTargetAccount: AvailableAccount | null;
   setAddTargetAccount: (v: AvailableAccount | null) => void;

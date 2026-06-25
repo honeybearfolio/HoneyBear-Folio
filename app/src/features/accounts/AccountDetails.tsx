@@ -12,7 +12,6 @@ import { useCustomRate } from "../../hooks/useCustomRate";
 import useTagColors from "../../hooks/useTagColors";
 import "../../styles/Scheduled.css";
 import type {
-  Account,
   AccountDetailsProps,
   AutocompleteSuggestion,
   Transaction,
@@ -316,16 +315,16 @@ export default function AccountDetails({
       const [payees, accountsList, categories, fetchedRules] =
         await Promise.all([
           rust.get_payees() as Promise<string[]>,
-          rust.get_accounts() as Promise<Account[]>,
+          rust.get_accounts(),
           rust.get_categories() as Promise<string[]>,
           rust.get_rules() as Promise<Rule[]>,
         ]);
       setRules(fetchedRules);
 
       // Filter out current account from accounts list
-      const otherAccounts = (accountsList as Account[])
-        .filter((a: Account) => a.id !== account.id)
-        .map((a: Account) => ({ name: a.name || "", id: a.id, kind: a.kind }));
+      const otherAccounts = accountsList
+        .filter((a) => a.id !== account.id)
+        .map((a) => ({ name: a.name || "", id: a.id, kind: a.kind }));
 
       setAvailableAccounts(otherAccounts);
 
@@ -384,13 +383,11 @@ export default function AccountDetails({
       if (account.id === "all") {
         const [transactionsList, accounts] = await Promise.all([
           rust.get_all_transactions() as Promise<Transaction[]>,
-          rust.get_accounts() as Promise<Account[]>,
+          rust.get_accounts(),
         ]);
         // Attach account_name for display in the consolidated view
         txs = (transactionsList as Transaction[]).map((tx: Transaction) => {
-          const acc = (accounts as Account[]).find(
-            (a: Account) => a.id === tx.account_id,
-          );
+          const acc = accounts.find((a) => a.id === tx.account_id);
           return {
             ...tx,
             account_name: acc ? acc.name : String(tx.account_id),

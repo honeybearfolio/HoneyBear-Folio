@@ -1,14 +1,14 @@
-export interface Account {
-  id: string | number;
-  name?: string;
-  balance?: number;
-  totalValue?: number;
-  currency?: string;
-  kind?: string;
-}
+import type { Account } from "../../api/types";
+
+/** Real accounts plus the synthetic "all transactions" view. */
+export type AccountDetailsAccount =
+  | Account
+  | (Pick<Account, "name" | "balance" | "totalValue" | "currency"> & {
+      id: "all";
+    });
 
 export interface AccountDetailsProps {
-  account: Account;
+  account: AccountDetailsAccount;
   onUpdate: () => void;
 }
 
@@ -88,12 +88,10 @@ export interface Rule {
   action_value?: string;
 }
 
-export interface AvailableAccount {
-  id: string | number;
-  name: string;
-  kind?: string;
-  currency?: string;
-}
+export type AvailableAccount = Pick<
+  Account,
+  "id" | "name" | "kind" | "currency"
+>;
 
 export interface MenuCoords {
   x?: number;

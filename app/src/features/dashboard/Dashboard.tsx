@@ -48,13 +48,13 @@ import AssetAllocationChart from "./AssetAllocationChart";
 import ExpensesByCategoryChart from "./ExpensesByCategoryChart";
 import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
 import type {
-  Account,
   Transaction,
   Quote,
   DailyPriceEntry,
   DailyPriceData,
   DashboardProps,
 } from "./dashboard-types";
+import type { Account } from "../../api/types";
 
 export default function Dashboard({
   accounts: propAccounts = [],
@@ -108,7 +108,7 @@ export default function Dashboard({
         if (propAccounts && propAccounts.length > 0) {
           setAccounts(propAccounts);
         } else {
-          const accs = (await rust.get_accounts()) as Account[];
+          const accs = await rust.get_accounts();
           setAccounts(accs);
         }
       } catch (e) {
@@ -1325,7 +1325,7 @@ export default function Dashboard({
         if (propAccounts && propAccounts.length > 0) {
           setAccounts(propAccounts);
         } else {
-          const accs = (await rust.get_accounts()) as Account[];
+          const accs = await rust.get_accounts();
           setAccounts(accs);
         }
       } catch (e) {
