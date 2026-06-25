@@ -784,36 +784,34 @@ export default function ImportModal({
     setImporting(false);
     setImportErrorsState(importErrors);
 
-    if (showToast) {
-      const accountMsg =
-        accountImportSummary.imported > 0
-          ? `${accountImportSummary.imported} accounts, `
-          : "";
-      const assetMsg =
-        assetImportSummary.imported > 0
-          ? `, ${assetImportSummary.imported} assets imported`
-          : "";
-      const hasErrors =
-        failCount > 0 ||
-        assetImportSummary.errors.length > 0 ||
-        accountImportSummary.errors.length > 0;
-      if (hasErrors) {
-        showToast(
-          `Import completed: ${accountMsg}${successCount} transactions succeeded, ${failCount} failed${assetMsg}`,
-          { type: "error" },
-        );
-        console.error(
-          "Import errors:",
-          importErrors,
-          assetImportSummary.errors,
-          accountImportSummary.errors,
-        );
-      } else {
-        showToast(
-          `${accountMsg}${successCount} transactions imported${assetMsg}`,
-          { type: "success" },
-        );
-      }
+    const accountMsg =
+      accountImportSummary.imported > 0
+        ? `${accountImportSummary.imported} accounts, `
+        : "";
+    const assetMsg =
+      assetImportSummary.imported > 0
+        ? `, ${assetImportSummary.imported} assets imported`
+        : "";
+    const hasErrors =
+      failCount > 0 ||
+      assetImportSummary.errors.length > 0 ||
+      accountImportSummary.errors.length > 0;
+    if (hasErrors) {
+      showToast(
+        `Import completed: ${accountMsg}${successCount} transactions succeeded, ${failCount} failed${assetMsg}`,
+        { type: "error" },
+      );
+      console.error(
+        "Import errors:",
+        importErrors,
+        assetImportSummary.errors,
+        accountImportSummary.errors,
+      );
+    } else {
+      showToast(
+        `${accountMsg}${successCount} transactions imported${assetMsg}`,
+        { type: "success" },
+      );
     }
 
     // Always refresh app data so created accounts/transactions appear, but keep modal open

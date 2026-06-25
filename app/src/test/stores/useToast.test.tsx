@@ -18,7 +18,7 @@ describe("useToast (Zustand store)", () => {
     useToastStore.setState({ toasts: [] });
   });
 
-  it("provides showToast without any provider", () => {
+  it("provides showToast from the Zustand store", () => {
     render(<TestComponent />);
     expect(screen.getByRole("button")).toBeInTheDocument();
   });

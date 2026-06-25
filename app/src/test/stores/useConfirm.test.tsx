@@ -7,7 +7,6 @@ interface TestComponentProps {
   onResult: (result: boolean) => void;
 }
 
-// Test component to consume hook
 function TestComponent({ onResult }: TestComponentProps) {
   const confirm = useConfirm();
   const handleClick = async () => {
@@ -27,7 +26,7 @@ describe("useConfirm (Zustand store)", () => {
     });
   });
 
-  it("returns a confirm function without any provider", () => {
+  it("returns a confirm function", () => {
     render(<TestComponent onResult={() => {}} />);
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
