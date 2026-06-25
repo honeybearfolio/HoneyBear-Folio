@@ -32,9 +32,9 @@ import {
   isAssetRow,
   isAssetSheetName,
   parseAssetFromRow,
-  rowsFromSheetData,
   type ExportAsset,
 } from "../../utils/assets-io";
+import { rowsFromSheetData } from "../../utils/spreadsheet-io";
 import type { Account, AssetWithLatestValue } from "../../api/types";
 
 export default function ImportModal({

@@ -1,6 +1,11 @@
 import type { Account } from "../api/types";
-import { parseNumberWithLocale } from "./format";
 import { isAssetRow, isAssetSheetName } from "./assets-io";
+import {
+  getField,
+  headerMatchesAlias,
+  normalizeKey,
+  parseNumericValue,
+} from "./spreadsheet-io";
 
 export interface ExportAccount {
   name: string;
@@ -44,49 +49,10 @@ const TRANSACTION_HEADER_HINTS = [
   "categoria",
 ];
 
-function stripAccents(value: string): string {
-  return value.normalize("NFD").replace(/\p{M}/gu, "");
-}
-
-function normalizeKey(value: string): string {
-  return stripAccents(value.trim().toLowerCase());
-}
-
-function headerMatchesAlias(
-  header: string,
-  aliases: readonly string[],
-): boolean {
-  const normalized = normalizeKey(header);
-  return aliases.some((alias) => normalizeKey(alias) === normalized);
-}
-
 function sheetHeaders(sheet: XlsxSheet): string[] {
   return (
     (sheet.data[0] as unknown[] | undefined)?.map((h) => String(h ?? "")) ?? []
   );
-}
-
-function getField(row: Record<string, unknown>, ...keys: string[]): unknown {
-  for (const key of keys) {
-    if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
-      return row[key];
-    }
-  }
-  const lowerMap = Object.fromEntries(
-    Object.entries(row).map(([k, v]) => [normalizeKey(k), v]),
-  );
-  for (const key of keys) {
-    const val = lowerMap[normalizeKey(key)];
-    if (val !== undefined && val !== null && val !== "") return val;
-  }
-  return undefined;
-}
-
-function parseNumericValue(raw: unknown): number {
-  if (raw === null || raw === undefined || raw === "") return 0;
-  if (typeof raw === "number") return isNaN(raw) ? 0 : raw;
-  const parsed = parseNumberWithLocale(raw, "en-US");
-  return isNaN(parsed) ? 0 : parsed;
 }
 
 export function isAccountSheetName(name: string): boolean {
@@ -140,7 +106,7 @@ export function parseAccountFromJson(item: unknown): ExportAccount | null {
 
   return {
     name,
-    balance: parseNumericValue(record.balance),
+    balance: parseNumericValue(record.balance) ?? 0,
     currency: record.currency ? String(record.currency) : null,
     kind: record.kind ? String(record.kind) : null,
   };
@@ -170,9 +136,9 @@ export function parseAccountFromRow(
   ).trim();
   if (!name) return null;
 
-  const balance = parseNumericValue(
-    getField(row, "balance", "Balance", "saldo", "Saldo"),
-  );
+  const balance =
+    parseNumericValue(getField(row, "balance", "Balance", "saldo", "Saldo")) ??
+    0;
   const currencyRaw = getField(row, "currency", "Currency", "moneda", "Moneda");
   const kindRaw = getField(row, "kind", "Kind");
 

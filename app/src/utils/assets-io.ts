@@ -1,5 +1,10 @@
 import type { AssetValuation, AssetWithLatestValue } from "../api/types";
-import { parseNumberWithLocale } from "./format";
+import {
+  getField,
+  headerMatchesAlias,
+  normalizeKey,
+  parseNumericValue,
+} from "./spreadsheet-io";
 
 export const ASSET_CATEGORIES = [
   "real_estate",
@@ -110,14 +115,6 @@ const ASSET_SHEET_NAMES = new Set(
   ),
 );
 
-function stripAccents(value: string): string {
-  return value.normalize("NFD").replace(/\p{M}/gu, "");
-}
-
-function normalizeKey(value: string): string {
-  return stripAccents(value.trim().toLowerCase());
-}
-
 export function normalizeAssetCategory(raw: unknown): AssetCategory {
   const value = normalizeKey(String(raw ?? ""));
   if ((ASSET_CATEGORIES as readonly string[]).includes(value)) {
@@ -130,14 +127,6 @@ export function normalizeAssetCategory(raw: unknown): AssetCategory {
 
 export function isAssetSheetName(name: string): boolean {
   return ASSET_SHEET_NAMES.has(normalizeKey(name));
-}
-
-function headerMatchesAlias(
-  header: string,
-  aliases: readonly string[],
-): boolean {
-  const normalized = normalizeKey(header);
-  return aliases.some((alias) => normalizeKey(alias) === normalized);
 }
 
 export function isAssetRow(headers: string[]): boolean {
@@ -164,29 +153,6 @@ function parseDateValue(raw: unknown): string | null {
     if (!isNaN(alt.getTime())) return alt.toISOString().slice(0, 10);
   }
   return null;
-}
-
-function parseNumericValue(raw: unknown): number | null {
-  if (raw === null || raw === undefined || raw === "") return null;
-  if (typeof raw === "number") return isNaN(raw) ? null : raw;
-  const parsed = parseNumberWithLocale(raw, "en-US");
-  return isNaN(parsed) ? null : parsed;
-}
-
-function getField(row: Record<string, unknown>, ...keys: string[]): unknown {
-  for (const key of keys) {
-    if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
-      return row[key];
-    }
-  }
-  const lowerMap = Object.fromEntries(
-    Object.entries(row).map(([k, v]) => [normalizeKey(k), v]),
-  );
-  for (const key of keys) {
-    const val = lowerMap[normalizeKey(key)];
-    if (val !== undefined && val !== null && val !== "") return val;
-  }
-  return undefined;
 }
 
 function getAssetField(
@@ -296,23 +262,6 @@ export function toLegacyJsonAsset(asset: ExportAsset): Record<string, unknown> {
     latest_value: latest?.value ?? null,
     latest_date: latest?.date ?? null,
   };
-}
-
-export function rowsFromSheetData(
-  data: unknown[][],
-): Record<string, unknown>[] {
-  if (!data.length) return [];
-  const headers = (data[0] as unknown[]).map((h) => String(h ?? ""));
-  return data.slice(1).map((row) => {
-    const obj: Record<string, unknown> = {};
-    headers.forEach((header, index) => {
-      obj[header] =
-        (row as unknown[])[index] !== undefined
-          ? (row as unknown[])[index]
-          : "";
-    });
-    return obj;
-  });
 }
 
 export async function fetchAssetsForExport(
