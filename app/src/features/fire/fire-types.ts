@@ -5,15 +5,16 @@ export interface InvestmentTransaction {
   price_per_share?: number;
   fee?: number;
   account_id: number;
-  amount: number;
+  amount?: number;
   category?: string;
-  [key: string]: unknown;
 }
 
 export interface InvestmentQuote {
   symbol: string;
   regularMarketPrice: number;
-  [key: string]: unknown;
+  regularMarketChangePercent?: number;
+  quoteType?: string | null;
+  currency?: string;
 }
 
 export interface ProjectionResult {

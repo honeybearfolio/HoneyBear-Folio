@@ -28,21 +28,18 @@ import {
   fetchAssetsForExport,
   toLegacyJsonAsset,
 } from "../../utils/assets-io";
+import type { Account, Transaction } from "../../api/types";
 
-interface Transaction {
-  id?: number;
-  date: string;
-  payee: string;
-  amount: number;
-  category?: string;
-  notes?: string;
-  account_id: number;
-  ticker?: string;
-  shares?: number;
-  price_per_share?: number;
-  fee?: number;
-  currency?: string;
-  [key: string]: unknown;
+function accountToExportRow(account: Account): Record<string, unknown> {
+  return {
+    id: account.id,
+    name: account.name,
+    balance: account.balance,
+    totalValue: account.totalValue,
+    currency: account.currency,
+    kind: account.kind,
+    exchange_rate: account.exchange_rate,
+  };
 }
 
 interface DailyPrice {
@@ -53,16 +50,6 @@ interface DailyPrice {
 interface ExchangeRateEntry {
   currency?: string;
   rate: number;
-}
-
-interface InvestmentTransaction {
-  date: string;
-  ticker?: string;
-  shares?: number;
-  price_per_share?: number;
-  fee?: number;
-  account_id: number;
-  [key: string]: unknown;
 }
 
 interface ExportModalProps {
@@ -327,7 +314,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
 
         const sheets: { name: string; data: Record<string, unknown>[] }[] = [
           { name: "Transactions", data: txData },
-          { name: "Accounts", data: accounts as Record<string, unknown>[] },
+          { name: "Accounts", data: accounts.map(accountToExportRow) },
           { name: t("assets.title"), data: assetData },
         ];
 
@@ -391,7 +378,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         let quotes: unknown[] = [];
         try {
           const { currentHoldings } = buildHoldingsFromTransactions(
-            transactions as InvestmentTransaction[],
+            transactions,
           );
           if (currentHoldings.length > 0) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];

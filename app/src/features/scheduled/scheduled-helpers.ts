@@ -97,18 +97,20 @@ export function toScheduledPayload(
   };
 }
 
-interface ScheduledRecord {
-  recurrence_type: string;
-  interval_value?: number;
-  interval_unit?: string;
-  days_of_week?: number[];
-  ordinal?: number;
-  weekday?: number;
-  [key: string]: unknown;
-}
+import type { AccountRecord, ScheduleRecord } from "./scheduled-types";
+
+type RecurrenceFields = Pick<
+  ScheduleRecord,
+  | "recurrence_type"
+  | "interval_value"
+  | "interval_unit"
+  | "days_of_week"
+  | "ordinal"
+  | "weekday"
+>;
 
 export function getRecurrenceSummary(
-  sched: ScheduledRecord,
+  sched: RecurrenceFields,
   translate: TranslateFn,
 ): string {
   if (sched.recurrence_type === "every_n") {
@@ -130,15 +132,9 @@ export function getRecurrenceSummary(
   return "";
 }
 
-interface AccountRecord {
-  id: number;
-  name: string;
-  [key: string]: unknown;
-}
-
 export function getAccountName(
   accounts: AccountRecord[],
-  accountId: number,
+  accountId: string | number,
 ): string {
   const acc = accounts.find((a) => a.id === accountId);
   return acc ? acc.name : String(accountId);

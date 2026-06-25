@@ -15,6 +15,7 @@ import type {
   AccountDetailsProps,
   AutocompleteSuggestion,
   Transaction,
+  TransactionEditForm,
   PendingOccurrence,
   TickerSuggestion,
   RuleCondition,
@@ -23,6 +24,7 @@ import type {
   AvailableAccount,
   MenuCoords,
   FormFieldKey,
+  SortableTransactionKey,
 } from "./account-details-types";
 import AccountHeader from "./AccountHeader";
 import TransactionForm from "./TransactionForm";
@@ -70,7 +72,7 @@ export default function AccountDetails({
 
   // Editing state
   const [editingId, setEditingId] = useState<string | number | null>(null);
-  const [editForm, setEditForm] = useState<Record<string, unknown>>({});
+  const [editForm, setEditForm] = useState<Partial<TransactionEditForm>>({});
   const [menuOpenId, setMenuOpenId] = useState<string | number | null>(null);
   // Coordinates/state for portal menu (so it can render above scrollable containers)
   const [menuCoords, setMenuCoords] = useState<MenuCoords | null>(null);
@@ -128,7 +130,7 @@ export default function AccountDetails({
 
   // Sorting State
   const [sortConfig, setSortConfig] = useState<{
-    key: string | null;
+    key: SortableTransactionKey | null;
     direction: string | null;
   }>({ key: null, direction: null });
 
@@ -771,7 +773,7 @@ export default function AccountDetails({
     }
   }
 
-  const handleSort = (key: string) => {
+  const handleSort = (key: SortableTransactionKey) => {
     let direction: string | null = "ascending";
     if (sortConfig.key === key) {
       if (sortConfig.direction === "ascending") {
@@ -800,17 +802,14 @@ export default function AccountDetails({
     });
 
     if (sortConfig.key !== null) {
+      const sortKey = sortConfig.key;
       data.sort((a: Transaction, b: Transaction) => {
-        let aValue: string | number =
-          (a[sortConfig.key!] as string | number) ?? "";
-        let bValue: string | number =
-          (b[sortConfig.key!] as string | number) ?? "";
+        let aValue: string | number = (a[sortKey] as string | number) ?? "";
+        let bValue: string | number = (b[sortKey] as string | number) ?? "";
 
         // Handle numeric values
         if (
-          ["amount", "shares", "price_per_share", "fee"].includes(
-            sortConfig.key!,
-          )
+          ["amount", "shares", "price_per_share", "fee"].includes(sortKey)
         ) {
           aValue = parseFloat(String(aValue) || "0");
           bValue = parseFloat(String(bValue) || "0");

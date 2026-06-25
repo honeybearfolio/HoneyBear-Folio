@@ -3,6 +3,7 @@ import { Filter, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import type { Account } from "../../api/types";
+import type { AccountChartDataset } from "./dashboard-types";
 
 interface AccountFilterPopoverProps {
   accounts: Account[];
@@ -12,11 +13,7 @@ interface AccountFilterPopoverProps {
   setAllAccountsVisibility: (visible: boolean) => void;
   marketValues: Record<string, number>;
   appCurrency: string;
-  chartDatasets?: Array<{
-    accountId?: string | number;
-    _color?: string;
-    [key: string]: unknown;
-  }>;
+  chartDatasets?: AccountChartDataset[];
 }
 
 export default function AccountFilterPopover({

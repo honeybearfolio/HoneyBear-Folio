@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from "react";
 import DatePicker from "react-datepicker";
 import type { Day } from "date-fns";
 import { createPortal } from "react-dom";
@@ -15,6 +16,7 @@ import {
 import type {
   AccountDetailsAccount,
   Transaction,
+  TransactionEditForm,
   AvailableAccount,
   AutocompleteSuggestion,
   TickerSuggestion,
@@ -26,8 +28,8 @@ interface TransactionRowProps {
   account: AccountDetailsAccount;
   hasInvestment: boolean;
   editingId: string | number | null;
-  editForm: Record<string, unknown>;
-  setEditForm: (v: Record<string, unknown>) => void;
+  editForm: Partial<TransactionEditForm>;
+  setEditForm: Dispatch<SetStateAction<Partial<TransactionEditForm>>>;
   startEditing: (tx: Transaction) => void;
   saveEdit: () => void;
   setEditingId: (v: string | number | null) => void;

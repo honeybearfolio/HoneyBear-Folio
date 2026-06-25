@@ -14,7 +14,6 @@ export interface Transaction {
   currency?: string;
   price_per_share?: number;
   fee?: number;
-  [key: string]: unknown;
 }
 
 export interface Quote {
@@ -33,6 +32,11 @@ export interface DailyPriceEntry {
 export interface DailyPriceData {
   list: DailyPriceEntry[];
   map: Record<string, number>;
+}
+
+export interface AccountChartDataset {
+  accountId?: string | number;
+  _color?: string;
 }
 
 export interface DashboardProps {

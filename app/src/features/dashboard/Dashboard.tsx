@@ -53,6 +53,7 @@ import type {
   DailyPriceEntry,
   DailyPriceData,
   DashboardProps,
+  AccountChartDataset,
 } from "./dashboard-types";
 import type { Account } from "../../api/types";
 
@@ -450,10 +451,8 @@ export default function Dashboard({
     // Ensure current (last) data point uses current market values (same as Sidebar/Investments)
     if (totalData.length > 0) {
       const currentTotal = computeNetWorth(
-        filteredAccounts as unknown as Parameters<typeof computeNetWorth>[0],
-        filteredMarketValues as unknown as Parameters<
-          typeof computeNetWorth
-        >[1],
+        filteredAccounts,
+        filteredMarketValues,
         totalAssetsValue,
       );
       totalData[totalData.length - 1] = currentTotal;
@@ -1341,10 +1340,8 @@ export default function Dashboard({
   const currentNetWorth = useMemo(
     () =>
       computeNetWorth(
-        filteredAccounts as unknown as Parameters<typeof computeNetWorth>[0],
-        filteredMarketValues as unknown as Parameters<
-          typeof computeNetWorth
-        >[1],
+        filteredAccounts,
+        filteredMarketValues,
         totalAssetsValue,
       ),
     [filteredAccounts, filteredMarketValues, totalAssetsValue],
@@ -1405,13 +1402,7 @@ export default function Dashboard({
             setAllAccountsVisibility={setAllAccountsVisibility}
             marketValues={marketValues}
             appCurrency={appCurrency}
-            chartDatasets={
-              chartData?.datasets as Array<{
-                accountId?: string | number;
-                _color?: string;
-                [key: string]: unknown;
-              }>
-            }
+            chartDatasets={chartData?.datasets as AccountChartDataset[] | undefined}
           />
         </div>
       </div>

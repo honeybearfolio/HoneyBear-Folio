@@ -1,3 +1,4 @@
+import type { InputHTMLAttributes } from "react";
 import type { Account } from "../../api/types";
 
 /** Real accounts plus the synthetic "all transactions" view. */
@@ -18,14 +19,11 @@ export interface AutocompleteSuggestion {
   type?: string;
 }
 
-export interface AutocompleteInputProps {
+export interface AutocompleteInputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> {
   value: string;
   onChange: (value: string) => void;
   suggestions: AutocompleteSuggestion[];
-  placeholder?: string;
-  className?: string;
-  disabled?: boolean;
-  [key: string]: unknown;
 }
 
 export interface Transaction {
@@ -42,7 +40,23 @@ export interface Transaction {
   price_per_share?: number;
   fee?: number;
   currency?: string;
-  [key: string]: unknown;
+}
+
+/** In-progress transaction edit state; numeric fields may be strings while typing. */
+export interface TransactionEditForm {
+  id: string | number;
+  date: string;
+  payee: string;
+  amount?: number | string;
+  category?: string;
+  notes?: string;
+  account_id: string | number;
+  account_name?: string;
+  ticker?: string;
+  shares?: number | string;
+  price_per_share?: number | string;
+  fee?: number | string;
+  currency?: string;
 }
 
 export interface PendingOccurrence {
@@ -103,6 +117,20 @@ export interface MenuCoords {
   width?: number;
   height?: number;
 }
+
+export type SortableTransactionKey = keyof Pick<
+  Transaction,
+  | "date"
+  | "payee"
+  | "category"
+  | "notes"
+  | "amount"
+  | "shares"
+  | "price_per_share"
+  | "fee"
+  | "ticker"
+  | "account_name"
+>;
 
 export type FormFieldKey =
   | "payee"

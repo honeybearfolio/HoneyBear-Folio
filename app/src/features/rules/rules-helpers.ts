@@ -1,3 +1,4 @@
+import type { RuleRecord } from "../../api/types";
 import {
   DEFAULT_RULE_ACTION,
   DEFAULT_RULE_CONDITION,
@@ -15,19 +16,6 @@ export {
 export type { RuleCondition, RuleAction, RuleFormState };
 
 type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
-
-interface RuleRecord {
-  id: number;
-  priority: number;
-  logic?: string;
-  conditions?: RuleCondition[];
-  actions?: RuleAction[];
-  match_field?: string;
-  match_pattern?: string;
-  action_field?: string;
-  action_value?: string;
-  [key: string]: unknown;
-}
 
 export function toRuleFormState(rule: RuleRecord): RuleFormState {
   const conditions: RuleCondition[] =

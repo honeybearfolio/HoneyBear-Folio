@@ -27,7 +27,7 @@ interface ScheduledFormProps {
   showTickerSuggestions: boolean;
   setShowTickerSuggestions: React.Dispatch<React.SetStateAction<boolean>>;
   tickerSuggestions: TickerSuggestion[];
-  accountOptions: { value: number; label: string }[];
+  accountOptions: { value: string | number; label: string }[];
   dateFormat: string;
   firstDayOfWeek: number;
   handleTickerChange: (query: string) => void;

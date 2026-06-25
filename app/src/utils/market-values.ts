@@ -1,24 +1,10 @@
 import { rust } from "../api/tauri-client";
-import type { Account } from "../api/types";
+import type { Account, StockQuote, Transaction } from "../api/types";
 
 type MarketValueAccount = Pick<Account, "id" | "currency">;
 
-interface Transaction {
-  account_id: number;
-  ticker?: string;
-  shares?: number;
-  [key: string]: unknown;
-}
-
-interface Quote {
-  symbol: string;
-  regularMarketPrice: number;
-  currency?: string;
-  [key: string]: unknown;
-}
-
 type HoldingsMap = Record<string, Record<string, number>>;
-type QuoteMap = Record<string, Quote>;
+type QuoteMap = Record<string, StockQuote>;
 type RateMap = Record<string, number>;
 type CurrencyMap = Record<number, string>;
 type MarketValueMap = Record<string, number>;
@@ -43,7 +29,7 @@ function buildAccountHoldings(transactions: Transaction[]): {
   return { accountHoldings, allTickers };
 }
 
-function buildQuoteMap(quotes: Quote[]): QuoteMap {
+function buildQuoteMap(quotes: StockQuote[]): QuoteMap {
   const quoteMap: QuoteMap = {};
   quotes.forEach((quote) => {
     quoteMap[quote.symbol] = quote;
@@ -84,7 +70,7 @@ async function fetchExchangeRates({
 
   const rateQuotes = (await rust.get_stock_quotes({
     tickers: Array.from(ratesToFetch),
-  })) as Quote[];
+  })) as StockQuote[];
   const rates: RateMap = {};
   rateQuotes.forEach((quote) => {
     rates[quote.symbol] = quote.regularMarketPrice;
@@ -151,7 +137,7 @@ export async function fetchMarketValuesForAccounts(
 
   const quotes = (await rust.get_stock_quotes({
     tickers: Array.from(allTickers),
-  })) as Quote[];
+  })) as StockQuote[];
   const quoteMap = buildQuoteMap(quotes);
   const exchangeRates = await fetchExchangeRates({
     accountHoldings,
