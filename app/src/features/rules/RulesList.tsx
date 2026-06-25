@@ -21,6 +21,7 @@ import {
   type RuleCondition,
   type RuleAction,
 } from "./rules-helpers";
+import { handleAsyncError } from "../../utils/errors";
 
 export default function RulesList() {
   const { t } = useTranslation();
@@ -44,14 +45,27 @@ export default function RulesList() {
   const confirm = useConfirm();
   const { showToast } = useToast();
 
-  async function fetchRules() {
+  async function loadRules(mode: "page" | "refresh" = "refresh") {
     try {
       const r = (await rust.get_rules()) as RuleRecord[];
       setRules(r);
       setFetchError(null);
     } catch (e) {
-      console.error("Failed to fetch rules:", e);
-      showToast(t("error.failed_to_load"), { type: "error" });
+      if (mode === "page") {
+        handleAsyncError({
+          context: "Failed to fetch rules",
+          error: e,
+          setError: setFetchError,
+          detailFallback: t("error.failed_to_load"),
+        });
+      } else {
+        handleAsyncError({
+          context: "Failed to fetch rules",
+          error: e,
+          userMessage: t("error.failed_to_load"),
+          toast: (message) => showToast(message, { type: "error" }),
+        });
+      }
     }
   }
 
@@ -59,18 +73,8 @@ export default function RulesList() {
     let mounted = true;
     (async () => {
       setLoading(true);
-      try {
-        const r = (await rust.get_rules()) as RuleRecord[];
-        if (mounted) {
-          setRules(r);
-          setFetchError(null);
-        }
-      } catch (e) {
-        console.error("Failed to fetch rules:", e);
-        if (mounted) setFetchError(String(e));
-      } finally {
-        if (mounted) setLoading(false);
-      }
+      await loadRules("page");
+      if (mounted) setLoading(false);
     })();
     return () => {
       mounted = false;
@@ -131,9 +135,13 @@ export default function RulesList() {
         setRules((current) => current.filter((r: RuleRecord) => r.id !== id));
         if (formState.id === id) resetForm();
       } catch (e) {
-        console.error("Failed to delete rule:", e);
-        showToast(t("error.failed_to_delete"), { type: "error" });
-        fetchRules();
+        handleAsyncError({
+          context: "Failed to delete rule",
+          error: e,
+          userMessage: t("error.failed_to_delete"),
+          toast: (message) => showToast(message, { type: "error" }),
+        });
+        loadRules();
       }
     }
   }
@@ -160,10 +168,14 @@ export default function RulesList() {
         });
       }
       resetForm();
-      fetchRules();
+      loadRules();
     } catch (e) {
-      console.error("Failed to save rule:", e);
-      showToast(t("error.failed_to_save"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to save rule",
+        error: e,
+        userMessage: t("error.failed_to_save"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
@@ -265,9 +277,13 @@ export default function RulesList() {
         ruleIds: rules.map((r: RuleRecord) => r.id),
       });
     } catch (err) {
-      console.error("Failed to reorder rules:", err);
-      showToast(t("error.failed_to_save"), { type: "error" });
-      fetchRules();
+      handleAsyncError({
+        context: "Failed to reorder rules",
+        error: err,
+        userMessage: t("error.failed_to_save"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
+      loadRules();
     }
   };
 
@@ -388,7 +404,7 @@ export default function RulesList() {
           onRetry={() => {
             setFetchError(null);
             setLoading(true);
-            fetchRules().finally(() => setLoading(false));
+            loadRules("page").finally(() => setLoading(false));
           }}
           retryLabel={t("error.retry")}
         />
@@ -784,11 +800,14 @@ export default function RulesList() {
                                 ruleIds: reordered.map((r: RuleRecord) => r.id),
                               });
                             } catch (err) {
-                              console.error("Failed to reorder rules:", err);
-                              showToast(t("error.failed_to_save"), {
-                                type: "error",
+                              handleAsyncError({
+                                context: "Failed to reorder rules",
+                                error: err,
+                                userMessage: t("error.failed_to_save"),
+                                toast: (message) =>
+                                  showToast(message, { type: "error" }),
                               });
-                              fetchRules();
+                              loadRules();
                             }
                           })();
                         }

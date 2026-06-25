@@ -10,6 +10,7 @@ import {
 } from "../../components/ui/Modal";
 import { useTranslation } from "react-i18next";
 import { useToast } from "../../stores/toast";
+import { handleAsyncError } from "../../utils/errors";
 import { useParseNumber, getDatePickerFormat } from "../../utils/format";
 import { useNumberFormat } from "../../stores/number-format";
 import type { AssetValuation } from "../../api/types";
@@ -64,7 +65,12 @@ export default function ValuationModal({
       }
       onSaved();
     } catch (err) {
-      showToast(String(err), { type: "error" });
+      handleAsyncError({
+        context: "Failed to save valuation",
+        error: err,
+        userMessage: t("error.failed_to_save"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 

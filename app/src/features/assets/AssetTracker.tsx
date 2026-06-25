@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
 import { useFormatNumber } from "../../utils/format";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
+import { handleAsyncError } from "../../utils/errors";
 import AssetModal from "./AssetModal";
 import ValuationModal from "./ValuationModal";
 import "../../styles/Dashboard.css";
@@ -142,7 +143,12 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
         await fetchAssets();
         onUpdate?.();
       } catch (e) {
-        showToast(String(e), { type: "error" });
+        handleAsyncError({
+          context: "Failed to delete asset",
+          error: e,
+          userMessage: t("error.failed_to_delete"),
+          toast: (message) => showToast(message, { type: "error" }),
+        });
       }
     },
     [confirm, t, showToast, fetchAssets, onUpdate],
@@ -162,7 +168,12 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
         await fetchAssets();
         onUpdate?.();
       } catch (e) {
-        showToast(String(e), { type: "error" });
+        handleAsyncError({
+          context: "Failed to delete valuation",
+          error: e,
+          userMessage: t("error.failed_to_delete"),
+          toast: (message) => showToast(message, { type: "error" }),
+        });
       }
     },
     [confirm, t, showToast, fetchValuations, fetchAssets, onUpdate],

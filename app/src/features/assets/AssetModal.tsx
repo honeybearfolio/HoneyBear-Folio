@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { useToast } from "../../stores/toast";
+import { handleAsyncError } from "../../utils/errors";
 import type { AssetWithLatestValue } from "../../api/types";
 import "../../styles/Modal.css";
 
@@ -71,7 +72,12 @@ export default function AssetModal({
       }
       onSaved();
     } catch (err) {
-      showToast(String(err), { type: "error" });
+      handleAsyncError({
+        context: "Failed to save asset",
+        error: err,
+        userMessage: t("error.failed_to_save"),
+        toast: (message) => showToast(message, { type: "error" }),
+      });
     }
   }
 
