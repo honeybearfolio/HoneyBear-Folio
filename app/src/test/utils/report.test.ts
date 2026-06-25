@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { computeReportData } from "../../utils/report";
+import type { ReportLabels } from "../../api/types";
 
 describe("computeReportData wrapper", () => {
   beforeEach(() => {
@@ -16,7 +17,7 @@ describe("computeReportData wrapper", () => {
       appCurrency: "USD",
       exchangeRates: {},
       quotes: [],
-      labels: [{ title: "Report" }],
+      labels: { title: "Report" } as ReportLabels,
     };
 
     const expected = {

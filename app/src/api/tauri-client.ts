@@ -8,11 +8,18 @@ import type {
   Conversation,
   DailyPrice,
   ExchangeRate,
+  Holding,
+  HoldingWithQuote,
+  HoldingsResult,
   LlmSettings,
   MonteCarloResult,
+  NetWorthMarketValues,
   OllamaModel,
   PendingOccurrence,
+  PortfolioTotals,
   ProjectionResult,
+  ReportComputeInput,
+  ReportData,
   RuleRecord,
   ScheduleRecord,
   Session,
@@ -81,19 +88,30 @@ export const rust = {
   // Rust-side compute helpers
   // ---------------------------------------------------------------------------
 
-  compute_net_worth: (args?: RustArgs): Promise<unknown> =>
-    callRust("compute_net_worth", args),
+  compute_net_worth: (args: {
+    accounts: Account[];
+    marketValues: Record<string, number | string>;
+  }): Promise<number> => callRust("compute_net_worth", args),
 
-  build_holdings_from_transactions: (args?: RustArgs): Promise<unknown> =>
+  build_holdings_from_transactions: (args: {
+    transactions: Transaction[];
+  }): Promise<HoldingsResult> =>
     callRust("build_holdings_from_transactions", args),
 
-  merge_holdings_with_quotes: (args?: RustArgs): Promise<unknown> =>
+  merge_holdings_with_quotes: (args: {
+    holdings: Holding[];
+    quotes: StockQuote[];
+  }): Promise<HoldingWithQuote[]> =>
     callRust("merge_holdings_with_quotes", args),
 
-  compute_portfolio_totals: (args?: RustArgs): Promise<unknown> =>
-    callRust("compute_portfolio_totals", args),
+  compute_portfolio_totals: (args: {
+    holdings: HoldingWithQuote[];
+  }): Promise<PortfolioTotals> => callRust("compute_portfolio_totals", args),
 
-  compute_net_worth_market_values: (args?: RustArgs): Promise<unknown> =>
+  compute_net_worth_market_values: (args: {
+    transactions: Transaction[];
+    quotes: StockQuote[];
+  }): Promise<NetWorthMarketValues> =>
     callRust("compute_net_worth_market_values", args),
 
   // ---------------------------------------------------------------------------
@@ -114,12 +132,12 @@ export const rust = {
   // ---------------------------------------------------------------------------
 
   compute_report_data: (args: {
-    input: Record<string, unknown>;
-  }): Promise<unknown> => callRust("compute_report_data", args),
+    input: ReportComputeInput;
+  }): Promise<ReportData> => callRust("compute_report_data", args),
 
   generate_pdf_report: (args: {
     filePath: string;
-    data: unknown;
+    data: ReportData;
   }): Promise<void> => callRust("generate_pdf_report", args),
 
   // ---------------------------------------------------------------------------

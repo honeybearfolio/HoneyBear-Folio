@@ -29,7 +29,7 @@ import {
   fetchAssetsForExport,
   toLegacyJsonAsset,
 } from "../../utils/assets-io";
-import type { Account, Transaction } from "../../api/types";
+import type { Account, StockQuote } from "../../api/types";
 
 function accountToExportRow(account: Account): Record<string, unknown> {
   return {
@@ -84,8 +84,8 @@ export default function ExportModal({ onClose }: ExportModalProps) {
     rust
       .get_all_transactions()
       .then((txs) => {
-        const dates = (txs as Transaction[])
-          .map((tx: Transaction) => tx.date)
+        const dates = txs
+          .map((tx) => tx.date)
           .filter(Boolean);
         setTransactionDates(dates);
       })
@@ -381,13 +381,13 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         }
 
         // Fetch stock quotes if user has investments
-        let quotes: unknown[] = [];
+        let quotes: StockQuote[] = [];
         try {
           const { currentHoldings } =
             buildHoldingsFromTransactions(transactions);
           if (currentHoldings.length > 0) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
-            quotes = (await rust.get_stock_quotes({ tickers })) as unknown[];
+            quotes = await rust.get_stock_quotes({ tickers });
           }
         } catch (e) {
           logError("Optional stock quotes fetch for PDF export", e);
@@ -441,14 +441,14 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         };
 
         const reportData = await computeReportData({
-          accounts: accounts as unknown[],
-          transactions: transactions as unknown[],
+          accounts,
+          transactions,
           startDate: pdfDateRange.start,
           endDate: pdfDateRange.end,
           appCurrency,
           exchangeRates,
           quotes,
-          labels: reportLabels as unknown as unknown[],
+          labels: reportLabels,
         });
 
         await rust.generate_pdf_report({
