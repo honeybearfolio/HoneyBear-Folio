@@ -84,9 +84,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
     rust
       .get_all_transactions()
       .then((txs) => {
-        const dates = txs
-          .map((tx) => tx.date)
-          .filter(Boolean);
+        const dates = txs.map((tx) => tx.date).filter(Boolean);
         setTransactionDates(dates);
       })
       .catch((e) => {
