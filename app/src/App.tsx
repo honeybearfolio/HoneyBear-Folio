@@ -215,7 +215,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
     setRefreshTrigger((prev) => prev + 1);
   };
 
-  async function fetchAccounts(): Promise<Account[]> {
+  const fetchAccounts = useCallback(async (): Promise<Account[]> => {
     try {
       const currency =
         localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
@@ -230,30 +230,33 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       showToast(t("error.failed_to_load"), { type: "error" });
       return [];
     }
-  }
+  }, [showToast, t]);
 
-  async function fetchMarketValues(
-    currentAccounts: Account[] = [],
-    force = false,
-  ) {
-    const now = Date.now();
-    if (!force && now - lastMarketFetchRef.current < MARKET_FETCH_COOLDOWN_MS) {
-      return;
-    }
-    lastMarketFetchRef.current = now;
-    try {
-      const appCurrency =
-        localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
-      const values = await fetchMarketValuesForAccounts(
-        currentAccounts,
-        appCurrency,
-      );
-      setMarketValues(values);
-    } catch (e) {
-      console.error("Failed to fetch market values:", e);
-      showToast(t("error.failed_to_load"), { type: "error" });
-    }
-  }
+  const fetchMarketValues = useCallback(
+    async (currentAccounts: Account[] = [], force = false) => {
+      const now = Date.now();
+      if (
+        !force &&
+        now - lastMarketFetchRef.current < MARKET_FETCH_COOLDOWN_MS
+      ) {
+        return;
+      }
+      lastMarketFetchRef.current = now;
+      try {
+        const appCurrency =
+          localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
+        const values = await fetchMarketValuesForAccounts(
+          currentAccounts,
+          appCurrency,
+        );
+        setMarketValues(values);
+      } catch (e) {
+        console.error("Failed to fetch market values:", e);
+        showToast(t("error.failed_to_load"), { type: "error" });
+      }
+    },
+    [showToast, t],
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -273,7 +276,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       }
     };
     loadData();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, fetchAccounts, fetchMarketValues]);
 
   // Clear saved FIRE calculator state at app startup so user inputs reset after the
   // app is closed and re-opened. We keep session persistence during the running

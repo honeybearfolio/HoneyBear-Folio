@@ -1,6 +1,16 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ExportModal from "../../../components/shared/ExportModal";
+import { useNumberFormatStore } from "../../../stores/number-format";
+
+const { mockGetDatePickerFormat, mockDatePicker } = vi.hoisted(() => ({
+  mockGetDatePickerFormat: vi.fn((key: string) => `picker-${key}`),
+  mockDatePicker: vi.fn(
+    (_props: { dateFormat?: string; calendarStartDay?: number }) => (
+      <input data-testid="datepicker" />
+    ),
+  ),
+}));
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
@@ -29,6 +39,36 @@ vi.mock("../../../stores/toast", () => ({
 // Mock format utility
 vi.mock("../../../utils/format", () => ({
   formatNumberForExport: (v: unknown) => (v != null ? String(v) : ""),
+  getDatePickerFormat: (key: string) => mockGetDatePickerFormat(key),
+}));
+
+vi.mock("react-datepicker", () => ({
+  default: (props: unknown) =>
+    mockDatePicker(props as { dateFormat?: string; calendarStartDay?: number }),
+}));
+
+vi.mock("../../../components/ui/CustomSelect", () => ({
+  default: ({
+    value,
+    onChange,
+    options,
+  }: {
+    value: string | number;
+    onChange: (v: string | number) => void;
+    options: { value: string | number; label: string }[];
+  }) => (
+    <select
+      data-testid={`custom-select-${String(value)}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      {options.map((opt) => (
+        <option key={String(opt.value)} value={String(opt.value)}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  ),
 }));
 
 describe("ExportModal", () => {
@@ -38,6 +78,10 @@ describe("ExportModal", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    useNumberFormatStore.setState({
+      dateFormat: "DD/MM/YYYY",
+      firstDayOfWeek: 0,
+    });
     mockInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_accounts") {
         return Promise.resolve([
@@ -274,5 +318,22 @@ describe("ExportModal", () => {
         }),
       );
     });
+  });
+
+  it("uses date format settings from number format store for PDF custom range", () => {
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("PDF Report"));
+    fireEvent.change(screen.getByTestId("custom-select-ytd"), {
+      target: { value: "custom" },
+    });
+
+    expect(mockGetDatePickerFormat).toHaveBeenCalledWith("DD/MM/YYYY");
+    expect(mockDatePicker).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dateFormat: "picker-DD/MM/YYYY",
+        calendarStartDay: 0,
+      }),
+    );
   });
 });
