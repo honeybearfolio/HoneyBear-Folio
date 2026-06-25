@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { useConfirm } from "../../stores/confirm";
-import { useToast } from "../../contexts/toast";
+import { useToast } from "../../stores/toast";
 import useTagColors from "../../hooks/useTagColors";
 import {
   APP_DEFAULTS,

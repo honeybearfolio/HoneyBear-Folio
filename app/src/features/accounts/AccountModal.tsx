@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { useCustomRate } from "../../hooks/useCustomRate";
-import { useToast } from "../../contexts/toast";
+import { useToast } from "../../stores/toast";
 import { useParseNumber } from "../../utils/format";
 import type { Account } from "../../api/types";
 

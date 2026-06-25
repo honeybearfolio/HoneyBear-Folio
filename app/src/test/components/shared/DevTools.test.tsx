@@ -4,7 +4,7 @@ import DevTools from "../../../components/shared/DevTools";
 
 // Mock toast context
 const mockShowToast = vi.fn();
-vi.mock("../../../contexts/toast", () => ({
+vi.mock("../../../stores/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 

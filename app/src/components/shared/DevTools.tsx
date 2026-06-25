@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useToast } from "../../contexts/toast";
+import { useToast } from "../../stores/toast";
 import { getDevSetting } from "../../config/dev-settings";
 
 export default function DevTools() {

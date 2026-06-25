@@ -22,7 +22,7 @@ vi.mock("@tauri-apps/plugin-fs", () => ({
 
 // Mock toast
 const mockShowToast = vi.fn();
-vi.mock("../../../contexts/toast", () => ({
+vi.mock("../../../stores/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
