@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { useTranslation } from "react-i18next";
-import type { AvailableAccount, AccountDetailsAccount } from "./account-details-types";
+import type {
+  AvailableAccount,
+  AccountDetailsAccount,
+} from "./account-details-types";
 
 interface AccountHeaderProps {
   account: AccountDetailsAccount;
