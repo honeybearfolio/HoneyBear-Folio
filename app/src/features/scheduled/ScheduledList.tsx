@@ -4,7 +4,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import { Plus } from "lucide-react";
 import { useConfirm } from "../../stores/confirm";
-import { useToast } from "../../contexts/toast";
+import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
 import "../../styles/Dashboard.css";

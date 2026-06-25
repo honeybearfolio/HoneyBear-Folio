@@ -48,7 +48,7 @@ vi.mock("../../../stores/confirm", () => ({
   useConfirm: () => mockConfirm,
 }));
 
-vi.mock("../../../contexts/toast", () => ({
+vi.mock("../../../stores/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 

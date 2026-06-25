@@ -4,7 +4,7 @@ import { HelpCircle, Loader2, Check, AlertCircle } from "lucide-react";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { rust } from "../../api/tauri-client";
 import { useConfirm } from "../../stores/confirm";
-import { useToast } from "../../contexts/toast";
+import { useToast } from "../../stores/toast";
 
 interface LlmSettings {
   ollama_url?: string;

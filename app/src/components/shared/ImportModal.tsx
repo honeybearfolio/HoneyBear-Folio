@@ -8,7 +8,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import Papa from "papaparse";
 import { parseNumberWithLocale } from "../../utils/format";
 import { useTranslation } from "react-i18next";
-import { useToast } from "../../contexts/toast";
+import { useToast } from "../../stores/toast";
 import { getMimeType } from "./import-types";
 import type {
   ImportModalProps,

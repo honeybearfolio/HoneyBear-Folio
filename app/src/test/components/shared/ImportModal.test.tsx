@@ -12,7 +12,7 @@ vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
 
 // Mock Toast
 const mockShowToast = vi.fn();
-vi.mock("../../../contexts/toast", () => ({
+vi.mock("../../../stores/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 

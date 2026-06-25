@@ -1,8 +1,7 @@
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
-import { useToast } from "../../contexts/toast";
-import { useToastStore } from "../../stores/toast";
+import { useToast, useToastStore } from "../../stores/toast";
 
 // Test component to consume hook
 function TestComponent() {
