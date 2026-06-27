@@ -162,12 +162,9 @@ pub fn set_llm_settings(
     Ok(())
 }
 
-/// Fetches the list of available models from the configured Ollama server.
-#[tauri::command]
-pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel>, String> {
-    let settings = db_init::read_settings(&app_handle)?;
-    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
-    let url = ollama_api_url(&base_url, "/api/tags")?;
+/// Fetches the list of available models from an Ollama server base URL.
+pub(crate) async fn fetch_ollama_models(base_url: &str) -> Result<Vec<OllamaModel>, String> {
+    let url = ollama_api_url(base_url, "/api/tags")?;
 
     let resp = reqwest::get(&url)
         .await
@@ -178,7 +175,11 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
         .await
         .map_err(|e| format!("Invalid response from Ollama: {e}"))?;
 
-    let models = body["models"]
+    Ok(parse_ollama_models(&body))
+}
+
+pub(crate) fn parse_ollama_models(body: &Value) -> Vec<OllamaModel> {
+    body["models"]
         .as_array()
         .unwrap_or(&vec![])
         .iter()
@@ -187,9 +188,27 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
             size: m["size"].as_u64(),
             modified_at: m["modified_at"].as_str().map(String::from),
         })
-        .collect();
+        .collect()
+}
 
-    Ok(models)
+/// Returns whether the Ollama server at `base_url` responds successfully.
+pub(crate) async fn ping_ollama(base_url: &str) -> bool {
+    let Ok(url) = ollama_api_url(base_url, "/api/tags") else {
+        return false;
+    };
+
+    match reqwest::get(&url).await {
+        Ok(resp) => resp.status().is_success(),
+        Err(_) => false,
+    }
+}
+
+/// Fetches the list of available models from the configured Ollama server.
+#[tauri::command]
+pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel>, String> {
+    let settings = db_init::read_settings(&app_handle)?;
+    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
+    fetch_ollama_models(&base_url).await
 }
 
 /// Validates that the Ollama server is reachable at the configured URL.
@@ -197,14 +216,7 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
 pub async fn check_ollama_connection(app_handle: AppHandle) -> Result<bool, String> {
     let settings = db_init::read_settings(&app_handle)?;
     let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
-    let Ok(url) = ollama_api_url(&base_url, "/api/tags") else {
-        return Ok(false);
-    };
-
-    match reqwest::get(&url).await {
-        Ok(resp) => Ok(resp.status().is_success()),
-        Err(_) => Ok(false),
-    }
+    Ok(ping_ollama(&base_url).await)
 }
 
 // ── Conversation CRUD ───────────────────────────────────────────────
@@ -271,6 +283,11 @@ pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conver
 #[tauri::command]
 pub fn delete_conversation(app_handle: AppHandle, conversation_id: i64) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
+    delete_conversation_db(&db_path, conversation_id)
+}
+
+/// Deletes a conversation and all its associated messages from the database.
+pub fn delete_conversation_db(db_path: &PathBuf, conversation_id: i64) -> Result<(), String> {
     let db_ref = db_path.as_path();
     crate::db_locked!(db_ref, {
         let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
@@ -293,6 +310,15 @@ pub fn rename_conversation(
     title: String,
 ) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
+    rename_conversation_db(&db_path, conversation_id, title)
+}
+
+/// Updates the title of an existing conversation in the database.
+pub fn rename_conversation_db(
+    db_path: &PathBuf,
+    conversation_id: i64,
+    title: String,
+) -> Result<(), String> {
     let db_ref = db_path.as_path();
     crate::db_locked!(db_ref, {
         let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
@@ -381,6 +407,11 @@ fn save_message_db(
 #[tauri::command]
 pub fn delete_all_conversations(app_handle: AppHandle) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
+    delete_all_conversations_db(&db_path)
+}
+
+/// Deletes all conversations and their messages from the database.
+pub fn delete_all_conversations_db(db_path: &PathBuf) -> Result<(), String> {
     let db_ref = db_path.as_path();
     crate::db_locked!(db_ref, {
         let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
@@ -1092,8 +1123,55 @@ async fn run_chat_loop(
 }
 
 #[cfg(test)]
+pub(crate) fn save_message_db_for_test(
+    db_path: &PathBuf,
+    conversation_id: i64,
+    role: &str,
+    content: Option<&str>,
+    tool_calls: Option<&str>,
+    tool_call_id: Option<&str>,
+    thinking: Option<&str>,
+) -> Result<i64, String> {
+    save_message_db(
+        db_path,
+        conversation_id,
+        role,
+        content,
+        tool_calls,
+        tool_call_id,
+        thinking,
+    )
+}
+
+#[cfg(test)]
+pub(crate) fn build_system_prompt_for_test(db_path: &PathBuf) -> String {
+    build_system_prompt(db_path)
+}
+
+#[cfg(test)]
+pub(crate) fn build_tool_definitions_for_test() -> Vec<Value> {
+    build_tool_definitions()
+}
+
+#[cfg(test)]
+pub(crate) fn is_cancelled_for_test(conversation_id: i64) -> bool {
+    is_cancelled(conversation_id)
+}
+
+#[cfg(test)]
+pub(crate) fn clear_cancelled_for_test(conversation_id: i64) {
+    clear_cancelled(conversation_id)
+}
+
+#[cfg(test)]
+pub(crate) async fn cancel_llm_chat_for_test(conversation_id: i64) -> Result<(), String> {
+    cancel_llm_chat(conversation_id).await
+}
+
+#[cfg(test)]
 mod tests {
-    use super::{ollama_api_url, validate_ollama_base_url};
+    use super::{fetch_ollama_models, ollama_api_url, parse_ollama_models, ping_ollama, validate_ollama_base_url};
+    use serde_json::json;
 
     #[test]
     fn validate_ollama_base_url_accepts_http_and_https_hosts() {
@@ -1120,5 +1198,53 @@ mod tests {
     fn ollama_api_url_builds_expected_endpoint_url() {
         let url = ollama_api_url("http://localhost:11434", "/api/tags").unwrap();
         assert_eq!(url, "http://localhost:11434/api/tags");
+    }
+
+    #[test]
+    fn parse_ollama_models_handles_empty_and_populated_payloads() {
+        assert!(parse_ollama_models(&json!({})).is_empty());
+        let models = parse_ollama_models(&json!({
+            "models": [
+                {"name": "llama3", "size": 100, "modified_at": "2024-01-01"},
+                {"size": 50}
+            ]
+        }));
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0].name, "llama3");
+        assert_eq!(models[0].size, Some(100));
+        assert_eq!(models[1].name, "");
+    }
+
+    #[tokio::test]
+    async fn fetch_ollama_models_uses_mock_server() {
+        let server = httpmock::MockServer::start();
+        server.mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/api/tags");
+            then.status(200).body(
+                r#"{"models":[{"name":"gemma","size":200,"modified_at":"2024-06-01"}]}"#,
+            );
+        });
+
+        let models = fetch_ollama_models(&server.base_url()).await.unwrap();
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].name, "gemma");
+    }
+
+    #[tokio::test]
+    async fn ping_ollama_reports_reachability() {
+        let server = httpmock::MockServer::start();
+        server.mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/api/tags");
+            then.status(200);
+        });
+        assert!(ping_ollama(&server.base_url()).await);
+
+        let down = httpmock::MockServer::start();
+        down.mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/api/tags");
+            then.status(503);
+        });
+        assert!(!ping_ollama(&down.base_url()).await);
+        assert!(!ping_ollama("not-a-valid-url").await);
     }
 }

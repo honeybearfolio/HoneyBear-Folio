@@ -2,6 +2,8 @@ use crate::core::scheduled::compute_occurrences;
 use crate::models::ScheduledTransaction;
 use chrono::NaiveDate;
 
+pub mod db_tests;
+
 fn create_base_schedule() -> ScheduledTransaction {
     ScheduledTransaction {
         id: 1,

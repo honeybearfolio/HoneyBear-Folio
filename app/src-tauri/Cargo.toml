@@ -52,6 +52,9 @@ cast_precision_loss = "allow"
 cast_sign_loss = "allow"
 cast_possible_wrap = "allow"
 
+[package.metadata.cargo-llvm-cov]
+ignore-filename-regex = ["lib\\.rs$"]
+
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
