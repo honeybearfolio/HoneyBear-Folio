@@ -4,6 +4,7 @@ import { Pencil, Trash2, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
+import { useNumberFormat } from "../../stores/number-format";
 import "../../styles/Settings.css";
 
 interface ExchangeRate {
@@ -31,11 +32,11 @@ export default function ExchangeRatesList({
   const [editValue, setEditValue] = useState("");
   const confirm = useConfirm();
   const { showToast } = useToast();
+  const { currency: appCurrency } = useNumberFormat();
 
   const loadRates = useCallback(async () => {
     setLoading(true);
     try {
-      const appCurrency = localStorage.getItem("hb_currency") || "USD";
       const result = (await rust.get_all_exchange_rates({
         appCurrency,
       })) as ExchangeRate[];
@@ -51,7 +52,7 @@ export default function ExchangeRatesList({
     } finally {
       setLoading(false);
     }
-  }, [showToast, t]);
+  }, [showToast, t, appCurrency]);
 
   useEffect(() => {
     loadRates();

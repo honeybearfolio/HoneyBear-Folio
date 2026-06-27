@@ -4,14 +4,13 @@ import {
   DEFAULT_COLOR,
   TRANSFER_DEFAULT_COLOR,
 } from "../config/tag-colors";
-
-const STORAGE_KEY = "hb_tag_colors";
+import { STORAGE_KEYS } from "../constants/app";
 
 type TagColorMap = Record<string, string>;
 
 function readFromStorage(): TagColorMap {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEYS.TAG_COLORS);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -20,7 +19,7 @@ function readFromStorage(): TagColorMap {
 
 function writeToStorage(map: TagColorMap): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    localStorage.setItem(STORAGE_KEYS.TAG_COLORS, JSON.stringify(map));
   } catch {
     /* ignore */
   }
@@ -57,7 +56,7 @@ export default function useTagColors(): UseTagColorsReturn {
   const resetAll = useCallback(() => {
     setTagColors({});
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEYS.TAG_COLORS);
     } catch {
       /* ignore */
     }

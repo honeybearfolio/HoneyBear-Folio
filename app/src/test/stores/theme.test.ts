@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useThemeStore } from "../../stores/theme";
+import { STORAGE_KEYS } from "../../constants/app";
 
 describe("useThemeStore", () => {
   beforeEach(() => {
@@ -18,7 +19,7 @@ describe("useThemeStore", () => {
 
   it("setTheme persists to localStorage", () => {
     useThemeStore.getState().setTheme("light");
-    expect(localStorage.setItem).toHaveBeenCalledWith("hb_theme", "light");
+    expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.THEME, "light");
   });
 
   it("supports high-contrast-dark theme", () => {

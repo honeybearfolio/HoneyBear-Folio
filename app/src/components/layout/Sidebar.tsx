@@ -38,6 +38,7 @@ import { rust } from "../../api/tauri-client";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import type { Account } from "../../api/types";
+import { STORAGE_KEYS } from "../../constants/app";
 
 interface SidebarVisibility {
   dashboard?: boolean;
@@ -105,7 +106,7 @@ export default function Sidebar({
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig>(() => {
     try {
-      const stored = localStorage.getItem("hb_account_sort_config");
+      const stored = localStorage.getItem(STORAGE_KEYS.ACCOUNT_SORT_CONFIG);
       return stored
         ? (JSON.parse(stored) as SortConfig)
         : { field: "name", direction: "asc" };
@@ -132,7 +133,7 @@ export default function Sidebar({
 
   const [manualOrder, setManualOrder] = useState<(string | number)[]>(() => {
     try {
-      const stored = localStorage.getItem("hb_account_order");
+      const stored = localStorage.getItem(STORAGE_KEYS.ACCOUNT_ORDER);
       return stored ? (JSON.parse(stored) as (string | number)[]) : [];
     } catch {
       return [];
@@ -186,13 +187,16 @@ export default function Sidebar({
     const newConfig = { field, direction };
     setSortConfig(newConfig);
     setShowSortMenu(false);
-    localStorage.setItem("hb_account_sort_config", JSON.stringify(newConfig));
+    localStorage.setItem(
+      STORAGE_KEYS.ACCOUNT_SORT_CONFIG,
+      JSON.stringify(newConfig),
+    );
   };
 
   const handleReorder = (newAccountsList: { id: string | number }[]) => {
     const newOrder = newAccountsList.map((a) => a.id);
     setManualOrder(newOrder);
-    localStorage.setItem("hb_account_order", JSON.stringify(newOrder));
+    localStorage.setItem(STORAGE_KEYS.ACCOUNT_ORDER, JSON.stringify(newOrder));
   };
 
   const handleSelect = (id: string | number) => {

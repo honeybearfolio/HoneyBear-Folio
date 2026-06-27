@@ -157,7 +157,6 @@ export default function Dashboard({
   useEffect(() => {
     const fetchDailyPrices = async () => {
       const tickers = new Set<string>();
-      const appCurrency = localStorage.getItem("hb_currency") || "USD";
 
       // Include all tickers from transactions
       transactions.forEach((t) => {
@@ -220,7 +219,7 @@ export default function Dashboard({
     if (transactions.length > 0) {
       fetchDailyPrices();
     }
-  }, [transactions, accounts, propAccounts]);
+  }, [transactions, accounts, propAccounts, appCurrency]);
 
   // Helper to get price
   const getPrice = useCallback(
