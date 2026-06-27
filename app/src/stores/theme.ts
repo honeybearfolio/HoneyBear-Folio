@@ -12,9 +12,7 @@ export interface ThemeState {
 export const useThemeStore = create<ThemeState>((set) => ({
   theme: (() => {
     if (typeof window !== "undefined") {
-      return (
-        localStorage.getItem(STORAGE_KEYS.THEME) || APP_DEFAULTS.THEME
-      );
+      return localStorage.getItem(STORAGE_KEYS.THEME) || APP_DEFAULTS.THEME;
     }
     return APP_DEFAULTS.THEME;
   })(),

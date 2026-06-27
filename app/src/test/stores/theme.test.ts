@@ -19,7 +19,10 @@ describe("useThemeStore", () => {
 
   it("setTheme persists to localStorage", () => {
     useThemeStore.getState().setTheme("light");
-    expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.THEME, "light");
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      STORAGE_KEYS.THEME,
+      "light",
+    );
   });
 
   it("supports high-contrast-dark theme", () => {

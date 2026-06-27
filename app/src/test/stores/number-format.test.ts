@@ -35,7 +35,10 @@ describe("useNumberFormatStore", () => {
   it("setCurrency updates currency and persists", () => {
     useNumberFormatStore.getState().setCurrency("EUR");
     expect(useNumberFormatStore.getState().currency).toBe("EUR");
-    expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.CURRENCY, "EUR");
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      STORAGE_KEYS.CURRENCY,
+      "EUR",
+    );
   });
 
   it("setDateFormat updates dateFormat and persists", () => {
@@ -59,6 +62,9 @@ describe("useNumberFormatStore", () => {
   it("setUiLanguage updates uiLanguage and persists", () => {
     useNumberFormatStore.getState().setUiLanguage("es");
     expect(useNumberFormatStore.getState().uiLanguage).toBe("es");
-    expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.UI_LANGUAGE, "es");
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      STORAGE_KEYS.UI_LANGUAGE,
+      "es",
+    );
   });
 });

@@ -92,7 +92,11 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       });
   }, []);
 
-  const { dateFormat, firstDayOfWeek, currency: appCurrency } = useNumberFormat();
+  const {
+    dateFormat,
+    firstDayOfWeek,
+    currency: appCurrency,
+  } = useNumberFormat();
 
   // Compute the effective date range for the PDF export
   const pdfDateRange = useMemo(() => {
