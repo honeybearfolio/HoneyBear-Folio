@@ -12,7 +12,22 @@ afterEach(() => {
 
 // Mock Tauri APIs to prevent runtime errors during tests
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
+  invoke: vi.fn((cmd: string) => {
+    switch (cmd) {
+      case "compute_net_worth":
+        return Promise.resolve(0);
+      case "build_holdings_from_transactions":
+        return Promise.resolve({ currentHoldings: [], firstTradeDate: null });
+      case "merge_holdings_with_quotes":
+        return Promise.resolve([]);
+      case "compute_portfolio_totals":
+        return Promise.resolve({ totalValue: 0, totalCostBasis: 0 });
+      case "compute_net_worth_market_values":
+        return Promise.resolve({});
+      default:
+        return Promise.resolve(null);
+    }
+  }),
 }));
 
 vi.mock("@tauri-apps/plugin-fs", () => ({

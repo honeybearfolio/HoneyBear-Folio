@@ -4,6 +4,21 @@ import Dashboard from "../../../features/dashboard/Dashboard";
 import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
 
+const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
+
+function mockDashboardInvoke(
+  handler: (cmd: string) => Promise<unknown> | undefined,
+) {
+  return vi.mocked(invoke).mockImplementation((cmd: string) => {
+    const result = handler(cmd);
+    if (result !== undefined) return result;
+    if (cmd === "build_holdings_from_transactions")
+      return Promise.resolve(emptyHoldings);
+    if (cmd === "compute_net_worth") return Promise.resolve(0);
+    return Promise.resolve(null);
+  });
+}
+
 // Mock dependencies
 vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
 vi.mock("../../../hooks/useIsDark", () => ({ default: () => false }));
@@ -57,7 +72,7 @@ describe("Dashboard", () => {
 
   it("fetches data and renders charts", async () => {
     // Mock data
-    vi.mocked(invoke).mockImplementation((cmd: string) => {
+    mockDashboardInvoke((cmd) => {
       if (cmd === "get_all_transactions")
         return Promise.resolve([
           {
@@ -74,7 +89,6 @@ describe("Dashboard", () => {
         return Promise.resolve([
           { id: 1, name: "Checking", balance: 1000, currency: "USD" },
         ]);
-      return Promise.resolve(null);
     });
 
     render(<Dashboard />);
@@ -88,7 +102,9 @@ describe("Dashboard", () => {
 
   it("uses provided accounts prop if available", async () => {
     const propAccounts = [{ id: 99, name: "Prop Account", balance: 500 }];
-    vi.mocked(invoke).mockResolvedValue([]); // transactions
+    mockDashboardInvoke((cmd) => {
+      if (cmd === "get_all_transactions") return Promise.resolve([]);
+    });
 
     render(<Dashboard accounts={propAccounts} />);
 
