@@ -134,7 +134,7 @@ export default function FireCalculator() {
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =
-        buildHoldingsFromTransactions(transactions);
+        await buildHoldingsFromTransactions(transactions);
 
       // Fetch quotes for holdings once
       const tickers = currentHoldings.map((h) => h.ticker);
@@ -146,14 +146,17 @@ export default function FireCalculator() {
       }
 
       // Compute portfolio totals
-      const finalHoldings = mergeHoldingsWithQuotes(currentHoldings, quotes);
+      const finalHoldings = await mergeHoldingsWithQuotes(
+        currentHoldings,
+        quotes,
+      );
       const {
         totalValue: totalPortfolioValue,
         totalCostBasis: totalPortfolioCostBasis,
-      } = computePortfolioTotals(finalHoldings);
+      } = await computePortfolioTotals(finalHoldings);
 
       // Compute market values per account used for net worth (re-uses quotes fetched earlier)
-      const netWorthMarketValues = computeNetWorthMarketValues(
+      const netWorthMarketValues = await computeNetWorthMarketValues(
         transactions,
         quotes,
       );
@@ -181,7 +184,7 @@ export default function FireCalculator() {
           totalPortfolioCostBasis;
         const now = new Date();
         const yearsInvested = Math.max(
-          (now.getTime() - firstTradeDate.getTime()) /
+          (now.getTime() - new Date(firstTradeDate).getTime()) /
             (1000 * 60 * 60 * 24 * 365.25),
           0.1,
         );

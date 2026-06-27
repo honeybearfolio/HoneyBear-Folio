@@ -29,7 +29,6 @@ import {
   Bot,
   Gem,
 } from "lucide-react";
-import { computeNetWorth } from "../../utils/networth";
 import { useTranslation } from "react-i18next";
 import "../../styles/Sidebar.css";
 import { useFormatNumber } from "../../utils/format";
@@ -66,7 +65,7 @@ interface SortConfig {
 interface SidebarProps {
   accounts: Account[];
   marketValues: Record<string | number, number>;
-  totalAssetsValue?: number;
+  totalBalance?: number;
   selectedId: string | number;
   onSelectAccount: (id: string | number) => void;
   onUpdate: () => void;
@@ -81,7 +80,7 @@ interface SidebarProps {
 export default function Sidebar({
   accounts,
   marketValues,
-  totalAssetsValue = 0,
+  totalBalance = 0,
   selectedId,
   onSelectAccount,
   onUpdate,
@@ -97,12 +96,6 @@ export default function Sidebar({
   const [showExportModal, setShowExportModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
-  // Compute total balance using helper so logic is shared with Dashboard/App
-  const totalBalance = computeNetWorth(
-    accounts,
-    marketValues,
-    totalAssetsValue,
-  );
   const formatNumber = useFormatNumber();
   const formattedTotalBalance = formatNumber(totalBalance, {
     style: "currency",

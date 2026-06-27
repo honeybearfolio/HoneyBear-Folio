@@ -72,7 +72,8 @@ export default function InvestmentDashboard() {
     setLoading(true);
     try {
       const transactions = (await rust.get_all_transactions()) as Transaction[];
-      const { currentHoldings } = buildHoldingsFromTransactions(transactions);
+      const { currentHoldings } =
+        await buildHoldingsFromTransactions(transactions);
 
       if (currentHoldings.length === 0) {
         setHoldings([]);
@@ -85,7 +86,10 @@ export default function InvestmentDashboard() {
         tickers,
       })) as StockQuote[];
 
-      const finalHoldings = mergeHoldingsWithQuotes(currentHoldings, quotes);
+      const finalHoldings = await mergeHoldingsWithQuotes(
+        currentHoldings,
+        quotes,
+      );
       setHoldings(finalHoldings as Holding[]);
     } catch (e: unknown) {
       console.error("Error fetching investment data:", e);

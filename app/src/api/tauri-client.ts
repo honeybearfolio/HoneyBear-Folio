@@ -91,6 +91,7 @@ export const rust = {
   compute_net_worth: (args: {
     accounts: Account[];
     marketValues: Record<string, number | string>;
+    totalAssetsValue?: number;
   }): Promise<number> => callRust("compute_net_worth", args),
 
   build_holdings_from_transactions: (args: {

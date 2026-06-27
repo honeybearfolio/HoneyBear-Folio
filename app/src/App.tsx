@@ -137,6 +137,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [marketValues, setMarketValues] = useState<Record<string, number>>({});
   const [totalAssetsValue, setTotalAssetsValue] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const lastMarketFetchRef = useRef<number>(0);
   const MARKET_FETCH_COOLDOWN_MS = 60_000;
   const [settingsSection, setSettingsSection] =
@@ -278,6 +279,16 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
     loadData();
   }, [refreshTrigger, fetchAccounts, fetchMarketValues]);
 
+  useEffect(() => {
+    let cancelled = false;
+    computeNetWorth(accounts, marketValues, totalAssetsValue).then((value) => {
+      if (!cancelled) setTotalBalance(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [accounts, marketValues, totalAssetsValue]);
+
   // Clear saved FIRE calculator state at app startup so user inputs reset after the
   // app is closed and re-opened. We keep session persistence during the running
   // session (switching tabs) since `sessionStorage` is still used by the
@@ -304,13 +315,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
     }
   }, []);
 
-  // Calculate total balance
-
-  const totalBalance = computeNetWorth(
-    accounts,
-    marketValues,
-    totalAssetsValue,
-  );
+  // Calculate total balance (kept in state via effect above)
 
   const totalCashBalance = accounts.reduce((sum, acc) => {
     const balance = Number(acc.balance) || 0;
@@ -398,7 +403,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
                   }[]
                 }
                 marketValues={marketValues}
-                totalAssetsValue={totalAssetsValue}
+                totalBalance={totalBalance}
                 selectedId={selectedAccountId}
                 onSelectAccount={(id: string | number) =>
                   setSelectedAccountId(String(id))

@@ -19,6 +19,7 @@ vi.mock("../api/tauri-client", () => ({
       },
     ]),
     get_total_assets_value: vi.fn().mockResolvedValue(0),
+    compute_net_worth: vi.fn().mockResolvedValue(0),
     get_system_theme: vi.fn().mockResolvedValue("light"),
   },
 }));
