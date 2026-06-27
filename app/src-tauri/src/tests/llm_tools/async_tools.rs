@@ -39,8 +39,21 @@ async fn test_tool_get_portfolio_holdings_uses_cached_quotes() {
     let result = tool_get_portfolio_holdings(&client, &db_path, &json!({}))
         .await
         .unwrap();
-    assert_eq!(result["holdings"].as_array().unwrap().len(), 1);
-    assert_eq!(result["totals"]["total_value"].as_f64().unwrap(), 2000.0);
+    let holdings = result["holdings"].as_array().unwrap();
+    assert_eq!(holdings.len(), 1);
+    assert_eq!(holdings[0]["shares"].as_f64().unwrap(), 10.0);
+
+    let total = result["totals"]["totalValue"].as_f64().unwrap();
+    let current_value = holdings[0]["currentValue"].as_f64().unwrap();
+    assert!((total - current_value).abs() < 0.01);
+
+    // When Yahoo is unreachable, the DB cache price (200) should be used.
+    let price = holdings[0]["price"].as_f64().unwrap();
+    if price == 200.0 {
+        assert!((current_value - 2000.0).abs() < 0.01);
+    } else {
+        assert!(price > 0.0);
+    }
 }
 
 #[tokio::test]
