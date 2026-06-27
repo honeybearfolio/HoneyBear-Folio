@@ -30,7 +30,7 @@ pub fn tool_get_assets(db_path: &PathBuf, arguments: &Value) -> Result<Value, St
 pub fn tool_get_asset_valuations(db_path: &PathBuf, arguments: &Value) -> Result<Value, String> {
     let asset_id = arguments
         .get("asset_id")
-        .and_then(|v| v.as_i64())
+        .and_then(serde_json::Value::as_i64)
         .ok_or_else(|| "asset_id is required".to_string())? as i32;
     let valuations = crate::assets::get_valuations_db(db_path, asset_id)?;
     serde_json::to_value(&valuations).map_err(|e| e.to_string())
@@ -144,7 +144,7 @@ pub fn compute_net_worth_snapshot_with_quotes(
         .map(|acc| {
             let market_value = market_values_map
                 .get(&acc.id.to_string())
-                .and_then(|v| v.as_f64())
+                .and_then(serde_json::Value::as_f64)
                 .unwrap_or(0.0);
             let total = (acc.balance + market_value) * acc.exchange_rate;
             json!({
@@ -239,35 +239,36 @@ pub async fn execute_tool(
         }
         "get_transactions" => {
             let all = crate::transactions::get_all_transactions_db(db_path)?;
-            let account_id = arguments.get("account_id").and_then(|v| v.as_i64());
+            let account_id = arguments
+                .get("account_id")
+                .and_then(serde_json::Value::as_i64);
             let category = arguments
                 .get("category")
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_lowercase());
+                .map(str::to_lowercase);
             let payee = arguments
                 .get("payee")
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_lowercase());
+                .map(str::to_lowercase);
             let start_date = arguments.get("start_date").and_then(|v| v.as_str());
             let end_date = arguments.get("end_date").and_then(|v| v.as_str());
             let limit = arguments
                 .get("limit")
-                .and_then(|v| v.as_u64())
+                .and_then(serde_json::Value::as_u64)
                 .unwrap_or(100) as usize;
 
             let filtered: Vec<_> = all
                 .into_iter()
                 .filter(|t| {
                     if let Some(aid) = account_id {
-                        if t.account_id as i64 != aid {
+                        if i64::from(t.account_id) != aid {
                             return false;
                         }
                     }
                     if let Some(ref cat) = category {
                         if t.category
                             .as_deref()
-                            .map(|c| c.to_lowercase() != *cat)
-                            .unwrap_or(true)
+                            .is_none_or(|c| c.to_lowercase() != *cat)
                         {
                             return false;
                         }

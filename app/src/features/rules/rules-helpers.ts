@@ -55,10 +55,10 @@ export function toRulePayload(
     match_field: firstCondition.field,
     match_pattern: firstCondition.value,
     action_field: firstAction.field,
-    action_value: String(firstAction.value),
+    action_value: firstAction.value,
     logic: formState.logic,
     conditions: formState.conditions,
-    actions: formState.actions.map((a) => ({ ...a, value: String(a.value) })),
+    actions: formState.actions.map((a) => ({ ...a })),
   };
 
   const maxPriority =
@@ -78,7 +78,7 @@ export function reorderRules(
   }
 
   const newItems = [...rules];
-  const item = newItems[dragIndex];
+  const item = newItems[dragIndex]!;
   newItems.splice(dragIndex, 1);
   newItems.splice(targetIndex, 0, item);
 

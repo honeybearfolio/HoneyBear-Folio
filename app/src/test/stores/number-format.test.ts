@@ -3,6 +3,8 @@ import { useNumberFormatStore } from "../../stores/number-format";
 import { STORAGE_KEYS } from "../../constants/app";
 
 describe("useNumberFormatStore", () => {
+  let setItemSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     useNumberFormatStore.setState({
       locale: "en-US",
@@ -11,7 +13,7 @@ describe("useNumberFormatStore", () => {
       firstDayOfWeek: 1,
       uiLanguage: "en",
     });
-    vi.spyOn(Storage.prototype, "setItem");
+    setItemSpy = vi.spyOn(Storage.prototype, "setItem");
   });
 
   it("has expected default state", () => {
@@ -26,7 +28,7 @@ describe("useNumberFormatStore", () => {
   it("setLocale updates locale and persists", () => {
     useNumberFormatStore.getState().setLocale("de-DE");
     expect(useNumberFormatStore.getState().locale).toBe("de-DE");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
+    expect(setItemSpy).toHaveBeenCalledWith(
       STORAGE_KEYS.NUMBER_FORMAT,
       "de-DE",
     );
@@ -35,16 +37,13 @@ describe("useNumberFormatStore", () => {
   it("setCurrency updates currency and persists", () => {
     useNumberFormatStore.getState().setCurrency("EUR");
     expect(useNumberFormatStore.getState().currency).toBe("EUR");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      STORAGE_KEYS.CURRENCY,
-      "EUR",
-    );
+    expect(setItemSpy).toHaveBeenCalledWith(STORAGE_KEYS.CURRENCY, "EUR");
   });
 
   it("setDateFormat updates dateFormat and persists", () => {
     useNumberFormatStore.getState().setDateFormat("MM/DD/YYYY");
     expect(useNumberFormatStore.getState().dateFormat).toBe("MM/DD/YYYY");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
+    expect(setItemSpy).toHaveBeenCalledWith(
       STORAGE_KEYS.DATE_FORMAT,
       "MM/DD/YYYY",
     );
@@ -53,7 +52,7 @@ describe("useNumberFormatStore", () => {
   it("setFirstDayOfWeek updates firstDayOfWeek and persists", () => {
     useNumberFormatStore.getState().setFirstDayOfWeek(0);
     expect(useNumberFormatStore.getState().firstDayOfWeek).toBe(0);
-    expect(localStorage.setItem).toHaveBeenCalledWith(
+    expect(setItemSpy).toHaveBeenCalledWith(
       STORAGE_KEYS.FIRST_DAY_OF_WEEK,
       "0",
     );
@@ -62,9 +61,6 @@ describe("useNumberFormatStore", () => {
   it("setUiLanguage updates uiLanguage and persists", () => {
     useNumberFormatStore.getState().setUiLanguage("es");
     expect(useNumberFormatStore.getState().uiLanguage).toBe("es");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      STORAGE_KEYS.UI_LANGUAGE,
-      "es",
-    );
+    expect(setItemSpy).toHaveBeenCalledWith(STORAGE_KEYS.UI_LANGUAGE, "es");
   });
 });

@@ -19,9 +19,9 @@ vi.mock("react-datepicker", () => ({
     <input
       data-testid="datepicker"
       value={props.selected ? props.selected.toISOString().split("T")[0] : ""}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-        props.onChange(new Date(e.target.value))
-      }
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        props.onChange(new Date(e.target.value));
+      }}
     />
   ),
 }));
@@ -68,9 +68,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     <select
       data-testid="custom-select"
       value={value || ""}
-      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-        onChange(e.target.value)
-      }
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+        onChange(e.target.value);
+      }}
       aria-label={placeholder}
     >
       <option value="">{placeholder}</option>
@@ -99,23 +99,28 @@ vi.mock("../../../components/ui/NumberInput", () => ({
     <input
       type="number"
       value={value}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-        onChange(e.target.value)
-      }
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.value);
+      }}
       placeholder={placeholder}
       className={className}
     />
   ),
 }));
 
-vi.mock("../../../utils/format", async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    useFormatNumber: () => (val: number) => String(val),
-    useFormatDate: () => (date: string) => String(date).split("T")[0],
-  };
-});
+vi.mock(
+  "../../../utils/format",
+  async (
+    importOriginal: () => Promise<typeof import("../../../utils/format")>,
+  ) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      useFormatNumber: () => (val: number) => String(val),
+      useFormatDate: () => (date: string) => date.split("T")[0],
+    };
+  },
+);
 
 const renderWithContext = (ui: React.ReactElement) => {
   useNumberFormatStore.setState({
@@ -191,7 +196,7 @@ describe("ScheduledList", () => {
     fireEvent.change(screen.getByPlaceholderText("Payee"), {
       target: { value: "Amazon" },
     });
-    const accountSelect = screen.getAllByTestId("custom-select")[0];
+    const accountSelect = screen.getAllByTestId("custom-select")[0]!;
     fireEvent.change(accountSelect, { target: { value: "1" } });
 
     // Submit
@@ -234,7 +239,7 @@ describe("ScheduledList", () => {
     fireEvent.change(tickerInput, {
       target: { value: "AAPL" },
     });
-    const accountSelect2 = screen.getAllByTestId("custom-select")[0];
+    const accountSelect2 = screen.getAllByTestId("custom-select")[0]!;
     fireEvent.change(accountSelect2, { target: { value: "1" } });
 
     // Submit
@@ -246,15 +251,15 @@ describe("ScheduledList", () => {
     fireEvent.click(submitButton2);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_scheduled_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            transactionType: "investment",
-            ticker: "AAPL",
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_scheduled_transaction");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as {
+        args: { transactionType: string; ticker: string };
+      };
+      expect(payload.args.transactionType).toBe("investment");
+      expect(payload.args.ticker).toBe("AAPL");
     });
 
     expect(mockShowToast).toHaveBeenCalledWith(
@@ -297,7 +302,7 @@ describe("ScheduledList", () => {
     await waitFor(() => screen.getByText("Netflix"));
 
     const rows = document.querySelectorAll("tbody tr");
-    fireEvent.contextMenu(rows[0]);
+    fireEvent.contextMenu(rows[0]!);
 
     const portal = document.querySelector(".sched-action-menu-portal");
     expect(portal).toBeInTheDocument();
@@ -310,7 +315,7 @@ describe("ScheduledList", () => {
     await waitFor(() => screen.getByText("Netflix"));
 
     const rows = document.querySelectorAll("tbody tr");
-    fireEvent.contextMenu(rows[0]);
+    fireEvent.contextMenu(rows[0]!);
 
     expect(
       document.querySelector(".sched-action-menu-portal"),

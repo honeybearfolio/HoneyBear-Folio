@@ -31,7 +31,7 @@ export function buildAccountHoldingsFromTransactions(
     if (!accountHoldings[accountId]) accountHoldings[accountId] = {};
     if (!accountHoldings[accountId][tx.ticker])
       accountHoldings[accountId][tx.ticker] = 0;
-    accountHoldings[accountId][tx.ticker] += tx.shares;
+    accountHoldings[accountId][tx.ticker]! += tx.shares;
     allTickers.add(tx.ticker);
   }
 

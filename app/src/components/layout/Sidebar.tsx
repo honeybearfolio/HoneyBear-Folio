@@ -164,15 +164,15 @@ export default function Sidebar({
         valA = a.name.toLowerCase();
         valB = b.name.toLowerCase();
       } else if (sortConfig.field === "balance") {
-        valA = Number(a.balance);
-        valB = Number(b.balance);
+        valA = a.balance;
+        valB = b.balance;
       } else if (sortConfig.field === "value") {
-        const cashA = Number(a.balance);
-        const marketA = marketValues?.[a.id] ? Number(marketValues[a.id]) : 0;
+        const cashA = a.balance;
+        const marketA = marketValues[a.id] ?? 0;
         valA = cashA + marketA;
 
-        const cashB = Number(b.balance);
-        const marketB = marketValues?.[b.id] ? Number(marketValues[b.id]) : 0;
+        const cashB = b.balance;
+        const marketB = marketValues[b.id] ?? 0;
         valB = cashB + marketB;
       }
 
@@ -209,7 +209,7 @@ export default function Sidebar({
   async function handleRenameAccount(id: string | number, newName: string) {
     try {
       await rust.rename_account({ id, newName });
-      if (onUpdate) onUpdate();
+      onUpdate();
     } catch (e) {
       console.error("Failed to rename account:", e);
       showToast(t("error.failed_to_rename"), { type: "error" });
@@ -230,7 +230,7 @@ export default function Sidebar({
     if (!confirmed) return;
     try {
       await rust.delete_account({ id });
-      if (onUpdate) onUpdate();
+      onUpdate();
     } catch (e) {
       console.error("Failed to delete account:", e);
       showToast(t("error.failed_to_delete"), { type: "error" });
@@ -318,7 +318,9 @@ export default function Sidebar({
           /* Settings sub-navigation */
           <div>
             <button
-              onClick={() => handleSelect("dashboard")}
+              onClick={() => {
+                handleSelect("dashboard");
+              }}
               className="sidebar-back-button group mb-6"
             >
               <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
@@ -339,7 +341,7 @@ export default function Sidebar({
                 />
                 <span className="font-medium">{t("settings.general")}</span>
               </button>
-              {sidebarVisibility && (
+              {
                 <button
                   onClick={() => onChangeSettingsSection?.("customization")}
                   className={`sidebar-nav-item group ${
@@ -355,7 +357,7 @@ export default function Sidebar({
                     {t("settings.customization")}
                   </span>
                 </button>
-              )}
+              }
               <button
                 onClick={() => onChangeSettingsSection?.("formats")}
                 className={`sidebar-nav-item group ${
@@ -392,7 +394,9 @@ export default function Sidebar({
               <div className="space-y-1">
                 {sidebarVisibility.dashboard !== false && (
                   <button
-                    onClick={() => handleSelect("dashboard")}
+                    onClick={() => {
+                      handleSelect("dashboard");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "dashboard"
                         ? "sidebar-nav-item-active"
@@ -408,7 +412,9 @@ export default function Sidebar({
 
                 {sidebarVisibility.investments !== false && (
                   <button
-                    onClick={() => handleSelect("investment-dashboard")}
+                    onClick={() => {
+                      handleSelect("investment-dashboard");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "investment-dashboard"
                         ? "sidebar-nav-item-active"
@@ -424,7 +430,9 @@ export default function Sidebar({
 
                 {sidebarVisibility.assets !== false && (
                   <button
-                    onClick={() => handleSelect("asset-tracker")}
+                    onClick={() => {
+                      handleSelect("asset-tracker");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "asset-tracker"
                         ? "sidebar-nav-item-active"
@@ -440,7 +448,9 @@ export default function Sidebar({
 
                 {sidebarVisibility.fire !== false && (
                   <button
-                    onClick={() => handleSelect("fire-calculator")}
+                    onClick={() => {
+                      handleSelect("fire-calculator");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "fire-calculator"
                         ? "sidebar-nav-item-active"
@@ -458,7 +468,9 @@ export default function Sidebar({
 
                 {sidebarVisibility.chat !== false && (
                   <button
-                    onClick={() => handleSelect("chat")}
+                    onClick={() => {
+                      handleSelect("chat");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "chat"
                         ? "sidebar-nav-item-active"
@@ -474,7 +486,9 @@ export default function Sidebar({
 
                 {sidebarVisibility.rules !== false && (
                   <button
-                    onClick={() => handleSelect("rules")}
+                    onClick={() => {
+                      handleSelect("rules");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "rules"
                         ? "sidebar-nav-item-active"
@@ -490,7 +504,9 @@ export default function Sidebar({
 
                 {sidebarVisibility.scheduled !== false && (
                   <button
-                    onClick={() => handleSelect("scheduled")}
+                    onClick={() => {
+                      handleSelect("scheduled");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "scheduled"
                         ? "sidebar-nav-item-active"
@@ -506,7 +522,9 @@ export default function Sidebar({
 
                 {sidebarVisibility.all !== false && (
                   <button
-                    onClick={() => handleSelect("all")}
+                    onClick={() => {
+                      handleSelect("all");
+                    }}
                     className={`sidebar-nav-item group ${
                       selectedId === "all"
                         ? "sidebar-nav-item-active"
@@ -533,7 +551,9 @@ export default function Sidebar({
                 <div className="flex items-center gap-1">
                   <div className="relative" ref={sortMenuRef}>
                     <button
-                      onClick={() => setShowSortMenu(!showSortMenu)}
+                      onClick={() => {
+                        setShowSortMenu(!showSortMenu);
+                      }}
                       className="sidebar-add-button"
                       title={t("sort.sort_by")}
                       aria-label={t("sort.sort_by")}
@@ -587,7 +607,9 @@ export default function Sidebar({
                           ].map((opt) => (
                             <button
                               key={`${opt.field}-${opt.dir}`}
-                              onClick={() => handleSort(opt.field, opt.dir)}
+                              onClick={() => {
+                                handleSort(opt.field, opt.dir);
+                              }}
                               className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors flex items-center justify-between ${
                                 sortConfig.field === opt.field &&
                                 sortConfig.direction === opt.dir
@@ -607,7 +629,9 @@ export default function Sidebar({
                     )}
                   </div>
                   <button
-                    onClick={() => setShowAccountModal(true)}
+                    onClick={() => {
+                      setShowAccountModal(true);
+                    }}
                     className="sidebar-add-button"
                     aria-label={t("account.new_account")}
                   >
@@ -624,8 +648,12 @@ export default function Sidebar({
                 Icon={CreditCard}
                 onReorder={handleReorder}
                 isDraggable={sortConfig.field === "manual"}
-                onRenameAccount={handleRenameAccount}
-                onDeleteAccount={handleDeleteAccount}
+                onRenameAccount={(id, newName) => {
+                  void handleRenameAccount(id, newName);
+                }}
+                onDeleteAccount={(id) => {
+                  void handleDeleteAccount(id);
+                }}
               />
             </div>
           </>
@@ -647,23 +675,29 @@ export default function Sidebar({
         )}
         <div className="sidebar-footer-buttons">
           <button
-            onClick={() => setShowImportModal(true)}
+            onClick={() => {
+              setShowImportModal(true);
+            }}
             className="sidebar-footer-button"
           >
             <Download className="w-4 h-4" />
             <span className="text-xs font-medium">{t("footer.import")}</span>
           </button>
           <button
-            onClick={() => setShowExportModal(true)}
+            onClick={() => {
+              setShowExportModal(true);
+            }}
             className="sidebar-footer-button"
           >
             <Upload className="w-4 h-4" />
             <span className="text-xs font-medium">{t("footer.export")}</span>
           </button>
           <button
-            onClick={() =>
-              handleSelect(selectedId === "settings" ? "dashboard" : "settings")
-            }
+            onClick={() => {
+              handleSelect(
+                selectedId === "settings" ? "dashboard" : "settings",
+              );
+            }}
             className="sidebar-footer-button"
           >
             <Settings className="w-4 h-4" />
@@ -674,7 +708,9 @@ export default function Sidebar({
 
       {showImportModal && (
         <ImportModal
-          onClose={() => setShowImportModal(false)}
+          onClose={() => {
+            setShowImportModal(false);
+          }}
           onImportComplete={() => {
             onUpdate();
           }}
@@ -682,12 +718,18 @@ export default function Sidebar({
       )}
 
       {showExportModal && (
-        <ExportModal onClose={() => setShowExportModal(false)} />
+        <ExportModal
+          onClose={() => {
+            setShowExportModal(false);
+          }}
+        />
       )}
 
       {showAccountModal && (
         <AccountModal
-          onClose={() => setShowAccountModal(false)}
+          onClose={() => {
+            setShowAccountModal(false);
+          }}
           onUpdate={onUpdate}
         />
       )}

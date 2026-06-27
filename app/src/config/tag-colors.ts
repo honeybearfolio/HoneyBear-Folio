@@ -106,7 +106,8 @@ export const TRANSFER_DEFAULT_COLOR: string = "purple";
  * Returns combined bg + text + border classes.
  */
 export function getColorClasses(colorKey: string): string {
-  const color = TAG_COLORS[colorKey] || TAG_COLORS[DEFAULT_COLOR];
+  const fallback = TAG_COLORS[DEFAULT_COLOR]!;
+  const color = TAG_COLORS[colorKey] ?? fallback;
   return `${color.bg} ${color.text} ${color.border}`;
 }
 
@@ -114,7 +115,8 @@ export function getColorClasses(colorKey: string): string {
  * Get the dot class for a color key (used in color selector UI).
  */
 export function getColorDot(colorKey: string): string {
-  const color = TAG_COLORS[colorKey] || TAG_COLORS[DEFAULT_COLOR];
+  const fallback = TAG_COLORS[DEFAULT_COLOR]!;
+  const color = TAG_COLORS[colorKey] ?? fallback;
   return color.dot;
 }
 

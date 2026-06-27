@@ -32,17 +32,17 @@ function formatRelativeTime(isoString: string | undefined) {
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffMins < 60) return `${String(diffMins)}m ago`;
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return `${String(diffHours)}h ago`;
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${String(diffDays)}d ago`;
   return date.toLocaleDateString();
 }
 
 function formatFileSize(bytes: number | undefined) {
   if (!bytes || bytes === 0) return "";
-  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024) return `${String(bytes)} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
@@ -70,7 +70,9 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
   }
 
   useEffect(() => {
-    loadSessions();
+    queueMicrotask(() => {
+      void loadSessions();
+    });
   }, []);
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
   async function handleOpenSession(path: string) {
     try {
       setError(null);
-      const session = (await rust.open_session({ path })) as Session;
+      const session = await rust.open_session({ path });
       onSessionReady(session);
     } catch (e) {
       setError(String(e));
@@ -98,7 +100,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         defaultPath: "honeybear.db",
       });
       if (path) {
-        const session = (await rust.create_session({ path })) as Session;
+        const session = await rust.create_session({ path });
         onSessionReady(session);
       }
     } catch (e) {
@@ -114,7 +116,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         multiple: false,
       });
       if (path) {
-        const session = (await rust.open_session({ path })) as Session;
+        const session = await rust.open_session({ path });
         onSessionReady(session);
       }
     } catch (e) {
@@ -160,7 +162,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
   }
 
   function handleRenameKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") commitRename();
+    if (e.key === "Enter") void commitRename();
     if (e.key === "Escape") cancelRename();
   }
 
@@ -194,9 +196,11 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
               {sessions.map((session) => (
                 <div
                   key={session.path}
-                  onClick={() =>
-                    session.file_exists ? handleOpenSession(session.path) : null
-                  }
+                  onClick={() => {
+                    if (session.file_exists) {
+                      void handleOpenSession(session.path);
+                    }
+                  }}
                   role="button"
                   tabIndex={session.file_exists ? 0 : -1}
                   className={`w-full text-left p-3 rounded-xl border transition-colors group ${
@@ -218,18 +222,24 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
                         {editingPath === session.path ? (
                           <div
                             className="flex items-center gap-1 flex-1"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
                           >
                             <input
                               ref={renameInputRef}
                               type="text"
                               value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
+                              onChange={(e) => {
+                                setEditName(e.target.value);
+                              }}
                               onKeyDown={handleRenameKeyDown}
                               className="flex-1 px-2 py-0.5 text-sm font-medium rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-brand-500"
                             />
                             <button
-                              onClick={commitRename}
+                              onClick={() => {
+                                void commitRename();
+                              }}
                               className="p-0.5 text-emerald-600 hover:text-emerald-700"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -275,7 +285,9 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         {session.file_exists && (
                           <button
-                            onClick={(e) => startRename(e, session)}
+                            onClick={(e) => {
+                              startRename(e, session);
+                            }}
                             className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             title="Rename"
                           >
@@ -283,7 +295,9 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
                           </button>
                         )}
                         <button
-                          onClick={(e) => handleRemove(e, session.path)}
+                          onClick={(e) => {
+                            void handleRemove(e, session.path);
+                          }}
                           className="p-1.5 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
                           title="Remove from list"
                         >
@@ -310,14 +324,18 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         {/* Action buttons */}
         <div className="flex gap-3">
           <button
-            onClick={handleCreateNew}
+            onClick={() => {
+              void handleCreateNew();
+            }}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             {t("session.create_new")}
           </button>
           <button
-            onClick={handleOpenExisting}
+            onClick={() => {
+              void handleOpenExisting();
+            }}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-300 dark:hover:border-brand-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition-colors cursor-pointer"
           >
             <FolderOpen className="w-4 h-4" />

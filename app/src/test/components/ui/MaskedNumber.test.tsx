@@ -53,10 +53,12 @@ describe("MaskedNumber", () => {
       togglePrivacyMode: vi.fn(),
     });
 
-    mockFormatNumber.mockImplementation((_val, opts) => {
-      if (opts?.ignorePrivacy) return "$1,234.56";
-      return "****";
-    });
+    mockFormatNumber.mockImplementation(
+      (_val: unknown, opts?: { ignorePrivacy?: boolean }) => {
+        if (opts?.ignorePrivacy) return "$1,234.56";
+        return "****";
+      },
+    );
 
     render(<MaskedNumber value={1234.56} options={{ style: "currency" }} />);
 
@@ -96,10 +98,12 @@ describe("MaskedNumber", () => {
       isPrivacyMode: true,
       togglePrivacyMode: vi.fn(),
     });
-    mockFormatNumber.mockImplementation((_val, opts) => {
-      if (opts?.ignorePrivacy) return "123";
-      return "***";
-    });
+    mockFormatNumber.mockImplementation(
+      (_val: unknown, opts?: { ignorePrivacy?: boolean }) => {
+        if (opts?.ignorePrivacy) return "123";
+        return "***";
+      },
+    );
 
     render(
       <MaskedNumber
@@ -119,10 +123,12 @@ describe("MaskedNumber", () => {
       isPrivacyMode: true,
       togglePrivacyMode: vi.fn(),
     });
-    mockFormatNumber.mockImplementation((_val, opts) => {
-      if (opts?.ignorePrivacy) return "$1,234.56";
-      return "$•••••••";
-    });
+    mockFormatNumber.mockImplementation(
+      (_val: unknown, opts?: { ignorePrivacy?: boolean }) => {
+        if (opts?.ignorePrivacy) return "$1,234.56";
+        return "$•••••••";
+      },
+    );
 
     render(
       <MaskedNumber

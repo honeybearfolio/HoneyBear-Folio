@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { rust } from "../../api/tauri-client";
-import type { StockQuote, Transaction } from "../../api/types";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
@@ -65,13 +64,13 @@ export default function InvestmentDashboard() {
   const formatNumber = useFormatNumber();
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, []);
 
   async function fetchData() {
     setLoading(true);
     try {
-      const transactions = (await rust.get_all_transactions()) as Transaction[];
+      const transactions = await rust.get_all_transactions();
       const { currentHoldings } =
         await buildHoldingsFromTransactions(transactions);
 
@@ -82,15 +81,15 @@ export default function InvestmentDashboard() {
       }
 
       const tickers = currentHoldings.map((h) => h.ticker);
-      const quotes = (await rust.get_stock_quotes({
+      const quotes = await rust.get_stock_quotes({
         tickers,
-      })) as StockQuote[];
+      });
 
       const finalHoldings = await mergeHoldingsWithQuotes(
         currentHoldings,
         quotes,
       );
-      setHoldings(finalHoldings as Holding[]);
+      setHoldings(finalHoldings);
     } catch (e: unknown) {
       console.error("Error fetching investment data:", e);
       setError(String(e));
@@ -122,7 +121,7 @@ export default function InvestmentDashboard() {
           borderColor: isDark ? "#474240" : "#ffffff",
           borderWidth: 4,
           borderDash: (ctx: { dataIndex: number }) => {
-            const val = rawData[ctx.dataIndex];
+            const val = rawData[ctx.dataIndex] ?? 0;
             return val < 0 ? [5, 5] : [];
           },
           hoverOffset: 4,
@@ -183,24 +182,26 @@ export default function InvestmentDashboard() {
               const dataset = context.dataset;
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
-              const bg =
+              const bgValue: unknown =
                 Array.isArray(dataset.backgroundColor) &&
                 dataset.backgroundColor[index] !== undefined
                   ? dataset.backgroundColor[index]
                   : dataset.backgroundColor;
-              const border =
+              const borderValue: unknown =
                 Array.isArray(dataset.borderColor) &&
                 dataset.borderColor[index] !== undefined
                   ? dataset.borderColor[index]
                   : dataset.borderColor;
+              const bg = typeof bgValue === "string" ? bgValue : "";
+              const border = typeof borderValue === "string" ? borderValue : "";
               // If the slice has a transparent background (negative sector), use tooltip bg so it blends in
               const backgroundColor =
                 bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
                   ? tooltipBg
                   : bg;
               return {
-                borderColor: String(border),
-                backgroundColor: String(backgroundColor),
+                borderColor: border,
+                backgroundColor: backgroundColor,
                 borderWidth: 2,
               };
             },
@@ -219,7 +220,9 @@ export default function InvestmentDashboard() {
           <p className="hb-header-subtitle">{t("investment.subtitle")}</p>
         </div>
         <button
-          onClick={fetchData}
+          onClick={() => {
+            void fetchData();
+          }}
           className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-xl transition-all duration-200 shadow-sm border border-transparent hover:border-brand-100 dark:hover:border-brand-800"
           title={t("investment.refresh_data")}
           aria-label={t("investment.refresh_data")}
@@ -244,7 +247,9 @@ export default function InvestmentDashboard() {
         <ErrorState
           title={t("investment.error_loading")}
           message={error}
-          onRetry={fetchData}
+          onRetry={() => {
+            void fetchData();
+          }}
           retryLabel={t("error.retry")}
         />
       ) : holdings.length === 0 ? (
@@ -486,7 +491,7 @@ function TreeMap({ items, totalValue, isDark }: TreeMapProps) {
         w={100}
         h={100}
         totalValue={totalValue}
-        isDark={isDark}
+        isDark={isDark ?? false}
       />
     </div>
   );
@@ -506,7 +511,7 @@ function TreeMapNode({
   if (items.length === 0) return null;
 
   if (items.length === 1) {
-    const item = items[0];
+    const item = items[0]!;
     // Color based on ROI
     // Green for positive, Red for negative. Intensity based on magnitude?
     // Let's use simple thresholds or a gradient.
@@ -521,22 +526,22 @@ function TreeMapNode({
       if (isDark) {
         // Dark Mode: 0% -> Dark (20%), High% -> Vibrant (50%)
         const lightness = 20 + intensity * 30;
-        bgColor = `hsl(160, 84%, ${lightness}%)`;
+        bgColor = `hsl(160, 84%, ${String(lightness)}%)`;
       } else {
         // Light Mode: 0% -> Very Light (95%), High% -> Dark (40%)
         const lightness = 95 - intensity * 55;
-        bgColor = `hsl(160, 84%, ${lightness}%)`;
+        bgColor = `hsl(160, 84%, ${String(lightness)}%)`;
       }
     } else {
       // Rose
       if (isDark) {
         // Dark Mode: 0% -> Dark (15%), High% -> Vibrant (50%)
         const lightness = 15 + intensity * 35;
-        bgColor = `hsl(343, 87%, ${lightness}%)`;
+        bgColor = `hsl(343, 87%, ${String(lightness)}%)`;
       } else {
         // Light Mode: 0% -> Very Light (95%), High% -> Dark (50%)
         const lightness = 95 - intensity * 45;
-        bgColor = `hsl(343, 87%, ${lightness}%)`;
+        bgColor = `hsl(343, 87%, ${String(lightness)}%)`;
       }
     }
 
@@ -554,10 +559,10 @@ function TreeMapNode({
       <div
         style={{
           position: "absolute",
-          left: `${x}%`,
-          top: `${y}%`,
-          width: `${w}%`,
-          height: `${h}%`,
+          left: `${String(x)}%`,
+          top: `${String(y)}%`,
+          width: `${String(w)}%`,
+          height: `${String(h)}%`,
           backgroundColor: bgColor,
           border: isDark ? "1px solid rgb(30, 41, 59)" : "1px solid white",
           overflow: "hidden",
@@ -588,9 +593,12 @@ function TreeMapNode({
   let splitIndex = 0;
 
   for (let i = 0; i < items.length; i++) {
-    if (currentSum + items[i].currentValue > halfValue && i > 0) {
+    const currentItem = items[i]!;
+    if (currentSum + currentItem.currentValue > halfValue && i > 0) {
       // Check if adding this item makes it closer or further from half
-      const diffWith = Math.abs(currentSum + items[i].currentValue - halfValue);
+      const diffWith = Math.abs(
+        currentSum + currentItem.currentValue - halfValue,
+      );
       const diffWithout = Math.abs(currentSum - halfValue);
       if (diffWith < diffWithout) {
         splitIndex = i + 1;
@@ -599,7 +607,7 @@ function TreeMapNode({
       }
       break;
     }
-    currentSum += items[i].currentValue;
+    currentSum += currentItem.currentValue;
     splitIndex = i + 1;
   }
 
@@ -640,7 +648,7 @@ function TreeMapNode({
         w={wA}
         h={hA}
         totalValue={totalValue}
-        isDark={isDark}
+        isDark={isDark ?? false}
       />
       <TreeMapNode
         items={groupB}
@@ -649,7 +657,7 @@ function TreeMapNode({
         w={wB}
         h={hB}
         totalValue={totalValue}
-        isDark={isDark}
+        isDark={isDark ?? false}
       />
     </>
   );

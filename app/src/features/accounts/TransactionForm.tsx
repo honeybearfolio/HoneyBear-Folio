@@ -53,11 +53,11 @@ interface TransactionFormProps {
   handlePricePerShareChange: (num: number) => void;
   payeeSuggestions: AutocompleteSuggestion[];
   categorySuggestions: AutocompleteSuggestion[];
-  handleAddTransaction: (e: React.FormEvent) => void;
+  handleAddTransaction: (e: React.SyntheticEvent) => Promise<void>;
   dateFormat: string;
   firstDayOfWeek: number;
   appCurrency: string;
-  checkAndPrompt: (currency: string) => Promise<boolean | void>;
+  checkAndPrompt: (currency: string) => Promise<boolean>;
 }
 
 export default function TransactionForm({
@@ -134,7 +134,9 @@ export default function TransactionForm({
           <div className="toggle-group">
             <button
               type="button"
-              onClick={() => setTransactionType("cash")}
+              onClick={() => {
+                setTransactionType("cash");
+              }}
               className={`toggle-group-btn ${
                 transactionType === "cash" ? "toggle-group-btn-active" : ""
               }`}
@@ -143,7 +145,9 @@ export default function TransactionForm({
             </button>
             <button
               type="button"
-              onClick={() => setTransactionType("investment")}
+              onClick={() => {
+                setTransactionType("investment");
+              }}
               className={`toggle-group-btn flex items-center gap-1.5 ${
                 transactionType === "investment"
                   ? "toggle-group-btn-active"
@@ -157,15 +161,20 @@ export default function TransactionForm({
       </div>
 
       {transactionType === "investment" ? (
-        <form onSubmit={handleAddTransaction} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            void handleAddTransaction(e);
+          }}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="form-label">{t("account.field.date")}</label>
               <DatePicker
                 selected={date ? new Date(date) : null}
-                onChange={(d: Date | null) =>
-                  setDate(d ? d.toISOString().split("T")[0] : "")
-                }
+                onChange={(d: Date | null) => {
+                  setDate(d ? (d.toISOString().split("T")[0] ?? "") : "");
+                }}
                 dateFormat={getDatePickerFormat(dateFormat)}
                 calendarStartDay={firstDayOfWeek as Day}
                 shouldCloseOnSelect={false}
@@ -182,7 +191,9 @@ export default function TransactionForm({
               <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
                 <button
                   type="button"
-                  onClick={() => setIsBuy(true)}
+                  onClick={() => {
+                    setIsBuy(true);
+                  }}
                   className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                     isBuy
                       ? "bg-emerald-500 text-white shadow-sm"
@@ -194,7 +205,9 @@ export default function TransactionForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsBuy(false)}
+                  onClick={() => {
+                    setIsBuy(false);
+                  }}
                   className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                     !isBuy
                       ? "bg-rose-500 text-white shadow-sm"
@@ -222,11 +235,15 @@ export default function TransactionForm({
                   setShowTickerSuggestions(true);
                 }}
                 onBlur={() =>
-                  setTimeout(() => setShowTickerSuggestions(false), 200)
+                  setTimeout(() => {
+                    setShowTickerSuggestions(false);
+                  }, 200)
                 }
-                onFocus={() =>
-                  ticker.length >= 2 && setShowTickerSuggestions(true)
-                }
+                onFocus={() => {
+                  if (ticker.length >= 2) {
+                    setShowTickerSuggestions(true);
+                  }
+                }}
               />
               {showTickerSuggestions && tickerSuggestions.length > 0 && (
                 <div className="absolute z-50 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 mt-1 max-h-60 overflow-y-auto">
@@ -270,7 +287,9 @@ export default function TransactionForm({
               <label className="form-label">{t("import.field.shares")}</label>
               <NumberInput
                 value={shares}
-                onChange={(num) => handleSharesChange(num)}
+                onChange={(num) => {
+                  handleSharesChange(num);
+                }}
                 className="form-input"
                 placeholder={formatNumber(0, {
                   maximumFractionDigits: 6,
@@ -290,7 +309,9 @@ export default function TransactionForm({
               </label>
               <NumberInput
                 value={pricePerShare}
-                onChange={(num) => handlePricePerShareChange(num)}
+                onChange={(num) => {
+                  handlePricePerShareChange(num);
+                }}
                 className="form-input"
                 placeholder={formatNumber(0, {
                   maximumFractionDigits: 2,
@@ -306,7 +327,9 @@ export default function TransactionForm({
               <label className="form-label">{t("import.field.fee")}</label>
               <NumberInput
                 value={fee}
-                onChange={(val: number) => setFee(String(val))}
+                onChange={(val: number) => {
+                  setFee(String(val));
+                }}
                 className="form-input"
                 placeholder={formatNumber(0, {
                   maximumFractionDigits: 2,
@@ -325,9 +348,11 @@ export default function TransactionForm({
                       label: `${c.code} - ${c.name}`,
                     }))}
                     value={selectedCurrency}
-                    onChange={async (val: string | number) => {
+                    onChange={(val: string | number) => {
                       setSelectedCurrency(String(val));
-                      if (val) await checkAndPrompt(String(val));
+                      if (val) {
+                        void checkAndPrompt(String(val));
+                      }
                     }}
                     placeholder="Select currency"
                   />
@@ -344,15 +369,20 @@ export default function TransactionForm({
           </div>
         </form>
       ) : (
-        <form onSubmit={handleAddTransaction} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            void handleAddTransaction(e);
+          }}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="form-label">{t("account.field.date")}</label>
               <DatePicker
                 selected={date ? new Date(date) : null}
-                onChange={(d: Date | null) =>
-                  setDate(d ? d.toISOString().split("T")[0] : "")
-                }
+                onChange={(d: Date | null) => {
+                  setDate(d ? (d.toISOString().split("T")[0] ?? "") : "");
+                }}
                 dateFormat={getDatePickerFormat(dateFormat)}
                 calendarStartDay={firstDayOfWeek as Day}
                 shouldCloseOnSelect={false}
@@ -379,13 +409,13 @@ export default function TransactionForm({
                 suggestions={categorySuggestions}
                 placeholder={t("import.field.category")}
                 className={`form-input ${
-                  availableAccounts?.some((a) => a.name === payee)
+                  availableAccounts.some((a) => a.name === payee)
                     ? "!bg-slate-100 dark:!bg-slate-800 !text-slate-500 dark:!text-slate-400"
                     : ""
                 }`}
                 value={category}
                 onChange={setCategory}
-                disabled={availableAccounts?.some((a) => a.name === payee)}
+                disabled={availableAccounts.some((a) => a.name === payee)}
               />
             </div>
 
@@ -396,7 +426,9 @@ export default function TransactionForm({
                 placeholder={t("account.notes_placeholder")}
                 className="form-input"
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => {
+                  setNotes(e.target.value);
+                }}
               />
             </div>
           </div>
@@ -415,7 +447,9 @@ export default function TransactionForm({
                 })}
                 className="form-input font-semibold"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                }}
               />
             </div>
 
@@ -429,9 +463,11 @@ export default function TransactionForm({
                       label: `${c.code} - ${c.name}`,
                     }))}
                     value={selectedCurrency}
-                    onChange={async (val: string | number) => {
+                    onChange={(val: string | number) => {
                       setSelectedCurrency(String(val));
-                      if (val) await checkAndPrompt(String(val));
+                      if (val) {
+                        void checkAndPrompt(String(val));
+                      }
                     }}
                     placeholder="Select currency"
                   />

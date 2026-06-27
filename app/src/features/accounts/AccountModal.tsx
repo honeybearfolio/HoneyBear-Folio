@@ -40,7 +40,7 @@ export default function AccountModal({
   const parseNumber = useParseNumber();
   const { checkAndPrompt, dialog, isLoading } = useCustomRate();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const nameTrimmed = name.trim();
 
@@ -80,9 +80,10 @@ export default function AccountModal({
       }
       onUpdate();
       onClose();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      const msg = String(err || "");
+      const msg =
+        err instanceof Error ? err.message : typeof err === "string" ? err : "";
       if (msg.includes("already exists")) {
         showToast(
           t("error.account_exists", { name: nameTrimmed }) ||
@@ -108,7 +109,13 @@ export default function AccountModal({
       />
 
       <ModalBody>
-        <form id="account-form" onSubmit={handleSubmit} className="space-y-4">
+        <form
+          id="account-form"
+          onSubmit={(e) => {
+            void handleSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {isEditing
               ? t("account.edit_description")
@@ -122,7 +129,9 @@ export default function AccountModal({
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 placeholder={t("account.placeholder.name")}
                 className="form-input"
                 autoFocus
@@ -140,7 +149,9 @@ export default function AccountModal({
                     type="text"
                     inputMode="decimal"
                     value={balanceStr}
-                    onChange={(e) => setBalanceStr(e.target.value)}
+                    onChange={(e) => {
+                      setBalanceStr(e.target.value);
+                    }}
                     placeholder={"0.00"}
                     className="form-input"
                   />
@@ -165,13 +176,15 @@ export default function AccountModal({
                     label: `${c.code} (${c.symbol}) - ${c.name}`,
                   })),
                 ]}
-                onChange={async (val: string | number) => {
+                onChange={(val: string | number) => {
                   setCurrency(String(val));
                   if (val) {
-                    const confirmed = await checkAndPrompt(String(val));
-                    if (!confirmed) {
-                      setCurrency("");
-                    }
+                    void (async () => {
+                      const confirmed = await checkAndPrompt(String(val));
+                      if (!confirmed) {
+                        setCurrency("");
+                      }
+                    })();
                   }
                 }}
                 icon={Globe}

@@ -8,7 +8,7 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
-  info?: string;
+  info: string | undefined;
 }
 
 export default class ErrorBoundary extends React.Component<
@@ -17,7 +17,7 @@ export default class ErrorBoundary extends React.Component<
 > {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, info: undefined };
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
@@ -30,7 +30,7 @@ export default class ErrorBoundary extends React.Component<
 
     // Also store component stack in state so users without devtools (e.g. Tauri WebView)
     // can inspect the error details directly in the UI.
-    this.setState({ info: info?.componentStack || "" });
+    this.setState({ info: info.componentStack ?? undefined });
   }
 
   render() {
@@ -66,7 +66,7 @@ export default class ErrorBoundary extends React.Component<
                       (this.state.error && this.state.error.stack) ||
                       String(this.state.error) ||
                       "";
-                    navigator.clipboard && navigator.clipboard.writeText(text);
+                    void navigator.clipboard.writeText(text);
                   } catch {
                     /* ignore clipboard failures */
                   }
@@ -76,7 +76,9 @@ export default class ErrorBoundary extends React.Component<
               </button>
               <button
                 className="inline-flex items-center gap-2 px-3 py-1 rounded bg-rose-600 text-white text-sm"
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  window.location.reload();
+                }}
               >
                 {i18n.t("error.reload")}
               </button>

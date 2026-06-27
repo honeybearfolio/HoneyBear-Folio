@@ -37,7 +37,9 @@ export function ToastContainer() {
             <button
               aria-label={t("toast.dismiss")}
               className="toast-close"
-              onClick={() => removeToast(toast.id)}
+              onClick={() => {
+                removeToast(toast.id);
+              }}
             >
               <X size={16} />
             </button>

@@ -25,19 +25,17 @@ pub struct ReadXlsxResult {
 fn cell_to_value(cell: &Data) -> Value {
     match cell {
         Data::Int(i) => Value::Number(i.to_owned().into()),
-        Data::Float(f) => serde_json::Number::from_f64(f.to_owned())
-            .map(Value::Number)
-            .unwrap_or(Value::Null),
+        Data::Float(f) => {
+            serde_json::Number::from_f64(f.to_owned()).map_or(Value::Null, Value::Number)
+        }
         Data::String(s) => Value::String(s.clone()),
         Data::Bool(b) => Value::Bool(b.to_owned()),
         Data::DateTime(d) => Value::Number(
             serde_json::Number::from_f64(d.as_f64().to_owned())
                 .unwrap_or(serde_json::Number::from(0)),
         ),
-        Data::Error(_) => Value::Null,
-        Data::Empty => Value::Null,
-        Data::DateTimeIso(d) => Value::String(d.clone()),
-        Data::DurationIso(d) => Value::String(d.clone()),
+        Data::Error(_) | Data::Empty => Value::Null,
+        Data::DateTimeIso(d) | Data::DurationIso(d) => Value::String(d.clone()),
     }
 }
 
@@ -63,7 +61,7 @@ pub fn read_xlsx(data: Vec<u8>) -> Result<ReadXlsxResult, String> {
     let mut workbook: Xlsx<_> =
         open_workbook_from_rs(cursor).map_err(|e: calamine::XlsxError| e.to_string())?;
 
-    let sheet_names = workbook.sheet_names().to_owned();
+    let sheet_names = workbook.sheet_names().clone();
     if sheet_names.is_empty() {
         return Err("No sheets found in workbook".to_string());
     }

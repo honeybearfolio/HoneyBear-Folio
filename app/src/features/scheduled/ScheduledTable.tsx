@@ -22,8 +22,8 @@ interface ScheduledTableProps {
     React.SetStateAction<{ x: number; y: number } | null>
   >;
   handleEdit: (sched: ScheduleRecord) => void;
-  handleDelete: (id: number) => void;
-  handleToggleEnabled: (sched: ScheduleRecord) => void;
+  handleDelete: (id: number) => Promise<void>;
+  handleToggleEnabled: (sched: ScheduleRecord) => Promise<void>;
 }
 
 export default function ScheduledTable({
@@ -135,7 +135,9 @@ export default function ScheduledTable({
               <td className="px-4 py-2.5 text-right sched-action-menu-container">
                 <div className="flex items-center justify-end gap-0.5">
                   <button
-                    onClick={() => handleToggleEnabled(sched)}
+                    onClick={() => {
+                      void handleToggleEnabled(sched);
+                    }}
                     className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={
                       sched.enabled
@@ -155,7 +157,9 @@ export default function ScheduledTable({
                     )}
                   </button>
                   <button
-                    onClick={() => handleEdit(sched)}
+                    onClick={() => {
+                      handleEdit(sched);
+                    }}
                     className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 hover:text-brand-500 cursor-pointer"
                     title={t("scheduled.update")}
                     aria-label={t("scheduled.update")}
@@ -163,7 +167,9 @@ export default function ScheduledTable({
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(sched.id)}
+                    onClick={() => {
+                      void handleDelete(sched.id);
+                    }}
                     className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors text-slate-400 hover:text-rose-500 cursor-pointer"
                     title={t("scheduled.delete")}
                     aria-label={t("scheduled.delete")}
@@ -177,13 +183,13 @@ export default function ScheduledTable({
                     <div
                       className="fixed z-50 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in sched-action-menu-portal"
                       style={{
-                        top: `${menuCoords.y}px`,
-                        left: `${Math.min(menuCoords.x, window.innerWidth - 192 - 8)}px`,
+                        top: `${String(menuCoords.y)}px`,
+                        left: `${String(Math.min(menuCoords.x, window.innerWidth - 192 - 8))}px`,
                       }}
                     >
                       <button
                         onClick={() => {
-                          handleToggleEnabled(sched);
+                          void handleToggleEnabled(sched);
                           setMenuOpenId(null);
                           setMenuCoords(null);
                         }}
@@ -214,7 +220,7 @@ export default function ScheduledTable({
                       </button>
                       <button
                         onClick={() => {
-                          handleDelete(sched.id);
+                          void handleDelete(sched.id);
                           setMenuOpenId(null);
                           setMenuCoords(null);
                         }}

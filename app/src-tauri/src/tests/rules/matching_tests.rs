@@ -25,10 +25,10 @@ fn test_rule_matching_and_logic() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![
             RuleCondition {
@@ -61,10 +61,10 @@ fn test_rule_matching_or_logic() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "or".to_string(),
         conditions: vec![
             RuleCondition {
@@ -97,10 +97,10 @@ fn test_rule_negated_condition() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -125,10 +125,10 @@ fn test_multiple_actions() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -220,10 +220,10 @@ fn test_operators() {
     let rule_gt = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "amount".to_string(),
@@ -241,13 +241,13 @@ fn test_operators() {
 
     // Test starts_with
     tx.category = None;
-    let rule_sw = Rule {
+    let rule_starts_with = Rule {
         id: 2,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -260,18 +260,18 @@ fn test_operators() {
             value: "Starts with Star".to_string(),
         }],
     };
-    apply_rules_to_transaction(&mut tx, &[rule_sw]);
+    apply_rules_to_transaction(&mut tx, &[rule_starts_with]);
     assert_eq!(tx.category, Some("Starts with Star".to_string()));
 
     // Test ends_with
     tx.category = None;
-    let rule_ew = Rule {
+    let rule_ends_with = Rule {
         id: 3,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -284,7 +284,7 @@ fn test_operators() {
             value: "Ends with Coffee".to_string(),
         }],
     };
-    apply_rules_to_transaction(&mut tx, &[rule_ew]);
+    apply_rules_to_transaction(&mut tx, &[rule_ends_with]);
     assert_eq!(tx.category, Some("Ends with Coffee".to_string()));
 }
 
@@ -295,10 +295,10 @@ fn test_matches_regex_basic() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -323,10 +323,10 @@ fn test_matches_regex_case_insensitive() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -351,10 +351,10 @@ fn test_matches_regex_no_match() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -379,10 +379,10 @@ fn test_not_matches_regex() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -407,10 +407,10 @@ fn test_matches_regex_invalid_pattern() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -435,10 +435,10 @@ fn test_matches_regex_with_negated_flag() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
@@ -464,15 +464,15 @@ fn test_matches_regex_empty_value() {
     let rule = Rule {
         id: 1,
         priority: 10,
-        match_field: "".to_string(),
-        match_pattern: "".to_string(),
-        action_field: "".to_string(),
-        action_value: "".to_string(),
+        match_field: String::new(),
+        match_pattern: String::new(),
+        action_field: String::new(),
+        action_value: String::new(),
         logic: "and".to_string(),
         conditions: vec![RuleCondition {
             field: "payee".to_string(),
             operator: "matches_regex".to_string(),
-            value: "".to_string(), // Empty regex
+            value: String::new(), // Empty regex
             negated: false,
         }],
         actions: vec![RuleAction {

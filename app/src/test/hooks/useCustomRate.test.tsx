@@ -26,10 +26,20 @@ vi.mock("../../components/shared/CustomRateDialog", () => ({
     isOpen ? (
       <div data-testid="custom-rate-dialog">
         <div data-testid="custom-rate-currency">{currency}</div>
-        <button data-testid="dialog-confirm" onClick={() => onConfirm(2.5)}>
+        <button
+          data-testid="dialog-confirm"
+          onClick={() => {
+            onConfirm(2.5);
+          }}
+        >
           Confirm
         </button>
-        <button data-testid="dialog-cancel" onClick={() => onCancel()}>
+        <button
+          data-testid="dialog-cancel"
+          onClick={() => {
+            onCancel();
+          }}
+        >
           Cancel
         </button>
       </div>
@@ -86,11 +96,11 @@ describe("useCustomRate", () => {
         <div>
           <button
             data-testid="trigger"
-            onClick={() =>
-              checkAndPrompt("GBP").then((v) => {
+            onClick={() => {
+              void checkAndPrompt("GBP").then((v) => {
                 resolvedValue = v;
-              })
-            }
+              });
+            }}
           />
           {dialog}
         </div>
@@ -108,7 +118,9 @@ describe("useCustomRate", () => {
 
     // confirm and assert the original promise resolved
     fireEvent.click(screen.getByTestId("dialog-confirm"));
-    await waitFor(() => expect(resolvedValue).toBe(true));
+    await waitFor(() => {
+      expect(resolvedValue).toBe(true);
+    });
 
     expect(invoke).toHaveBeenCalledWith("set_custom_exchange_rate", {
       currency: "GBP",

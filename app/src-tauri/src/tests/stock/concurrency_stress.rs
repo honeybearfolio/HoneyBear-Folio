@@ -8,17 +8,17 @@ async fn test_get_stock_quotes_concurrency_stress() {
     let server = MockServer::start();
 
     // Create a moderate number of tickers for stress (50)
-    let tickers: Vec<String> = (0..50).map(|i| format!("T{:03}", i)).collect();
+    let tickers: Vec<String> = (0..50).map(|i| format!("T{i:03}")).collect();
 
     // Register mock responses for each ticker
     for t in &tickers {
-        let path = format!("/v8/finance/chart/{}", t);
+        let path = format!("/v8/finance/chart/{t}");
         let symbol = t.clone();
         server.mock(move |when, then| {
             when.method(GET).path(path.as_str());
             then.status(200)
                 .header("content-type", "application/json")
-                .body(format!(r#"{{"chart": {{"result": [{{"meta": {{"symbol": "{}", "regularMarketPrice": 10.0, "chartPreviousClose": 9.0}}}}]}}}}"#, symbol));
+                .body(format!(r#"{{"chart": {{"result": [{{"meta": {{"symbol": "{symbol}", "regularMarketPrice": 10.0, "chartPreviousClose": 9.0}}}}]}}}}"#));
         });
     }
 

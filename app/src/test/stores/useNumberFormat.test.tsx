@@ -20,9 +20,27 @@ function TestComponent() {
       <div data-testid="locale">{locale}</div>
       <div data-testid="currency">{currency}</div>
       <div data-testid="uiLanguage">{uiLanguage}</div>
-      <button onClick={() => setLocale("de-DE")}>Set Locale DE</button>
-      <button onClick={() => setCurrency("EUR")}>Set Currency EUR</button>
-      <button onClick={() => setUiLanguage("es")}>Set UI Language ES</button>
+      <button
+        onClick={() => {
+          setLocale("de-DE");
+        }}
+      >
+        Set Locale DE
+      </button>
+      <button
+        onClick={() => {
+          setCurrency("EUR");
+        }}
+      >
+        Set Currency EUR
+      </button>
+      <button
+        onClick={() => {
+          setUiLanguage("es");
+        }}
+      >
+        Set UI Language ES
+      </button>
     </div>
   );
 }

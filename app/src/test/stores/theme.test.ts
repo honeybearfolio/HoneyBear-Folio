@@ -3,9 +3,11 @@ import { useThemeStore } from "../../stores/theme";
 import { STORAGE_KEYS } from "../../constants/app";
 
 describe("useThemeStore", () => {
+  let setItemSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     useThemeStore.setState({ theme: "system" });
-    vi.spyOn(Storage.prototype, "setItem");
+    setItemSpy = vi.spyOn(Storage.prototype, "setItem");
   });
 
   it("has default theme of 'system'", () => {
@@ -19,10 +21,7 @@ describe("useThemeStore", () => {
 
   it("setTheme persists to localStorage", () => {
     useThemeStore.getState().setTheme("light");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      STORAGE_KEYS.THEME,
-      "light",
-    );
+    expect(setItemSpy).toHaveBeenCalledWith(STORAGE_KEYS.THEME, "light");
   });
 
   it("supports high-contrast-dark theme", () => {

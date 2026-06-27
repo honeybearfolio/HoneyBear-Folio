@@ -64,10 +64,10 @@ describe("useTagColors", () => {
 
   it("getTagClasses returns default for null/undefined category", () => {
     const { result } = renderHook(() => useTagColors());
-    expect(result.current.getTagClasses(null as any)).toBe(
+    expect(result.current.getTagClasses(null as unknown as string)).toBe(
       getColorClasses(DEFAULT_COLOR),
     );
-    expect(result.current.getTagClasses(undefined as any)).toBe(
+    expect(result.current.getTagClasses(undefined as unknown as string)).toBe(
       getColorClasses(DEFAULT_COLOR),
     );
   });

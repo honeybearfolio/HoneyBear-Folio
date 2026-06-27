@@ -43,10 +43,10 @@ export default function ValuationModal({
     valuation ? String(valuation.value) : "",
   );
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const value = parseNumber(valueStr);
-    if (value === null || Number.isNaN(value)) {
+    if (Number.isNaN(value)) {
       showToast(t("assets.error.invalid_value"), { type: "warning" });
       return;
     }
@@ -56,7 +56,7 @@ export default function ValuationModal({
     }
 
     try {
-      if (isEditing && valuation) {
+      if (valuation) {
         await rust.update_valuation({ id: valuation.id, date, value });
         showToast(t("assets.valuation_updated"), { type: "success" });
       } else {
@@ -69,14 +69,20 @@ export default function ValuationModal({
         context: "Failed to save valuation",
         error: err,
         userMessage: t("error.failed_to_save"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
 
   return (
     <Modal onClose={onClose}>
-      <form onSubmit={handleSubmit}>
+      <form
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
+      >
         <ModalHeader onClose={onClose}>
           {isEditing ? t("assets.edit_valuation") : t("assets.add_valuation")}
         </ModalHeader>
@@ -89,9 +95,9 @@ export default function ValuationModal({
               </label>
               <DatePicker
                 selected={date ? new Date(date) : null}
-                onChange={(d: Date | null) =>
-                  setDate(d ? d.toISOString().split("T")[0] : "")
-                }
+                onChange={(d: Date | null) => {
+                  setDate(d ? d.toISOString().split("T")[0] : "");
+                }}
                 dateFormat={getDatePickerFormat(dateFormat)}
                 calendarStartDay={firstDayOfWeek as Day}
                 shouldCloseOnSelect={false}
@@ -110,7 +116,9 @@ export default function ValuationModal({
                 type="text"
                 inputMode="decimal"
                 value={valueStr}
-                onChange={(e) => setValueStr(e.target.value)}
+                onChange={(e) => {
+                  setValueStr(e.target.value);
+                }}
                 className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
                 placeholder="0.00"
                 autoFocus

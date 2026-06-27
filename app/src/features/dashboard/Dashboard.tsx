@@ -111,13 +111,13 @@ export default function Dashboard({
         setTransactions(txs);
 
         // If parent passed accounts, use them; otherwise fetch from backend
-        if (propAccounts && propAccounts.length > 0) {
+        if (propAccounts.length > 0) {
           setAccounts(propAccounts);
         } else {
           const accs = await rust.get_accounts();
           setAccounts(accs);
         }
-      } catch (e) {
+      } catch (e: unknown) {
         handleAsyncError({
           context: "Failed to fetch dashboard data",
           error: e,
@@ -128,7 +128,7 @@ export default function Dashboard({
         setLoading(false);
       }
     };
-    fetchData();
+    void fetchData();
   }, [propAccounts, t]);
 
   useEffect(() => {
@@ -151,7 +151,7 @@ export default function Dashboard({
         logError("Failed to fetch quotes", e);
       }
     };
-    fetchQuotes();
+    void fetchQuotes();
   }, [transactions]);
 
   useEffect(() => {
@@ -208,7 +208,7 @@ export default function Dashboard({
           prices.forEach((p: DailyPriceEntry) => {
             priceByDate[p.date] = p.price;
           });
-          pricesMap[ticker as string] = { list: prices, map: priceByDate };
+          pricesMap[ticker] = { list: prices, map: priceByDate };
         }
         setDailyPrices(pricesMap);
       } catch (e) {
@@ -217,7 +217,7 @@ export default function Dashboard({
     };
 
     if (transactions.length > 0) {
-      fetchDailyPrices();
+      void fetchDailyPrices();
     }
   }, [transactions, accounts, propAccounts, appCurrency]);
 
@@ -254,18 +254,18 @@ export default function Dashboard({
     const timer = setTimeout(() => {
       setToggledAccounts((prev) => {
         const next = { ...prev };
-        let changed = false;
         accounts.forEach((a) => {
           if (!(a.id in next)) {
             next[a.id] = true;
-            changed = true;
           }
         });
-        return changed ? next : prev;
+        return next;
       });
     }, 0);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [accounts]);
 
   const selectedAccountIds = useMemo(() => {
@@ -314,7 +314,9 @@ export default function Dashboard({
       .then((value) => {
         if (!cancelled) setCurrentNetWorth(value);
       })
-      .catch((e) => logError("Failed to compute net worth", e));
+      .catch((e: unknown) => {
+        logError("Failed to compute net worth", e);
+      });
     return () => {
       cancelled = true;
     };
@@ -362,7 +364,7 @@ export default function Dashboard({
       const firstTxDate = new Date(
         filteredTransactions.reduce(
           (min, t) => (t.date < min ? t.date : min),
-          filteredTransactions[0].date,
+          filteredTransactions[0]!.date,
         ),
       );
       cutoffDate = firstTxDate;
@@ -377,7 +379,7 @@ export default function Dashboard({
       const firstTxDate = new Date(
         filteredTransactions.reduce(
           (min, t) => (t.date < min ? t.date : min),
-          filteredTransactions[0].date,
+          filteredTransactions[0]!.date,
         ),
       );
       // Normalize to midnight for consistent comparisons
@@ -387,16 +389,15 @@ export default function Dashboard({
     }
 
     const sortedDates: string[] = [];
-    let d = new Date(cutoffDate);
+    const d = new Date(cutoffDate);
     d.setHours(0, 0, 0, 0);
 
     while (d <= endDate) {
       // Use local date components to avoid UTC conversion issues that can
       // shift the date to the previous day for users in negative timezones.
-      const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-        2,
-        "0",
-      )}-${String(d.getDate()).padStart(2, "0")}`;
+      const localDate = `${String(d.getFullYear())}-${String(
+        d.getMonth() + 1,
+      ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       sortedDates.push(localDate);
       d.setDate(d.getDate() + 1);
     }
@@ -440,7 +441,7 @@ export default function Dashboard({
         );
         // Include all transactions (even stock buys/sells) to get correct cash balance
         const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
-        const cashBalance = initial + cashChange;
+        const cashBalance = (initial ?? 0) + cashChange;
 
         const holdings: Record<string, number> = {};
         accTxs.forEach((t) => {
@@ -451,14 +452,14 @@ export default function Dashboard({
 
         let stockValue = 0;
         for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares as number) > 0.0001) {
+          if (Math.abs(shares) > 0.0001) {
             const price = getPrice(ticker, date);
             const tickerCurr = tickerCurrencies[ticker] || accCurrency;
             const rateToAcc =
               tickerCurr === accCurrency
                 ? 1.0
                 : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += (shares as number) * price * rateToAcc;
+            stockValue += shares * price * rateToAcc;
           }
         }
 
@@ -514,7 +515,7 @@ export default function Dashboard({
         );
         // Include all transactions (even stock buys/sells) to get correct cash balance
         const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
-        const cashBalance = initial + cashChange;
+        const cashBalance = (initial ?? 0) + cashChange;
 
         const holdings: Record<string, number> = {};
         accTxs.forEach((t) => {
@@ -525,14 +526,14 @@ export default function Dashboard({
 
         let stockValue = 0;
         for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares as number) > 0.0001) {
+          if (Math.abs(shares) > 0.0001) {
             const price = getPrice(ticker, date);
             const tickerCurr = tickerCurrencies[ticker] || accCurrency;
             const rateToAcc =
               tickerCurr === accCurrency
                 ? 1.0
                 : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += (shares as number) * price * rateToAcc;
+            stockValue += shares * price * rateToAcc;
           }
         }
 
@@ -578,7 +579,6 @@ export default function Dashboard({
     timeRange,
     customStartDate,
     customEndDate,
-    filteredMarketValues,
     formatDate,
     appCurrency,
     getPrice,
@@ -612,9 +612,9 @@ export default function Dashboard({
       if (!cancelled) setDoughnutData(data);
     }
 
-    computeDoughnutData().catch((e) =>
-      logError("Failed to compute doughnut chart data", e),
-    );
+    computeDoughnutData().catch((e: unknown) => {
+      logError("Failed to compute doughnut chart data", e);
+    });
 
     return () => {
       cancelled = true;
@@ -658,8 +658,8 @@ export default function Dashboard({
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
 
-    const startStr = startDate.toISOString().split("T")[0];
-    const endStr = endDate.toISOString().split("T")[0];
+    const startStr = startDate.toISOString().split("T")[0] ?? "";
+    const endStr = endDate.toISOString().split("T")[0] ?? "";
 
     const expenses = filteredTransactions.filter(
       (t) =>
@@ -689,7 +689,7 @@ export default function Dashboard({
     });
 
     const sortedCategories = Object.entries(categoryTotals).sort(
-      ([, a], [, b]) => (b as number) - (a as number),
+      ([, a], [, b]) => b - a,
     );
 
     const colors =
@@ -776,7 +776,8 @@ export default function Dashboard({
       else if (timeRange === "1Y") start.setFullYear(now.getFullYear() - 1);
       else if (timeRange === "ALL") {
         const txDates = filteredTransactions.map((t) => t.date).sort();
-        start = new Date(txDates[0]);
+        const firstDate = txDates[0];
+        if (firstDate) start = new Date(firstDate);
       } else if (timeRange === "CUSTOM") {
         start = new Date(customStartDate);
         end = new Date(customEndDate);
@@ -785,10 +786,9 @@ export default function Dashboard({
       start.setDate(1); // Start of month
       const d = new Date(start);
       while (d <= end) {
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-          2,
-          "0",
-        )}`;
+        const key = `${String(d.getFullYear())}-${String(
+          d.getMonth() + 1,
+        ).padStart(2, "0")}`;
         keys.push(key);
         const opts: Intl.DateTimeFormatOptions = { month: "short" };
         // If the range spans more than a year, show the year
@@ -802,8 +802,8 @@ export default function Dashboard({
       }
     }
 
-    const incomeData = new Array(keys.length).fill(0);
-    const expenseData = new Array(keys.length).fill(0);
+    const incomeData: number[] = Array.from({ length: keys.length }, () => 0);
+    const expenseData: number[] = Array.from({ length: keys.length }, () => 0);
 
     filteredTransactions.forEach((t) => {
       if (t.category === "Transfer" || t.ticker) return; // Exclude transfers and investments
@@ -812,14 +812,21 @@ export default function Dashboard({
       if (index !== -1) {
         const acc = accountMap[t.account_id];
         const accCurrency = acc?.currency || appCurrency;
+        const fromCurrency = accCurrency;
+        const toCurrency = appCurrency;
         const rateToApp =
           accCurrency === appCurrency
             ? 1.0
-            : getPrice(`${accCurrency}${appCurrency}=X`, t.date) || 1.0;
-        const amount = t.amount * rateToApp;
+            : getPrice(`${fromCurrency}${toCurrency}=X`, t.date) || 1.0;
+        const txAmount =
+          typeof t.amount === "number" ? t.amount : Number(t.amount) || 0;
+        const amount = txAmount * rateToApp;
 
-        if (amount > 0) incomeData[index] += amount;
-        else expenseData[index] += Math.abs(amount);
+        if (amount > 0) {
+          incomeData[index] = (incomeData[index] ?? 0) + amount;
+        } else {
+          expenseData[index] = (expenseData[index] ?? 0) + Math.abs(amount);
+        }
       }
     });
 
@@ -915,16 +922,18 @@ export default function Dashboard({
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
 
-              const bg =
+              const bgValue: unknown =
                 Array.isArray(dataset.backgroundColor) &&
                 dataset.backgroundColor[index] !== undefined
                   ? dataset.backgroundColor[index]
                   : dataset.backgroundColor;
-              const border =
+              const borderValue: unknown =
                 Array.isArray(dataset.borderColor) &&
                 dataset.borderColor[index] !== undefined
                   ? dataset.borderColor[index]
                   : dataset.borderColor;
+              const bg = typeof bgValue === "string" ? bgValue : "";
+              const border = typeof borderValue === "string" ? borderValue : "";
 
               const backgroundColor =
                 bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
@@ -932,8 +941,8 @@ export default function Dashboard({
                   : bg;
 
               return {
-                borderColor: String(border),
-                backgroundColor: String(backgroundColor),
+                borderColor: border,
+                backgroundColor,
                 borderWidth: 2,
               };
             },
@@ -992,12 +1001,17 @@ export default function Dashboard({
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
 
-              const bg =
+              const bgValue: unknown =
                 Array.isArray(dataset.backgroundColor) &&
                 dataset.backgroundColor[index] !== undefined
                   ? dataset.backgroundColor[index]
                   : dataset.backgroundColor;
-              const border = dataset.borderColor;
+              const borderValue: unknown = dataset.borderColor;
+              const bg = typeof bgValue === "string" ? bgValue : "";
+              const border =
+                typeof borderValue === "string"
+                  ? borderValue
+                  : chartColors.grid;
 
               const backgroundColor =
                 bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
@@ -1005,8 +1019,8 @@ export default function Dashboard({
                   : bg;
 
               return {
-                borderColor: String(border),
-                backgroundColor: String(backgroundColor),
+                borderColor: border,
+                backgroundColor,
                 borderWidth: 2,
               };
             },
@@ -1157,7 +1171,7 @@ export default function Dashboard({
                 if (ds.accountCurrency) {
                   const nativeVal =
                     ds.originalData && ds.originalData[context.dataIndex];
-                  if (nativeVal !== undefined && nativeVal !== null) {
+                  if (nativeVal !== undefined) {
                     label += formatNumber(nativeVal, {
                       style: "currency",
                       currency: ds.accountCurrency,
@@ -1236,13 +1250,13 @@ export default function Dashboard({
       try {
         const txs = (await rust.get_all_transactions()) as Transaction[];
         setTransactions(txs);
-        if (propAccounts && propAccounts.length > 0) {
+        if (propAccounts.length > 0) {
           setAccounts(propAccounts);
         } else {
           const accs = await rust.get_accounts();
           setAccounts(accs);
         }
-      } catch (e) {
+      } catch (e: unknown) {
         handleAsyncError({
           context: "Failed to fetch dashboard data",
           error: e,
@@ -1253,7 +1267,7 @@ export default function Dashboard({
         setLoading(false);
       }
     };
-    doFetch();
+    void doFetch();
   }, [propAccounts, t]);
 
   if (loading) {
@@ -1311,9 +1325,11 @@ export default function Dashboard({
             setAllAccountsVisibility={setAllAccountsVisibility}
             marketValues={marketValues}
             appCurrency={appCurrency}
-            chartDatasets={
-              chartData?.datasets as AccountChartDataset[] | undefined
-            }
+            {...(chartData?.datasets
+              ? {
+                  chartDatasets: chartData.datasets as AccountChartDataset[],
+                }
+              : {})}
           />
         </div>
       </div>
@@ -1325,10 +1341,7 @@ export default function Dashboard({
       />
 
       {filteredTransactions.length === 0 ? null : (
-        <NetWorthChart
-          chartData={chartData as ChartData<"line"> | null}
-          options={options}
-        />
+        <NetWorthChart chartData={chartData} options={options} />
       )}
 
       <div className="charts-grid">
@@ -1359,9 +1372,7 @@ export default function Dashboard({
         ) : (
           <>
             <IncomeVsExpensesChart
-              incomeVsExpensesData={
-                incomeVsExpensesData as ChartData<"bar"> | null
-              }
+              incomeVsExpensesData={incomeVsExpensesData}
               barOptions={barOptions}
             />
 
@@ -1390,7 +1401,7 @@ export default function Dashboard({
             </div>
 
             <AssetAllocationChart
-              doughnutData={doughnutData as ChartData<"doughnut"> | null}
+              doughnutData={doughnutData}
               doughnutOptions={doughnutOptions}
             />
 

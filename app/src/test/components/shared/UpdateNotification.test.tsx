@@ -19,13 +19,13 @@ vi.mock("../../../i18n/i18n", () => ({
 // Mock Tauri updater plugin
 const mockCheck = vi.fn();
 vi.mock("@tauri-apps/plugin-updater", () => ({
-  check: () => mockCheck(),
+  check: () => mockCheck() as Promise<unknown>,
 }));
 
 // Mock Tauri process plugin
 const mockRelaunch = vi.fn();
 vi.mock("@tauri-apps/plugin-process", () => ({
-  relaunch: () => mockRelaunch(),
+  relaunch: () => mockRelaunch() as Promise<unknown>,
 }));
 
 // Mock dev settings

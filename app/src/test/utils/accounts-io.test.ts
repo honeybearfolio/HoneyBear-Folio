@@ -98,17 +98,18 @@ describe("accounts-io", () => {
 
   it("imports accounts and skips duplicates", async () => {
     const create_account = vi.fn(
-      async (args: {
+      (args: {
         name: string;
         balance?: number;
         kind?: string;
         currency?: string | null;
-      }) => ({
-        id: 10,
-        name: args.name,
-        balance: args.balance ?? 0,
-        kind: args.kind ?? "cash",
-      }),
+      }) =>
+        Promise.resolve({
+          id: 10,
+          name: args.name,
+          balance: args.balance ?? 0,
+          kind: args.kind ?? "cash",
+        }),
     );
 
     const existing: Account[] = [{ id: 1, name: "Checking", balance: 100 }];

@@ -38,9 +38,9 @@ fn test_create_and_get_rules() {
 
 #[test]
 fn test_create_complex_rule() {
-    let (_dir, db_path) = setup_db();
-
     use crate::models::{RuleAction, RuleCondition};
+
+    let (_dir, db_path) = setup_db();
 
     let conditions = vec![
         RuleCondition {
@@ -72,10 +72,10 @@ fn test_create_complex_rule() {
         &db_path,
         crate::core::rules::CreateRuleDbParams {
             priority: 20,
-            match_field: "".to_string(), // Legacy fields can be empty
-            match_pattern: "".to_string(),
-            action_field: "".to_string(),
-            action_value: "".to_string(),
+            match_field: String::new(), // Legacy fields can be empty
+            match_pattern: String::new(),
+            action_field: String::new(),
+            action_value: String::new(),
             logic: "and".to_string(),
             conditions,
             actions,

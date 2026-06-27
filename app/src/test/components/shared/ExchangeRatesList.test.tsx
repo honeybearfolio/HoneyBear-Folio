@@ -26,7 +26,7 @@ vi.mock("@tauri-apps/api/core", () => ({
     if (cmd === "set_custom_exchange_rate") {
       const { currency, rate } = args as { currency: string; rate: number };
       const idx = inMemoryRates.findIndex((r) => r.currency === currency);
-      if (idx >= 0) inMemoryRates[idx].rate = rate;
+      if (idx >= 0) inMemoryRates[idx]!.rate = rate;
       else inMemoryRates.push({ currency, rate });
       return Promise.resolve();
     }

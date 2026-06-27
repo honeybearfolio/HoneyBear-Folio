@@ -22,6 +22,13 @@ export interface AboutSectionProps {
 export default function AboutSection({ openExternal }: AboutSectionProps) {
   const { t } = useTranslation();
   const [showAllLicenses, setShowAllLicenses] = useState(false);
+  const githubRepoUrl = EXTERNAL_URLS.GITHUB_REPO ?? "";
+  const websiteUrl = EXTERNAL_URLS.WEBSITE ?? "";
+  const licenseUrl = EXTERNAL_URLS.LICENSE ?? "";
+  const buyCoffeeUrl = EXTERNAL_URLS.BUY_ME_A_COFFEE ?? "";
+  const releaseVersion = APP_VERSION ?? "";
+  const commitHash = APP_COMMIT ?? "";
+  const docsUrl = EXTERNAL_URLS.DOCS ?? `${websiteUrl}/docs`;
 
   return (
     <>
@@ -37,33 +44,31 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
           {IS_RELEASE && APP_VERSION ? (
             <>
               <a
-                href={`${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`}
+                href={`${githubRepoUrl}/releases/tag/v${releaseVersion}`}
                 className="about-version-link"
                 onClick={(e) => {
                   e.preventDefault();
                   openExternal(
-                    `${EXTERNAL_URLS.GITHUB_REPO}/releases/tag/v${APP_VERSION}`,
+                    `${githubRepoUrl}/releases/tag/v${releaseVersion}`,
                   );
                 }}
               >
-                v{APP_VERSION}
+                v{releaseVersion}
               </a>
               {APP_COMMIT && (
                 <>
                   <p>
                     (
                     <a
-                      href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
+                      href={`${githubRepoUrl}/commit/${commitHash}`}
                       className="about-version-link"
                       style={{ fontFamily: "monospace" }}
                       onClick={(e) => {
                         e.preventDefault();
-                        openExternal(
-                          `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
-                        );
+                        openExternal(`${githubRepoUrl}/commit/${commitHash}`);
                       }}
                     >
-                      {APP_COMMIT.substring(0, 7)}
+                      {commitHash.substring(0, 7)}
                     </a>
                     )
                   </p>
@@ -77,17 +82,15 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
                 <p>
                   (
                   <a
-                    href={`${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`}
+                    href={`${githubRepoUrl}/commit/${commitHash}`}
                     className="about-version-link"
                     style={{ fontFamily: "monospace" }}
                     onClick={(e) => {
                       e.preventDefault();
-                      openExternal(
-                        `${EXTERNAL_URLS.GITHUB_REPO}/commit/${APP_COMMIT}`,
-                      );
+                      openExternal(`${githubRepoUrl}/commit/${commitHash}`);
                     }}
                   >
-                    {APP_COMMIT.substring(0, 7)}
+                    {commitHash.substring(0, 7)}
                   </a>
                   )
                 </p>
@@ -106,11 +109,11 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
         <h4 className="about-section-title">{t("about.license")}</h4>
         <p className="about-license-text">{t("about.license_text")}</p>
         <a
-          href={EXTERNAL_URLS.LICENSE}
+          href={licenseUrl}
           className="about-link"
           onClick={(e) => {
             e.preventDefault();
-            openExternal(EXTERNAL_URLS.LICENSE);
+            openExternal(licenseUrl);
           }}
         >
           <ExternalLink className="w-3.5 h-3.5" />
@@ -142,7 +145,9 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
 
         <div className="mt-2">
           <button
-            onClick={() => setShowAllLicenses(!showAllLicenses)}
+            onClick={() => {
+              setShowAllLicenses(!showAllLicenses);
+            }}
             className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
           >
             {showAllLicenses ? (
@@ -198,22 +203,22 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
       <div className="about-section">
         <div className="about-links">
           <a
-            href={EXTERNAL_URLS.WEBSITE}
+            href={websiteUrl}
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
-              openExternal(EXTERNAL_URLS.WEBSITE);
+              openExternal(websiteUrl);
             }}
           >
             <Globe className="w-3.5 h-3.5" />
             {t("about.website")}
           </a>
           <a
-            href={EXTERNAL_URLS.GITHUB_REPO}
+            href={githubRepoUrl}
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
-              openExternal(EXTERNAL_URLS.GITHUB_REPO);
+              openExternal(githubRepoUrl);
             }}
           >
             <svg
@@ -227,12 +232,12 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
             {t("about.github")}
           </a>
           <a
-            href={`${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=feature_request.md`}
+            href={`${githubRepoUrl}/issues/new?template=feature_request.md`}
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
               openExternal(
-                `${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=feature_request.md`,
+                `${githubRepoUrl}/issues/new?template=feature_request.md`,
               );
             }}
           >
@@ -240,12 +245,12 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
             {t("about.features")}
           </a>
           <a
-            href={`${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=bug_report.md`}
+            href={`${githubRepoUrl}/issues/new?template=bug_report.md`}
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
               openExternal(
-                `${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=bug_report.md`,
+                `${githubRepoUrl}/issues/new?template=bug_report.md`,
               );
             }}
           >
@@ -253,22 +258,22 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
             {t("about.issues")}
           </a>
           <a
-            href={`${EXTERNAL_URLS.DOCS}`}
+            href={docsUrl}
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
-              openExternal(`${EXTERNAL_URLS.DOCS}`);
+              openExternal(docsUrl);
             }}
           >
             <BookOpen className="w-3.5 h-3.5" />
             {t("about.docs")}
           </a>
           <a
-            href={EXTERNAL_URLS.BUY_ME_A_COFFEE}
+            href={buyCoffeeUrl}
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
-              openExternal(EXTERNAL_URLS.BUY_ME_A_COFFEE);
+              openExternal(buyCoffeeUrl);
             }}
           >
             <Coffee className="w-3.5 h-3.5" />

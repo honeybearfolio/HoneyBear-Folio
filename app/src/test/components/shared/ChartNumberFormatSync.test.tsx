@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import ChartNumberFormatSync from "../../../components/shared/ChartNumberFormatSync";
 import ChartJS from "chart.js/auto";
+import ChartNumberFormatSync from "../../../components/shared/ChartNumberFormatSync";
 
 // Mock format utility
 const mockFormatNumber = vi.fn(
@@ -11,16 +11,38 @@ vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => mockFormatNumber,
 }));
 
+type TooltipCallback = (ctx: {
+  dataset: { label?: string };
+  parsed: { y?: number } | null;
+  raw?: unknown;
+}) => string;
+
+type TickCallback = (
+  value: unknown,
+  index: number,
+  values: unknown[],
+) => unknown;
+
+function deleteTooltipLabel(): void {
+  const callbacks = ChartJS.defaults.plugins.tooltip
+    .callbacks as unknown as Record<string, unknown>;
+  delete callbacks.label;
+}
+
+function deleteLinearTickCallback(): void {
+  const ticks = ChartJS.defaults.scales.linear.ticks as unknown as
+    | Record<string, unknown>
+    | undefined;
+  if (ticks) {
+    delete ticks.callback;
+  }
+}
+
 describe("ChartNumberFormatSync", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset Chart.js defaults
-    if (ChartJS.defaults.plugins.tooltip.callbacks) {
-      delete (ChartJS.defaults.plugins.tooltip.callbacks as any).label;
-    }
-    if (ChartJS.defaults.scales?.linear?.ticks) {
-      delete (ChartJS.defaults.scales.linear.ticks as any).callback;
-    }
+    deleteTooltipLabel();
+    deleteLinearTickCallback();
   });
 
   it("renders nothing (null)", () => {
@@ -32,10 +54,10 @@ describe("ChartNumberFormatSync", () => {
   it("sets up tooltip label callback on Chart.js defaults", () => {
     render(<ChartNumberFormatSync />);
 
-    expect(ChartJS.defaults.plugins.tooltip.callbacks.label).toBeDefined();
-    expect(typeof ChartJS.defaults.plugins.tooltip.callbacks.label).toBe(
-      "function",
-    );
+    const callbacks = ChartJS.defaults.plugins.tooltip
+      .callbacks as unknown as Record<string, unknown>;
+    expect(callbacks.label).toBeDefined();
+    expect(typeof callbacks.label).toBe("function");
   });
 
   it("sets up linear scale tick callback on Chart.js defaults", () => {
@@ -50,13 +72,16 @@ describe("ChartNumberFormatSync", () => {
   it("tooltip callback formats parsed.y value", () => {
     render(<ChartNumberFormatSync />);
 
-    const callback = ChartJS.defaults.plugins.tooltip.callbacks.label;
+    const callback: TooltipCallback = (ctx) =>
+      (ChartJS.defaults.plugins.tooltip.callbacks.label as TooltipCallback)(
+        ctx,
+      );
     const ctx = {
       dataset: { label: "Revenue" },
       parsed: { y: 1234.56 },
     };
 
-    const _result = (callback as any)(ctx);
+    const _result = callback(ctx);
 
     expect(mockFormatNumber).toHaveBeenCalledWith(1234.56, {
       style: "currency",
@@ -67,14 +92,17 @@ describe("ChartNumberFormatSync", () => {
   it("tooltip callback handles doughnut chart raw values", () => {
     render(<ChartNumberFormatSync />);
 
-    const callback = ChartJS.defaults.plugins.tooltip.callbacks.label;
+    const callback: TooltipCallback = (ctx) =>
+      (ChartJS.defaults.plugins.tooltip.callbacks.label as TooltipCallback)(
+        ctx,
+      );
     const ctx = {
       dataset: { label: "Category" },
       parsed: null,
       raw: 500,
     };
 
-    (callback as any)(ctx);
+    callback(ctx);
 
     expect(mockFormatNumber).toHaveBeenCalledWith(500, { style: "currency" });
   });
@@ -82,14 +110,17 @@ describe("ChartNumberFormatSync", () => {
   it("tooltip callback returns label without value for NaN", () => {
     render(<ChartNumberFormatSync />);
 
-    const callback = ChartJS.defaults.plugins.tooltip.callbacks.label;
+    const callback: TooltipCallback = (ctx) =>
+      (ChartJS.defaults.plugins.tooltip.callbacks.label as TooltipCallback)(
+        ctx,
+      );
     const ctx = {
       dataset: { label: "Test" },
       parsed: null,
       raw: "not a number",
     };
 
-    const _result = (callback as any)(ctx);
+    const _result = callback(ctx);
 
     expect(_result).toBe("Test: ");
   });
@@ -97,8 +128,13 @@ describe("ChartNumberFormatSync", () => {
   it("tick callback formats numeric values", () => {
     render(<ChartNumberFormatSync />);
 
-    const callback = ChartJS.defaults.scales.linear.ticks.callback;
-    (callback as any)(1000, 0, []);
+    const callback: TickCallback = (value, index, values) =>
+      (ChartJS.defaults.scales.linear.ticks.callback as TickCallback)(
+        value,
+        index,
+        values,
+      );
+    callback(1000, 0, []);
 
     expect(mockFormatNumber).toHaveBeenCalledWith(1000, { style: "currency" });
   });
@@ -106,8 +142,13 @@ describe("ChartNumberFormatSync", () => {
   it("tick callback returns original value for NaN", () => {
     render(<ChartNumberFormatSync />);
 
-    const callback = ChartJS.defaults.scales.linear.ticks.callback;
-    const result = (callback as any)("not a number", 0, []);
+    const callback: TickCallback = (value, index, values) =>
+      (ChartJS.defaults.scales.linear.ticks.callback as TickCallback)(
+        value,
+        index,
+        values,
+      );
+    const result = callback("not a number", 0, []);
 
     expect(result).toBe("not a number");
   });

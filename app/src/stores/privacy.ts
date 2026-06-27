@@ -14,7 +14,7 @@ export const usePrivacyStore = create<PrivacyState>((set) => ({
       return false;
     }
   })(),
-  togglePrivacyMode: () =>
+  togglePrivacyMode: () => {
     set((state) => {
       const next = !state.isPrivacyMode;
       try {
@@ -23,7 +23,8 @@ export const usePrivacyStore = create<PrivacyState>((set) => ({
         // ignore
       }
       return { isPrivacyMode: next };
-    }),
+    });
+  },
 }));
 
 export function usePrivacy(): PrivacyState {

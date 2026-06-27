@@ -80,7 +80,7 @@ export default function UpdateNotification() {
       }
     };
 
-    checkForUpdates();
+    void checkForUpdates();
   }, []);
 
   const handleUpdate = async () => {
@@ -151,7 +151,9 @@ export default function UpdateNotification() {
           {updateInfo?.body && (
             <div className="mb-2">
               <button
-                onClick={() => setShowNotes(!showNotes)}
+                onClick={() => {
+                  setShowNotes(!showNotes);
+                }}
                 className={`flex items-center gap-1 text-sm text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium ${
                   showNotes ? "mb-2" : ""
                 }`}
@@ -224,12 +226,12 @@ export default function UpdateNotification() {
             <div className="mb-4">
               <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 mb-1">
                 <span>{t("update.downloading")}</span>
-                <span>{progress}%</span>
+                <span>{String(progress)}%</span>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
                 <div
                   className="bg-brand-600 h-2.5 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
+                  style={{ width: `${String(progress)}%` }}
                 ></div>
               </div>
             </div>
@@ -247,7 +249,9 @@ export default function UpdateNotification() {
                 {t("update.later")}
               </button>
               <button
-                onClick={handleUpdate}
+                onClick={() => {
+                  void handleUpdate();
+                }}
                 disabled={downloading}
                 className="btn-primary px-3 py-1.5"
               >
@@ -266,7 +270,9 @@ export default function UpdateNotification() {
             </>
           ) : (
             <button
-              onClick={handleRelaunch}
+              onClick={() => {
+                void handleRelaunch();
+              }}
               className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors w-full justify-center"
             >
               <RefreshCw size={18} />

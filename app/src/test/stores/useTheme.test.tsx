@@ -8,7 +8,13 @@ function TestComponent() {
   return (
     <div>
       <span data-testid="theme">{theme}</span>
-      <button onClick={() => setTheme("dark")}>Set Dark</button>
+      <button
+        onClick={() => {
+          setTheme("dark");
+        }}
+      >
+        Set Dark
+      </button>
     </div>
   );
 }

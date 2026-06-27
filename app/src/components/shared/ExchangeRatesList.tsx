@@ -55,7 +55,9 @@ export default function ExchangeRatesList({
   }, [showToast, t, appCurrency]);
 
   useEffect(() => {
-    loadRates();
+    queueMicrotask(() => {
+      void loadRates();
+    });
   }, [loadRates]);
 
   const handleEdit = (currency: string, currentRate: number | string) => {
@@ -106,7 +108,7 @@ export default function ExchangeRatesList({
     currency: string,
   ) => {
     if (e.key === "Enter") {
-      handleSaveEdit(currency);
+      void handleSaveEdit(currency);
     } else if (e.key === "Escape") {
       handleCancelEdit();
     }
@@ -153,15 +155,21 @@ export default function ExchangeRatesList({
                 type="number"
                 step="any"
                 value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, entry.currency)}
+                onChange={(e) => {
+                  setEditValue(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  handleKeyDown(e, entry.currency);
+                }}
                 className="exchange-rate-input"
                 placeholder={t("settings.exchange_rate_placeholder")}
                 autoFocus
               />
               <button
                 type="button"
-                onClick={() => handleSaveEdit(entry.currency)}
+                onClick={() => {
+                  void handleSaveEdit(entry.currency);
+                }}
                 className="btn-primary btn-sm"
               >
                 {t("confirm.save")}
@@ -182,7 +190,9 @@ export default function ExchangeRatesList({
               <div className="exchange-rate-actions">
                 <button
                   type="button"
-                  onClick={() => handleEdit(entry.currency, entry.rate)}
+                  onClick={() => {
+                    handleEdit(entry.currency, entry.rate);
+                  }}
                   className="exchange-rate-action-btn"
                   title={t("settings.exchange_rate_edit")}
                   aria-label={t("settings.exchange_rate_edit")}
@@ -191,7 +201,9 @@ export default function ExchangeRatesList({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDelete(entry.currency)}
+                  onClick={() => {
+                    void handleDelete(entry.currency);
+                  }}
                   className="exchange-rate-action-btn exchange-rate-action-delete"
                   title={t("settings.exchange_rate_delete")}
                   aria-label={t("settings.exchange_rate_delete")}
@@ -207,7 +219,9 @@ export default function ExchangeRatesList({
               </span>
               <button
                 type="button"
-                onClick={() => handleEdit(entry.currency, "")}
+                onClick={() => {
+                  handleEdit(entry.currency, "");
+                }}
                 className="btn-secondary btn-sm"
               >
                 {t("settings.exchange_rate_override")}

@@ -78,46 +78,38 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
   }, [appCurrency, fetchValuations]);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    void (async () => {
       setLoading(true);
       try {
         const data = await rust.get_assets({
           targetCurrency: appCurrency || "USD",
         });
-        if (mounted) {
-          setAssets(data);
-          setFetchError(null);
-          setExpandedAssetIds(new Set(data.map((a) => a.id)));
-          await Promise.all(
-            data.map(async (a) => {
-              const vals = await rust.get_valuations({ assetId: a.id });
-              if (mounted) {
-                setValuationsMap((prev) => ({ ...prev, [a.id]: vals }));
-              }
-            }),
-          );
-        }
+        setAssets(data);
+        setFetchError(null);
+        setExpandedAssetIds(new Set(data.map((a) => a.id)));
+        await Promise.all(
+          data.map(async (a) => {
+            const vals = await rust.get_valuations({ assetId: a.id });
+            setValuationsMap((prev) => ({ ...prev, [a.id]: vals }));
+          }),
+        );
       } catch (e) {
-        if (mounted) setFetchError(String(e));
+        setFetchError(String(e));
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
   }, [appCurrency]);
 
   const handleExpand = useCallback(
-    async (assetId: number) => {
+    (assetId: number) => {
       setExpandedAssetIds((prev) => {
         const next = new Set(prev);
         if (next.has(assetId)) {
           next.delete(assetId);
         } else {
           next.add(assetId);
-          fetchValuations(assetId);
+          void fetchValuations(assetId);
         }
         return next;
       });
@@ -147,7 +139,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
           context: "Failed to delete asset",
           error: e,
           userMessage: t("error.failed_to_delete"),
-          toast: (message) => showToast(message, { type: "error" }),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
         });
       }
     },
@@ -172,7 +166,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
           context: "Failed to delete valuation",
           error: e,
           userMessage: t("error.failed_to_delete"),
-          toast: (message) => showToast(message, { type: "error" }),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
         });
       }
     },
@@ -197,7 +193,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
   }, [fetchAssets, fetchValuations, onUpdate, valuationAssetId]);
 
   const totalValue = assets.reduce(
-    (sum, a) => sum + (a.latest_value ?? 0) * (a.exchange_rate ?? 1),
+    (sum, a) =>
+      sum +
+      (a.latest_value !== undefined ? a.latest_value : 0) * a.exchange_rate,
     0,
   );
 
@@ -210,7 +208,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
         onRetry={() => {
           setFetchError(null);
           setLoading(true);
-          fetchAssets().finally(() => setLoading(false));
+          void fetchAssets().finally(() => {
+            setLoading(false);
+          });
         }}
       />
     );
@@ -278,11 +278,11 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-slate-800 dark:text-slate-100">
-                    {asset.latest_value != null
-                      ? formatNumber(
-                          asset.latest_value * (asset.exchange_rate ?? 1),
-                          { style: "currency", currency: appCurrency },
-                        )
+                    {asset.latest_value !== undefined
+                      ? formatNumber(asset.latest_value * asset.exchange_rate, {
+                          style: "currency",
+                          currency: appCurrency,
+                        })
                       : "—"}
                   </p>
                   {asset.latest_date && (
@@ -303,14 +303,18 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                     <Edit size={15} />
                   </button>
                   <button
-                    onClick={() => handleDeleteAsset(asset)}
+                    onClick={() => {
+                      void handleDeleteAsset(asset);
+                    }}
                     className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={t("assets.delete")}
                   >
                     <Trash2 size={15} />
                   </button>
                   <button
-                    onClick={() => handleExpand(asset.id)}
+                    onClick={() => {
+                      handleExpand(asset.id);
+                    }}
                     className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={t("assets.show_valuations")}
                   >
@@ -374,7 +378,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                             <Edit size={13} />
                           </button>
                           <button
-                            onClick={() => handleDeleteValuation(v)}
+                            onClick={() => {
+                              void handleDeleteValuation(v);
+                            }}
                             className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
                             title={t("assets.delete")}
                           >
@@ -399,7 +405,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
             setShowAssetModal(false);
             setEditingAsset(null);
           }}
-          onSaved={handleAssetSaved}
+          onSaved={() => {
+            void handleAssetSaved();
+          }}
         />
       )}
 
@@ -411,7 +419,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
             setShowValuationModal(false);
             setEditingValuation(null);
           }}
-          onSaved={handleValuationSaved}
+          onSaved={() => {
+            void handleValuationSaved();
+          }}
         />
       )}
     </div>

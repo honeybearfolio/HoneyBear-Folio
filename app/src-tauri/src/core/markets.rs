@@ -8,7 +8,7 @@ pub async fn search_ticker_with_client(
     base_url: String,
     query: String,
 ) -> Result<Vec<YahooSearchQuote>, String> {
-    let url = format!("{}/v1/finance/search?q={}", base_url, query);
+    let url = format!("{base_url}/v1/finance/search?q={query}");
     let res = client
         .get(&url)
         .header("User-Agent", "Mozilla/5.0")
@@ -91,12 +91,12 @@ pub async fn get_stock_quotes_with_client(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.iter() {
+    for ticker in &tickers {
         let ticker = ticker.clone();
         let client = client.clone();
         let base_url = base_url.clone();
         tasks.push(tokio::spawn(async move {
-            let url = format!("{}/v8/finance/chart/{}?interval=1d&range=1d", base_url, ticker);
+            let url = format!("{base_url}/v8/finance/chart/{ticker}?interval=1d&range=1d");
             let res = client.get(&url)
                 .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .send()
@@ -118,10 +118,10 @@ pub async fn get_stock_quotes_with_client(
                                                     .or(item.meta.previous_close)
                                                     .unwrap_or(price);
 
-                                                let change_percent = if prev != 0.0 {
-                                                    ((price - prev) / prev) * 100.0
-                                                } else {
+                                                let change_percent = if prev == 0.0 {
                                                     0.0
+                                                } else {
+                                                    ((price - prev) / prev) * 100.0
                                                 };
                                                 return Some(YahooQuote {
                                                     symbol: item.meta.symbol.clone(),
@@ -202,8 +202,7 @@ pub async fn get_stock_quotes_with_client(
                 .collect::<Vec<_>>()
                 .join(",");
             let query = format!(
-                "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({})",
-                placeholders
+                "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({placeholders})"
             );
             let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
@@ -246,7 +245,7 @@ pub async fn get_stock_quotes_with_client_and_db(
 
     let mut tasks = Vec::new();
 
-    for ticker in tickers.iter() {
+    for ticker in &tickers {
         let ticker = ticker.clone();
         let client = client.clone();
         let base_url = base_url.clone();
@@ -273,10 +272,10 @@ pub async fn get_stock_quotes_with_client_and_db(
                                                     .or(item.meta.previous_close)
                                                     .unwrap_or(price);
 
-                                                let change_percent = if prev != 0.0 {
-                                                    ((price - prev) / prev) * 100.0
-                                                } else {
+                                                let change_percent = if prev == 0.0 {
                                                     0.0
+                                                } else {
+                                                    ((price - prev) / prev) * 100.0
                                                 };
                                                 return Some(YahooQuote {
                                                     symbol: item.meta.symbol.clone(),
@@ -355,8 +354,7 @@ pub async fn get_stock_quotes_with_client_and_db(
                 .collect::<Vec<_>>()
                 .join(",");
             let query = format!(
-                "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({})",
-                placeholders
+                "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({placeholders})"
             );
             let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
@@ -434,8 +432,7 @@ pub async fn update_daily_stock_prices_with_client_and_base(
 
         // 2. Fetch from Yahoo
         let url = format!(
-            "{}/v8/finance/chart/{}?period1={}&period2={}&interval=1d",
-            base_url, ticker, start_timestamp, end_timestamp
+            "{base_url}/v8/finance/chart/{ticker}?period1={start_timestamp}&period2={end_timestamp}&interval=1d"
         );
 
         let res = client
@@ -570,7 +567,7 @@ pub async fn check_currency_availability(
         return Ok(true);
     }
 
-    let ticker = format!("{}USD=X", currency);
+    let ticker = format!("{currency}USD=X");
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()

@@ -81,10 +81,10 @@ export const EXTERNAL_URLS: Record<string, string> = {
   GITHUB_REPO: "https://github.com/HoneyBearFolio/HoneyBear-Folio",
   WEBSITE: "https://honeybearfolio.github.io",
   BUY_ME_A_COFFEE: "https://buymeacoffee.com/bernatbc",
+  DOCS: "https://honeybearfolio.github.io/docs",
+  LICENSE:
+    "https://github.com/HoneyBearFolio/HoneyBear-Folio/blob/main/LICENSE",
 };
-
-EXTERNAL_URLS.DOCS = `${EXTERNAL_URLS.WEBSITE}/docs`;
-EXTERNAL_URLS.LICENSE = `${EXTERNAL_URLS.GITHUB_REPO}/blob/main/LICENSE`;
 
 export const WEEKDAY_KEYS: readonly string[] = [
   "weekday.sunday",
@@ -138,7 +138,7 @@ export function createDefaultScheduledForm(): ScheduledFormState {
     daysOfWeek: [],
     ordinal: 1,
     weekday: 1,
-    startDate: new Date().toISOString().split("T")[0],
+    startDate: new Date().toISOString().split("T")[0] ?? "",
     endDate: "",
     maxOccurrences: "",
     enabled: true,

@@ -1,5 +1,13 @@
 import { parseNumberWithLocale } from "./format";
 
+function asText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return "";
+}
+
 export function stripAccents(value: string): string {
   return value.normalize("NFD").replace(/\p{M}/gu, "");
 }
@@ -46,14 +54,11 @@ export function rowsFromSheetData(
   data: unknown[][],
 ): Record<string, unknown>[] {
   if (!data.length) return [];
-  const headers = (data[0] as unknown[]).map((h) => String(h ?? ""));
+  const headers = (data[0] as unknown[]).map((h) => asText(h));
   return data.slice(1).map((row) => {
     const obj: Record<string, unknown> = {};
     headers.forEach((header, index) => {
-      obj[header] =
-        (row as unknown[])[index] !== undefined
-          ? (row as unknown[])[index]
-          : "";
+      obj[header] = row[index] !== undefined ? row[index] : "";
     });
     return obj;
   });

@@ -87,7 +87,7 @@ where
 
 /// Acquires a per-path database lock and evaluates `body` while the lock is held.
 ///
-/// Prefer this over [`with_db_lock`] when the body needs outer variables: CodeQL's
+/// Prefer this over [`with_db_lock`] when the body needs outer variables: `CodeQL`'s
 /// `rust/unused-variable` query does not track implicit closure captures.
 #[macro_export]
 macro_rules! db_locked {

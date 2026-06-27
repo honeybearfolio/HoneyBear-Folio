@@ -58,7 +58,7 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     options: { value: string; label: string }[];
     placeholder?: string;
   }) => {
-    const p = String(placeholder || "").toLowerCase();
+    const p = (placeholder || "").toLowerCase();
     const testId = p.includes("language")
       ? "language-select"
       : p.includes("theme")
@@ -73,9 +73,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
       <select
         data-testid={testId}
         value={value}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-          onChange(e.target.value)
-        }
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+          onChange(e.target.value);
+        }}
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (
@@ -147,7 +147,7 @@ describe("SettingsView", () => {
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
     fireEvent.click(btn);
 
-    await expect(mockConfirmLocal).toHaveBeenCalledWith(
+    expect(mockConfirmLocal).toHaveBeenCalledWith(
       "Reset all settings to their default values? This cannot be undone.",
       expect.objectContaining({ kind: "warning" }),
     );
@@ -182,7 +182,7 @@ describe("SettingsView", () => {
     const btn = screen.getByRole("button", { name: /Reset to defaults/i });
     fireEvent.click(btn);
 
-    await expect(mockConfirmLocal).toHaveBeenCalled();
+    expect(mockConfirmLocal).toHaveBeenCalled();
     expect(mockSetLocale).not.toHaveBeenCalled();
     expect(mockSetUiLanguage).not.toHaveBeenCalled();
     expect(setters.setUiLanguage).not.toHaveBeenCalled();
@@ -215,7 +215,7 @@ describe("SettingsView", () => {
     // verify order: Theme -> Font size -> sidebar switches
     const themeLabel = screen.getByText("Theme");
     const fontLabel = screen.getByText("Font size");
-    const firstSwitch = screen.getAllByRole("switch")[0];
+    const firstSwitch = screen.getAllByRole("switch")[0]!;
 
     expect(
       themeLabel.compareDocumentPosition(fontLabel) &

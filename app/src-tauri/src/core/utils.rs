@@ -27,6 +27,7 @@ pub fn get_custom_rates_map(db_path: &std::path::PathBuf) -> Result<HashMap<Stri
 
 /// Calculates account balances by aggregating transactions and converting currencies
 /// using market and custom exchange rates.
+#[must_use]
 pub fn calculate_account_balances(
     mut accounts: Vec<Account>,
     raw_data: Vec<(i32, String, f64)>,
@@ -52,7 +53,7 @@ pub fn calculate_account_balances(
         }
 
         // 1. Try direct pair first (e.g. EURGBP=X)
-        let direct_ticker = format!("{}{}=X", src, dst);
+        let direct_ticker = format!("{src}{dst}=X");
         if let Some(r) = rates.get(&direct_ticker) {
             if *r > 0.0 {
                 return *r;
@@ -67,7 +68,7 @@ pub fn calculate_account_balances(
             if let Some(r) = custom_rates.get(curr) {
                 return *r;
             }
-            *rates.get(&format!("{}USD=X", curr)).unwrap_or(&1.0)
+            *rates.get(&format!("{curr}USD=X")).unwrap_or(&1.0)
         };
 
         let r_src = get_rate_to_usd(src);
@@ -83,8 +84,7 @@ pub fn calculate_account_balances(
     for (acc_id, tx_curr, amt) in raw_data {
         let acc_currency = account_currency_map
             .get(&acc_id)
-            .map(|s| s.as_str())
-            .unwrap_or(target);
+            .map_or(target, std::string::String::as_str);
         let rate = compute_rate(&tx_curr, &acc_currency.to_string(), rates, custom_rates);
         let val = amt * rate;
         sums.entry(acc_id).and_modify(|e| *e += val).or_insert(val);
@@ -181,10 +181,7 @@ pub fn get_system_theme() -> Result<String, String> {
             }
         }
         // Env var fallback
-        if std::env::var("GTK_THEME")
-            .map(|v| v.to_lowercase().contains("dark"))
-            .unwrap_or(false)
-        {
+        if std::env::var("GTK_THEME").is_ok_and(|v| v.to_lowercase().contains("dark")) {
             return Ok("dark".to_string());
         }
 

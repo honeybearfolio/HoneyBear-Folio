@@ -34,8 +34,14 @@ export default function AutocompleteInput({
           onChange(e.target.value);
           setIsOpen(true);
         }}
-        onFocus={() => setIsOpen(true)}
-        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        onFocus={() => {
+          setIsOpen(true);
+        }}
+        onBlur={() =>
+          setTimeout(() => {
+            setIsOpen(false);
+          }, 200)
+        }
         className={className}
         placeholder={placeholder}
         disabled={disabled}

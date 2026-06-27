@@ -13,7 +13,15 @@ function TestComponent({ onResult }: TestComponentProps) {
     const result = await confirm("Test confirm?");
     onResult(result);
   };
-  return <button onClick={handleClick}>Confirm</button>;
+  return (
+    <button
+      onClick={() => {
+        void handleClick();
+      }}
+    >
+      Confirm
+    </button>
+  );
 }
 
 describe("useConfirm (Zustand store)", () => {

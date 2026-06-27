@@ -69,18 +69,10 @@ export function ThemeEffects() {
         handleChange = (e) => {
           applyTheme(e.matches ? "dark" : "light");
         };
-        try {
-          mediaQuery.addEventListener("change", handleChange);
-        } catch {
-          try {
-            mediaQuery.addListener(handleChange);
-          } catch {
-            /* ignore */
-          }
-        }
+        mediaQuery.addEventListener("change", handleChange);
       }
 
-      (async () => {
+      void (async () => {
         try {
           const sys = await rust.get_system_theme();
           if (sys === "dark" || sys === "light") {
@@ -92,7 +84,7 @@ export function ThemeEffects() {
       })();
 
       let unlistenFn: (() => void) | undefined;
-      listen("system-theme-changed", (event: { payload: unknown }) => {
+      void listen("system-theme-changed", (event: { payload: unknown }) => {
         const sys = event.payload;
         if (sys === "dark" || sys === "light") {
           applyTheme(sys);
@@ -103,15 +95,7 @@ export function ThemeEffects() {
 
       return () => {
         if (mediaQuery && handleChange) {
-          try {
-            mediaQuery.removeEventListener("change", handleChange);
-          } catch {
-            try {
-              mediaQuery.removeListener(handleChange);
-            } catch {
-              /* ignore */
-            }
-          }
+          mediaQuery.removeEventListener("change", handleChange);
         }
         if (unlistenFn) unlistenFn();
       };

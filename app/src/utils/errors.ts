@@ -37,7 +37,7 @@ export function toUserMessage(
     error &&
     typeof error === "object" &&
     "message" in error &&
-    typeof (error as { message: unknown }).message === "string"
+    typeof error.message === "string"
   ) {
     const message = (error as { message: string }).message.trim();
     return message || fallback;

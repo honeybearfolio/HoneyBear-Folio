@@ -23,7 +23,7 @@ describe("ConfirmDialogContainer", () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore.getState().confirm("Are you sure?");
+      void useConfirmStore.getState().confirm("Are you sure?");
     });
 
     expect(await screen.findByText("Are you sure?")).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe("ConfirmDialogContainer", () => {
 
     let result: boolean | undefined;
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Are you sure?")
         .then((r) => {
@@ -45,7 +45,9 @@ describe("ConfirmDialogContainer", () => {
     const confirmBtn = await screen.findByRole("button", { name: "OK" });
     fireEvent.click(confirmBtn);
 
-    await waitFor(() => expect(result).toBe(true));
+    await waitFor(() => {
+      expect(result).toBe(true);
+    });
   });
 
   it("resolves to false when canceled", async () => {
@@ -53,7 +55,7 @@ describe("ConfirmDialogContainer", () => {
 
     let result: boolean | undefined;
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Are you sure?")
         .then((r) => {
@@ -64,43 +66,51 @@ describe("ConfirmDialogContainer", () => {
     const cancelBtn = await screen.findByRole("button", { name: /cancel|no/i });
     fireEvent.click(cancelBtn);
 
-    await waitFor(() => expect(result).toBe(false));
+    await waitFor(() => {
+      expect(result).toBe(false);
+    });
   });
 
   it("focuses the Cancel button for destructive (warning) dialogs", async () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Delete this item?", { kind: "warning" });
     });
 
     const cancelBtn = await screen.findByRole("button", { name: /cancel/i });
-    await waitFor(() => expect(document.activeElement).toBe(cancelBtn));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(cancelBtn);
+    });
   });
 
   it("focuses the Cancel button for destructive (error) dialogs", async () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Delete this item?", { kind: "error" });
     });
 
     const cancelBtn = await screen.findByRole("button", { name: /cancel/i });
-    await waitFor(() => expect(document.activeElement).toBe(cancelBtn));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(cancelBtn);
+    });
   });
 
   it("focuses the OK button for non-destructive (info) dialogs", async () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore.getState().confirm("Proceed?", { kind: "info" });
+      void useConfirmStore.getState().confirm("Proceed?", { kind: "info" });
     });
 
     const okBtn = await screen.findByRole("button", { name: "OK" });
-    await waitFor(() => expect(document.activeElement).toBe(okBtn));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(okBtn);
+    });
   });
 });

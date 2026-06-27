@@ -78,14 +78,16 @@ export default function FormatsSection({
       <div className="relative settings-select">
         <CustomSelect
           value={currency}
-          onChange={async (v) => {
-            setCurrency(String(v));
-            if (v) {
-              const confirmed = await checkAndPrompt(String(v));
-              if (!confirmed) {
-                setCurrency(currency);
+          onChange={(v) => {
+            void (async () => {
+              setCurrency(String(v));
+              if (v) {
+                const confirmed = await checkAndPrompt(String(v));
+                if (!confirmed) {
+                  setCurrency(currency);
+                }
               }
-            }
+            })();
           }}
           options={CURRENCIES.map((c) => ({
             value: c.code,
@@ -123,7 +125,9 @@ export default function FormatsSection({
       <div className="relative settings-select">
         <CustomSelect
           value={locale}
-          onChange={(v) => setLocale(String(v))}
+          onChange={(v) => {
+            setLocale(String(v));
+          }}
           options={[
             { value: "en-US", label: "1,234.56" },
             { value: "de-DE", label: "1.234,56" },
@@ -163,7 +167,9 @@ export default function FormatsSection({
       <div className="relative settings-select">
         <CustomSelect
           value={dateFormat}
-          onChange={(v) => setDateFormat(String(v))}
+          onChange={(v) => {
+            setDateFormat(String(v));
+          }}
           options={dateFormatOptions}
           placeholder={t("settings.select_date_format_placeholder")}
           fullWidth={false}
@@ -196,7 +202,9 @@ export default function FormatsSection({
       <div className="relative settings-select">
         <CustomSelect
           value={firstDayOfWeek}
-          onChange={(v) => setFirstDayOfWeek(Number(v))}
+          onChange={(v) => {
+            setFirstDayOfWeek(Number(v));
+          }}
           options={[
             { value: 1, label: t("weekday.monday") },
             { value: 2, label: t("weekday.tuesday") },

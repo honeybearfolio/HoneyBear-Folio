@@ -1,4 +1,6 @@
 // Tests organized into folders
+#![allow(clippy::float_cmp)]
+
 pub mod common;
 pub use crate::core::test_helpers;
 

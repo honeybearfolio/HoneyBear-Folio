@@ -49,10 +49,16 @@ const TRANSACTION_HEADER_HINTS = [
   "categoria",
 ];
 
+function asText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return "";
+}
+
 function sheetHeaders(sheet: XlsxSheet): string[] {
-  return (
-    (sheet.data[0] as unknown[] | undefined)?.map((h) => String(h ?? "")) ?? []
-  );
+  return sheet.data[0]?.map((h) => asText(h)) ?? [];
 }
 
 export function isAccountSheetName(name: string): boolean {
@@ -101,14 +107,14 @@ export function pickAccountSheet(sheets: XlsxSheet[]): XlsxSheet | undefined {
 export function parseAccountFromJson(item: unknown): ExportAccount | null {
   if (!item || typeof item !== "object") return null;
   const record = item as Record<string, unknown>;
-  const name = String(record.name ?? "").trim();
+  const name = asText(record.name).trim();
   if (!name) return null;
 
   return {
     name,
     balance: parseNumericValue(record.balance) ?? 0,
-    currency: record.currency ? String(record.currency) : null,
-    kind: record.kind ? String(record.kind) : null,
+    currency: record.currency ? asText(record.currency) : null,
+    kind: record.kind ? asText(record.kind) : null,
   };
 }
 
@@ -131,9 +137,7 @@ export function extractAccountsFromHoneyBearJson(
 export function parseAccountFromRow(
   row: Record<string, unknown>,
 ): ExportAccount | null {
-  const name = String(
-    getField(row, "name", "Name", "nombre", "Nombre") ?? "",
-  ).trim();
+  const name = asText(getField(row, "name", "Name", "nombre", "Nombre")).trim();
   if (!name) return null;
 
   const balance =
@@ -145,8 +149,8 @@ export function parseAccountFromRow(
   return {
     name,
     balance,
-    currency: currencyRaw ? String(currencyRaw) : null,
-    kind: kindRaw ? String(kindRaw) : null,
+    currency: currencyRaw ? asText(currencyRaw) : null,
+    kind: kindRaw ? asText(kindRaw) : null,
   };
 }
 
@@ -185,8 +189,8 @@ export async function importAccounts(
       const created = await api.create_account({
         name: account.name,
         balance: account.balance,
-        kind: account.kind || undefined,
-        currency: account.currency || undefined,
+        ...(account.kind ? { kind: account.kind } : {}),
+        ...(account.currency ? { currency: account.currency } : {}),
       });
       knownNames.add(key);
       result.created.push(created);

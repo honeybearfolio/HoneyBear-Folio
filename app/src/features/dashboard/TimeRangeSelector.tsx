@@ -33,7 +33,9 @@ export default function TimeRangeSelector({
         {["1M", "3M", "6M", "1Y", "YTD", "ALL", "CUSTOM"].map((range) => (
           <button
             key={range}
-            onClick={() => setTimeRange(range)}
+            onClick={() => {
+              setTimeRange(range);
+            }}
             className={`time-range-button whitespace-nowrap ${
               timeRange === range
                 ? "time-range-button-active"
@@ -52,8 +54,9 @@ export default function TimeRangeSelector({
             <DatePicker
               selected={customStartDate}
               onChange={(date: Date | null) => {
-                setCustomStartDate(date!);
-                if (date && customEndDate && date > customEndDate) {
+                if (!date) return;
+                setCustomStartDate(date);
+                if (date > customEndDate) {
                   setCustomEndDate(date);
                 }
               }}
@@ -73,7 +76,10 @@ export default function TimeRangeSelector({
           <div className="flex items-center gap-2 px-2">
             <DatePicker
               selected={customEndDate}
-              onChange={(date: Date | null) => setCustomEndDate(date!)}
+              onChange={(date: Date | null) => {
+                if (!date) return;
+                setCustomEndDate(date);
+              }}
               selectsEnd
               startDate={customStartDate}
               endDate={customEndDate}

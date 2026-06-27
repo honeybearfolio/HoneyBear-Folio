@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useFormatNumber, useParseNumber } from "../../utils/format";
 
 interface NumberInputProps {
@@ -36,33 +36,21 @@ export default function NumberInput({
   const [inputValue, setInputValue] = useState("");
   const ref = useRef<HTMLInputElement>(null);
 
-  // When value changes externally, update display if not editing
-  useEffect(() => {
-    if (!editing) {
-      if (
-        value === undefined ||
-        value === null ||
-        Number.isNaN(Number(value))
-      ) {
-        setInputValue("");
-      } else {
-        setInputValue(
-          formatNumber(Number(value), {
-            maximumFractionDigits,
-            minimumFractionDigits,
-            useGrouping,
-          }),
-        );
+  const formatDisplayValue = useCallback(
+    (val: number | string | undefined | null) => {
+      if (val === undefined || val === null || Number.isNaN(Number(val))) {
+        return "";
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    value,
-    editing,
-    maximumFractionDigits,
-    minimumFractionDigits,
-    useGrouping,
-  ]);
+      return formatNumber(Number(val), {
+        maximumFractionDigits,
+        minimumFractionDigits,
+        useGrouping,
+      });
+    },
+    [formatNumber, maximumFractionDigits, minimumFractionDigits, useGrouping],
+  );
+
+  const displayValue = editing ? inputValue : formatDisplayValue(value);
 
   const commitValue = () => {
     const parsed = parseNumber(inputValue);
@@ -78,7 +66,7 @@ export default function NumberInput({
       inputMode={inputMode}
       className={className}
       placeholder={placeholder}
-      value={inputValue}
+      value={displayValue}
       onFocus={() => {
         setEditing(true);
         if (
@@ -96,8 +84,12 @@ export default function NumberInput({
           );
         }
       }}
-      onChange={(e) => setInputValue(e.target.value)}
-      onBlur={() => commitValue()}
+      onChange={(e) => {
+        setInputValue(e.target.value);
+      }}
+      onBlur={() => {
+        commitValue();
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
           commitValue();

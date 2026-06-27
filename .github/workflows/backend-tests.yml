@@ -40,16 +40,12 @@ jobs:
         with:
           workspaces: app/src-tauri
 
-      - name: Run tests
-        working-directory: app/src-tauri
-        run: cargo test
-
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Generate coverage report
+      - name: Run tests with coverage
         working-directory: app/src-tauri
-        run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov --lib --all-features --fail-under-lines 50 --lcov --output-path lcov.info
 
       - name: Upload backend coverage report
         if: always()

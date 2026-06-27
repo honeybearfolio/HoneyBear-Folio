@@ -48,7 +48,7 @@ export default function RulesList() {
   const loadRules = useCallback(
     async (mode: "page" | "refresh" = "refresh") => {
       try {
-        const r = (await rust.get_rules()) as RuleRecord[];
+        const r = await rust.get_rules();
         setRules(r);
         setFetchError(null);
       } catch (e) {
@@ -64,7 +64,9 @@ export default function RulesList() {
             context: "Failed to fetch rules",
             error: e,
             userMessage: t("error.failed_to_load"),
-            toast: (message) => showToast(message, { type: "error" }),
+            toast: (message) => {
+              showToast(message, { type: "error" });
+            },
           });
         }
       }
@@ -73,15 +75,11 @@ export default function RulesList() {
   );
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    void (async () => {
       setLoading(true);
       await loadRules("page");
-      if (mounted) setLoading(false);
+      setLoading(false);
     })();
-    return () => {
-      mounted = false;
-    };
   }, [loadRules]);
 
   useEffect(() => {
@@ -96,7 +94,9 @@ export default function RulesList() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [menuOpenId]);
 
   useEffect(() => {
@@ -142,14 +142,16 @@ export default function RulesList() {
           context: "Failed to delete rule",
           error: e,
           userMessage: t("error.failed_to_delete"),
-          toast: (message) => showToast(message, { type: "error" }),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
         });
-        loadRules();
+        void loadRules();
       }
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     try {
       const { payload, maxPriority } = toRulePayload(formState, rules);
@@ -159,7 +161,7 @@ export default function RulesList() {
           args: {
             ...payload,
             id: formState.id,
-            priority: Number(formState.priority),
+            priority: formState.priority,
           },
         });
       } else {
@@ -171,13 +173,15 @@ export default function RulesList() {
         });
       }
       resetForm();
-      loadRules();
+      void loadRules();
     } catch (e) {
       handleAsyncError({
         context: "Failed to save rule",
         error: e,
         userMessage: t("error.failed_to_save"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -284,9 +288,11 @@ export default function RulesList() {
         context: "Failed to reorder rules",
         error: err,
         userMessage: t("error.failed_to_save"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
-      loadRules();
+      void loadRules();
     }
   };
 
@@ -407,7 +413,9 @@ export default function RulesList() {
           onRetry={() => {
             setFetchError(null);
             setLoading(true);
-            loadRules("page").finally(() => setLoading(false));
+            void loadRules("page").finally(() => {
+              setLoading(false);
+            });
           }}
           retryLabel={t("error.retry")}
         />
@@ -465,7 +473,12 @@ export default function RulesList() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              void handleSubmit(e);
+            }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Conditions Section */}
               <div className="space-y-4">
@@ -478,12 +491,12 @@ export default function RulesList() {
                       </span>
                       <CustomSelect
                         value={formState.logic}
-                        onChange={(val) =>
+                        onChange={(val) => {
                           setFormState((prev) => ({
                             ...prev,
                             logic: String(val),
-                          }))
-                        }
+                          }));
+                        }}
                         options={logicOptions}
                         className="w-24 h-9"
                       />
@@ -509,22 +522,22 @@ export default function RulesList() {
 
                     <CustomSelect
                       value={condition.field}
-                      onChange={(val) =>
+                      onChange={(val) => {
                         updateCondition(index, {
                           field: String(val),
                           operator: "equals",
                           value: "",
-                        })
-                      }
+                        });
+                      }}
                       options={availableFields}
                       className="w-32"
                     />
 
                     <CustomSelect
                       value={condition.operator}
-                      onChange={(val) =>
-                        updateCondition(index, { operator: String(val) })
-                      }
+                      onChange={(val) => {
+                        updateCondition(index, { operator: String(val) });
+                      }}
                       options={getOperatorsForField(condition.field)}
                       className="w-40"
                     />
@@ -533,9 +546,9 @@ export default function RulesList() {
                       (getFieldType(condition.field) === "number" ? (
                         <NumberInput
                           value={condition.value}
-                          onChange={(val) =>
-                            updateCondition(index, { value: String(val) })
-                          }
+                          onChange={(val) => {
+                            updateCondition(index, { value: String(val) });
+                          }}
                           className="form-input w-32"
                           placeholder="0.00"
                         />
@@ -556,9 +569,9 @@ export default function RulesList() {
                                 : ""
                             }`}
                             value={condition.value}
-                            onChange={(e) =>
-                              updateCondition(index, { value: e.target.value })
-                            }
+                            onChange={(e) => {
+                              updateCondition(index, { value: e.target.value });
+                            }}
                             title={
                               isRegexOperator(condition.operator)
                                 ? t("rules.regex_help")
@@ -578,7 +591,9 @@ export default function RulesList() {
                     {formState.conditions.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeCondition(index)}
+                        onClick={() => {
+                          removeCondition(index);
+                        }}
                         className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                         title={t("rules.remove_condition")}
                         aria-label={t("rules.remove_condition")}
@@ -626,9 +641,12 @@ export default function RulesList() {
 
                       <CustomSelect
                         value={action.field}
-                        onChange={(val) =>
-                          updateAction(index, { field: String(val), value: "" })
-                        }
+                        onChange={(val) => {
+                          updateAction(index, {
+                            field: String(val),
+                            value: "",
+                          });
+                        }}
                         options={availableFields}
                         className="w-32"
                       />
@@ -640,9 +658,9 @@ export default function RulesList() {
                       {fieldType === "number" ? (
                         <NumberInput
                           value={action.value}
-                          onChange={(val) =>
-                            updateAction(index, { value: String(val) })
-                          }
+                          onChange={(val) => {
+                            updateAction(index, { value: String(val) });
+                          }}
                           className="form-input w-40"
                           placeholder="0.00"
                         />
@@ -652,16 +670,18 @@ export default function RulesList() {
                           placeholder="Value"
                           className="form-input w-40"
                           value={action.value}
-                          onChange={(e) =>
-                            updateAction(index, { value: e.target.value })
-                          }
+                          onChange={(e) => {
+                            updateAction(index, { value: e.target.value });
+                          }}
                         />
                       )}
 
                       {formState.actions.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeAction(index)}
+                          onClick={() => {
+                            removeAction(index);
+                          }}
                           className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                           title={t("rules.remove_action")}
                           aria-label={t("rules.remove_action")}
@@ -761,11 +781,17 @@ export default function RulesList() {
                       : "hover:bg-slate-50 dark:hover:bg-slate-700/50"
                   }`}
                   draggable={!isEditing}
-                  onDragStart={(e) => handleDragStart(e, rule.id)}
+                  onDragStart={(e) => {
+                    handleDragStart(e, rule.id);
+                  }}
                   onDragOver={handleDragOver}
-                  onDragEnter={(e) => handleDragEnter(e, index)}
+                  onDragEnter={(e) => {
+                    handleDragEnter(e, index);
+                  }}
                   onDrop={handleDrop}
-                  onDragEnd={handleDragEnd}
+                  onDragEnd={() => {
+                    void handleDragEnd();
+                  }}
                   data-index={index}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -792,7 +818,7 @@ export default function RulesList() {
                           setRules((current) =>
                             reorderRules(current, rule.id, newIndex),
                           );
-                          (async () => {
+                          void (async () => {
                             try {
                               const reordered = reorderRules(
                                 rules,
@@ -807,10 +833,11 @@ export default function RulesList() {
                                 context: "Failed to reorder rules",
                                 error: err,
                                 userMessage: t("error.failed_to_save"),
-                                toast: (message) =>
-                                  showToast(message, { type: "error" }),
+                                toast: (message) => {
+                                  showToast(message, { type: "error" });
+                                },
                               });
-                              loadRules();
+                              void loadRules();
                             }
                           })();
                         }
@@ -855,7 +882,9 @@ export default function RulesList() {
                   <td className="px-4 py-2.5 text-right rule-action-menu-container">
                     <div className="flex items-center justify-end gap-0.5">
                       <button
-                        onClick={() => handleEdit(rule)}
+                        onClick={() => {
+                          handleEdit(rule);
+                        }}
                         className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 hover:text-brand-500 cursor-pointer"
                         title={t("rules.edit")}
                         aria-label={t("rules.edit")}
@@ -863,7 +892,9 @@ export default function RulesList() {
                         <Edit size={16} />
                       </button>
                       <button
-                        onClick={() => handleDelete(rule.id)}
+                        onClick={() => {
+                          void handleDelete(rule.id);
+                        }}
                         className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors text-slate-400 hover:text-rose-500 cursor-pointer"
                         title={t("rules.delete")}
                         aria-label={t("rules.delete")}
@@ -877,8 +908,8 @@ export default function RulesList() {
                         <div
                           className="fixed z-50 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in rule-action-menu-portal"
                           style={{
-                            top: `${menuCoords.y}px`,
-                            left: `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`,
+                            top: `${String(menuCoords.y)}px`,
+                            left: `${String(Math.min(menuCoords.x, window.innerWidth - 176 - 8))}px`,
                           }}
                         >
                           <button
@@ -897,7 +928,7 @@ export default function RulesList() {
                           </button>
                           <button
                             onClick={() => {
-                              handleDelete(rule.id);
+                              void handleDelete(rule.id);
                               setMenuOpenId(null);
                               setMenuCoords(null);
                             }}

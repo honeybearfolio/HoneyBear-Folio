@@ -35,7 +35,40 @@ import {
   type ExportAsset,
 } from "../../utils/assets-io";
 import { rowsFromSheetData } from "../../utils/spreadsheet-io";
-import type { Account, AssetWithLatestValue } from "../../api/types";
+import type { Account } from "../../api/types";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function asText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return "";
+}
+
+function getJsonRows(parsed: unknown): Record<string, unknown>[] {
+  if (Array.isArray(parsed)) {
+    return parsed.filter(isRecord);
+  }
+  if (!isRecord(parsed)) {
+    return [];
+  }
+
+  const txs = parsed.transactions;
+  if (Array.isArray(txs)) {
+    return txs.filter(isRecord);
+  }
+
+  const data = parsed.data;
+  if (Array.isArray(data)) {
+    return data.filter(isRecord);
+  }
+
+  return [];
+}
 
 export default function ImportModal({
   onClose,
@@ -127,33 +160,23 @@ export default function ImportModal({
         const data = e.target!.result;
 
         if (file.name.endsWith(".csv")) {
-          Papa.parse(data as string, {
+          if (typeof data !== "string") return;
+          Papa.parse<Record<string, unknown>>(data, {
             header: true,
             skipEmptyLines: true,
-            complete: (results: {
-              meta: { fields?: string[] };
-              data: Record<string, unknown>[];
-            }) => {
-              setColumns(results.meta.fields || []);
-              setPreviewRows((results.data || []).slice(0, 5));
-              autoMapColumns(results.meta.fields || []);
+            complete: (results) => {
+              const fields = results.meta.fields ?? [];
+              setColumns(fields);
+              setPreviewRows(results.data.slice(0, 5));
+              autoMapColumns(fields);
             },
           });
         } else if (file.name.endsWith(".json")) {
           try {
-            const parsed = JSON.parse(data as string);
-            let rows = [];
+            const parsed: unknown = JSON.parse(data as string);
+            const rows = getJsonRows(parsed);
 
-            if (Array.isArray(parsed)) {
-              rows = parsed;
-            } else if (
-              parsed.transactions &&
-              Array.isArray(parsed.transactions)
-            ) {
-              rows = parsed.transactions;
-            } else if (parsed.data && Array.isArray(parsed.data)) {
-              rows = parsed.data;
-            } else {
+            if (rows.length === 0) {
               // Unsupported JSON shape
               setColumns([]);
               setPreviewRows([]);
@@ -165,13 +188,13 @@ export default function ImportModal({
             // Collect union of keys as columns
             const cols: string[] = Array.from(
               rows.reduce((acc: Set<string>, row: Record<string, unknown>) => {
-                Object.keys(row || {}).forEach((k: string) => acc.add(k));
+                Object.keys(row).forEach((k: string) => acc.add(k));
                 return acc;
               }, new Set<string>()),
             );
 
             setColumns(cols);
-            setPreviewRows(rows.slice(0, 5) as Record<string, unknown>[]);
+            setPreviewRows(rows.slice(0, 5));
             setParseError(null);
             autoMapColumns(cols);
           } catch (e: unknown) {
@@ -188,17 +211,14 @@ export default function ImportModal({
           try {
             const arrayBuffer = e.target!.result as ArrayBuffer;
             const bytes = Array.from(new Uint8Array(arrayBuffer));
-            const result = (await rust.read_xlsx({ data: bytes })) as {
-              data: unknown[][];
-              sheets?: { name: string; data: unknown[][] }[];
-            };
+            const result = await rust.read_xlsx({ data: bytes });
 
             const sheets = result.sheets ?? [
               { name: "Sheet1", data: result.data },
             ];
             const transactionSheet = pickTransactionSheet(sheets);
 
-            if (transactionSheet?.data?.length) {
+            if (transactionSheet && transactionSheet.data.length > 0) {
               const rows = rowsFromSheetData(transactionSheet.data);
               const strHeaders = Object.keys(rows[0] ?? {});
               setColumns(strHeaders);
@@ -272,9 +292,10 @@ export default function ImportModal({
       // Listen for file drop
       unlistenDrop = await listen("tauri://drag-drop", (event) => {
         const payload = event.payload as { paths?: string[] };
-        const paths = payload?.paths;
+        const paths = payload.paths;
         if (paths && paths.length > 0) {
           const filePath = paths[0];
+          if (!filePath) return;
           // Check if it's a supported file type
           const validExtensions = [".csv", ".xlsx", ".xls", ".json"];
           const hasValidExtension = validExtensions.some((ext) =>
@@ -282,7 +303,7 @@ export default function ImportModal({
           );
           if (hasValidExtension) {
             // Read the file from the path using fetch with file:// protocol
-            handleFileFromPath(filePath);
+            void handleFileFromPath(filePath);
           }
         }
         setIsDragging(false);
@@ -299,7 +320,7 @@ export default function ImportModal({
       });
     };
 
-    setupListeners();
+    void setupListeners();
 
     return () => {
       // Restore previous overflow setting on unmount
@@ -342,9 +363,10 @@ export default function ImportModal({
     e.stopPropagation();
     setIsDragging(false);
 
-    const files = e.dataTransfer?.files;
-    if (files && files.length > 0) {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
       const droppedFile = files[0];
+      if (!droppedFile) return;
       const fileName = droppedFile.name.toLowerCase();
       const validExtensions = [".csv", ".xlsx", ".xls", ".json"];
       const hasValidExtension = validExtensions.some((ext) =>
@@ -365,10 +387,13 @@ export default function ImportModal({
     parseFile(selectedFile);
   };
 
-  const handleImport = async () => {
+  const handleImport = () => {
     // Require that an account column is indicated (CSV/XLSX) or JSON includes account fields.
     // Use optional chaining so the check is safe when `file` is null and avoids patterns that trigger CodeQL.
-    if (!mapping.account && !file?.name?.endsWith(".json")) {
+    if (!file) {
+      return;
+    }
+    if (!mapping.account && !file.name.endsWith(".json")) {
       alert(t("error.no_account_mapping"));
       return;
     }
@@ -385,30 +410,19 @@ export default function ImportModal({
       let xlsxAssetRows: Record<string, unknown>[] = [];
       let xlsxAccounts: ExportAccount[] = [];
 
-      if (file!.name.endsWith(".csv")) {
+      if (file.name.endsWith(".csv")) {
         Papa.parse(data as string, {
           header: true,
           skipEmptyLines: true,
           complete: (results: { data: Record<string, unknown>[] }) => {
             allRows = results.data;
-            processRows(allRows, jsonAssets, jsonAccounts);
+            void processRows(allRows, jsonAssets, jsonAccounts);
           },
         });
-      } else if (file!.name.endsWith(".json")) {
+      } else if (file.name.endsWith(".json")) {
         try {
-          const parsed = JSON.parse(data as string);
-          if (Array.isArray(parsed)) {
-            allRows = parsed;
-          } else if (
-            parsed.transactions &&
-            Array.isArray(parsed.transactions)
-          ) {
-            allRows = parsed.transactions;
-          } else if (parsed.data && Array.isArray(parsed.data)) {
-            allRows = parsed.data;
-          } else {
-            allRows = [];
-          }
+          const parsed: unknown = JSON.parse(data as string);
+          allRows = getJsonRows(parsed);
 
           jsonAssets = extractAssetsFromHoneyBearJson(parsed);
           jsonAccounts = extractAccountsFromHoneyBearJson(parsed);
@@ -416,27 +430,24 @@ export default function ImportModal({
           console.error("Failed to parse JSON import file:", e);
           allRows = [];
         }
-        processRows(allRows, jsonAssets, jsonAccounts);
-      } else if (file!.name.endsWith(".xlsx") || file!.name.endsWith(".xls")) {
+        void processRows(allRows, jsonAssets, jsonAccounts);
+      } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
         try {
           const arrayBuffer = e.target!.result as ArrayBuffer;
           const bytes = Array.from(new Uint8Array(arrayBuffer));
-          const result = (await rust.read_xlsx({ data: bytes })) as {
-            data: unknown[][];
-            sheets?: { name: string; data: unknown[][] }[];
-          };
+          const result = await rust.read_xlsx({ data: bytes });
 
           const sheets = result.sheets ?? [
             { name: "Sheet1", data: result.data },
           ];
           const transactionSheet = pickTransactionSheet(sheets);
 
-          if (transactionSheet?.data?.length) {
+          if (transactionSheet && transactionSheet.data.length > 0) {
             allRows = rowsFromSheetData(transactionSheet.data);
           }
 
           const accountSheet = pickAccountSheet(sheets);
-          if (accountSheet?.data?.length) {
+          if (accountSheet && accountSheet.data.length > 0) {
             xlsxAccounts = rowsFromSheetData(accountSheet.data)
               .map(parseAccountFromRow)
               .filter((account): account is ExportAccount => account !== null);
@@ -445,13 +456,9 @@ export default function ImportModal({
           const assetSheet = sheets.find(
             (sheet) =>
               isAssetSheetName(sheet.name) ||
-              isAssetRow(
-                (sheet.data[0] as unknown[] | undefined)?.map((h) =>
-                  String(h ?? ""),
-                ) ?? [],
-              ),
+              isAssetRow(sheet.data[0]?.map((h) => asText(h)) ?? []),
           );
-          if (assetSheet?.data?.length) {
+          if (assetSheet && assetSheet.data.length > 0) {
             xlsxAssetRows = rowsFromSheetData(assetSheet.data);
           }
         } catch (err) {
@@ -462,7 +469,7 @@ export default function ImportModal({
         const xlsxAssets = xlsxAssetRows
           .map(parseAssetFromRow)
           .filter((asset): asset is ExportAsset => asset !== null);
-        processRows(
+        void processRows(
           allRows,
           [...jsonAssets, ...xlsxAssets],
           [...jsonAccounts, ...xlsxAccounts],
@@ -470,10 +477,10 @@ export default function ImportModal({
       }
     };
 
-    if (file!.name.endsWith(".csv") || file!.name.endsWith(".json")) {
-      reader.readAsText(file!);
+    if (file.name.endsWith(".csv") || file.name.endsWith(".json")) {
+      reader.readAsText(file);
     } else {
-      reader.readAsArrayBuffer(file!);
+      reader.readAsArrayBuffer(file);
     }
   };
 
@@ -495,8 +502,7 @@ export default function ImportModal({
     };
     if (assetsToImport.length > 0) {
       try {
-        const existingAssets =
-          (await rust.get_assets()) as AssetWithLatestValue[];
+        const existingAssets = await rust.get_assets();
         assetImportSummary = await importAssets(
           rust,
           assetsToImport,
@@ -539,6 +545,7 @@ export default function ImportModal({
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      if (!row) continue;
       const mappedAccountValue = mapping.account
         ? row[mapping.account]
         : undefined;
@@ -554,7 +561,7 @@ export default function ImportModal({
         const key =
           typeof accountField === "string"
             ? accountField.trim().toLowerCase()
-            : String(accountField);
+            : asText(accountField);
         if (!rowsByAccount.has(key)) {
           rowsByAccount.set(key, { identifier: accountField, rows: [] });
         }
@@ -580,8 +587,8 @@ export default function ImportModal({
       if (identifier !== null) {
         if (typeof identifier === "number") {
           accountId = identifier;
-        } else if (!isNaN(parseInt(String(identifier)))) {
-          accountId = parseInt(String(identifier));
+        } else if (!isNaN(parseInt(asText(identifier)))) {
+          accountId = parseInt(asText(identifier));
         } else if (typeof identifier === "string") {
           const name = identifier.trim();
           // Do a case-insensitive, trimmed comparison to avoid duplicates
@@ -596,7 +603,7 @@ export default function ImportModal({
               if (
                 mapping.ticker &&
                 row[mapping.ticker] &&
-                String(row[mapping.ticker]).trim() !== ""
+                asText(row[mapping.ticker]).trim() !== ""
               ) {
                 isBrokerage = true;
                 break;
@@ -604,15 +611,15 @@ export default function ImportModal({
               if (
                 mapping.shares &&
                 row[mapping.shares] &&
-                String(row[mapping.shares]).trim() !== ""
+                asText(row[mapping.shares]).trim() !== ""
               ) {
                 isBrokerage = true;
                 break;
               }
               // Check heuristics
-              const keys = Object.keys(row || {});
+              const keys = Object.keys(row);
               for (const k of keys) {
-                const lowerKey = String(k).toLowerCase();
+                const lowerKey = k.toLowerCase();
                 if (
                   [
                     "ticker",
@@ -626,7 +633,7 @@ export default function ImportModal({
                   if (
                     val !== undefined &&
                     val !== null &&
-                    String(val).trim() !== ""
+                    asText(val).trim() !== ""
                   ) {
                     isBrokerage = true;
                     break;
@@ -661,7 +668,7 @@ export default function ImportModal({
               continue;
             }
           }
-          if (match) accountId = match.id;
+          accountId = match.id;
         }
       }
 
@@ -679,27 +686,30 @@ export default function ImportModal({
           if (dateStr === undefined || dateStr === null || dateStr === "") {
             date = new Date().toISOString().split("T")[0];
           } else {
-            const parsedDate = new Date(String(dateStr));
+            const parsedDate = new Date(asText(dateStr));
             if (isNaN(parsedDate.getTime())) {
               // Try to normalize common separators and formats
-              const normalized = String(dateStr)
+              const normalized = asText(dateStr)
                 .replace(/\./g, "/")
                 .replace(/-/g, "/");
               const parts = normalized.split("/");
               let altDate = null;
               if (parts.length === 3) {
-                if (parts[0].length === 4) {
-                  // yyyy/mm/dd
-                  altDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
-                } else {
-                  // dd/mm/yyyy -> yyyy-mm-dd
-                  altDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                const [p0, p1, p2] = parts;
+                if (p0 && p1 && p2) {
+                  if (p0.length === 4) {
+                    // yyyy/mm/dd
+                    altDate = new Date(`${p0}-${p1}-${p2}`);
+                  } else {
+                    // dd/mm/yyyy -> yyyy-mm-dd
+                    altDate = new Date(`${p2}-${p1}-${p0}`);
+                  }
                 }
               }
               if (altDate && !isNaN(altDate.getTime())) {
                 date = altDate.toISOString().split("T")[0];
               } else {
-                console.warn(`Invalid date for row ${i}:`, dateStr);
+                console.warn(`Invalid date for row ${String(i)}:`, dateStr);
                 date = new Date().toISOString().split("T")[0];
               }
             } else {
@@ -729,7 +739,7 @@ export default function ImportModal({
             ? row[mapping.fee]
             : row.fee || row.commission || row.Fee;
 
-          let currency = mapping.currency
+          const currency = mapping.currency
             ? row[mapping.currency]
             : row.currency ||
               row.Currency ||
@@ -762,12 +772,12 @@ export default function ImportModal({
               shares,
               pricePerShare: price,
               fee,
-              currency: currency ? String(currency) : null,
+              currency: currency ? asText(currency) : null,
             },
           });
           successCount++;
         } catch (e) {
-          console.error(`Row ${i} import failed:`, e);
+          console.error(`Row ${String(i)} import failed:`, e);
           importErrors.push({ row: i, error: String(e) });
           failCount++;
         }
@@ -786,11 +796,11 @@ export default function ImportModal({
 
     const accountMsg =
       accountImportSummary.imported > 0
-        ? `${accountImportSummary.imported} accounts, `
+        ? `${String(accountImportSummary.imported)} accounts, `
         : "";
     const assetMsg =
       assetImportSummary.imported > 0
-        ? `, ${assetImportSummary.imported} assets imported`
+        ? `, ${String(assetImportSummary.imported)} assets imported`
         : "";
     const hasErrors =
       failCount > 0 ||
@@ -798,7 +808,7 @@ export default function ImportModal({
       accountImportSummary.errors.length > 0;
     if (hasErrors) {
       showToast(
-        `Import completed: ${accountMsg}${successCount} transactions succeeded, ${failCount} failed${assetMsg}`,
+        `Import completed: ${accountMsg}${String(successCount)} transactions succeeded, ${String(failCount)} failed${assetMsg}`,
         { type: "error" },
       );
       console.error(
@@ -809,7 +819,7 @@ export default function ImportModal({
       );
     } else {
       showToast(
-        `${accountMsg}${successCount} transactions imported${assetMsg}`,
+        `${accountMsg}${String(successCount)} transactions imported${assetMsg}`,
         { type: "success" },
       );
     }
@@ -828,7 +838,7 @@ export default function ImportModal({
 
   // derived helper used by the Start Import button (keeps conditional concise & clear)
   const canStartImport = Boolean(
-    file && (mapping.account || file?.name?.endsWith(".json")) && !importing,
+    file && (mapping.account || file.name.endsWith(".json")) && !importing,
   );
 
   // If SSR or tests, avoid touching document
@@ -914,7 +924,9 @@ export default function ImportModal({
 
           {step === 0 ? (
             <button
-              onClick={() => setStep(1)}
+              onClick={() => {
+                setStep(1);
+              }}
               disabled={!file}
               className="btn-primary"
             >
@@ -923,7 +935,9 @@ export default function ImportModal({
           ) : (
             <>
               <button
-                onClick={() => setStep(0)}
+                onClick={() => {
+                  setStep(0);
+                }}
                 disabled={importing}
                 className="btn-secondary"
               >
@@ -931,7 +945,9 @@ export default function ImportModal({
               </button>
 
               <button
-                onClick={handleImport}
+                onClick={() => {
+                  handleImport();
+                }}
                 disabled={!canStartImport}
                 className="btn-primary"
               >

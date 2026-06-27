@@ -8,10 +8,22 @@ import { STORAGE_KEYS } from "../constants/app";
 
 type TagColorMap = Record<string, string>;
 
+function isTagColorMap(value: unknown): value is TagColorMap {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  return Object.values(value).every((entry) => typeof entry === "string");
+}
+
 function readFromStorage(): TagColorMap {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.TAG_COLORS);
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    return isTagColorMap(parsed) ? parsed : {};
   } catch {
     return {};
   }
@@ -46,8 +58,7 @@ export default function useTagColors(): UseTagColorsReturn {
 
   const removeTagColor = useCallback((categoryName: string) => {
     setTagColors((prev) => {
-      const next = { ...prev };
-      delete next[categoryName];
+      const { [categoryName]: _removed, ...next } = prev;
       writeToStorage(next);
       return next;
     });

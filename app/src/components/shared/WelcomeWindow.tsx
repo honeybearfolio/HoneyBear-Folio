@@ -76,7 +76,9 @@ export default function WelcomeWindow() {
           <label className="modal-label">{t("settings.language")}</label>
           <CustomSelect
             value={uiLanguage}
-            onChange={(v) => setUiLanguage(String(v))}
+            onChange={(v) => {
+              setUiLanguage(String(v));
+            }}
             options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({
               value: code,
               label,
@@ -91,7 +93,9 @@ export default function WelcomeWindow() {
           <label className="modal-label">{t("settings.theme")}</label>
           <CustomSelect
             value={theme}
-            onChange={(v) => setTheme(String(v))}
+            onChange={(v) => {
+              setTheme(String(v));
+            }}
             options={[
               { value: "light", label: t("settings.theme.light") },
               { value: "dark", label: t("settings.theme.dark") },
@@ -108,7 +112,9 @@ export default function WelcomeWindow() {
           <label className="modal-label">{t("import.field.currency")}</label>
           <CustomSelect
             value={currency}
-            onChange={(v) => setCurrency(String(v))}
+            onChange={(v) => {
+              setCurrency(String(v));
+            }}
             options={CURRENCIES.map((c) => ({
               value: c.code,
               label: `${c.code} - ${c.name} (${c.symbol})`,
@@ -123,7 +129,9 @@ export default function WelcomeWindow() {
           <label className="modal-label">{t("number_format")}</label>
           <CustomSelect
             value={locale}
-            onChange={(v) => setLocale(String(v))}
+            onChange={(v) => {
+              setLocale(String(v));
+            }}
             options={[
               { value: "en-US", label: "1,234.56" },
               { value: "de-DE", label: "1.234,56" },
@@ -140,7 +148,9 @@ export default function WelcomeWindow() {
           <label className="modal-label">{t("settings.date_format")}</label>
           <CustomSelect
             value={dateFormat}
-            onChange={(v) => setDateFormat(String(v))}
+            onChange={(v) => {
+              setDateFormat(String(v));
+            }}
             options={dateFormatOptions}
             placeholder={t("settings.select_date_format_placeholder")}
             data-testid="date-format-select"
@@ -153,7 +163,9 @@ export default function WelcomeWindow() {
           </label>
           <CustomSelect
             value={firstDayOfWeek}
-            onChange={(v) => setFirstDayOfWeek(Number(v))}
+            onChange={(v) => {
+              setFirstDayOfWeek(Number(v));
+            }}
             options={[
               { value: 1, label: t("weekday.monday") },
               { value: 2, label: t("weekday.tuesday") },

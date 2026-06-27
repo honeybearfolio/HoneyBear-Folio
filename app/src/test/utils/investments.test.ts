@@ -47,10 +47,7 @@ describe("investment utils wrappers", () => {
 
     vi.mocked(invoke).mockResolvedValue(expected);
 
-    const result = await mergeHoldingsWithQuotes(
-      holdings as never,
-      quotes as never,
-    );
+    const result = await mergeHoldingsWithQuotes(holdings, quotes);
 
     expect(invoke).toHaveBeenCalledWith("merge_holdings_with_quotes", {
       holdings,
@@ -85,7 +82,7 @@ describe("investment utils wrappers", () => {
 
     const result = await computeNetWorthMarketValues(
       transactions as never,
-      quotes as never,
+      quotes,
     );
 
     expect(result["1"]).toBeCloseTo(1100);
@@ -102,7 +99,7 @@ describe("investment utils wrappers", () => {
 
     const result = await computeNetWorthMarketValues(
       transactions as never,
-      quotes as never,
+      quotes,
     );
 
     expect(result["1"]).toBe(0);

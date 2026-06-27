@@ -26,7 +26,7 @@ export const useToastStore = create<ToastState>((set) => ({
       duration = 4000,
     }: { type?: ToastType; duration?: number } = {},
   ) => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const id = `${String(Date.now())}-${Math.random().toString(36).slice(2, 9)}`;
     set((s) => ({ toasts: [...s.toasts, { id, message, type }] }));
     if (duration > 0) {
       setTimeout(() => {
@@ -35,8 +35,9 @@ export const useToastStore = create<ToastState>((set) => ({
     }
     return id;
   },
-  removeToast: (id: string) =>
-    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  removeToast: (id: string) => {
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+  },
 }));
 
 export interface ToastAPI {

@@ -9,8 +9,9 @@ export default function useDocumentClass(className: string): boolean {
   });
 
   useLayoutEffect(() => {
-    const syncClassState = () =>
+    const syncClassState = () => {
       setHasClass(document.documentElement.classList.contains(className));
+    };
 
     syncClassState();
 
@@ -20,7 +21,9 @@ export default function useDocumentClass(className: string): boolean {
       attributeFilter: ["class"],
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [className]);
 
   return hasClass;

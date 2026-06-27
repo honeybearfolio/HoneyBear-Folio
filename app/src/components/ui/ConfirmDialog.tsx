@@ -30,8 +30,12 @@ export function ConfirmDialogContainer() {
       cancelLabel={cancelLabel}
       kind={kind}
       showCancel={showCancel}
-      onConfirm={() => handleClose(true)}
-      onCancel={() => handleClose(false)}
+      onConfirm={() => {
+        handleClose(true);
+      }}
+      onCancel={() => {
+        handleClose(false);
+      }}
     />
   );
 }
@@ -84,7 +88,10 @@ function ConfirmDialog({
 
   return (
     <Modal onClose={onCancel} size="md">
-      <ModalHeader title={title} onClose={showCancel ? onCancel : undefined} />
+      <ModalHeader
+        title={title}
+        {...(showCancel ? { onClose: onCancel } : {})}
+      />
       <ModalBody>
         <p className="text-slate-600 dark:text-slate-300">{message}</p>
       </ModalBody>

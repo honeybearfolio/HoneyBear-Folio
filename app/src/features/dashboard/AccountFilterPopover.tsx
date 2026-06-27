@@ -39,13 +39,17 @@ export default function AccountFilterPopover({
     if (showAccountFilter) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [showAccountFilter]);
 
   return (
     <div className="relative" ref={filterRef}>
       <button
-        onClick={() => setShowAccountFilter((v) => !v)}
+        onClick={() => {
+          setShowAccountFilter((v) => !v);
+        }}
         className={`account-filter-trigger ${
           selectedAccountIds.size < accounts.length
             ? "account-filter-trigger-active"
@@ -77,14 +81,18 @@ export default function AccountFilterPopover({
             <div className="flex items-center gap-2">
               <button
                 className="toggle-all text-xs"
-                onClick={() => setAllAccountsVisibility(true)}
+                onClick={() => {
+                  setAllAccountsVisibility(true);
+                }}
               >
                 {t("dashboard.show_all")}
               </button>
               <span className="text-slate-300 dark:text-slate-600">|</span>
               <button
                 className="toggle-all text-xs"
-                onClick={() => setAllAccountsVisibility(false)}
+                onClick={() => {
+                  setAllAccountsVisibility(false);
+                }}
               >
                 {t("dashboard.hide_all")}
               </button>
@@ -100,13 +108,13 @@ export default function AccountFilterPopover({
                     type="checkbox"
                     className="account-checkbox"
                     checked={!!toggledAccounts[acc.id]}
-                    onChange={() => toggleAccountVisibility(acc.id)}
+                    onChange={() => {
+                      toggleAccountVisibility(acc.id);
+                    }}
                     aria-label={acc.name}
-                    style={
-                      {
-                        ["--hb-account-color" as string]: color,
-                      } as React.CSSProperties
-                    }
+                    style={{
+                      ["--hb-account-color" as string]: color,
+                    }}
                   />
                   <span
                     className="account-dot w-3 h-3 rounded-full flex-shrink-0"
@@ -116,8 +124,8 @@ export default function AccountFilterPopover({
                   <span className="account-balance ml-auto text-slate-500 dark:text-slate-400 text-xs">
                     <MaskedNumber
                       value={
-                        marketValues && marketValues[acc.id] !== undefined
-                          ? (acc.balance || 0) + marketValues[acc.id]
+                        marketValues[acc.id] !== undefined
+                          ? (acc.balance || 0) + marketValues[acc.id]!
                           : acc.balance || 0
                       }
                       options={{

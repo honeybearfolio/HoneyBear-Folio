@@ -21,7 +21,7 @@ interface AccountHeaderProps {
   setIsRenamingAccount: (v: boolean) => void;
   renameValue: string;
   setRenameValue: (v: string) => void;
-  handleRenameAccount: (e: React.FormEvent) => void;
+  handleRenameAccount: (e: React.SyntheticEvent) => Promise<void>;
   renameInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
@@ -57,14 +57,18 @@ export default function AccountHeader({
       <div>
         {isRenamingAccount ? (
           <form
-            onSubmit={handleRenameAccount}
+            onSubmit={(e) => {
+              void handleRenameAccount(e);
+            }}
             className="flex items-center gap-2"
           >
             <input
               type="text"
               value={renameValue}
               ref={renameInputRef}
-              onChange={(e) => setRenameValue(e.target.value)}
+              onChange={(e) => {
+                setRenameValue(e.target.value);
+              }}
               className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight bg-transparent border-b-2 border-brand-500 focus:outline-none min-w-[200px]"
               autoFocus
               onKeyDown={(e) => {
@@ -103,7 +107,7 @@ export default function AccountHeader({
 
         <div className="flex flex-col mt-2 gap-1">
           {account.totalValue !== undefined &&
-          Math.abs(account.totalValue - (account.balance ?? 0)) > 0.01 ? (
+          Math.abs(account.totalValue - account.balance) > 0.01 ? (
             <>
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -131,7 +135,7 @@ export default function AccountHeader({
                 </span>
                 <span
                   className={`text-lg font-medium tracking-tight ${
-                    (account.balance ?? 0) >= 0
+                    account.balance >= 0
                       ? "text-emerald-600 dark:text-emerald-400 opacity-80"
                       : "text-rose-600 dark:text-rose-400 opacity-80"
                   }`}
@@ -153,12 +157,12 @@ export default function AccountHeader({
               </span>
               <span
                 className={`text-3xl font-bold tracking-tight ${
-                  (account.balance ?? 0) >= 0
+                  account.balance >= 0
                     ? "text-emerald-600 dark:text-emerald-400"
                     : "text-rose-600 dark:text-rose-400"
                 }`}
               >
-                {(account.balance ?? 0) >= 0 ? "+" : ""}
+                {account.balance >= 0 ? "+" : ""}
                 <MaskedNumber
                   value={account.balance}
                   options={{
@@ -180,7 +184,9 @@ export default function AccountHeader({
             placeholder={t("account.search_transactions")}
             className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm transition-all hover:border-slate-300 dark:hover:border-slate-600 text-slate-900 dark:text-slate-100"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
           />
         </div>
         <div className="flex items-center gap-3">
@@ -199,7 +205,9 @@ export default function AccountHeader({
               </button>
             ) : (
               <button
-                onClick={() => setIsAdding(false)}
+                onClick={() => {
+                  setIsAdding(false);
+                }}
                 className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center gap-2 px-3 sm:px-5 py-3 rounded-xl font-semibold text-sm shadow-sm transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -211,7 +219,9 @@ export default function AccountHeader({
         {account.id !== "all" && (
           <div className="relative account-action-menu">
             <button
-              onClick={() => setAccountMenuOpen(!accountMenuOpen)}
+              onClick={() => {
+                setAccountMenuOpen(!accountMenuOpen);
+              }}
               className="p-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
             >
               <MoreVertical className="w-5 h-5" />
@@ -220,6 +230,7 @@ export default function AccountHeader({
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-200">
                 <button
                   onClick={() => {
+                    setRenameValue(account.name);
                     setIsRenamingAccount(true);
                     setAccountMenuOpen(false);
                     setTimeout(() => renameInputRef.current?.focus(), 50);

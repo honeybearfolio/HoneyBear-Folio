@@ -87,8 +87,8 @@ export default function SankeyDiagram({
     endDate.setHours(23, 59, 59, 999);
 
     // Use local date components to avoid timezone shifts
-    const startStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
-    const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+    const startStr = `${String(startDate.getFullYear())}-${String(startDate.getMonth() + 1).padStart(2, "0")}-${String(startDate.getDate()).padStart(2, "0")}`;
+    const endStr = `${String(endDate.getFullYear())}-${String(endDate.getMonth() + 1).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
 
     const relevantTransactions = transactions.filter(
       (t) =>
@@ -117,10 +117,12 @@ export default function SankeyDiagram({
     relevantTransactions.forEach((tx) => {
       const acc = accountMap[tx.account_id];
       const accCurrency = acc?.currency || appCurrency;
+      const fromCurrency = accCurrency ?? "";
+      const toCurrency = appCurrency ?? "";
       const rateToApp =
         accCurrency === appCurrency
           ? 1.0
-          : getPrice(`${accCurrency}${appCurrency}=X`, tx.date) || 1.0;
+          : getPrice(`${fromCurrency}${toCurrency}=X`, tx.date) || 1.0;
       const amount = tx.amount * rateToApp;
 
       if (amount > 0) {
@@ -170,7 +172,7 @@ export default function SankeyDiagram({
 
     // 1. Income -> Budget
     Object.entries(incomeCategories)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .sort(([, a], [, b]) => b - a)
       .forEach(([cat, value]) => {
         const id = `inc:${cat}`;
         flows.push({ from: id, to: ID_BUDGET, flow: value });
@@ -180,14 +182,10 @@ export default function SankeyDiagram({
 
     // 2. Budget -> Intermediate Nodes
     let expensesTotal = 0;
-    Object.values(expenseCategories).forEach(
-      (v) => (expensesTotal += v as number),
-    );
+    Object.values(expenseCategories).forEach((v) => (expensesTotal += v));
 
     let investmentsTotal = 0;
-    Object.values(investmentCategories).forEach(
-      (v) => (investmentsTotal += v as number),
-    );
+    Object.values(investmentCategories).forEach((v) => (investmentsTotal += v));
 
     let surplus = 0;
     let deficit = 0;
@@ -237,7 +235,7 @@ export default function SankeyDiagram({
     }
 
     Object.entries(investmentCategories)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .sort(([, a], [, b]) => b - a)
       .forEach(([cat, value]) => {
         const id = `inv:${cat}`;
         flows.push({ from: ID_INVESTMENTS_GROUP, to: id, flow: value });
@@ -246,7 +244,7 @@ export default function SankeyDiagram({
       });
 
     Object.entries(expenseCategories)
-      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .sort(([, a], [, b]) => b - a)
       .forEach(([cat, value]) => {
         const id = `exp:${cat}`;
         flows.push({ from: ID_EXPENSES_GROUP, to: id, flow: value });
@@ -281,9 +279,9 @@ export default function SankeyDiagram({
           label: t("dashboard.cash_flow"),
           data: flows,
           colorFrom: (c: ScriptableContext<"sankey">) =>
-            getColor(c.dataset.data[c.dataIndex].from),
+            getColor(c.dataset.data[c.dataIndex]!.from),
           colorTo: (c: ScriptableContext<"sankey">) =>
-            getColor(c.dataset.data[c.dataIndex].to),
+            getColor(c.dataset.data[c.dataIndex]!.to),
           colorMode: "gradient",
           labels: labels,
           priority: priorityMap,

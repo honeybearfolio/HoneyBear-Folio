@@ -8,7 +8,7 @@ use tauri::AppHandle;
 // Recurrence engine
 // ---------------------------------------------------------------------------
 
-/// Convert our 0=Sun..6=Sat integer to chrono::Weekday
+/// Convert our 0=Sun..6=Sat integer to `chrono::Weekday`
 fn to_chrono_weekday(d: u32) -> Option<Weekday> {
     match d {
         0 => Some(Weekday::Sun),
@@ -45,7 +45,7 @@ fn nth_weekday_of_month(
         while d.weekday() != weekday {
             d = d.succ_opt()?;
         }
-        d += Duration::weeks((ordinal - 1) as i64);
+        d += Duration::weeks(i64::from(ordinal - 1));
         // Verify still in the same month
         if d.month() == month {
             Some(d)
@@ -66,6 +66,7 @@ fn last_day_of_month(year: i32, month: u32) -> Option<NaiveDate> {
 }
 
 /// Compute all occurrence dates for a scheduled transaction within [from, to] (inclusive).
+#[must_use]
 pub fn compute_occurrences(
     schedule: &ScheduledTransaction,
     from: NaiveDate,
@@ -87,9 +88,8 @@ fn compute_every_n(
     let interval = schedule.interval_value.unwrap_or(1).max(1);
     let unit = schedule.interval_unit.as_deref().unwrap_or("month");
 
-    let start = match NaiveDate::parse_from_str(&schedule.start_date, "%Y-%m-%d") {
-        Ok(d) => d,
-        Err(_) => return vec![],
+    let Ok(start) = NaiveDate::parse_from_str(&schedule.start_date, "%Y-%m-%d") else {
+        return vec![];
     };
 
     let end_date = schedule
@@ -120,11 +120,10 @@ fn compute_every_n(
 
         // Advance cursor
         cursor = match unit {
-            "day" => cursor + Duration::days(interval as i64),
-            "week" => cursor + Duration::weeks(interval as i64),
+            "week" => cursor + Duration::weeks(i64::from(interval)),
             "month" => add_months(cursor, interval),
             "year" => add_months(cursor, interval * 12),
-            _ => cursor + Duration::days(interval as i64),
+            _ => cursor + Duration::days(i64::from(interval)),
         };
     }
 
@@ -141,9 +140,8 @@ fn compute_day_of_week(
         _ => return vec![],
     };
 
-    let start = match NaiveDate::parse_from_str(&schedule.start_date, "%Y-%m-%d") {
-        Ok(d) => d,
-        Err(_) => return vec![],
+    let Ok(start) = NaiveDate::parse_from_str(&schedule.start_date, "%Y-%m-%d") else {
+        return vec![];
     };
 
     let end_date = schedule
@@ -202,22 +200,18 @@ fn compute_ordinal_weekday(
     from: NaiveDate,
     to: NaiveDate,
 ) -> Vec<NaiveDate> {
-    let ordinal = match schedule.ordinal {
-        Some(o) => o,
-        None => return vec![],
+    let Some(ordinal) = schedule.ordinal else {
+        return vec![];
     };
-    let weekday_num = match schedule.weekday {
-        Some(w) => w,
-        None => return vec![],
+    let Some(weekday_num) = schedule.weekday else {
+        return vec![];
     };
-    let weekday = match to_chrono_weekday(weekday_num) {
-        Some(w) => w,
-        None => return vec![],
+    let Some(weekday) = to_chrono_weekday(weekday_num) else {
+        return vec![];
     };
 
-    let start = match NaiveDate::parse_from_str(&schedule.start_date, "%Y-%m-%d") {
-        Ok(d) => d,
-        Err(_) => return vec![],
+    let Ok(start) = NaiveDate::parse_from_str(&schedule.start_date, "%Y-%m-%d") else {
+        return vec![];
     };
 
     let end_date = schedule
@@ -276,9 +270,7 @@ fn add_months(date: NaiveDate, months: i32) -> NaiveDate {
     let target_day = date.day();
 
     // Clamp day to the last valid day of the target month
-    let max_day = last_day_of_month(target_year, target_month)
-        .map(|d| d.day())
-        .unwrap_or(28);
+    let max_day = last_day_of_month(target_year, target_month).map_or(28, |d| d.day());
 
     NaiveDate::from_ymd_opt(target_year, target_month, target_day.min(max_day)).unwrap_or(date)
 }
@@ -338,10 +330,7 @@ pub fn get_scheduled_transactions_db(
 ) -> Result<Vec<ScheduledTransaction>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-        let sql = format!(
-            "SELECT {} FROM scheduled_transactions ORDER BY id ASC",
-            SELECT_COLUMNS
-        );
+        let sql = format!("SELECT {SELECT_COLUMNS} FROM scheduled_transactions ORDER BY id ASC");
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
         let iter = stmt
@@ -396,7 +385,7 @@ pub fn create_scheduled_transaction_db(
             .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
 
         let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
-        let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
+        let is_buy_int: Option<i32> = args.is_buy.map(i32::from);
 
         conn.execute(
         "INSERT INTO scheduled_transactions \
@@ -476,9 +465,9 @@ pub fn update_scheduled_transaction_db(
             .as_ref()
             .map(|d| serde_json::to_string(d).unwrap_or_else(|_| "[]".to_string()));
 
-        let enabled_int: i32 = if args.enabled { 1 } else { 0 };
+        let enabled_int: i32 = i32::from(args.enabled);
         let tx_type = args.transaction_type.as_deref().unwrap_or("regular");
-        let is_buy_int: Option<i32> = args.is_buy.map(|b| if b { 1 } else { 0 });
+        let is_buy_int: Option<i32> = args.is_buy.map(i32::from);
 
         conn.execute(
             "UPDATE scheduled_transactions SET \
@@ -535,8 +524,8 @@ pub fn delete_scheduled_transaction_db(db_path: &PathBuf, id: i32) -> Result<(),
     })
 }
 
-/// Compute pending occurrences (missed + upcoming 5 days) for an optional account_id.
-/// If account_id is None, returns occurrences across all accounts.
+/// Compute pending occurrences (missed + upcoming 5 days) for an optional `account_id`.
+/// If `account_id` is None, returns occurrences across all accounts.
 pub fn get_pending_occurrences_db(
     db_path: &PathBuf,
     account_id: Option<i32>,
@@ -544,7 +533,7 @@ pub fn get_pending_occurrences_db(
 ) -> Result<Vec<ScheduledOccurrence>, String> {
     crate::db_locked!(db_path, {
         let today = NaiveDate::parse_from_str(today_str, "%Y-%m-%d")
-            .map_err(|e| format!("Invalid date: {}", e))?;
+            .map_err(|e| format!("Invalid date: {e}"))?;
         let lookahead = today + Duration::days(5);
 
         let schedules = get_scheduled_transactions_db(db_path)?;
@@ -559,7 +548,7 @@ pub fn get_pending_occurrences_db(
                 Ok((row.get::<_, i32>(0)?, row.get::<_, String>(1)?))
             })
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
+            .filter_map(std::result::Result::ok)
             .collect();
 
         let mut occurrences = Vec::new();
@@ -579,10 +568,10 @@ pub fn get_pending_occurrences_db(
                 .last_applied_date
                 .as_ref()
                 .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
-                .map(|d| d + Duration::days(1))
-                .unwrap_or_else(|| {
-                    NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d").unwrap_or(today)
-                });
+                .map_or_else(
+                    || NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d").unwrap_or(today),
+                    |d| d + Duration::days(1),
+                );
 
             let dates = compute_occurrences(sched, range_start, lookahead);
 
@@ -635,10 +624,7 @@ pub fn apply_scheduled_occurrence_db(
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         // Fetch the scheduled transaction
-        let sql = format!(
-            "SELECT {} FROM scheduled_transactions WHERE id = ?1",
-            SELECT_COLUMNS
-        );
+        let sql = format!("SELECT {SELECT_COLUMNS} FROM scheduled_transactions WHERE id = ?1");
         let sched: ScheduledTransaction = conn
             .query_row(&sql, params![scheduled_tx_id], row_to_scheduled)
             .map_err(|e| e.to_string())?;
@@ -693,7 +679,7 @@ pub fn apply_scheduled_occurrence_db(
     })
 }
 
-/// Skip a scheduled occurrence: advance last_applied_date without creating a transaction.
+/// Skip a scheduled occurrence: advance `last_applied_date` without creating a transaction.
 pub fn skip_scheduled_occurrence_db(
     db_path: &PathBuf,
     scheduled_tx_id: i32,

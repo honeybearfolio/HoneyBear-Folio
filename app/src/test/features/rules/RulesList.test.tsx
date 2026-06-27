@@ -13,7 +13,8 @@ import { invoke } from "@tauri-apps/api/core";
 // Number formatting hooks are used by NumberInput — provide light mocks so
 // RulesList can be exercised without wrapping providers.
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (v: unknown) => (v == null ? "" : String(v)),
+  useFormatNumber: () => (v: unknown) =>
+    typeof v === "number" || typeof v === "string" ? String(v) : "",
   useParseNumber: () => (s: string) => Number(s),
 }));
 
@@ -69,9 +70,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     <select
       data-testid="select"
       value={value}
-      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-        onChange(e.target.value)
-      }
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+        onChange(e.target.value);
+      }}
     >
       <option value="">{placeholder}</option>
       {options.map((opt: { value: string; label: string }) => (
@@ -125,7 +126,9 @@ describe("RulesList", () => {
 
     render(<RulesList />);
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // open the create-rule form (header Add button)
     const headerAddBtn = screen
@@ -134,11 +137,11 @@ describe("RulesList", () => {
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Fill new rule form
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
     const patternInput = within(conditionGroup!).getByPlaceholderText("Value");
     fireEvent.change(patternInput, { target: { value: "Netflix" } });
 
-    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0]!.closest("div");
     const valueInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(valueInput, { target: { value: "Entertainment" } });
 
@@ -150,15 +153,15 @@ describe("RulesList", () => {
     fireEvent.click(addButton!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            match_pattern: "Netflix",
-            action_value: "Entertainment",
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as {
+        args: { match_pattern: string; action_value: string };
+      };
+      expect(payload.args.match_pattern).toBe("Netflix");
+      expect(payload.args.action_value).toBe("Entertainment");
     });
   });
 
@@ -178,9 +181,9 @@ describe("RulesList", () => {
 
     render(<RulesList />);
 
-    await waitFor(() =>
-      expect(screen.getByText(/"Test Rule"/)).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByText(/"Test Rule"/)).toBeInTheDocument();
+    });
 
     // Find delete button
     const deleteBtn = screen.getByText("Delete").closest("button");
@@ -214,7 +217,9 @@ describe("RulesList", () => {
     vi.mocked(invoke).mockResolvedValueOnce(mockRules); // initial fetch
     render(<RulesList />);
 
-    await waitFor(() => expect(screen.getByText(/"a"/)).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText(/"a"/)).toBeInTheDocument();
+    });
 
     const rows = screen.getAllByRole("row");
     const firstRow = rows.find((r) => r.getAttribute("data-index") === "0");
@@ -260,19 +265,19 @@ describe("RulesList", () => {
 
     render(<RulesList />);
 
-    await waitFor(() =>
-      expect(screen.getByText(/"Old Payee"/)).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByText(/"Old Payee"/)).toBeInTheDocument();
+    });
 
     // Click edit and assert form populated
     const editBtn = screen.getByText("Edit").closest("button");
     fireEvent.click(editBtn!);
 
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
     const patternInput = within(conditionGroup!).getByPlaceholderText("Value");
     expect((patternInput as HTMLInputElement).value).toBe("Old Payee");
 
-    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0]!.closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     expect((actionInput as HTMLInputElement).value).toBe("OldCat");
 
@@ -284,16 +289,16 @@ describe("RulesList", () => {
     fireEvent.click(submit);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "update_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            id: 11,
-            match_pattern: "New Payee",
-            action_value: "NewCat",
-          }),
-        }),
-      );
+      const updateCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "update_rule");
+      expect(updateCall).toBeDefined();
+      const payload = updateCall?.[1] as {
+        args: { id: number; match_pattern: string; action_value: string };
+      };
+      expect(payload.args.id).toBe(11);
+      expect(payload.args.match_pattern).toBe("New Payee");
+      expect(payload.args.action_value).toBe("NewCat");
     });
   });
 
@@ -301,7 +306,9 @@ describe("RulesList", () => {
     vi.mocked(invoke).mockResolvedValueOnce([]); // initial fetch
 
     render(<RulesList />);
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // open the create-rule form
     const headerAddBtn = screen
@@ -321,15 +328,15 @@ describe("RulesList", () => {
 
     // Fill both conditions and an action
     const conds = screen.getAllByText("If");
-    const firstCond = conds[0].closest("div");
+    const firstCond = conds[0]!.closest("div");
     const firstPattern = within(firstCond!).getByPlaceholderText("Value");
     fireEvent.change(firstPattern, { target: { value: "A" } });
 
-    const secondCond = conds[1].closest("div");
+    const secondCond = conds[1]!.closest("div");
     const secondPattern = within(secondCond!).getByPlaceholderText("Value");
     fireEvent.change(secondPattern, { target: { value: "B" } });
 
-    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0]!.closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(actionInput, { target: { value: "SomeCat" } });
 
@@ -341,16 +348,16 @@ describe("RulesList", () => {
     fireEvent.click(submit!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            logic: "or",
-            conditions: expect.any(Array),
-            actions: expect.any(Array),
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((c) => c[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const createPayload = createCall?.[1] as {
+        args: { logic: string; conditions: unknown[]; actions: unknown[] };
+      };
+      expect(createPayload.args.logic).toBe("or");
+      expect(Array.isArray(createPayload.args.conditions)).toBe(true);
+      expect(Array.isArray(createPayload.args.actions)).toBe(true);
       const payload = (
         vi
           .mocked(invoke)
@@ -368,40 +375,50 @@ describe("RulesList", () => {
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtnAgain) fireEvent.click(headerAddBtnAgain);
 
-    await waitFor(() =>
-      expect(screen.getAllByText("If").length).toBeGreaterThan(0),
-    );
+    await waitFor(() => {
+      expect(screen.getAllByText("If").length).toBeGreaterThan(0);
+    });
 
     // Add then remove a condition and assert UI updates
     const addCond2 = screen.getByRole("button", {
       name: /Add condition/,
     });
     fireEvent.click(addCond2);
-    await waitFor(() => expect(screen.getAllByText("If").length).toBe(2));
+    await waitFor(() => {
+      expect(screen.getAllByText("If").length).toBe(2);
+    });
 
     const condsAfter = screen.getAllByText("If");
-    const secondCondAfter = condsAfter[1].closest("div");
+    const secondCondAfter = condsAfter[1]!.closest("div");
     const removeBtns2 = within(secondCondAfter!).getByTitle("Remove condition");
     fireEvent.click(removeBtns2);
-    await waitFor(() => expect(screen.getAllByText("If").length).toBe(1));
+    await waitFor(() => {
+      expect(screen.getAllByText("If").length).toBe(1);
+    });
 
     // Add & remove action (UI) and assert updates
     const addAction = screen.getByRole("button", { name: /Add action/ });
     fireEvent.click(addAction);
-    await waitFor(() => expect(screen.getAllByText("Then set").length).toBe(2));
+    await waitFor(() => {
+      expect(screen.getAllByText("Then set").length).toBe(2);
+    });
 
     const removeActionBtn = within(
-      screen.getAllByText("Then set")[1].closest("div") as HTMLElement,
+      screen.getAllByText("Then set")[1]!.closest("div") as HTMLElement,
     ).getByTitle("Remove action");
     fireEvent.click(removeActionBtn);
-    await waitFor(() => expect(screen.getAllByText("Then set").length).toBe(1));
+    await waitFor(() => {
+      expect(screen.getAllByText("Then set").length).toBe(1);
+    });
   });
 
   it("supports numeric fields for condition and action (NumberInput) and stringifies action values", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([]);
 
     render(<RulesList />);
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // open the create-rule form
     const headerAddBtn = screen
@@ -409,10 +426,10 @@ describe("RulesList", () => {
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
     // there are two selects inside the condition: [0] = field, [1] = operator
     const selects = within(conditionGroup!).getAllByTestId("select");
-    const fieldSelect = selects[0];
+    const fieldSelect = selects[0]!;
     // choose the numeric 'amount' field
     fireEvent.change(fieldSelect, { target: { value: "amount" } });
 
@@ -421,7 +438,7 @@ describe("RulesList", () => {
     fireEvent.change(numInput, { target: { value: "123.45" } });
     fireEvent.blur(numInput);
 
-    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0]!.closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(actionInput, { target: { value: "42" } });
 
@@ -432,15 +449,15 @@ describe("RulesList", () => {
     fireEvent.click(submitBtn!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            match_pattern: "123.45",
-            actions: expect.any(Array),
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const createPayload = createCall?.[1] as {
+        args: { match_pattern: string; actions: unknown[] };
+      };
+      expect(createPayload.args.match_pattern).toBe("123.45");
+      expect(Array.isArray(createPayload.args.actions)).toBe(true);
       // action values are stringified by the component
       const payload = (
         vi
@@ -450,7 +467,7 @@ describe("RulesList", () => {
           unknown
         > as { args: { actions: { value: string }[] } }
       ).args;
-      expect(payload.actions[0].value).toBe("42");
+      expect(payload.actions[0]!.value).toBe("42");
     });
   });
 
@@ -458,7 +475,9 @@ describe("RulesList", () => {
     vi.mocked(invoke).mockResolvedValueOnce([]);
 
     render(<RulesList />);
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // open the create-rule form
     const headerAddBtn = screen
@@ -466,8 +485,8 @@ describe("RulesList", () => {
       .find((b) => b.getAttribute("type") !== "submit");
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
-    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
+    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1]!;
     // choose valueless operator
     fireEvent.change(operatorSelect, { target: { value: "is_empty" } });
 
@@ -480,12 +499,12 @@ describe("RulesList", () => {
     fireEvent.click(submitBtn!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({ match_pattern: "" }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as { args: { match_pattern: string } };
+      expect(payload.args.match_pattern).toBe("");
     });
   });
 
@@ -512,9 +531,9 @@ describe("RulesList", () => {
 
     render(<RulesList />);
 
-    await waitFor(() =>
-      expect(screen.getByText(/"First"/)).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByText(/"First"/)).toBeInTheDocument();
+    });
 
     const row1 = screen.getByText(/"First"/).closest("tr");
     const row2 = screen.getByText(/"Second"/).closest("tr");
@@ -547,7 +566,9 @@ describe("RulesList", () => {
   it("shows regex operators in the operator list for text fields", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([]);
     render(<RulesList />);
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // Open the create-rule form
     const headerAddBtn = screen
@@ -556,8 +577,8 @@ describe("RulesList", () => {
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Regex operators should appear in the operator select for text fields
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
-    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
+    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1]!;
     const options = within(operatorSelect).getAllByRole("option");
     const optionValues = options.map((o) => (o as HTMLOptionElement).value);
     expect(optionValues).toContain("matches_regex");
@@ -567,7 +588,9 @@ describe("RulesList", () => {
   it("shows validation error for invalid regex and disables submit", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([]);
     render(<RulesList />);
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // Open the create-rule form
     const headerAddBtn = screen
@@ -576,8 +599,8 @@ describe("RulesList", () => {
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Select matches_regex operator
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
-    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
+    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1]!;
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
     // Enter invalid regex
@@ -599,7 +622,9 @@ describe("RulesList", () => {
   it("allows submit with valid regex pattern", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([]);
     render(<RulesList />);
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // Open the create-rule form
     const headerAddBtn = screen
@@ -608,8 +633,8 @@ describe("RulesList", () => {
     if (headerAddBtn) fireEvent.click(headerAddBtn);
 
     // Select matches_regex operator
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
-    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
+    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1]!;
     fireEvent.change(operatorSelect, { target: { value: "matches_regex" } });
 
     // Enter valid regex
@@ -625,7 +650,7 @@ describe("RulesList", () => {
     );
 
     // Fill action value
-    const actionGroup = screen.getAllByText("Then set")[0].closest("div");
+    const actionGroup = screen.getAllByText("Then set")[0]!.closest("div");
     const actionInput = within(actionGroup!).getByPlaceholderText("Value");
     fireEvent.change(actionInput, { target: { value: "Coffee" } });
 
@@ -637,18 +662,20 @@ describe("RulesList", () => {
     fireEvent.click(submitBtn!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            conditions: expect.arrayContaining([
-              expect.objectContaining({
-                operator: "matches_regex",
-                value: "^Star.*Coffee$",
-              }),
-            ]),
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as {
+        args: { conditions: Array<{ operator: string; value: string }> };
+      };
+      expect(payload.args.conditions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            operator: "matches_regex",
+            value: "^Star.*Coffee$",
           }),
-        }),
+        ]),
       );
     });
   });
@@ -675,14 +702,16 @@ describe("RulesList", () => {
     vi.mocked(invoke).mockResolvedValueOnce([regexRule]);
     render(<RulesList />);
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // Click edit
     const editBtn = screen.getByText("Edit").closest("button");
     fireEvent.click(editBtn!);
 
-    const conditionGroup = screen.getAllByText("If")[0].closest("div");
-    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1];
+    const conditionGroup = screen.getAllByText("If")[0]!.closest("div");
+    const operatorSelect = within(conditionGroup!).getAllByTestId("select")[1]!;
     expect((operatorSelect as HTMLSelectElement).value).toBe("matches_regex");
   });
 
@@ -701,7 +730,9 @@ describe("RulesList", () => {
     vi.mocked(invoke).mockResolvedValueOnce([rule]);
     render(<RulesList />);
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // The condition badge renders: "Payee contains "Coffee""
     const conditionBadge = await screen.findByText('Payee contains "Coffee"');
@@ -740,7 +771,9 @@ describe("RulesList", () => {
     vi.mocked(invoke).mockResolvedValueOnce([rule]);
     render(<RulesList />);
 
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith("get_rules"));
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("get_rules");
+    });
 
     // The condition badge renders: "Payee equals "Test""
     const conditionBadge = await screen.findByText('Payee equals "Test"');

@@ -31,14 +31,14 @@ interface TransactionRowProps {
   editForm: Partial<TransactionEditForm>;
   setEditForm: Dispatch<SetStateAction<Partial<TransactionEditForm>>>;
   startEditing: (tx: Transaction) => void;
-  saveEdit: () => void;
+  saveEdit: () => Promise<void>;
   setEditingId: (v: string | number | null) => void;
   menuOpenId: string | number | null;
   setMenuOpenId: (v: string | number | null) => void;
   menuCoords: MenuCoords | null;
   setMenuCoords: (v: MenuCoords | null) => void;
-  duplicateTransaction: (tx: Transaction) => void;
-  deleteTransaction: (id: string | number) => void;
+  duplicateTransaction: (tx: Transaction) => Promise<void>;
+  deleteTransaction: (id: string | number) => Promise<void>;
   payeeSuggestions: AutocompleteSuggestion[];
   categorySuggestions: AutocompleteSuggestion[];
   availableAccounts: AvailableAccount[];
@@ -99,15 +99,13 @@ export default function TransactionRow({
         <>
           <td className="px-6 py-3">
             <DatePicker
-              selected={
-                editForm.date ? new Date(editForm.date as string) : null
-              }
-              onChange={(date: Date | null) =>
+              selected={editForm.date ? new Date(editForm.date) : null}
+              onChange={(date: Date | null) => {
                 setEditForm({
                   ...editForm,
-                  date: date ? date.toISOString().split("T")[0] : "",
-                })
-              }
+                  date: date ? (date.toISOString().split("T")[0] ?? "") : "",
+                });
+              }}
               dateFormat={getDatePickerFormat(dateFormat)}
               calendarStartDay={firstDayOfWeek as Day}
               shouldCloseOnSelect={false}
@@ -132,15 +130,15 @@ export default function TransactionRow({
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
-                      name={`txType-${tx.id}`}
+                      name={`txType-${String(tx.id)}`}
                       checked={
                         editForm.payee === "Buy" ||
                         (editForm.payee !== "Sell" &&
                           (parseNumber(editForm.shares) || 0) > 0)
                       }
-                      onChange={() =>
-                        setEditForm({ ...editForm, payee: "Buy" })
-                      }
+                      onChange={() => {
+                        setEditForm({ ...editForm, payee: "Buy" });
+                      }}
                       className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm text-slate-700 dark:text-slate-300">
@@ -150,18 +148,18 @@ export default function TransactionRow({
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
-                      name={`txType-${tx.id}`}
+                      name={`txType-${String(tx.id)}`}
                       checked={
                         editForm.payee === "Sell" ||
                         (editForm.payee !== "Buy" &&
                           (parseNumber(editForm.shares) || 0) < 0)
                       }
-                      onChange={() =>
+                      onChange={() => {
                         setEditForm({
                           ...editForm,
                           payee: "Sell",
-                        })
-                      }
+                        });
+                      }}
                       className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
                     />
                     <span className="text-sm text-slate-700 dark:text-slate-300">
@@ -175,13 +173,13 @@ export default function TransactionRow({
                 <input
                   type="text"
                   className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                  value={(editForm.category as string) || "Investment"}
-                  onChange={(e) =>
+                  value={editForm.category || "Investment"}
+                  onChange={(e) => {
                     setEditForm({
                       ...editForm,
                       category: e.target.value,
-                    })
-                  }
+                    });
+                  }}
                 />
               </td>
 
@@ -189,13 +187,13 @@ export default function TransactionRow({
                 <input
                   type="text"
                   className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                  value={(editForm.notes as string) || ""}
-                  onChange={(e) =>
+                  value={editForm.notes || ""}
+                  onChange={(e) => {
                     setEditForm({
                       ...editForm,
                       notes: e.target.value,
-                    })
-                  }
+                    });
+                  }}
                   placeholder={t("account.notes_placeholder")}
                 />
               </td>
@@ -205,7 +203,7 @@ export default function TransactionRow({
                   <input
                     type="text"
                     className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none uppercase"
-                    value={(editForm.ticker as string) || ""}
+                    value={editForm.ticker || ""}
                     onChange={(e) => {
                       const val = e.target.value.toUpperCase();
                       setEditForm({
@@ -226,8 +224,12 @@ export default function TransactionRow({
                             setEditForm({
                               ...editForm,
                               ticker: suggestion.symbol,
-                              currency:
-                                suggestion.currency || editForm.currency,
+                              ...(suggestion.currency || editForm.currency
+                                ? {
+                                    currency:
+                                      suggestion.currency || editForm.currency,
+                                  }
+                                : {}),
                             });
                             setTickerSuggestions([]);
                           }}
@@ -254,13 +256,13 @@ export default function TransactionRow({
 
               <td className="px-6 py-3">
                 <NumberInput
-                  value={editForm.shares as number | string | undefined}
-                  onChange={(num) =>
+                  value={editForm.shares}
+                  onChange={(num) => {
                     setEditForm({
                       ...editForm,
                       shares: num,
-                    })
-                  }
+                    });
+                  }}
                   className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-right"
                   maximumFractionDigits={6}
                   useGrouping={false}
@@ -270,15 +272,13 @@ export default function TransactionRow({
               <td className="px-6 py-3">
                 <div className="relative">
                   <NumberInput
-                    value={
-                      editForm.price_per_share as number | string | undefined
-                    }
-                    onChange={(num) =>
+                    value={editForm.price_per_share}
+                    onChange={(num) => {
                       setEditForm({
                         ...editForm,
                         price_per_share: num,
-                      })
-                    }
+                      });
+                    }}
                     className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-right"
                     maximumFractionDigits={8}
                     useGrouping={false}
@@ -289,13 +289,13 @@ export default function TransactionRow({
               <td className="px-6 py-3">
                 <div className="relative">
                   <NumberInput
-                    value={editForm.fee as number | string | undefined}
-                    onChange={(num) =>
+                    value={editForm.fee}
+                    onChange={(num) => {
                       setEditForm({
                         ...editForm,
                         fee: num,
-                      })
-                    }
+                      });
+                    }}
                     className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-right"
                     maximumFractionDigits={2}
                     minimumFractionDigits={2}
@@ -328,7 +328,7 @@ export default function TransactionRow({
                   {typeof editForm.currency === "string" &&
                     editForm.currency !== appCurrency && (
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                        {editForm.currency as string}
+                        {editForm.currency}
                       </span>
                     )}
                 </div>
@@ -337,13 +337,17 @@ export default function TransactionRow({
               <td className="px-6 py-3 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <button
-                    onClick={saveEdit}
+                    onClick={() => {
+                      void saveEdit();
+                    }}
                     className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                   >
                     <Check className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setEditingId(null)}
+                    onClick={() => {
+                      setEditingId(null);
+                    }}
                     className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -358,7 +362,16 @@ export default function TransactionRow({
                   suggestions={payeeSuggestions}
                   className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
                   value={editForm.payee as string}
-                  onChange={(val) => setEditForm({ ...editForm, payee: val })}
+                  onChange={(val) => {
+                    const isTransfer = availableAccounts.some(
+                      (a) => a.name === val,
+                    );
+                    setEditForm({
+                      ...editForm,
+                      payee: val,
+                      ...(isTransfer ? { category: "Transfer" } : {}),
+                    });
+                  }}
                 />
               </td>
 
@@ -366,18 +379,18 @@ export default function TransactionRow({
                 <AutocompleteInput
                   suggestions={categorySuggestions}
                   className={`w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none ${
-                    availableAccounts?.some((a) => a.name === editForm.payee)
+                    availableAccounts.some((a) => a.name === editForm.payee)
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                       : ""
                   }`}
                   value={(editForm.category as string) || ""}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setEditForm({
                       ...editForm,
                       category: val,
-                    })
-                  }
-                  disabled={availableAccounts?.some(
+                    });
+                  }}
+                  disabled={availableAccounts.some(
                     (a) => a.name === editForm.payee,
                   )}
                 />
@@ -387,13 +400,13 @@ export default function TransactionRow({
                 <input
                   type="text"
                   className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                  value={(editForm.notes as string) || ""}
-                  onChange={(e) =>
+                  value={editForm.notes || ""}
+                  onChange={(e) => {
                     setEditForm({
                       ...editForm,
                       notes: e.target.value,
-                    })
-                  }
+                    });
+                  }}
                 />
               </td>
 
@@ -424,13 +437,13 @@ export default function TransactionRow({
 
               <td className="px-6 py-3">
                 <NumberInput
-                  value={editForm.amount as number | string | undefined}
-                  onChange={(num) =>
+                  value={editForm.amount}
+                  onChange={(num) => {
                     setEditForm({
                       ...editForm,
                       amount: num,
-                    })
-                  }
+                    });
+                  }}
                   placeholder={formatNumber(0, {
                     maximumFractionDigits: 2,
                     minimumFractionDigits: 2,
@@ -443,13 +456,17 @@ export default function TransactionRow({
               <td className="px-6 py-3 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <button
-                    onClick={saveEdit}
+                    onClick={() => {
+                      void saveEdit();
+                    }}
                     className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                   >
                     <Check className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setEditingId(null)}
+                    onClick={() => {
+                      setEditingId(null);
+                    }}
                     className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -463,7 +480,9 @@ export default function TransactionRow({
         <>
           <td
             className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400 font-medium cursor-pointer"
-            onClick={() => startEditing(tx)}
+            onClick={() => {
+              startEditing(tx);
+            }}
           >
             {formatDate(tx.date)}
           </td>
@@ -471,7 +490,9 @@ export default function TransactionRow({
           {account.id === "all" && (
             <td
               className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300"
-              onClick={() => startEditing(tx)}
+              onClick={() => {
+                startEditing(tx);
+              }}
             >
               {tx.account_name || tx.account_id}
             </td>
@@ -479,14 +500,18 @@ export default function TransactionRow({
 
           <td
             className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900 dark:text-slate-100 cursor-pointer"
-            onClick={() => startEditing(tx)}
+            onClick={() => {
+              startEditing(tx);
+            }}
           >
             {tx.payee}
           </td>
 
           <td
             className="px-6 py-4 whitespace-nowrap text-sm cursor-pointer"
-            onClick={() => startEditing(tx)}
+            onClick={() => {
+              startEditing(tx);
+            }}
           >
             {tx.category ? (
               <span
@@ -500,7 +525,9 @@ export default function TransactionRow({
           </td>
           <td
             className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate cursor-pointer"
-            onClick={() => startEditing(tx)}
+            onClick={() => {
+              startEditing(tx);
+            }}
           >
             {tx.notes || (
               <span className="text-slate-300 dark:text-slate-600 italic">
@@ -513,7 +540,9 @@ export default function TransactionRow({
             <>
               <td
                 className="px-6 py-4 whitespace-nowrap text-sm cursor-pointer text-slate-700 dark:text-slate-300"
-                onClick={() => startEditing(tx)}
+                onClick={() => {
+                  startEditing(tx);
+                }}
               >
                 {tx.ticker ? (
                   <span className="font-medium uppercase">{tx.ticker}</span>
@@ -524,9 +553,11 @@ export default function TransactionRow({
 
               <td
                 className="px-6 py-4 whitespace-nowrap text-sm text-right cursor-pointer text-slate-700 dark:text-slate-300"
-                onClick={() => startEditing(tx)}
+                onClick={() => {
+                  startEditing(tx);
+                }}
               >
-                {typeof tx.shares !== "undefined" && tx.shares !== null ? (
+                {typeof tx.shares !== "undefined" ? (
                   <span>
                     <MaskedNumber
                       value={Math.abs(tx.shares)}
@@ -544,10 +575,11 @@ export default function TransactionRow({
 
               <td
                 className="px-6 py-4 whitespace-nowrap text-sm text-right cursor-pointer text-slate-700 dark:text-slate-300"
-                onClick={() => startEditing(tx)}
+                onClick={() => {
+                  startEditing(tx);
+                }}
               >
-                {typeof tx.price_per_share !== "undefined" &&
-                tx.price_per_share !== null ? (
+                {typeof tx.price_per_share !== "undefined" ? (
                   <span>
                     <MaskedNumber
                       value={tx.price_per_share}
@@ -566,9 +598,11 @@ export default function TransactionRow({
 
               <td
                 className="px-6 py-4 whitespace-nowrap text-sm text-right cursor-pointer text-slate-700 dark:text-slate-300"
-                onClick={() => startEditing(tx)}
+                onClick={() => {
+                  startEditing(tx);
+                }}
               >
-                {typeof tx.fee !== "undefined" && tx.fee !== null ? (
+                {typeof tx.fee !== "undefined" ? (
                   <span>
                     <MaskedNumber
                       value={tx.fee}
@@ -589,7 +623,9 @@ export default function TransactionRow({
 
           <td
             className={`px-6 py-4 whitespace-nowrap text-sm text-right font-bold cursor-pointer ${tx.amount >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
-            onClick={() => startEditing(tx)}
+            onClick={() => {
+              startEditing(tx);
+            }}
           >
             {tx.amount >= 0 ? "+" : ""}
             <MaskedNumber
@@ -633,17 +669,20 @@ export default function TransactionRow({
                   style={{
                     top:
                       menuCoords.x !== undefined
-                        ? `${menuCoords.y}px`
-                        : `${(menuCoords.top ?? 0) + (menuCoords.height ?? 0) + 8}px`,
+                        ? (menuCoords.y ?? 0)
+                        : (menuCoords.top ?? 0) + (menuCoords.height ?? 0) + 8,
                     left:
                       menuCoords.x !== undefined
-                        ? `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`
-                        : `${Math.min(Math.max((menuCoords.right ?? 0) - 176, 8), window.innerWidth - 176 - 8)}px`,
+                        ? Math.min(menuCoords.x, window.innerWidth - 176 - 8)
+                        : Math.min(
+                            Math.max((menuCoords.right ?? 0) - 176, 8),
+                            window.innerWidth - 176 - 8,
+                          ),
                   }}
                 >
                   <button
                     onClick={() => {
-                      duplicateTransaction(tx);
+                      void duplicateTransaction(tx);
                       setMenuOpenId(null);
                       setMenuCoords(null);
                     }}
@@ -654,7 +693,7 @@ export default function TransactionRow({
                   </button>
                   <button
                     onClick={() => {
-                      deleteTransaction(tx.id);
+                      void deleteTransaction(tx.id);
                       setMenuOpenId(null);
                       setMenuCoords(null);
                     }}

@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import fs from "fs";
 import child_process from "child_process";
@@ -24,7 +24,7 @@ if (!commit) {
 }
 
 // https://vite.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   plugins: [react()],
 
   // Build-time constants available to the client (version and commit)
@@ -42,13 +42,15 @@ export default defineConfig(async () => ({
     port: 1420,
     strictPort: true,
     host: host || false,
-    hmr: host
+    ...(host
       ? {
-          protocol: "ws",
-          host,
-          port: 1421,
+          hmr: {
+            protocol: "ws",
+            host,
+            port: 1421,
+          },
         }
-      : undefined,
+      : {}),
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
@@ -92,5 +94,14 @@ export default defineConfig(async () => ({
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
     css: true,
+    coverage: {
+      provider: "v8",
+      thresholds: {
+        lines: 55,
+        functions: 55,
+        branches: 44,
+        statements: 55,
+      },
+    },
   },
-}));
+});

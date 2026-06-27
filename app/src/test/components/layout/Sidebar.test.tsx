@@ -6,7 +6,7 @@ import { usePrivacy } from "../../../stores/privacy";
 
 // Mock dependencies
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val: number) => `fmt-${val}`,
+  useFormatNumber: () => (val: number) => `fmt-${String(val)}`,
 }));
 vi.mock("../../../stores/privacy", () => ({
   usePrivacy: vi.fn(),

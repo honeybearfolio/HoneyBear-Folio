@@ -85,7 +85,7 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     options: { value: string; label: string }[];
     placeholder?: string;
   }) => {
-    const p = String(placeholder || "").toLowerCase();
+    const p = (placeholder || "").toLowerCase();
     const testId = p.includes("language")
       ? "language-select"
       : p.includes("theme")
@@ -100,9 +100,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
       <select
         data-testid={testId}
         value={value}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-          onChange(e.target.value)
-        }
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+          onChange(e.target.value);
+        }}
       >
         <option value="">{placeholder}</option>
         {options.map((opt) => (

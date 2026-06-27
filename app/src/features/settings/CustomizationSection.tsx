@@ -36,12 +36,12 @@ export default function CustomizationSection({
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       try {
-        const cats = (await rust.get_categories()) as string[];
+        const cats = await rust.get_categories();
         const all = cats.includes("Transfer") ? cats : ["Transfer", ...cats];
         setCategories(all.sort((a: string, b: string) => a.localeCompare(b)));
-      } catch (e) {
+      } catch (e: unknown) {
         console.error("Failed to fetch categories:", e);
       }
     })();
@@ -75,7 +75,9 @@ export default function CustomizationSection({
         <div className="relative settings-select mt-2">
           <CustomSelect
             value={theme}
-            onChange={(v) => setTheme(String(v))}
+            onChange={(v) => {
+              setTheme(String(v));
+            }}
             options={[
               { value: "light", label: t("settings.theme.light") },
               {
@@ -133,7 +135,9 @@ export default function CustomizationSection({
             max={1.25}
             step={0.05}
             value={fontSize}
-            onChange={(e) => setFontSize(Number(e.target.value))}
+            onChange={(e) => {
+              setFontSize(Number(e.target.value));
+            }}
             className="w-full accent-brand-500"
             aria-label={t("settings.font_size")}
           />
@@ -204,13 +208,13 @@ export default function CustomizationSection({
               {label}
             </span>
             <Switch
-              checked={sidebarVisibility[key]}
-              onChange={(val) =>
+              checked={sidebarVisibility[key] ?? false}
+              onChange={(val) => {
                 onChangeSidebarVisibility({
                   ...sidebarVisibility,
                   [key]: val,
-                })
-              }
+                });
+              }}
               aria-label={label}
             />
           </div>
@@ -266,7 +270,9 @@ export default function CustomizationSection({
                   <button
                     key={colorKey}
                     type="button"
-                    onClick={() => setTagColor(cat, colorKey)}
+                    onClick={() => {
+                      setTagColor(cat, colorKey);
+                    }}
                     title={colorKey}
                     className={`w-5 h-5 rounded-full border-2 transition-transform ${getColorDot(colorKey)} ${
                       tagColors[cat] === colorKey ||

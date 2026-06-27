@@ -56,7 +56,9 @@ export default function AccountList({
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [menuOpenId]);
 
   useEffect(() => {
@@ -123,7 +125,7 @@ export default function AccountList({
       lastReorder.current = now;
 
       const newItems = [...accounts];
-      const item = newItems[dragIndex];
+      const item = newItems[dragIndex]!;
       newItems.splice(dragIndex, 1);
       newItems.splice(targetIndex, 0, item);
       onReorder(newItems);
@@ -159,13 +161,13 @@ export default function AccountList({
               ? Math.min(currentIndex + 1, accounts.length - 1)
               : Math.max(currentIndex - 1, 0);
           if (nextIndex >= 0 && nextIndex < accounts.length) {
-            onSelectAccount(accounts[nextIndex].id);
+            onSelectAccount(accounts[nextIndex]!.id);
           }
         }
       }}
     >
       {accounts.map((account, index) => {
-        const cashBalance = Number(account.balance);
+        const cashBalance = account.balance;
         const marketValue =
           marketValues && marketValues[account.id] !== undefined
             ? Number(marketValues[account.id])
@@ -187,9 +189,13 @@ export default function AccountList({
           <div
             key={account.id}
             draggable={isDraggable}
-            onDragStart={(e) => handleDragStart(e, account.id)}
+            onDragStart={(e) => {
+              handleDragStart(e, account.id);
+            }}
             onDragOver={handleDragOver}
-            onDragEnter={(e) => handleDragEnter(e, index)}
+            onDragEnter={(e) => {
+              handleDragEnter(e, index);
+            }}
             onDrop={handleDrop}
             onDragEnd={handleDragEnd}
             onContextMenu={
@@ -222,7 +228,9 @@ export default function AccountList({
                 <input
                   ref={renameInputRef}
                   value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
+                  onChange={(e) => {
+                    setRenameValue(e.target.value);
+                  }}
                   onBlur={() => {
                     if (renameValue.trim()) {
                       onRenameAccount?.(account.id, renameValue.trim());
@@ -238,7 +246,9 @@ export default function AccountList({
               </form>
             ) : (
               <button
-                onClick={() => onSelectAccount(account.id)}
+                onClick={() => {
+                  onSelectAccount(account.id);
+                }}
                 role="option"
                 aria-selected={sameId(selectedId, account.id)}
                 className={`sidebar-nav-item justify-between group w-full ${
@@ -310,8 +320,8 @@ export default function AccountList({
                   role="menu"
                   aria-label={t("account.context_menu")}
                   style={{
-                    top: `${menuCoords.y}px`,
-                    left: `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`,
+                    top: menuCoords.y,
+                    left: Math.min(menuCoords.x, window.innerWidth - 176 - 8),
                   }}
                 >
                   {onRenameAccount && (

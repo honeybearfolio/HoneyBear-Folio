@@ -307,7 +307,9 @@ export default function FireInputsPanel({
         <div className="pt-2">
           <button
             type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
+            onClick={() => {
+              setShowAdvanced(!showAdvanced);
+            }}
             className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
           >
             {showAdvanced ? (

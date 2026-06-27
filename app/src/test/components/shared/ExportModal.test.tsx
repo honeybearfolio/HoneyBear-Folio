@@ -12,33 +12,48 @@ const { mockGetDatePickerFormat, mockDatePicker } = vi.hoisted(() => ({
   ),
 }));
 
+const {
+  mockInvoke,
+  mockSave,
+  mockWriteTextFile,
+  mockWriteFile,
+  mockShowToast,
+} = vi.hoisted(() => ({
+  mockInvoke:
+    vi.fn<(cmd: string, args?: Record<string, unknown>) => Promise<unknown>>(),
+  mockSave: vi.fn<(opts?: Record<string, unknown>) => Promise<string | null>>(),
+  mockWriteTextFile:
+    vi.fn<(filePath: string, content: string) => Promise<void>>(),
+  mockWriteFile:
+    vi.fn<
+      (filePath: string, content: Uint8Array | number[]) => Promise<void>
+    >(),
+  mockShowToast: vi.fn(),
+}));
+
 // Mock Tauri APIs
-const mockInvoke = vi.fn();
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (...args: unknown[]) => mockInvoke(...args),
+  invoke: mockInvoke,
 }));
 
-const mockSave = vi.fn();
 vi.mock("@tauri-apps/plugin-dialog", () => ({
-  save: (...args: unknown[]) => mockSave(...args),
+  save: mockSave,
 }));
 
-const mockWriteTextFile = vi.fn();
-const mockWriteFile = vi.fn();
 vi.mock("@tauri-apps/plugin-fs", () => ({
-  writeTextFile: (...args: unknown[]) => mockWriteTextFile(...args),
-  writeFile: (...args: unknown[]) => mockWriteFile(...args),
+  writeTextFile: mockWriteTextFile,
+  writeFile: mockWriteFile,
 }));
 
 // Mock toast
-const mockShowToast = vi.fn();
 vi.mock("../../../stores/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
 // Mock format utility
 vi.mock("../../../utils/format", () => ({
-  formatNumberForExport: (v: unknown) => (v != null ? String(v) : ""),
+  formatNumberForExport: (v: unknown) =>
+    typeof v === "number" || typeof v === "string" ? String(v) : "",
   getDatePickerFormat: (key: string) => mockGetDatePickerFormat(key),
 }));
 
@@ -60,7 +75,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     <select
       data-testid={`custom-select-${String(value)}`}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        onChange(e.target.value);
+      }}
     >
       {options.map((opt) => (
         <option key={String(opt.value)} value={String(opt.value)}>
@@ -72,6 +89,18 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
 }));
 
 describe("ExportModal", () => {
+  type ExportJson = {
+    assets: Array<{
+      name: string;
+      category: string;
+      currency: string;
+      notes: string | null;
+      valuations: Array<{ date: string; value: number }>;
+      latest_value: number;
+      latest_date: string;
+    }>;
+  };
+
   const defaultProps = {
     onClose: vi.fn(),
   };
@@ -183,7 +212,7 @@ describe("ExportModal", () => {
     });
 
     const [, content] = mockWriteTextFile.mock.calls[0] as [string, string];
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(content) as ExportJson;
     expect(parsed.assets).toEqual([
       {
         name: "House",
@@ -254,16 +283,17 @@ describe("ExportModal", () => {
     fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "write_xlsx",
-        expect.objectContaining({
-          filePath: "/path/to/export.xlsx",
-          sheets: expect.arrayContaining([
-            expect.objectContaining({ name: "Transactions" }),
-            expect.objectContaining({ name: "Accounts" }),
-            expect.objectContaining({ name: "Assets" }),
-          ]),
-        }),
+      const writeXlsxCall = mockInvoke.mock.calls.find(
+        (call) => call[0] === "write_xlsx",
+      );
+      expect(writeXlsxCall).toBeDefined();
+      const payload = writeXlsxCall?.[1] as {
+        filePath: string;
+        sheets: Array<{ name: string }>;
+      };
+      expect(payload.filePath).toBe("/path/to/export.xlsx");
+      expect(payload.sheets.map((sheet) => sheet.name)).toEqual(
+        expect.arrayContaining(["Transactions", "Accounts", "Assets"]),
       );
     });
   });
@@ -299,24 +329,26 @@ describe("ExportModal", () => {
     fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "compute_report_data",
-        expect.objectContaining({
-          input: expect.objectContaining({
-            startDate: expect.any(String),
-            endDate: expect.any(String),
-          }),
-        }),
+      const computeCall = mockInvoke.mock.calls.find(
+        (call) => call[0] === "compute_report_data",
       );
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "generate_pdf_report",
-        expect.objectContaining({
-          filePath: "/path/to/export.pdf",
-          data: expect.objectContaining({
-            date_range_start: expect.any(String),
-          }),
-        }),
+      expect(computeCall).toBeDefined();
+      const computePayload = computeCall?.[1] as {
+        input: { startDate: string; endDate: string };
+      };
+      expect(typeof computePayload.input.startDate).toBe("string");
+      expect(typeof computePayload.input.endDate).toBe("string");
+
+      const generateCall = mockInvoke.mock.calls.find(
+        (call) => call[0] === "generate_pdf_report",
       );
+      expect(generateCall).toBeDefined();
+      const generatePayload = generateCall?.[1] as {
+        filePath: string;
+        data: { date_range_start: string };
+      };
+      expect(generatePayload.filePath).toBe("/path/to/export.pdf");
+      expect(typeof generatePayload.data.date_range_start).toBe("string");
     });
   });
 

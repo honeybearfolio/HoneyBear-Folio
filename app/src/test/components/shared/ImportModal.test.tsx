@@ -6,7 +6,7 @@ import ImportModal from "../../../components/shared/ImportModal";
 // Mock Tauri/Event
 const mockInvoke = vi.fn();
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: (...args: unknown[]) => mockInvoke(...args),
+  invoke: (...args: unknown[]) => mockInvoke(...args) as Promise<unknown>,
 }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
 
@@ -133,7 +133,7 @@ describe("ImportModal", () => {
       result: string | ArrayBuffer | null = null;
       onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
       readAsText(blob: Blob) {
-        blob.text().then((text) => {
+        void blob.text().then((text) => {
           this.result = text;
           this.onload?.({
             target: this,
@@ -209,7 +209,7 @@ describe("ImportModal", () => {
       result: string | ArrayBuffer | null = null;
       onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
       readAsText(blob: Blob) {
-        blob.text().then((text) => {
+        void blob.text().then((text) => {
           this.result = text;
           this.onload?.({
             target: this,
@@ -292,7 +292,7 @@ describe("ImportModal", () => {
       result: string | ArrayBuffer | null = null;
       onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
       readAsText(blob: Blob) {
-        blob.text().then((text) => {
+        void blob.text().then((text) => {
           this.result = text;
           this.onload?.({
             target: this,
@@ -370,7 +370,7 @@ describe("ImportModal", () => {
       result: string | ArrayBuffer | null = null;
       onload: ((ev: ProgressEvent<FileReader>) => void) | null = null;
       readAsText(blob: Blob) {
-        blob.text().then((text) => {
+        void blob.text().then((text) => {
           this.result = text;
           this.onload?.({
             target: this,

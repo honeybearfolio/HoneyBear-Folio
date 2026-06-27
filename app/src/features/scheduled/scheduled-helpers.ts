@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import {
   WEEKDAY_KEYS,
   createDefaultScheduledForm,
@@ -7,7 +8,7 @@ import {
 export { WEEKDAY_KEYS, createDefaultScheduledForm };
 export type { ScheduledFormState };
 
-type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
+type TranslateFn = TFunction;
 
 interface ScheduledPayload {
   accountId: number | null;
@@ -67,20 +68,16 @@ export function toScheduledPayload(
     recurrenceType: formState.recurrenceType,
     intervalValue:
       formState.recurrenceType === "every_n"
-        ? Number(formState.intervalValue) || 1
+        ? formState.intervalValue || 1
         : null,
     intervalUnit:
       formState.recurrenceType === "every_n" ? formState.intervalUnit : null,
     daysOfWeek:
       formState.recurrenceType === "day_of_week" ? formState.daysOfWeek : null,
     ordinal:
-      formState.recurrenceType === "ordinal_weekday"
-        ? Number(formState.ordinal)
-        : null,
+      formState.recurrenceType === "ordinal_weekday" ? formState.ordinal : null,
     weekday:
-      formState.recurrenceType === "ordinal_weekday"
-        ? Number(formState.weekday)
-        : null,
+      formState.recurrenceType === "ordinal_weekday" ? formState.weekday : null,
     startDate: formState.startDate,
     endDate: formState.endDate || null,
     maxOccurrences: formState.maxOccurrences
@@ -120,13 +117,15 @@ export function getRecurrenceSummary(
   }
   if (sched.recurrence_type === "day_of_week") {
     const days = (sched.days_of_week || [])
-      .map((d) => translate(WEEKDAY_KEYS[d]))
+      .map((d) => translate(WEEKDAY_KEYS[d] ?? ""))
       .join(", ");
     return translate("scheduled.summary.days_of_week", { days });
   }
   if (sched.recurrence_type === "ordinal_weekday") {
-    const ordinal = translate(`scheduled.ordinal.${sched.ordinal}`);
-    const weekday = translate(WEEKDAY_KEYS[sched.weekday ?? 0]);
+    const ordinal = translate(
+      `scheduled.ordinal.${String(sched.ordinal ?? "")}`,
+    );
+    const weekday = translate(WEEKDAY_KEYS[sched.weekday ?? 0] ?? "");
     return translate("scheduled.summary.ordinal_weekday", { ordinal, weekday });
   }
   return "";
