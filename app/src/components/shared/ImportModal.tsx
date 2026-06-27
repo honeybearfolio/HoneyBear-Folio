@@ -696,14 +696,14 @@ export default function ImportModal({
               let altDate = null;
               if (parts.length === 3) {
                 const [p0, p1, p2] = parts;
-                if (!p0 || !p1 || !p2) {
-                  date = new Date().toISOString().split("T")[0] ?? "";
-                } else if (p0.length === 4) {
-                  // yyyy/mm/dd
-                  altDate = new Date(`${p0}-${p1}-${p2}`);
-                } else {
-                  // dd/mm/yyyy -> yyyy-mm-dd
-                  altDate = new Date(`${p2}-${p1}-${p0}`);
+                if (p0 && p1 && p2) {
+                  if (p0.length === 4) {
+                    // yyyy/mm/dd
+                    altDate = new Date(`${p0}-${p1}-${p2}`);
+                  } else {
+                    // dd/mm/yyyy -> yyyy-mm-dd
+                    altDate = new Date(`${p2}-${p1}-${p0}`);
+                  }
                 }
               }
               if (altDate && !isNaN(altDate.getTime())) {
