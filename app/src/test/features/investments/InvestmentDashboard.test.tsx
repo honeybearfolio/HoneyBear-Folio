@@ -29,18 +29,21 @@ vi.mock("../../../stores/number-format", () => ({
 }));
 
 vi.mock("../../../utils/investments", () => ({
-  buildHoldingsFromTransactions: (txs: unknown[]) => ({
-    currentHoldings: txs.length > 0 ? [{ ticker: "AAPL", qty: 10 }] : [],
-  }),
+  buildHoldingsFromTransactions: (txs: unknown[]) =>
+    Promise.resolve({
+      currentHoldings: txs.length > 0 ? [{ ticker: "AAPL", qty: 10 }] : [],
+    }),
   mergeHoldingsWithQuotes: (
     holdings: { ticker: string; qty: number }[],
     _quotes: unknown,
   ) =>
-    holdings.map((h) => ({
-      ...h,
-      currentValue: 1500, // 10 * 150
-      price: 150,
-    })),
+    Promise.resolve(
+      holdings.map((h) => ({
+        ...h,
+        currentValue: 1500,
+        price: 150,
+      })),
+    ),
 }));
 
 // Mock Chart

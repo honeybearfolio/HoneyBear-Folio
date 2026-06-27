@@ -1,119 +1,94 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { invoke } from "@tauri-apps/api/core";
 import {
   buildHoldingsFromTransactions,
   mergeHoldingsWithQuotes,
   computePortfolioTotals,
+  computeNetWorthMarketValues,
 } from "../../utils/investments";
 
-describe("Investment Utils", () => {
-  const mockTransactions = [
-    {
-      date: "2023-01-01",
-      ticker: "AAPL",
-      shares: 10,
-      price_per_share: 150,
-      fee: 5,
-      account_id: 1,
-    },
-    {
-      date: "2023-02-01",
-      ticker: "GOOGL",
-      shares: 5,
-      price_per_share: 2000,
-      fee: 10,
-      account_id: 1,
-    },
-    {
-      date: "2023-03-01",
-      ticker: "AAPL",
-      shares: 5,
-      price_per_share: 160,
-      fee: 5,
-      account_id: 1,
-    },
-    {
-      date: "2023-04-01",
-      ticker: "AAPL",
-      shares: -2,
-      price_per_share: 170, // Selling price doesn't affect cost basis logic directly in simple average cost usually, but let's test result
-      account_id: 1,
-    },
-  ];
-
-  describe("buildHoldingsFromTransactions", () => {
-    it("aggregates holdings correctly", () => {
-      const { currentHoldings, firstTradeDate } =
-        buildHoldingsFromTransactions(mockTransactions);
-
-      expect(new Date(firstTradeDate!).toISOString().slice(0, 10)).toBe(
-        "2023-01-01",
-      );
-
-      // AAPL:
-      // Buy 10 @ 150 + 5 fee = 1505
-      // Buy 5 @ 160 + 5 fee = 805
-      // Total Shares: 15, Total Cost: 2310, Avg: 154
-      // Sell 2: Cost removal = 2 * 154 = 308
-      // Remaining Cost: 2310 - 308 = 2002
-      // Remaining Shares: 13
-      const aapl = currentHoldings.find((h: any) => h.ticker === "AAPL");
-      expect(aapl).toBeDefined();
-      expect(aapl!.shares).toBe(13);
-      expect(aapl!.costBasis).toBeCloseTo(2002);
-
-      // GOOGL:
-      // Buy 5 @ 2000 + 10 fee = 10010
-      const googl = currentHoldings.find((h: any) => h.ticker === "GOOGL");
-      expect(googl).toBeDefined();
-      expect(googl!.shares).toBe(5);
-      expect(googl!.costBasis).toBe(10010);
-    });
+describe("investment utils wrappers", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  describe("mergeHoldingsWithQuotes", () => {
-    it("merges quotes and calculates value and ROI", () => {
-      const holdings = [
-        { ticker: "AAPL", shares: 10, costBasis: 1500 },
-        { ticker: "GOOGL", shares: 5, costBasis: 5000 },
-      ];
-      const quotes = [
-        {
-          symbol: "AAPL",
-          regularMarketPrice: 200,
-          regularMarketChangePercent: 1.5,
-          quoteType: "EQUITY",
-        },
-        // GOOGL missing quote
-      ];
+  it("calls Rust build_holdings_from_transactions command", async () => {
+    const transactions = [{ date: "2023-01-01", ticker: "AAPL", shares: 10 }];
+    const expected = {
+      currentHoldings: [{ ticker: "AAPL", shares: 10, costBasis: 1505 }],
+      firstTradeDate: "2023-01-01",
+    };
 
-      const merged = mergeHoldingsWithQuotes(holdings, quotes);
+    vi.mocked(invoke).mockResolvedValue(expected);
 
-      // AAPL
-      // Value: 10 * 200 = 2000
-      // ROI: (2000 - 1500) / 1500 = 0.333... -> 33.33%
-      const aapl = merged.find((h: any) => h.ticker === "AAPL");
-      expect(aapl!.price).toBe(200);
-      expect(aapl!.currentValue).toBe(2000);
-      expect(aapl!.roi).toBeCloseTo(33.33);
+    const result = await buildHoldingsFromTransactions(transactions as never);
 
-      // GOOGL (missing quote)
-      // Price 0
-      const googl = merged.find((h: any) => h.ticker === "GOOGL");
-      expect(googl!.price).toBe(0);
-      expect(googl!.currentValue).toBe(0);
-      expect(googl!.roi).toBe(-100);
+    expect(invoke).toHaveBeenCalledWith("build_holdings_from_transactions", {
+      transactions,
     });
+    expect(result).toEqual(expected);
   });
 
-  describe("computePortfolioTotals", () => {
-    it("sums up values correctly", () => {
-      const holdings = [
-        { currentValue: 2000, costBasis: 1500 },
-        { currentValue: 0, costBasis: 5000 },
-      ];
-      const totals = computePortfolioTotals(holdings as any);
-      expect(totals.totalValue).toBe(2000);
-      expect(totals.totalCostBasis).toBe(6500);
+  it("calls Rust merge_holdings_with_quotes command", async () => {
+    const holdings = [{ ticker: "AAPL", shares: 10, costBasis: 1500 }];
+    const quotes = [{ symbol: "AAPL", regularMarketPrice: 200 }];
+    const expected = [
+      {
+        ticker: "AAPL",
+        shares: 10,
+        costBasis: 1500,
+        price: 200,
+        currentValue: 2000,
+        roi: 33.33,
+        changePercent: 0,
+        quoteType: null,
+      },
+    ];
+
+    vi.mocked(invoke).mockResolvedValue(expected);
+
+    const result = await mergeHoldingsWithQuotes(
+      holdings as never,
+      quotes as never,
+    );
+
+    expect(invoke).toHaveBeenCalledWith("merge_holdings_with_quotes", {
+      holdings,
+      quotes,
     });
+    expect(result).toEqual(expected);
+  });
+
+  it("calls Rust compute_portfolio_totals command", async () => {
+    const holdings = [{ currentValue: 2000, costBasis: 1500 }];
+    const expected = { totalValue: 2000, totalCostBasis: 1500 };
+
+    vi.mocked(invoke).mockResolvedValue(expected);
+
+    const result = await computePortfolioTotals(holdings as never);
+
+    expect(invoke).toHaveBeenCalledWith("compute_portfolio_totals", {
+      holdings,
+    });
+    expect(result).toEqual(expected);
+  });
+
+  it("calls Rust compute_net_worth_market_values command", async () => {
+    const transactions = [{ account_id: 1, ticker: "AAPL", shares: 5 }];
+    const quotes = [{ symbol: "AAPL", regularMarketPrice: 220 }];
+    const expected = { 1: 1100 };
+
+    vi.mocked(invoke).mockResolvedValue(expected);
+
+    const result = await computeNetWorthMarketValues(
+      transactions as never,
+      quotes as never,
+    );
+
+    expect(invoke).toHaveBeenCalledWith("compute_net_worth_market_values", {
+      transactions,
+      quotes,
+    });
+    expect(result).toEqual(expected);
   });
 });

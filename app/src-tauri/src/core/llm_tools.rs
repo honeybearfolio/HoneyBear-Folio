@@ -135,7 +135,7 @@ pub fn compute_net_worth_snapshot_with_quotes(
     let market_values_f64 = compute_net_worth_market_values_logic(&transactions, quotes);
     let market_values_map = market_values_to_json_map(market_values_f64);
 
-    let accounts_total = compute_net_worth_logic(&accounts, &market_values_map);
+    let accounts_total = compute_net_worth_logic(&accounts, &market_values_map, None);
     let tracked_assets_total =
         crate::assets::get_total_assets_value_db(db_path, Some(target_currency))?;
 

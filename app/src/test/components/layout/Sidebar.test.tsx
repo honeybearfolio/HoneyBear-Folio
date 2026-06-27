@@ -8,9 +8,6 @@ import { usePrivacy } from "../../../stores/privacy";
 vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (val: number) => `fmt-${val}`,
 }));
-vi.mock("../../../utils/networth", () => ({
-  computeNetWorth: () => 12345.67,
-}));
 vi.mock("../../../stores/privacy", () => ({
   usePrivacy: vi.fn(),
 }));
@@ -119,13 +116,13 @@ describe("Sidebar", () => {
         onSelectAccount={mockOnSelectAccount}
         sidebarVisibility={defaultVisibility}
         marketValues={{}}
+        totalBalance={12345.67}
         selectedId=""
         onUpdate={vi.fn()}
         onClose={vi.fn()}
       />,
     );
 
-    // We mocked computeNetWorth to 12345.67 and formatNumber to prefix 'fmt-'
     expect(screen.getByText("fmt-12345.67")).toBeInTheDocument();
   });
 

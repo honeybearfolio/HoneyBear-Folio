@@ -1,70 +1,46 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { invoke } from "@tauri-apps/api/core";
 import { computeNetWorth } from "../../utils/networth";
 
-describe("computeNetWorth", () => {
-  it("returns 0 for empty or invalid inputs", () => {
-    expect(computeNetWorth([])).toBe(0);
-    expect(computeNetWorth(undefined as any)).toBe(0);
+describe("networth utils wrapper", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("sums account balances", () => {
+  it("calls Rust compute_net_worth command", async () => {
     const accounts = [
-      { id: 1, balance: 100 },
-      { id: 2, balance: 200.5 },
+      { id: 1, balance: 100, exchange_rate: 1 },
+      { id: 2, balance: 200.5, exchange_rate: 1 },
     ];
-    expect(computeNetWorth(accounts)).toBe(300.5);
-  });
-
-  it("includes market values from the secondary map", () => {
-    const accounts = [{ id: 1, balance: 100 }];
     const marketValues = { 1: 50 };
-    // 100 + 50 = 150
-    expect(computeNetWorth(accounts, marketValues)).toBe(150);
+
+    vi.mocked(invoke).mockResolvedValue(350.5);
+
+    const result = await computeNetWorth(accounts, marketValues, 0);
+
+    expect(invoke).toHaveBeenCalledWith("compute_net_worth", {
+      accounts,
+      marketValues: { 1: 50 },
+      totalAssetsValue: 0,
+    });
+    expect(result).toBe(350.5);
   });
 
-  it("handles exchange rates", () => {
-    const accounts = [
-      { id: 1, balance: 100, exchange_rate: 1.5 }, // 150
-      { id: 2, balance: 200, exchange_rate: 0.5 }, // 100
-    ];
-    // 150 + 100 = 250
-    expect(computeNetWorth(accounts)).toBe(250);
+  it("passes totalAssetsValue when finite", async () => {
+    vi.mocked(invoke).mockResolvedValue(5100);
+
+    await computeNetWorth([{ id: 1, balance: 100 }], {}, 5000);
+
+    expect(invoke).toHaveBeenCalledWith("compute_net_worth", {
+      accounts: [{ id: 1, balance: 100 }],
+      marketValues: {},
+      totalAssetsValue: 5000,
+    });
   });
 
-  it("applies exchange rate to both balance and market value", () => {
-    const accounts = [{ id: 1, balance: 100, exchange_rate: 2 }];
-    const marketValues = { 1: 50 };
-    // (100 + 50) * 2 = 300
-    expect(computeNetWorth(accounts, marketValues)).toBe(300);
-  });
-
-  it("handles missing or invalid balances gracefully", () => {
-    const accounts = [
-      { id: 1, balance: null },
-      { id: 2, balance: "invalid" },
-      { id: 3, balance: 100 },
-    ] as any[];
-    expect(computeNetWorth(accounts)).toBe(100);
-  });
-
-  it("ignores invalid market values", () => {
-    const accounts = [{ id: 1, balance: 100 }];
-    const marketValues = { 1: "invalid" } as any;
-    expect(computeNetWorth(accounts, marketValues)).toBe(100);
-  });
-
-  it("includes totalAssetsValue in net worth", () => {
-    const accounts = [{ id: 1, balance: 100 }];
-    expect(computeNetWorth(accounts, {}, 5000)).toBe(5100);
-  });
-
-  it("handles non-finite totalAssetsValue gracefully", () => {
-    const accounts = [{ id: 1, balance: 100 }];
-    expect(computeNetWorth(accounts, {}, NaN)).toBe(100);
-    expect(computeNetWorth(accounts, {}, Infinity)).toBe(100);
-  });
-
-  it("returns totalAssetsValue when accounts is invalid", () => {
-    expect(computeNetWorth(undefined as any, {}, 500)).toBe(500);
+  it("returns totalAssetsValue for invalid accounts without calling Rust", async () => {
+    const result = await computeNetWorth(undefined as never, {}, 500);
+    expect(invoke).not.toHaveBeenCalled();
+    expect(result).toBe(500);
   });
 });

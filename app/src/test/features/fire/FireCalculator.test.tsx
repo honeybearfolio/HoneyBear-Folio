@@ -79,13 +79,14 @@ vi.mock("@tauri-apps/api/event", () => ({
 }));
 
 vi.mock("../../../utils/investments", () => ({
-  buildHoldingsFromTransactions: () => ({
-    currentHoldings: [],
-    firstTradeDate: new Date(),
-  }),
-  mergeHoldingsWithQuotes: () => [],
-  computePortfolioTotals: () => ({ totalValue: 50000 }), // Default mocked net worth from portfolio
-  computeNetWorthMarketValues: () => [],
+  buildHoldingsFromTransactions: () =>
+    Promise.resolve({
+      currentHoldings: [],
+      firstTradeDate: "2020-01-01",
+    }),
+  mergeHoldingsWithQuotes: () => Promise.resolve([]),
+  computePortfolioTotals: () => Promise.resolve({ totalValue: 50000 }),
+  computeNetWorthMarketValues: () => Promise.resolve({}),
 }));
 
 vi.mock("../../../utils/fire", () => ({

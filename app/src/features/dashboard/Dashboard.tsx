@@ -20,6 +20,10 @@ import "../../styles/Dashboard.css";
 import { computeNetWorth } from "../../utils/networth";
 import { useFormatNumber, useFormatDate } from "../../utils/format";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
+import {
+  buildDoughnutChartData,
+  type DoughnutChartData,
+} from "./dashboard-doughnut";
 import { useNumberFormat } from "../../stores/number-format";
 import { DashboardSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { useTranslation } from "react-i18next";
@@ -130,7 +134,9 @@ export default function Dashboard({
   useEffect(() => {
     const fetchQuotes = async () => {
       if (transactions.length === 0) return;
-      const { currentHoldings } = buildHoldingsFromTransactions(transactions);
+      const { currentHoldings } = await buildHoldingsFromTransactions(
+        transactions,
+      );
       if (currentHoldings.length === 0) {
         setQuotes([]);
         return;
@@ -302,6 +308,20 @@ export default function Dashboard({
     return mv;
   }, [marketValues, selectedAccountIds]);
 
+  const [currentNetWorth, setCurrentNetWorth] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    computeNetWorth(filteredAccounts, filteredMarketValues, totalAssetsValue)
+      .then((value) => {
+        if (!cancelled) setCurrentNetWorth(value);
+      })
+      .catch((e) => logError("Failed to compute net worth", e));
+    return () => {
+      cancelled = true;
+    };
+  }, [filteredAccounts, filteredMarketValues, totalAssetsValue]);
+
   const chartData = useMemo(() => {
     // Require accounts and at least one transaction to render the net worth evolution chart
     if (filteredAccounts.length === 0 || filteredTransactions.length === 0)
@@ -455,12 +475,7 @@ export default function Dashboard({
 
     // Ensure current (last) data point uses current market values (same as Sidebar/Investments)
     if (totalData.length > 0) {
-      const currentTotal = computeNetWorth(
-        filteredAccounts,
-        filteredMarketValues,
-        totalAssetsValue,
-      );
-      totalData[totalData.length - 1] = currentTotal;
+      totalData[totalData.length - 1] = currentNetWorth;
     }
 
     datasets.push({
@@ -571,143 +586,40 @@ export default function Dashboard({
     getPrice,
     chartColors,
     t,
-    totalAssetsValue,
+    currentNetWorth,
   ]);
 
-  const doughnutData = useMemo(() => {
-    if (filteredAccounts.length === 0) return null;
+  const [doughnutData, setDoughnutData] = useState<DoughnutChartData | null>(
+    null,
+  );
 
-    const assetTypes: Record<string, number> = {};
+  useEffect(() => {
+    let cancelled = false;
 
-    // Helper to determine asset type
-    const getAssetType = (ticker: string) => {
-      const q = quotes.find(
-        (q) => q.symbol.toLowerCase() === ticker.toLowerCase(),
-      );
-      if (!q || !q.quoteType) return t("dashboard.assets.stock");
-
-      const type = q.quoteType.toUpperCase();
-      if (type === "EQUITY") return t("dashboard.assets.stock");
-      if (type === "ETF") return t("dashboard.assets.etf");
-      if (type === "CRYPTOCURRENCY") return t("dashboard.assets.crypto");
-      if (type === "MUTUALFUND") return t("dashboard.assets.mutual_fund");
-      if (type === "FUTURE") return t("dashboard.assets.future");
-      if (type === "INDEX") return t("dashboard.assets.index");
-      if (type === "COMMODITY") return t("dashboard.assets.commodities");
-      return t("dashboard.assets.stock");
-    };
-
-    filteredAccounts.forEach((acc) => {
-      let kind = acc.kind || "cash";
-      let accKindLower = kind.toLowerCase();
-      const exchangeRate = acc.exchange_rate || 1.0;
-
-      // Check if this account has any holdings (transactions with ticker)
-      // If it does, we treat it as an investment capable account regardless of 'kind'
-      const accTxs = filteredTransactions.filter(
-        (t) => t.account_id === acc.id,
-      );
-      const { currentHoldings } = buildHoldingsFromTransactions(accTxs);
-
-      if (currentHoldings.length > 0) {
-        accKindLower = "brokerage";
+    async function computeDoughnutData() {
+      if (filteredAccounts.length === 0) {
+        if (!cancelled) setDoughnutData(null);
+        return;
       }
 
-      if (accKindLower === "brokerage") {
-        // Calculate holdings for this account
-        let holdingsValue = 0;
+      const data = await buildDoughnutChartData({
+        filteredAccounts,
+        filteredTransactions,
+        quotes,
+        dailyPrices,
+        isDark,
+        chartColors,
+        t,
+      });
+      if (!cancelled) setDoughnutData(data);
+    }
 
-        currentHoldings.forEach((h) => {
-          // Find price
-          let price = 0;
-          const quote = quotes.find(
-            (q) => q.symbol.toLowerCase() === h.ticker.toLowerCase(),
-          );
-          if (quote) {
-            price = quote.regularMarketPrice;
-          } else if (dailyPrices[h.ticker]) {
-            const { list } = dailyPrices[h.ticker];
-            if (list.length > 0) price = list[list.length - 1].price;
-          }
+    computeDoughnutData().catch((e) =>
+      logError("Failed to compute doughnut chart data", e),
+    );
 
-          const val = h.shares * price * exchangeRate;
-          holdingsValue += val;
-
-          const type = getAssetType(h.ticker);
-          assetTypes[type] = (assetTypes[type] || 0) + val;
-        });
-
-        // Remainder is Cash
-        // Calculate the cash component from the account balance
-        // We assume acc.balance correctly tracks the cash balance of the account (money in - money out - buys + sells)
-        const cashBalanceConverted = (acc.balance || 0) * exchangeRate;
-        const cashValue = cashBalanceConverted;
-
-        // Add to Cash if significant
-        if (
-          holdingsValue === 0 &&
-          currentHoldings.length === 0 &&
-          Math.abs(cashBalanceConverted) > 1.0
-        ) {
-          // Case: Account marked as brokerage manually but no holdings transactions entered.
-          // Treat all balance as "Stock" because presumably the user is tracking total value manually in the balance field.
-          const translatedStock = t("dashboard.assets.stock");
-          assetTypes[translatedStock] =
-            (assetTypes[translatedStock] || 0) + cashBalanceConverted;
-        } else if (Math.abs(cashValue) > 1.0) {
-          assetTypes[t("dashboard.assets.cash")] =
-            (assetTypes[t("dashboard.assets.cash")] || 0) + cashValue;
-        }
-      } else {
-        // Non-Brokerage (e.g. Cash, Savings)
-        // If they have no holdings (otherwise they'd be in the 'if' above),
-        // Then the value is just the balance.
-        const value = (acc.balance || 0) * exchangeRate;
-
-        if (accKindLower === "cash") kind = t("dashboard.assets.cash");
-        else kind = kind.charAt(0).toUpperCase() + kind.slice(1);
-
-        assetTypes[kind] = (assetTypes[kind] || 0) + value;
-      }
-    });
-
-    const labels = Object.keys(assetTypes);
-    const rawData = Object.values(assetTypes);
-    const data = rawData.map((v) => Math.abs(v as number));
-
-    const colors =
-      chartColors.palette.length > 0
-        ? chartColors.palette
-        : [
-            "rgb(59, 130, 246)",
-            "rgb(16, 185, 129)",
-            "rgb(245, 158, 11)",
-            "rgb(244, 63, 94)",
-            "rgb(139, 92, 246)",
-            "rgb(6, 182, 212)",
-            "rgb(99, 102, 241)",
-            "rgb(249, 115, 22)",
-          ];
-
-    return {
-      labels: labels,
-      datasets: [
-        {
-          data: data,
-          originalData: rawData,
-          backgroundColor: rawData.map((v: number, i: number) => {
-            if (v < 0) return "transparent";
-            return colors[i % colors.length];
-          }),
-          borderColor: isDark ? "#474240" : "#ffffff",
-          borderWidth: 4,
-          borderDash: (ctx: { dataIndex: number }) => {
-            const val = rawData[ctx.dataIndex] as number;
-            return val < 0 ? [5, 5] : [];
-          },
-          hoverOffset: 4,
-        },
-      ],
+    return () => {
+      cancelled = true;
     };
   }, [
     filteredAccounts,
@@ -1345,12 +1257,6 @@ export default function Dashboard({
     };
     doFetch();
   }, [propAccounts, t]);
-
-  const currentNetWorth = useMemo(
-    () =>
-      computeNetWorth(filteredAccounts, filteredMarketValues, totalAssetsValue),
-    [filteredAccounts, filteredMarketValues, totalAssetsValue],
-  );
 
   if (loading) {
     return <DashboardSkeleton />;

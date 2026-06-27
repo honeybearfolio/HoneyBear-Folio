@@ -381,7 +381,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         let quotes: StockQuote[] = [];
         try {
           const { currentHoldings } =
-            buildHoldingsFromTransactions(transactions);
+            await buildHoldingsFromTransactions(transactions);
           if (currentHoldings.length > 0) {
             const tickers = [...new Set(currentHoldings.map((h) => h.ticker))];
             quotes = await rust.get_stock_quotes({ tickers });

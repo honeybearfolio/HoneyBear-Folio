@@ -141,12 +141,13 @@ fn to_numeric(value: &Value) -> Option<f64> {
 }
 
 /// Computes total net worth by summing each account's balance plus its market value,
-/// multiplied by the account's exchange rate.
+/// multiplied by the account's exchange rate, plus any tracked assets not tied to accounts.
 pub fn compute_net_worth_logic(
     accounts: &[Account],
     market_values: &HashMap<String, Value>,
+    total_assets_value: Option<f64>,
 ) -> f64 {
-    accounts
+    let accounts_total: f64 = accounts
         .iter()
         .map(|acc| {
             let balance = acc.balance;
@@ -156,7 +157,12 @@ pub fn compute_net_worth_logic(
                 .unwrap_or(0.0);
             (balance + market_value) * acc.exchange_rate
         })
-        .sum()
+        .sum();
+
+    let extra = total_assets_value
+        .filter(|value| value.is_finite())
+        .unwrap_or(0.0);
+    accounts_total + extra
 }
 
 /// Extracts stock holdings from transactions, computing total shares and cost basis per ticker.
@@ -473,6 +479,7 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             .iter()
             .map(|(k, v)| (k.clone(), json!(v)))
             .collect(),
+        None,
     );
 
     let to_app_currency = |amount: f64, account_id: i32, date: &str| -> f64 {
@@ -774,8 +781,13 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
 pub fn compute_net_worth(
     accounts: Vec<Account>,
     market_values: HashMap<String, Value>,
+    total_assets_value: Option<f64>,
 ) -> Result<f64, String> {
-    Ok(compute_net_worth_logic(&accounts, &market_values))
+    Ok(compute_net_worth_logic(
+        &accounts,
+        &market_values,
+        total_assets_value,
+    ))
 }
 
 /// Tauri command: builds holdings from transactions.
