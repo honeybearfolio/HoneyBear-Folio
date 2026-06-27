@@ -1,11 +1,7 @@
 import type { TFunction } from "i18next";
 import type { Account } from "../../api/types";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
-import type {
-  DailyPriceData,
-  Quote,
-  Transaction,
-} from "./dashboard-types";
+import type { DailyPriceData, Quote, Transaction } from "./dashboard-types";
 
 export interface DoughnutChartData {
   labels: string[];
@@ -65,7 +61,9 @@ export async function buildDoughnutChartData({
     let accKindLower = kind.toLowerCase();
     const exchangeRate = acc.exchange_rate || 1.0;
 
-    const accTxs = filteredTransactions.filter((tx) => tx.account_id === acc.id);
+    const accTxs = filteredTransactions.filter(
+      (tx) => tx.account_id === acc.id,
+    );
     const { currentHoldings } = await buildHoldingsFromTransactions(accTxs);
 
     if (currentHoldings.length > 0) {

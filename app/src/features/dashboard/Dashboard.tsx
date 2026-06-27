@@ -134,9 +134,8 @@ export default function Dashboard({
   useEffect(() => {
     const fetchQuotes = async () => {
       if (transactions.length === 0) return;
-      const { currentHoldings } = await buildHoldingsFromTransactions(
-        transactions,
-      );
+      const { currentHoldings } =
+        await buildHoldingsFromTransactions(transactions);
       if (currentHoldings.length === 0) {
         setQuotes([]);
         return;

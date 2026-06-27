@@ -146,7 +146,10 @@ export default function FireCalculator() {
       }
 
       // Compute portfolio totals
-      const finalHoldings = await mergeHoldingsWithQuotes(currentHoldings, quotes);
+      const finalHoldings = await mergeHoldingsWithQuotes(
+        currentHoldings,
+        quotes,
+      );
       const {
         totalValue: totalPortfolioValue,
         totalCostBasis: totalPortfolioCostBasis,
