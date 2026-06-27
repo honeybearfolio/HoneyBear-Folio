@@ -270,8 +270,7 @@ fn add_months(date: NaiveDate, months: i32) -> NaiveDate {
     let target_day = date.day();
 
     // Clamp day to the last valid day of the target month
-    let max_day = last_day_of_month(target_year, target_month)
-        .map_or(28, |d| d.day());
+    let max_day = last_day_of_month(target_year, target_month).map_or(28, |d| d.day());
 
     NaiveDate::from_ymd_opt(target_year, target_month, target_day.min(max_day)).unwrap_or(date)
 }
@@ -331,9 +330,7 @@ pub fn get_scheduled_transactions_db(
 ) -> Result<Vec<ScheduledTransaction>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-        let sql = format!(
-            "SELECT {SELECT_COLUMNS} FROM scheduled_transactions ORDER BY id ASC"
-        );
+        let sql = format!("SELECT {SELECT_COLUMNS} FROM scheduled_transactions ORDER BY id ASC");
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
 
         let iter = stmt
@@ -570,9 +567,11 @@ pub fn get_pending_occurrences_db(
             let range_start = sched
                 .last_applied_date
                 .as_ref()
-                .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok()).map_or_else(|| {
-                    NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d").unwrap_or(today)
-                }, |d| d + Duration::days(1));
+                .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
+                .map_or_else(
+                    || NaiveDate::parse_from_str(&sched.start_date, "%Y-%m-%d").unwrap_or(today),
+                    |d| d + Duration::days(1),
+                );
 
             let dates = compute_occurrences(sched, range_start, lookahead);
 
@@ -625,9 +624,7 @@ pub fn apply_scheduled_occurrence_db(
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         // Fetch the scheduled transaction
-        let sql = format!(
-            "SELECT {SELECT_COLUMNS} FROM scheduled_transactions WHERE id = ?1"
-        );
+        let sql = format!("SELECT {SELECT_COLUMNS} FROM scheduled_transactions WHERE id = ?1");
         let sched: ScheduledTransaction = conn
             .query_row(&sql, params![scheduled_tx_id], row_to_scheduled)
             .map_err(|e| e.to_string())?;

@@ -637,7 +637,8 @@ fn build_system_prompt(db_path: &PathBuf) -> String {
                 .iter()
                 .map(|a| {
                     let value_str = a
-                        .latest_value.map_or_else(|| "no valuation".to_string(), |v| format!("{v:.2}"));
+                        .latest_value
+                        .map_or_else(|| "no valuation".to_string(), |v| format!("{v:.2}"));
                     let date_str = a.latest_date.as_deref().unwrap_or("unknown");
                     format!(
                         "- {} (ID: {}, category: {}, latest value: {} {}, as of {})",

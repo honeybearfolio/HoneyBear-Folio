@@ -181,9 +181,7 @@ pub fn get_system_theme() -> Result<String, String> {
             }
         }
         // Env var fallback
-        if std::env::var("GTK_THEME")
-            .is_ok_and(|v| v.to_lowercase().contains("dark"))
-        {
+        if std::env::var("GTK_THEME").is_ok_and(|v| v.to_lowercase().contains("dark")) {
             return Ok("dark".to_string());
         }
 

@@ -239,7 +239,9 @@ pub async fn execute_tool(
         }
         "get_transactions" => {
             let all = crate::transactions::get_all_transactions_db(db_path)?;
-            let account_id = arguments.get("account_id").and_then(serde_json::Value::as_i64);
+            let account_id = arguments
+                .get("account_id")
+                .and_then(serde_json::Value::as_i64);
             let category = arguments
                 .get("category")
                 .and_then(|v| v.as_str())

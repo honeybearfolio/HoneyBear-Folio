@@ -684,7 +684,11 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         b.get("amount")
             .and_then(serde_json::Value::as_f64)
             .unwrap_or(0.0)
-            .partial_cmp(&a.get("amount").and_then(serde_json::Value::as_f64).unwrap_or(0.0))
+            .partial_cmp(
+                &a.get("amount")
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0),
+            )
             .unwrap_or(Ordering::Equal)
     });
 
@@ -702,7 +706,11 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         b.get("amount")
             .and_then(serde_json::Value::as_f64)
             .unwrap_or(0.0)
-            .partial_cmp(&a.get("amount").and_then(serde_json::Value::as_f64).unwrap_or(0.0))
+            .partial_cmp(
+                &a.get("amount")
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0),
+            )
             .unwrap_or(Ordering::Equal)
     });
 

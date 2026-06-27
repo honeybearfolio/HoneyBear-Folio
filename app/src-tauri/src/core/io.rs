@@ -25,8 +25,9 @@ pub struct ReadXlsxResult {
 fn cell_to_value(cell: &Data) -> Value {
     match cell {
         Data::Int(i) => Value::Number(i.to_owned().into()),
-        Data::Float(f) => serde_json::Number::from_f64(f.to_owned())
-            .map_or(Value::Null, Value::Number),
+        Data::Float(f) => {
+            serde_json::Number::from_f64(f.to_owned()).map_or(Value::Null, Value::Number)
+        }
         Data::String(s) => Value::String(s.clone()),
         Data::Bool(b) => Value::Bool(b.to_owned()),
         Data::DateTime(d) => Value::Number(

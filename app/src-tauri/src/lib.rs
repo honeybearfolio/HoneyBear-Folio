@@ -10,7 +10,7 @@
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
-    clippy::cast_possible_wrap,
+    clippy::cast_possible_wrap
 )]
 
 mod core;
@@ -109,8 +109,8 @@ pub fn run() {
             // Only initialize the DB if an active session is configured.
             // If no db_path is set (fresh install), the frontend will show the
             // session picker and call create_session / open_session which runs init_db.
-            let has_session = db_init::read_settings(app.handle())
-                .is_ok_and(|s| s.db_path.is_some());
+            let has_session =
+                db_init::read_settings(app.handle()).is_ok_and(|s| s.db_path.is_some());
             if has_session {
                 db_init::init_db(app.handle())?;
             }
