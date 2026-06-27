@@ -4,9 +4,11 @@ import AssetTracker from "../../../features/assets/AssetTracker";
 import { invoke } from "@tauri-apps/api/core";
 
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (v: unknown) => (v == null ? "" : String(v)),
+  useFormatNumber: () => (v: unknown) =>
+    typeof v === "number" ? String(v) : "",
   useParseNumber: () => (s: string) => Number(s),
-  formatNumberForExport: (v: unknown) => String(v ?? ""),
+  formatNumberForExport: (v: unknown) =>
+    typeof v === "number" ? String(v) : "",
   getDatePickerFormat: () => "yyyy-MM-dd",
 }));
 
@@ -78,10 +80,10 @@ const MOCK_ASSETS = [
 describe("AssetTracker", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedInvoke.mockImplementation(async (cmd: string) => {
-      if (cmd === "get_assets") return MOCK_ASSETS;
-      if (cmd === "get_valuations") return [];
-      return undefined;
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_assets") return Promise.resolve(MOCK_ASSETS);
+      if (cmd === "get_valuations") return Promise.resolve([]);
+      return Promise.resolve(undefined);
     });
   });
 
@@ -94,7 +96,7 @@ describe("AssetTracker", () => {
   });
 
   it("shows empty state when no assets", async () => {
-    mockedInvoke.mockImplementation(async () => []);
+    mockedInvoke.mockImplementation(() => Promise.resolve([]));
     render(<AssetTracker />);
     await waitFor(() => {
       expect(screen.getByText("No assets yet")).toBeInTheDocument();
@@ -115,10 +117,10 @@ describe("AssetTracker", () => {
       { id: 1, asset_id: 1, date: "2024-06-01", value: 350000 },
       { id: 2, asset_id: 1, date: "2024-01-01", value: 300000 },
     ];
-    mockedInvoke.mockImplementation(async (cmd: string) => {
-      if (cmd === "get_assets") return MOCK_ASSETS;
-      if (cmd === "get_valuations") return mockValuations;
-      return undefined;
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_assets") return Promise.resolve(MOCK_ASSETS);
+      if (cmd === "get_valuations") return Promise.resolve(mockValuations);
+      return Promise.resolve(undefined);
     });
 
     render(<AssetTracker />);
@@ -150,12 +152,17 @@ describe("AssetTracker", () => {
 
   it("calls onUpdate after saving a valuation", async () => {
     const onUpdate = vi.fn();
-    mockedInvoke.mockImplementation(async (cmd: string) => {
-      if (cmd === "get_assets") return MOCK_ASSETS;
-      if (cmd === "get_valuations") return [];
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_assets") return Promise.resolve(MOCK_ASSETS);
+      if (cmd === "get_valuations") return Promise.resolve([]);
       if (cmd === "create_valuation")
-        return { id: 99, asset_id: 1, date: "2024-07-01", value: 400000 };
-      return undefined;
+        return Promise.resolve({
+          id: 99,
+          asset_id: 1,
+          date: "2024-07-01",
+          value: 400000,
+        });
+      return Promise.resolve(undefined);
     });
 
     render(<AssetTracker onUpdate={onUpdate} />);
@@ -187,11 +194,11 @@ describe("AssetTracker", () => {
     const mockValuations = [
       { id: 1, asset_id: 1, date: "2024-06-01", value: 350000 },
     ];
-    mockedInvoke.mockImplementation(async (cmd: string) => {
-      if (cmd === "get_assets") return MOCK_ASSETS;
-      if (cmd === "get_valuations") return mockValuations;
-      if (cmd === "delete_valuation") return undefined;
-      return undefined;
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_assets") return Promise.resolve(MOCK_ASSETS);
+      if (cmd === "get_valuations") return Promise.resolve(mockValuations);
+      if (cmd === "delete_valuation") return Promise.resolve(undefined);
+      return Promise.resolve(undefined);
     });
     mockConfirm.mockResolvedValue(true);
 
@@ -214,12 +221,17 @@ describe("AssetTracker", () => {
 
   it("calls onUpdate after saving an asset", async () => {
     const onUpdate = vi.fn();
-    mockedInvoke.mockImplementation(async (cmd: string) => {
-      if (cmd === "get_assets") return MOCK_ASSETS;
-      if (cmd === "get_valuations") return [];
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_assets") return Promise.resolve(MOCK_ASSETS);
+      if (cmd === "get_valuations") return Promise.resolve([]);
       if (cmd === "create_asset")
-        return { id: 3, name: "Boat", category: "other", currency: "USD" };
-      return undefined;
+        return Promise.resolve({
+          id: 3,
+          name: "Boat",
+          category: "other",
+          currency: "USD",
+        });
+      return Promise.resolve(undefined);
     });
 
     render(<AssetTracker onUpdate={onUpdate} />);

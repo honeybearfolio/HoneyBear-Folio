@@ -23,7 +23,7 @@ describe("ConfirmDialogContainer", () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore.getState().confirm("Are you sure?");
+      void useConfirmStore.getState().confirm("Are you sure?");
     });
 
     expect(await screen.findByText("Are you sure?")).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe("ConfirmDialogContainer", () => {
 
     let result: boolean | undefined;
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Are you sure?")
         .then((r) => {
@@ -55,7 +55,7 @@ describe("ConfirmDialogContainer", () => {
 
     let result: boolean | undefined;
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Are you sure?")
         .then((r) => {
@@ -75,7 +75,7 @@ describe("ConfirmDialogContainer", () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Delete this item?", { kind: "warning" });
     });
@@ -90,7 +90,7 @@ describe("ConfirmDialogContainer", () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore
+      void useConfirmStore
         .getState()
         .confirm("Delete this item?", { kind: "error" });
     });
@@ -105,7 +105,7 @@ describe("ConfirmDialogContainer", () => {
     render(<ConfirmDialogContainer />);
 
     act(() => {
-      useConfirmStore.getState().confirm("Proceed?", { kind: "info" });
+      void useConfirmStore.getState().confirm("Proceed?", { kind: "info" });
     });
 
     const okBtn = await screen.findByRole("button", { name: "OK" });

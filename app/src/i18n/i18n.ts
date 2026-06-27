@@ -23,7 +23,7 @@ function readLS(key: string, fallback: string): string {
   }
 }
 
-i18n.use(initReactI18next).init({
+void i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     es: { translation: es },

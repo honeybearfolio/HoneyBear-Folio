@@ -108,14 +108,19 @@ vi.mock("../../../components/ui/NumberInput", () => ({
   ),
 }));
 
-vi.mock("../../../utils/format", async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    useFormatNumber: () => (val: number) => String(val),
-    useFormatDate: () => (date: string) => String(date).split("T")[0],
-  };
-});
+vi.mock(
+  "../../../utils/format",
+  async (
+    importOriginal: () => Promise<typeof import("../../../utils/format")>,
+  ) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      useFormatNumber: () => (val: number) => String(val),
+      useFormatDate: () => (date: string) => date.split("T")[0],
+    };
+  },
+);
 
 const renderWithContext = (ui: React.ReactElement) => {
   useNumberFormatStore.setState({
@@ -246,15 +251,15 @@ describe("ScheduledList", () => {
     fireEvent.click(submitButton2);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_scheduled_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            transactionType: "investment",
-            ticker: "AAPL",
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_scheduled_transaction");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as {
+        args: { transactionType: string; ticker: string };
+      };
+      expect(payload.args.transactionType).toBe("investment");
+      expect(payload.args.ticker).toBe("AAPL");
     });
 
     expect(mockShowToast).toHaveBeenCalledWith(

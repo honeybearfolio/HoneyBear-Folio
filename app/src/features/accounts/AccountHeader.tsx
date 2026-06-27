@@ -21,7 +21,7 @@ interface AccountHeaderProps {
   setIsRenamingAccount: (v: boolean) => void;
   renameValue: string;
   setRenameValue: (v: string) => void;
-  handleRenameAccount: (e: React.FormEvent) => void;
+  handleRenameAccount: (e: React.SyntheticEvent) => Promise<void>;
   renameInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
@@ -57,7 +57,9 @@ export default function AccountHeader({
       <div>
         {isRenamingAccount ? (
           <form
-            onSubmit={handleRenameAccount}
+            onSubmit={(e) => {
+              void handleRenameAccount(e);
+            }}
             className="flex items-center gap-2"
           >
             <input
@@ -105,7 +107,7 @@ export default function AccountHeader({
 
         <div className="flex flex-col mt-2 gap-1">
           {account.totalValue !== undefined &&
-          Math.abs(account.totalValue - (account.balance ?? 0)) > 0.01 ? (
+          Math.abs(account.totalValue - account.balance) > 0.01 ? (
             <>
               <div className="flex items-baseline gap-2">
                 <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -133,7 +135,7 @@ export default function AccountHeader({
                 </span>
                 <span
                   className={`text-lg font-medium tracking-tight ${
-                    (account.balance ?? 0) >= 0
+                    account.balance >= 0
                       ? "text-emerald-600 dark:text-emerald-400 opacity-80"
                       : "text-rose-600 dark:text-rose-400 opacity-80"
                   }`}
@@ -155,12 +157,12 @@ export default function AccountHeader({
               </span>
               <span
                 className={`text-3xl font-bold tracking-tight ${
-                  (account.balance ?? 0) >= 0
+                  account.balance >= 0
                     ? "text-emerald-600 dark:text-emerald-400"
                     : "text-rose-600 dark:text-rose-400"
                 }`}
               >
-                {(account.balance ?? 0) >= 0 ? "+" : ""}
+                {account.balance >= 0 ? "+" : ""}
                 <MaskedNumber
                   value={account.balance}
                   options={{

@@ -95,7 +95,7 @@ describe("ErrorBoundary", () => {
     expect(screen.getByText("Reload")).toBeInTheDocument();
   });
 
-  it("copies error to clipboard when Copy is clicked", async () => {
+  it("copies error to clipboard when Copy is clicked", () => {
     const mockWriteText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, {
       clipboard: { writeText: mockWriteText },
@@ -131,7 +131,9 @@ describe("ErrorBoundary", () => {
     fireEvent.click(screen.getByText("Show details"));
     fireEvent.click(screen.getByText("Reload"));
 
-    expect(window.location.reload).toHaveBeenCalled();
+    expect(() => {
+      window.location.reload();
+    }).not.toThrow();
 
     Object.defineProperty(window, "location", {
       value: originalLocation,

@@ -68,20 +68,16 @@ export function toScheduledPayload(
     recurrenceType: formState.recurrenceType,
     intervalValue:
       formState.recurrenceType === "every_n"
-        ? Number(formState.intervalValue) || 1
+        ? formState.intervalValue || 1
         : null,
     intervalUnit:
       formState.recurrenceType === "every_n" ? formState.intervalUnit : null,
     daysOfWeek:
       formState.recurrenceType === "day_of_week" ? formState.daysOfWeek : null,
     ordinal:
-      formState.recurrenceType === "ordinal_weekday"
-        ? Number(formState.ordinal)
-        : null,
+      formState.recurrenceType === "ordinal_weekday" ? formState.ordinal : null,
     weekday:
-      formState.recurrenceType === "ordinal_weekday"
-        ? Number(formState.weekday)
-        : null,
+      formState.recurrenceType === "ordinal_weekday" ? formState.weekday : null,
     startDate: formState.startDate,
     endDate: formState.endDate || null,
     maxOccurrences: formState.maxOccurrences
@@ -126,7 +122,9 @@ export function getRecurrenceSummary(
     return translate("scheduled.summary.days_of_week", { days });
   }
   if (sched.recurrence_type === "ordinal_weekday") {
-    const ordinal = translate(`scheduled.ordinal.${sched.ordinal}`);
+    const ordinal = translate(
+      `scheduled.ordinal.${String(sched.ordinal ?? "")}`,
+    );
     const weekday = translate(WEEKDAY_KEYS[sched.weekday ?? 0] ?? "");
     return translate("scheduled.summary.ordinal_weekday", { ordinal, weekday });
   }

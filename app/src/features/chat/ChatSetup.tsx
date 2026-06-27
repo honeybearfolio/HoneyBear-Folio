@@ -136,7 +136,7 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
     }
   }
 
-  async function handleSelectModel() {
+  function handleSelectModel() {
     if (!selectedModel) return;
     setStep("ready");
   }
@@ -206,7 +206,9 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
             )}
 
             <button
-              onClick={handleTestConnection}
+              onClick={() => {
+                void handleTestConnection();
+              }}
               disabled={loading || !ollamaUrl.trim()}
               className="chat-setup-btn-primary"
             >
@@ -282,7 +284,9 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
             </div>
 
             <button
-              onClick={handleSelectModel}
+              onClick={() => {
+                handleSelectModel();
+              }}
               disabled={!selectedModel}
               className="chat-setup-btn-primary"
             >
@@ -328,7 +332,9 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
             )}
 
             <button
-              onClick={handleFinish}
+              onClick={() => {
+                void handleFinish();
+              }}
               disabled={saving}
               className="chat-setup-btn-primary"
             >

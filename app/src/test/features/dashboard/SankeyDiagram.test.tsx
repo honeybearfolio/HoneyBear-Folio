@@ -20,7 +20,7 @@ vi.mock("chartjs-chart-sankey", () => ({
 }));
 
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val: number) => `${val}`,
+  useFormatNumber: () => (val: number) => String(val),
 }));
 
 // Provide a light NumberFormat context mock so the component can call

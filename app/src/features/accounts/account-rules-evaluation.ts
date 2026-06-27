@@ -7,10 +7,10 @@ export function evaluateCondition(
 ): boolean {
   const fieldValue = values[condition.field];
   const conditionValue = condition.value;
-  const strFieldValue = String(fieldValue ?? "");
-  const strCondValue = String(conditionValue ?? "");
-  const numFieldValue = parseFloat(fieldValue ?? "");
-  const numCondValue = parseFloat(String(conditionValue ?? ""));
+  const strFieldValue = fieldValue ?? "";
+  const strCondValue = conditionValue;
+  const numFieldValue = parseFloat(strFieldValue);
+  const numCondValue = parseFloat(strCondValue);
 
   let matched: boolean;
   switch (condition.operator) {
@@ -53,12 +53,10 @@ export function evaluateCondition(
         numFieldValue < numCondValue;
       break;
     case "is_empty":
-      matched =
-        strFieldValue === "" || fieldValue === null || fieldValue === undefined;
+      matched = strFieldValue === "";
       break;
     case "is_not_empty":
-      matched =
-        strFieldValue !== "" && fieldValue !== null && fieldValue !== undefined;
+      matched = strFieldValue !== "";
       break;
     default:
       matched = strFieldValue === strCondValue;

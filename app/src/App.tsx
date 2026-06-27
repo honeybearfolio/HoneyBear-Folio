@@ -109,6 +109,12 @@ interface MainAppProps {
   onSwitchSession: () => void;
 }
 
+function toGlobalError(value: unknown, fallback: string): string | Error {
+  if (value instanceof Error) return value;
+  if (typeof value === "string" && value.trim().length > 0) return value;
+  return fallback;
+}
+
 function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -148,13 +154,18 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   >(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_VISIBILITY);
-      const defaults = DEFAULT_SIDEBAR_VISIBILITY;
+      const defaults: Record<string, boolean> = {
+        ...DEFAULT_SIDEBAR_VISIBILITY,
+      };
       if (stored) {
-        return { ...defaults, ...JSON.parse(stored) };
+        const parsed: unknown = JSON.parse(stored);
+        if (parsed && typeof parsed === "object") {
+          return { ...defaults, ...(parsed as Record<string, boolean>) };
+        }
       }
       return defaults;
     } catch {
-      return DEFAULT_SIDEBAR_VISIBILITY;
+      return { ...DEFAULT_SIDEBAR_VISIBILITY };
     }
   });
 
@@ -272,14 +283,16 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
         // Non-critical: if assets fail to load, net worth just excludes them
       }
     };
-    loadData();
+    void loadData();
   }, [refreshTrigger, fetchAccounts, fetchMarketValues, currency]);
 
   useEffect(() => {
     let cancelled = false;
-    computeNetWorth(accounts, marketValues, totalAssetsValue).then((value) => {
-      if (!cancelled) setTotalBalance(value);
-    });
+    void computeNetWorth(accounts, marketValues, totalAssetsValue).then(
+      (value) => {
+        if (!cancelled) setTotalBalance(value);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -314,7 +327,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   // Calculate total balance (kept in state via effect above)
 
   const totalCashBalance = accounts.reduce((sum, acc) => {
-    const balance = Number(acc.balance) || 0;
+    const balance = acc.balance;
     const rate = acc.exchange_rate || 1.0;
     return sum + balance * rate;
   }, 0);
@@ -331,13 +344,12 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   } else {
     const acc = accounts.find((a) => sameId(a.id, selectedAccountId));
     if (acc) {
+      const marketValue = marketValues[acc.id];
       accountForDetails = {
         ...acc,
-        balance: Number(acc.balance),
+        balance: acc.balance,
         totalValue:
-          marketValues[acc.id] !== undefined
-            ? Number(acc.balance) + Number(marketValues[acc.id])
-            : Number(acc.balance),
+          marketValue === undefined ? acc.balance : acc.balance + marketValue,
       };
     }
   }
@@ -351,12 +363,14 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   // handler accumulation across effect cleanup/re-run cycles.
   const handleWindowError = useCallback((event: ErrorEvent) => {
     console.error("Window error:", event.error || event.message, event);
-    setGlobalError(event.error || event.message || "Unknown error");
+    setGlobalError(
+      toGlobalError(event.error ?? event.message, "Unknown error"),
+    );
   }, []);
 
   const handleRejection = useCallback((event: PromiseRejectionEvent) => {
     console.error("Unhandled rejection:", event.reason || event);
-    setGlobalError(event.reason || "Unhandled promise rejection");
+    setGlobalError(toGlobalError(event.reason, "Unhandled promise rejection"));
   }, []);
 
   useEffect(() => {

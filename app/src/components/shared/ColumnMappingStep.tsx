@@ -31,6 +31,15 @@ export default function ColumnMappingStep({
   importErrors,
 }: ColumnMappingStepProps) {
   const { t } = useTranslation();
+  const firstPreviewRow = previewRows[0];
+
+  const toDisplayValue = (value: unknown): string => {
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    return "";
+  };
 
   return (
     <div className="space-y-6">
@@ -103,12 +112,12 @@ export default function ColumnMappingStep({
 
         {parseError ? (
           <p className="text-sm text-red-500">{parseError}</p>
-        ) : previewRows && previewRows.length > 0 ? (
+        ) : previewRows.length > 0 && firstPreviewRow ? (
           <div className="overflow-x-auto bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 p-2 mt-2">
             <table className="w-full min-w-full text-sm table-auto">
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-800">
-                  {Object.keys(previewRows[0]!).map((h) => (
+                  {Object.keys(firstPreviewRow).map((h) => (
                     <th
                       key={h}
                       className="text-left pr-4 text-xs font-medium text-slate-700 dark:text-slate-200 uppercase tracking-wide"
@@ -124,12 +133,12 @@ export default function ColumnMappingStep({
                     key={idx}
                     className="hover:bg-slate-100 dark:hover:bg-slate-800 odd:bg-white even:bg-slate-50 dark:odd:bg-slate-900 dark:even:bg-slate-800"
                   >
-                    {Object.keys(previewRows[0]!).map((h) => (
+                    {Object.keys(firstPreviewRow).map((h) => (
                       <td
                         key={h}
                         className="pr-4 text-slate-900 dark:text-white whitespace-normal break-words"
                       >
-                        {String(r[h] ?? "")}
+                        {toDisplayValue(r[h])}
                       </td>
                     ))}
                   </tr>
@@ -157,7 +166,7 @@ export default function ColumnMappingStep({
               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
               style={{
                 width: progress.total
-                  ? `${(progress.current / progress.total) * 100}%`
+                  ? `${String((progress.current / progress.total) * 100)}%`
                   : "0%",
               }}
             />
@@ -175,7 +184,7 @@ export default function ColumnMappingStep({
         </div>
       )}
 
-      {showImportSummary && importErrors && importErrors.length > 0 && (
+      {showImportSummary && importErrors.length > 0 && (
         <div className="mt-4 p-4 rounded bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200">
           <h3 className="text-sm font-semibold mb-2">
             {t("import.error_summary") || "Import errors"}

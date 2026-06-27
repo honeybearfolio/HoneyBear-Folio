@@ -78,14 +78,16 @@ export default function FormatsSection({
       <div className="relative settings-select">
         <CustomSelect
           value={currency}
-          onChange={async (v) => {
-            setCurrency(String(v));
-            if (v) {
-              const confirmed = await checkAndPrompt(String(v));
-              if (!confirmed) {
-                setCurrency(currency);
+          onChange={(v) => {
+            void (async () => {
+              setCurrency(String(v));
+              if (v) {
+                const confirmed = await checkAndPrompt(String(v));
+                if (!confirmed) {
+                  setCurrency(currency);
+                }
               }
-            }
+            })();
           }}
           options={CURRENCIES.map((c) => ({
             value: c.code,

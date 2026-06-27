@@ -31,14 +31,14 @@ interface TransactionRowProps {
   editForm: Partial<TransactionEditForm>;
   setEditForm: Dispatch<SetStateAction<Partial<TransactionEditForm>>>;
   startEditing: (tx: Transaction) => void;
-  saveEdit: () => void;
+  saveEdit: () => Promise<void>;
   setEditingId: (v: string | number | null) => void;
   menuOpenId: string | number | null;
   setMenuOpenId: (v: string | number | null) => void;
   menuCoords: MenuCoords | null;
   setMenuCoords: (v: MenuCoords | null) => void;
-  duplicateTransaction: (tx: Transaction) => void;
-  deleteTransaction: (id: string | number) => void;
+  duplicateTransaction: (tx: Transaction) => Promise<void>;
+  deleteTransaction: (id: string | number) => Promise<void>;
   payeeSuggestions: AutocompleteSuggestion[];
   categorySuggestions: AutocompleteSuggestion[];
   availableAccounts: AvailableAccount[];
@@ -130,7 +130,7 @@ export default function TransactionRow({
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
-                      name={`txType-${tx.id}`}
+                      name={`txType-${String(tx.id)}`}
                       checked={
                         editForm.payee === "Buy" ||
                         (editForm.payee !== "Sell" &&
@@ -148,7 +148,7 @@ export default function TransactionRow({
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
-                      name={`txType-${tx.id}`}
+                      name={`txType-${String(tx.id)}`}
                       checked={
                         editForm.payee === "Sell" ||
                         (editForm.payee !== "Buy" &&
@@ -337,7 +337,9 @@ export default function TransactionRow({
               <td className="px-6 py-3 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <button
-                    onClick={saveEdit}
+                    onClick={() => {
+                      void saveEdit();
+                    }}
                     className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                   >
                     <Check className="w-4 h-4" />
@@ -361,7 +363,7 @@ export default function TransactionRow({
                   className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
                   value={editForm.payee as string}
                   onChange={(val) => {
-                    const isTransfer = availableAccounts?.some(
+                    const isTransfer = availableAccounts.some(
                       (a) => a.name === val,
                     );
                     setEditForm({
@@ -377,7 +379,7 @@ export default function TransactionRow({
                 <AutocompleteInput
                   suggestions={categorySuggestions}
                   className={`w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none ${
-                    availableAccounts?.some((a) => a.name === editForm.payee)
+                    availableAccounts.some((a) => a.name === editForm.payee)
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                       : ""
                   }`}
@@ -388,7 +390,7 @@ export default function TransactionRow({
                       category: val,
                     });
                   }}
-                  disabled={availableAccounts?.some(
+                  disabled={availableAccounts.some(
                     (a) => a.name === editForm.payee,
                   )}
                 />
@@ -454,7 +456,9 @@ export default function TransactionRow({
               <td className="px-6 py-3 text-center">
                 <div className="flex items-center justify-center gap-1">
                   <button
-                    onClick={saveEdit}
+                    onClick={() => {
+                      void saveEdit();
+                    }}
                     className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                   >
                     <Check className="w-4 h-4" />
@@ -553,7 +557,7 @@ export default function TransactionRow({
                   startEditing(tx);
                 }}
               >
-                {typeof tx.shares !== "undefined" && tx.shares !== null ? (
+                {typeof tx.shares !== "undefined" ? (
                   <span>
                     <MaskedNumber
                       value={Math.abs(tx.shares)}
@@ -575,8 +579,7 @@ export default function TransactionRow({
                   startEditing(tx);
                 }}
               >
-                {typeof tx.price_per_share !== "undefined" &&
-                tx.price_per_share !== null ? (
+                {typeof tx.price_per_share !== "undefined" ? (
                   <span>
                     <MaskedNumber
                       value={tx.price_per_share}
@@ -599,7 +602,7 @@ export default function TransactionRow({
                   startEditing(tx);
                 }}
               >
-                {typeof tx.fee !== "undefined" && tx.fee !== null ? (
+                {typeof tx.fee !== "undefined" ? (
                   <span>
                     <MaskedNumber
                       value={tx.fee}
@@ -666,17 +669,20 @@ export default function TransactionRow({
                   style={{
                     top:
                       menuCoords.x !== undefined
-                        ? `${menuCoords.y}px`
-                        : `${(menuCoords.top ?? 0) + (menuCoords.height ?? 0) + 8}px`,
+                        ? (menuCoords.y ?? 0)
+                        : (menuCoords.top ?? 0) + (menuCoords.height ?? 0) + 8,
                     left:
                       menuCoords.x !== undefined
-                        ? `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`
-                        : `${Math.min(Math.max((menuCoords.right ?? 0) - 176, 8), window.innerWidth - 176 - 8)}px`,
+                        ? Math.min(menuCoords.x, window.innerWidth - 176 - 8)
+                        : Math.min(
+                            Math.max((menuCoords.right ?? 0) - 176, 8),
+                            window.innerWidth - 176 - 8,
+                          ),
                   }}
                 >
                   <button
                     onClick={() => {
-                      duplicateTransaction(tx);
+                      void duplicateTransaction(tx);
                       setMenuOpenId(null);
                       setMenuCoords(null);
                     }}
@@ -687,7 +693,7 @@ export default function TransactionRow({
                   </button>
                   <button
                     onClick={() => {
-                      deleteTransaction(tx.id);
+                      void deleteTransaction(tx.id);
                       setMenuOpenId(null);
                       setMenuCoords(null);
                     }}

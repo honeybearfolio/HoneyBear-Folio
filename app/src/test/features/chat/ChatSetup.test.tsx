@@ -18,7 +18,7 @@ describe("ChatSetup", () => {
     });
   });
 
-  it("renders the setup title", async () => {
+  it("renders the setup title", () => {
     render(<ChatSetup onComplete={onComplete} />);
     expect(screen.getByText("Set up AI Assistant")).toBeInTheDocument();
   });

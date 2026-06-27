@@ -84,7 +84,7 @@ export function NumberFormatEffects() {
   const uiLanguage = useNumberFormatStore((s) => s.uiLanguage);
 
   useEffect(() => {
-    i18n.changeLanguage(uiLanguage).catch((e) => {
+    i18n.changeLanguage(uiLanguage).catch((e: unknown) => {
       console.error("Failed to apply UI language:", e);
     });
   }, [uiLanguage]);

@@ -92,7 +92,7 @@ export function useFormatNumber(): (
       finalOptions.currency = currency || "USD";
     }
 
-    if (isPrivacyMode && !options?.ignorePrivacy) {
+    if (isPrivacyMode && !options.ignorePrivacy) {
       if (finalOptions.style === "currency") {
         // Keep currency symbol visible but mask the numeric amount with
         // as many bullets as the localized numeric string length.
@@ -123,7 +123,7 @@ export function useFormatNumber(): (
           decimalOptions,
         );
         // Remove any leading sign characters that may be present
-        formattedNumeric = String(formattedNumeric).replace(/^[+-]/, "");
+        formattedNumeric = formattedNumeric.replace(/^[+-]/, "");
         const len = Math.max(formattedNumeric.length, 1);
         const masked = "•".repeat(len);
 
@@ -136,7 +136,7 @@ export function useFormatNumber(): (
 
       // Non-currency values: mask with as many bullets as the localized formatted value
       let formatted = formatNumberWithLocale(value, locale, finalOptions);
-      formatted = String(formatted).replace(/^[+-]/, "");
+      formatted = formatted.replace(/^[+-]/, "");
       const length = Math.max(formatted.length, 1);
       return "•".repeat(length);
     }
@@ -152,8 +152,9 @@ export function parseNumberWithLocale(
 ): number {
   if (str === undefined || str === null) return NaN;
   if (typeof str === "number") return str;
+  if (typeof str !== "string") return NaN;
 
-  const s = String(str).trim();
+  const s = str.trim();
   if (s === "") return NaN;
 
   // Normalize common whitespace characters used as group separators
@@ -223,21 +224,29 @@ export function formatDateForUI(
 
   switch (formatKey) {
     case "YYYY-MM-DD":
-      return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(
+      return `${String(date.getFullYear())}-${pad2(date.getMonth() + 1)}-${pad2(
         date.getDate(),
       )}`;
     case "YYYY/MM/DD":
-      return `${date.getFullYear()}/${pad2(date.getMonth() + 1)}/${pad2(
+      return `${String(date.getFullYear())}/${pad2(date.getMonth() + 1)}/${pad2(
         date.getDate(),
       )}`;
     case "MM/DD/YYYY":
-      return `${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}/${date.getFullYear()}`;
+      return `${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}/${String(
+        date.getFullYear(),
+      )}`;
     case "DD/MM/YYYY":
-      return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
+      return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${String(
+        date.getFullYear(),
+      )}`;
     case "DD-MM-YYYY":
-      return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()}`;
+      return `${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${String(
+        date.getFullYear(),
+      )}`;
     case "DD.MM.YYYY":
-      return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+      return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${String(
+        date.getFullYear(),
+      )}`;
     case "DD MMM YYYY":
       // Use current locale month names for UI display
       return date.toLocaleDateString(_locale || "en-US", {
@@ -279,7 +288,8 @@ export function useFormatDate(): (
 export function formatNumberForExport(value: unknown): string {
   if (value === undefined || value === null) return "";
   if (typeof value === "number") return String(value);
-  const s = String(value).trim();
+  if (typeof value !== "string") return "";
+  const s = value.trim();
   if (s === "") return "";
 
   // Remove common non-breaking/grouping spaces

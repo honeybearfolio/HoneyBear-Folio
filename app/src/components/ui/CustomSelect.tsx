@@ -42,6 +42,11 @@ export default function CustomSelect({
   "aria-label": ariaLabel,
 }: CustomSelectProps) {
   const { t } = useTranslation();
+  const optionLabelText = (label: React.ReactNode, value: string | number) => {
+    if (typeof label === "string") return label;
+    if (typeof label === "number") return String(label);
+    return String(value);
+  };
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,15 +58,15 @@ export default function CustomSelect({
   const selected = options.find((o) => String(o.value) === String(value));
 
   const filteredOptions = options.filter((opt) => {
-    const label = opt.label ? String(opt.label) : String(opt.value);
+    const label = optionLabelText(opt.label, opt.value);
     return label.toLowerCase().includes(search.toLowerCase());
   });
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
-      const tgt = e && e.target;
+      const tgt = e.target;
       const clickedInsideTrigger =
-        containerRef.current &&
+        !!containerRef.current &&
         tgt instanceof Node &&
         containerRef.current.contains(tgt);
       const clickedInsidePortal =
@@ -95,9 +100,8 @@ export default function CustomSelect({
     function handleScrollOrResize(e: Event) {
       // If the scroll/wheel/touch event originates from inside the menu or the trigger, ignore it
       try {
-        const tgt = e && e.target;
+        const tgt = e.target;
         if (
-          e &&
           e.type === "scroll" &&
           listRef.current &&
           tgt instanceof Node &&
@@ -107,7 +111,6 @@ export default function CustomSelect({
           return;
         }
         if (
-          e &&
           (e.type === "wheel" || e.type === "touchmove") &&
           listRef.current &&
           tgt instanceof Node &&
@@ -160,7 +163,7 @@ export default function CustomSelect({
 
       // compute initial highlighted index from the current filtered options
       const currentFiltered = options.filter((opt) => {
-        const label = opt.label ? String(opt.label) : String(opt.value);
+        const label = optionLabelText(opt.label, opt.value);
         return label.toLowerCase().includes(search.toLowerCase());
       });
       const idx = currentFiltered.findIndex(
@@ -255,13 +258,19 @@ export default function CustomSelect({
             className="custom-select-portal fixed bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-56 overflow-auto p-2 animate-fade-in"
             style={{
               ...(openUpward
-                ? { bottom: `${window.innerHeight - menuCoords.top + 8}px` }
-                : { top: `${menuCoords.top + menuCoords.height + 8}px` }),
-              left: `${Math.min(
-                Math.max(menuCoords.left, 8),
-                window.innerWidth - menuCoords.width - 8,
+                ? {
+                    bottom: `${String(window.innerHeight - menuCoords.top + 8)}px`,
+                  }
+                : {
+                    top: `${String(menuCoords.top + menuCoords.height + 8)}px`,
+                  }),
+              left: `${String(
+                Math.min(
+                  Math.max(menuCoords.left, 8),
+                  window.innerWidth - menuCoords.width - 8,
+                ),
               )}px`,
-              width: `${menuCoords.width}px`,
+              width: `${String(menuCoords.width)}px`,
               zIndex: 10003,
             }}
             onKeyDown={handleKeyDown}
@@ -292,7 +301,7 @@ export default function CustomSelect({
               const isHighlighted = i === highlighted;
               return (
                 <li
-                  key={String(opt.value) + i}
+                  key={`${String(opt.value)}-${String(i)}`}
                   role="option"
                   aria-selected={isSelected}
                   data-highlighted={isHighlighted}

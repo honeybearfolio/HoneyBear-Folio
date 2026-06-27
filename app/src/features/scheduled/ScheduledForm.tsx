@@ -31,7 +31,7 @@ interface ScheduledFormProps {
   dateFormat: string;
   firstDayOfWeek: number;
   handleTickerChange: (query: string) => void;
-  handleSubmit: (e: React.FormEvent) => void;
+  handleSubmit: (e: React.SyntheticEvent<HTMLFormElement>) => void;
   resetForm: () => void;
   toggleDayOfWeek: (day: number) => void;
 }
@@ -323,15 +323,16 @@ export default function ScheduledForm({
                     handleTickerChange(val);
                     setShowTickerSuggestions(true);
                   }}
-                  onBlur={() =>
+                  onBlur={() => {
                     setTimeout(() => {
                       setShowTickerSuggestions(false);
-                    }, 200)
-                  }
-                  onFocus={() =>
-                    formState.ticker.length >= 2 &&
-                    setShowTickerSuggestions(true)
-                  }
+                    }, 200);
+                  }}
+                  onFocus={() => {
+                    if (formState.ticker.length >= 2) {
+                      setShowTickerSuggestions(true);
+                    }
+                  }}
                   className="form-input"
                   placeholder="AAPL"
                 />
@@ -573,7 +574,10 @@ export default function ScheduledForm({
                   const year = date.getFullYear();
                   const month = String(date.getMonth() + 1).padStart(2, "0");
                   const day = String(date.getDate()).padStart(2, "0");
-                  return { ...prev, startDate: `${year}-${month}-${day}` };
+                  return {
+                    ...prev,
+                    startDate: `${String(year)}-${month}-${day}`,
+                  };
                 });
               }}
               dateFormat={getDatePickerFormat(dateFormat)}
@@ -598,7 +602,10 @@ export default function ScheduledForm({
                   const year = date.getFullYear();
                   const month = String(date.getMonth() + 1).padStart(2, "0");
                   const day = String(date.getDate()).padStart(2, "0");
-                  return { ...prev, endDate: `${year}-${month}-${day}` };
+                  return {
+                    ...prev,
+                    endDate: `${String(year)}-${month}-${day}`,
+                  };
                 });
               }}
               dateFormat={getDatePickerFormat(dateFormat)}

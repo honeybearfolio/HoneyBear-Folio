@@ -32,7 +32,9 @@ vi.mock("react-datepicker", () => {
   return {
     default: (props: { onChange: (date: Date) => void; selected?: Date }) => (
       <input
-        onChange={(e) => props.onChange(new Date(e.target.value))}
+        onChange={(e) => {
+          props.onChange(new Date(e.target.value));
+        }}
         value={
           props.selected ? props.selected.toISOString().substring(0, 10) : ""
         }

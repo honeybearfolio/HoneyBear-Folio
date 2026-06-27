@@ -43,10 +43,10 @@ export default function ValuationModal({
     valuation ? String(valuation.value) : "",
   );
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const value = parseNumber(valueStr);
-    if (value === null || Number.isNaN(value)) {
+    if (Number.isNaN(value)) {
       showToast(t("assets.error.invalid_value"), { type: "warning" });
       return;
     }
@@ -56,7 +56,7 @@ export default function ValuationModal({
     }
 
     try {
-      if (isEditing && valuation) {
+      if (valuation) {
         await rust.update_valuation({ id: valuation.id, date, value });
         showToast(t("assets.valuation_updated"), { type: "success" });
       } else {
@@ -78,7 +78,11 @@ export default function ValuationModal({
 
   return (
     <Modal onClose={onClose}>
-      <form onSubmit={handleSubmit}>
+      <form
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
+      >
         <ModalHeader onClose={onClose}>
           {isEditing ? t("assets.edit_valuation") : t("assets.add_valuation")}
         </ModalHeader>

@@ -9,7 +9,7 @@ vi.mock("../../../hooks/useIsDark", () => ({ default: () => false }));
 
 // Mock utils
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val: number) => `fmt-${val}`,
+  useFormatNumber: () => (val: number) => `fmt-${String(val)}`,
 }));
 
 // Mock number-format context used by formatting hooks/components

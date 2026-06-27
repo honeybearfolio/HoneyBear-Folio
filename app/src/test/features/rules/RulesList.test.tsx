@@ -13,7 +13,8 @@ import { invoke } from "@tauri-apps/api/core";
 // Number formatting hooks are used by NumberInput — provide light mocks so
 // RulesList can be exercised without wrapping providers.
 vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (v: unknown) => (v == null ? "" : String(v)),
+  useFormatNumber: () => (v: unknown) =>
+    typeof v === "number" || typeof v === "string" ? String(v) : "",
   useParseNumber: () => (s: string) => Number(s),
 }));
 
@@ -152,15 +153,15 @@ describe("RulesList", () => {
     fireEvent.click(addButton!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            match_pattern: "Netflix",
-            action_value: "Entertainment",
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as {
+        args: { match_pattern: string; action_value: string };
+      };
+      expect(payload.args.match_pattern).toBe("Netflix");
+      expect(payload.args.action_value).toBe("Entertainment");
     });
   });
 
@@ -288,16 +289,16 @@ describe("RulesList", () => {
     fireEvent.click(submit);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "update_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            id: 11,
-            match_pattern: "New Payee",
-            action_value: "NewCat",
-          }),
-        }),
-      );
+      const updateCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "update_rule");
+      expect(updateCall).toBeDefined();
+      const payload = updateCall?.[1] as {
+        args: { id: number; match_pattern: string; action_value: string };
+      };
+      expect(payload.args.id).toBe(11);
+      expect(payload.args.match_pattern).toBe("New Payee");
+      expect(payload.args.action_value).toBe("NewCat");
     });
   });
 
@@ -347,16 +348,16 @@ describe("RulesList", () => {
     fireEvent.click(submit!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            logic: "or",
-            conditions: expect.any(Array),
-            actions: expect.any(Array),
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((c) => c[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const createPayload = createCall?.[1] as {
+        args: { logic: string; conditions: unknown[]; actions: unknown[] };
+      };
+      expect(createPayload.args.logic).toBe("or");
+      expect(Array.isArray(createPayload.args.conditions)).toBe(true);
+      expect(Array.isArray(createPayload.args.actions)).toBe(true);
       const payload = (
         vi
           .mocked(invoke)
@@ -448,15 +449,15 @@ describe("RulesList", () => {
     fireEvent.click(submitBtn!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            match_pattern: "123.45",
-            actions: expect.any(Array),
-          }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const createPayload = createCall?.[1] as {
+        args: { match_pattern: string; actions: unknown[] };
+      };
+      expect(createPayload.args.match_pattern).toBe("123.45");
+      expect(Array.isArray(createPayload.args.actions)).toBe(true);
       // action values are stringified by the component
       const payload = (
         vi
@@ -498,12 +499,12 @@ describe("RulesList", () => {
     fireEvent.click(submitBtn!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({ match_pattern: "" }),
-        }),
-      );
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as { args: { match_pattern: string } };
+      expect(payload.args.match_pattern).toBe("");
     });
   });
 
@@ -661,18 +662,20 @@ describe("RulesList", () => {
     fireEvent.click(submitBtn!);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "create_rule",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            conditions: expect.arrayContaining([
-              expect.objectContaining({
-                operator: "matches_regex",
-                value: "^Star.*Coffee$",
-              }),
-            ]),
+      const createCall = vi
+        .mocked(invoke)
+        .mock.calls.find((call) => call[0] === "create_rule");
+      expect(createCall).toBeDefined();
+      const payload = createCall?.[1] as {
+        args: { conditions: Array<{ operator: string; value: string }> };
+      };
+      expect(payload.args.conditions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            operator: "matches_regex",
+            value: "^Star.*Coffee$",
           }),
-        }),
+        ]),
       );
     });
   });

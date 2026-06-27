@@ -68,35 +68,34 @@ export default function SettingsView({
     try {
       document.documentElement.style.setProperty(
         "--hb-font-size",
-        `${fontSize}`,
+        String(fontSize),
       );
       localStorage.setItem(STORAGE_KEYS.FONT_SIZE, String(fontSize));
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to apply font size:", e);
     }
   }, [fontSize]);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    void (async () => {
       try {
         const p = await rust.get_db_path_command();
-        if (mounted) setDbPath(p);
-      } catch (e) {
+        setDbPath(p);
+      } catch (e: unknown) {
         console.error("Failed to fetch DB path:", e);
       }
     })();
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   function showTooltip(e: React.MouseEvent | React.FocusEvent) {
     const el = e.currentTarget as HTMLElement;
     try {
       const rect = el.getBoundingClientRect();
-      el.style.setProperty("--tooltip-top", `${rect.top - 8}px`);
-      el.style.setProperty("--tooltip-left", `${rect.left + rect.width / 2}px`);
+      el.style.setProperty("--tooltip-top", `${String(rect.top - 8)}px`);
+      el.style.setProperty(
+        "--tooltip-left",
+        `${String(rect.left + rect.width / 2)}px`,
+      );
       el.setAttribute("data-tooltip-visible", "true");
     } catch {
       // ignore measurement errors
@@ -111,7 +110,7 @@ export default function SettingsView({
   async function openExternal(url: string) {
     try {
       await open(url);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to open external URL:", e);
       showToast(t("error.operation_failed"), { type: "error" });
     }
@@ -129,7 +128,7 @@ export default function SettingsView({
         const p = await rust.get_db_path_command();
         setDbPath(p);
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to select DB file:", e);
       showToast(t("error.operation_failed"), { type: "error" });
     }
@@ -169,10 +168,10 @@ export default function SettingsView({
         await rust.reset_db_path();
         const p = await rust.get_db_path_command();
         setDbPath(p);
-      } catch (e) {
+      } catch (e: unknown) {
         console.error("Failed to reset DB path:", e);
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to reset defaults:", e);
       showToast(t("error.operation_failed"), { type: "error" });
     }
@@ -204,24 +203,29 @@ export default function SettingsView({
               uiLanguage={uiLanguage}
               setUiLanguage={setUiLanguage}
               dbPath={dbPath}
-              handleSelectDb={handleSelectDb}
+              handleSelectDb={() => {
+                void handleSelectDb();
+              }}
               showTooltip={showTooltip}
               hideTooltip={hideTooltip}
             />
           )}
 
-          {activeSection === "customization" &&
-            sidebarVisibility &&
-            onChangeSidebarVisibility && (
-              <CustomizationSection
-                sidebarVisibility={sidebarVisibility}
-                onChangeSidebarVisibility={onChangeSidebarVisibility}
-                showTooltip={showTooltip}
-                hideTooltip={hideTooltip}
-                fontSize={fontSize}
-                setFontSize={setFontSize}
-              />
-            )}
+          {activeSection === "customization" && onChangeSidebarVisibility && (
+            <CustomizationSection
+              sidebarVisibility={
+                (sidebarVisibility ?? DEFAULT_SIDEBAR_VISIBILITY) as Record<
+                  string,
+                  boolean
+                >
+              }
+              onChangeSidebarVisibility={onChangeSidebarVisibility}
+              showTooltip={showTooltip}
+              hideTooltip={hideTooltip}
+              fontSize={fontSize}
+              setFontSize={setFontSize}
+            />
+          )}
 
           {activeSection === "formats" && (
             <FormatsSection
@@ -240,14 +244,20 @@ export default function SettingsView({
           )}
 
           {activeSection === "about" && (
-            <AboutSection openExternal={openExternal} />
+            <AboutSection
+              openExternal={(url) => {
+                void openExternal(url);
+              }}
+            />
           )}
         </div>
 
         <div className="settings-view-footer">
           <button
             type="button"
-            onClick={handleResetDefaults}
+            onClick={() => {
+              void handleResetDefaults();
+            }}
             className="reset-button"
             aria-label={t("settings.reset_to_defaults")}
           >

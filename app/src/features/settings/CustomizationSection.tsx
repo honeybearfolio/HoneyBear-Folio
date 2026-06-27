@@ -36,12 +36,12 @@ export default function CustomizationSection({
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    (async () => {
+    void (async () => {
       try {
         const cats = await rust.get_categories();
         const all = cats.includes("Transfer") ? cats : ["Transfer", ...cats];
         setCategories(all.sort((a: string, b: string) => a.localeCompare(b)));
-      } catch (e) {
+      } catch (e: unknown) {
         console.error("Failed to fetch categories:", e);
       }
     })();

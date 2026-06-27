@@ -17,7 +17,9 @@ export default function Switch({
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
-      onClick={() => !disabled && onChange(!checked)}
+      onClick={() => {
+        if (!disabled) onChange(!checked);
+      }}
       disabled={disabled}
       className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
         checked ? "bg-brand-500" : "bg-slate-200 dark:bg-slate-600"

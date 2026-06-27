@@ -37,6 +37,114 @@ import type {
 import FireInputsPanel from "./FireInputsPanel";
 import FireResultsPanel from "./FireResultsPanel";
 
+type FireUserModified = {
+  currentNetWorth: boolean;
+  annualExpenses: boolean;
+  expectedReturn: boolean;
+  withdrawalRate: boolean;
+  annualSavings: boolean;
+  inflation: boolean;
+  currentAge: boolean;
+  retirementAge: boolean;
+  retirementDuration: boolean;
+  volatility: boolean;
+  simulationCount: boolean;
+};
+
+interface FireCalculatorState {
+  currentNetWorth: number;
+  annualExpenses: number;
+  expectedReturn: number;
+  withdrawalRate: number;
+  annualSavings: number;
+  inflation: number;
+  currentAge: number;
+  retirementAge: number;
+  retirementDuration: number;
+  showAdvanced: boolean;
+  volatility: number;
+  simulationCount: number;
+  userModified: FireUserModified;
+}
+
+const defaultUserModified: FireUserModified = {
+  currentNetWorth: false,
+  annualExpenses: false,
+  expectedReturn: false,
+  withdrawalRate: false,
+  annualSavings: false,
+  inflation: false,
+  currentAge: false,
+  retirementAge: false,
+  retirementDuration: false,
+  volatility: false,
+  simulationCount: false,
+};
+
+function asNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function asBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function parseSavedState(raw: string): FireCalculatorState | null {
+  const parsed: unknown = JSON.parse(raw);
+  if (typeof parsed !== "object" || parsed === null) return null;
+  const state = parsed as Record<string, unknown>;
+  const userModifiedRaw =
+    typeof state.userModified === "object" && state.userModified !== null
+      ? (state.userModified as Record<string, unknown>)
+      : {};
+
+  return {
+    currentNetWorth: asNumber(
+      state.currentNetWorth,
+      FIRE_DEFAULTS.CURRENT_NET_WORTH,
+    ),
+    annualExpenses: asNumber(
+      state.annualExpenses,
+      FIRE_DEFAULTS.ANNUAL_EXPENSES,
+    ),
+    expectedReturn: asNumber(
+      state.expectedReturn,
+      FIRE_DEFAULTS.EXPECTED_RETURN,
+    ),
+    withdrawalRate: asNumber(
+      state.withdrawalRate,
+      FIRE_DEFAULTS.WITHDRAWAL_RATE,
+    ),
+    annualSavings: asNumber(state.annualSavings, FIRE_DEFAULTS.ANNUAL_SAVINGS),
+    inflation: asNumber(state.inflation, FIRE_DEFAULTS.INFLATION),
+    currentAge: asNumber(state.currentAge, FIRE_DEFAULTS.CURRENT_AGE),
+    retirementAge: asNumber(state.retirementAge, FIRE_DEFAULTS.RETIREMENT_AGE),
+    retirementDuration: asNumber(
+      state.retirementDuration,
+      FIRE_DEFAULTS.RETIREMENT_DURATION,
+    ),
+    showAdvanced: asBoolean(state.showAdvanced, FIRE_DEFAULTS.SHOW_ADVANCED),
+    volatility: asNumber(state.volatility, FIRE_DEFAULTS.VOLATILITY),
+    simulationCount: asNumber(
+      state.simulationCount,
+      FIRE_DEFAULTS.SIMULATION_COUNT,
+    ),
+    userModified: {
+      currentNetWorth: asBoolean(userModifiedRaw.currentNetWorth, false),
+      annualExpenses: asBoolean(userModifiedRaw.annualExpenses, false),
+      expectedReturn: asBoolean(userModifiedRaw.expectedReturn, false),
+      withdrawalRate: asBoolean(userModifiedRaw.withdrawalRate, false),
+      annualSavings: asBoolean(userModifiedRaw.annualSavings, false),
+      inflation: asBoolean(userModifiedRaw.inflation, false),
+      currentAge: asBoolean(userModifiedRaw.currentAge, false),
+      retirementAge: asBoolean(userModifiedRaw.retirementAge, false),
+      retirementDuration: asBoolean(userModifiedRaw.retirementDuration, false),
+      volatility: asBoolean(userModifiedRaw.volatility, false),
+      simulationCount: asBoolean(userModifiedRaw.simulationCount, false),
+    },
+  };
+}
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -51,12 +159,12 @@ ChartJS.register(
 export default function FireCalculator() {
   const { t } = useTranslation();
   // Initialize state from sessionStorage if available (persists for the lifetime of the browser/tab session, including reloads, and is cleared when the tab or window is closed)
-  const savedState = useMemo(() => {
+  const savedState = useMemo<FireCalculatorState | null>(() => {
     const saved = sessionStorage.getItem("fireCalculatorState");
     if (saved) {
       try {
-        return JSON.parse(saved);
-      } catch (e) {
+        return parseSavedState(saved);
+      } catch (e: unknown) {
         console.error("Failed to parse saved state:", e);
       }
     }
@@ -111,17 +219,7 @@ export default function FireCalculator() {
   // persist these flags in sessionStorage alongside values so switching
   // tabs/remounts keep user edits intact.
   const initialUserModified = savedState?.userModified ?? {
-    currentNetWorth: false,
-    annualExpenses: false,
-    expectedReturn: false,
-    withdrawalRate: false,
-    annualSavings: false,
-    inflation: false,
-    currentAge: false,
-    retirementAge: false,
-    retirementDuration: false,
-    volatility: false,
-    simulationCount: false,
+    ...defaultUserModified,
   };
   const userModified = useRef(initialUserModified); // keep as ref so it doesn't trigger effects
 
@@ -316,7 +414,7 @@ export default function FireCalculator() {
     setShowAdvanced(false);
 
     // Re-fetch data which will set the computed defaults
-    fetchData();
+    void fetchData();
   }
 
   // Ensure the saved session state is cleared when the window is closed
@@ -334,13 +432,13 @@ export default function FireCalculator() {
   // Also listen to Tauri close event in case beforeunload doesn't fire in some environments
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    (async () => {
+    void (async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
         unlisten = await listen("tauri://close-requested", () => {
           sessionStorage.removeItem("fireCalculatorState");
         });
-      } catch (e) {
+      } catch (e: unknown) {
         // If Tauri event API isn't available, that's fine — beforeunload handles it
         console.debug("Tauri event listener not available:", e);
       }
@@ -385,7 +483,7 @@ export default function FireCalculator() {
       }
     };
 
-    loadDeterministicProjection().catch((e) => {
+    loadDeterministicProjection().catch((e: unknown) => {
       console.error("Failed to calculate deterministic projection:", e);
     });
 
@@ -438,7 +536,7 @@ export default function FireCalculator() {
   // Debounce Monte Carlo calculation
   useEffect(() => {
     const timer = setTimeout(() => {
-      runSimulation().catch((e) => {
+      runSimulation().catch((e: unknown) => {
         console.error("Failed to run Monte Carlo simulation:", e);
       });
     }, 300);
@@ -468,8 +566,8 @@ export default function FireCalculator() {
       datasets.push({
         label: t("fire.percentile_90"),
         data: percentiles.p90,
-        borderColor: chartColors.success + "4D",
-        backgroundColor: chartColors.success + "1A",
+        borderColor: `${chartColors.success}4D`,
+        backgroundColor: `${chartColors.success}1A`,
         fill: "+1",
         tension: 0.4,
         pointRadius: 0,
@@ -479,7 +577,7 @@ export default function FireCalculator() {
       datasets.push({
         label: t("fire.percentile_10"),
         data: percentiles.p10,
-        borderColor: chartColors.success + "4D",
+        borderColor: `${chartColors.success}4D`,
         backgroundColor: "transparent",
         fill: false,
         tension: 0.4,
@@ -491,8 +589,8 @@ export default function FireCalculator() {
       datasets.push({
         label: t("fire.percentile_75"),
         data: percentiles.p75,
-        borderColor: chartColors.success + "80",
-        backgroundColor: chartColors.success + "26",
+        borderColor: `${chartColors.success}80`,
+        backgroundColor: `${chartColors.success}26`,
         fill: "+1",
         tension: 0.4,
         pointRadius: 0,
@@ -502,7 +600,7 @@ export default function FireCalculator() {
       datasets.push({
         label: t("fire.percentile_25"),
         data: percentiles.p25,
-        borderColor: chartColors.success + "80",
+        borderColor: `${chartColors.success}80`,
         backgroundColor: "transparent",
         fill: false,
         tension: 0.4,
@@ -528,7 +626,7 @@ export default function FireCalculator() {
       label: t("fire.deterministic_projection"),
       data: projectionData.slice(0, totalYears + 1),
       borderColor: chartColors.primary,
-      backgroundColor: chartColors.primary + "1A",
+      backgroundColor: `${chartColors.primary}1A`,
       fill: !monteCarloResult, // Only fill if no Monte Carlo data
       tension: 0.4,
       pointRadius: 0,
@@ -566,7 +664,7 @@ export default function FireCalculator() {
   ]);
 
   // Calculate retirement age when FIRE is reached
-  const fireAge = yearsToFire ? currentAge + yearsToFire : null;
+  const fireAge = yearsToFire === null ? null : currentAge + yearsToFire;
 
   if (loading) {
     return (
@@ -606,7 +704,7 @@ export default function FireCalculator() {
           message={fetchError}
           onRetry={() => {
             setFetchError(null);
-            fetchData();
+            void fetchData();
           }}
           retryLabel={t("error.retry")}
         />

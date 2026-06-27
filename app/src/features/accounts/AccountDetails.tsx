@@ -158,7 +158,7 @@ export default function AccountDetails({
     category,
     notes,
     amount,
-    date: date ?? "",
+    date,
     ticker,
     shares,
     price: pricePerShare,
@@ -189,7 +189,7 @@ export default function AccountDetails({
       category,
       notes,
       amount,
-      date: date ?? "",
+      date,
       ticker,
       shares,
       price: pricePerShare,
@@ -204,14 +204,14 @@ export default function AccountDetails({
       if (rule.actions && rule.actions.length > 0) {
         rule.actions.forEach((action: RuleAction) => {
           const target = fieldMap[action.field as FormFieldKey];
-          if (target && target.value !== action.value) {
+          if (target.value !== action.value) {
             target.set(action.value);
           }
         });
       } else {
         // Legacy format: single action_field/action_value
         const target = fieldMap[rule.action_field as FormFieldKey];
-        if (target && target.value !== rule.action_value) {
+        if (target.value !== rule.action_value) {
           target.set(rule.action_value ?? "");
         }
       }
@@ -417,13 +417,11 @@ export default function AccountDetails({
   }
 
   useEffect(() => {
-    if (account) {
-      queueMicrotask(() => {
-        void fetchTransactions();
-        void fetchSuggestions();
-        void fetchPendingOccurrences();
-      });
-    }
+    queueMicrotask(() => {
+      void fetchTransactions();
+      void fetchSuggestions();
+      void fetchPendingOccurrences();
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account.id]);
 
@@ -469,16 +467,18 @@ export default function AccountDetails({
       return;
     }
 
-    tickerTimeoutRef.current = setTimeout(async () => {
-      try {
-        const suggestions = (await rust.search_ticker({
-          query,
-        })) as TickerSuggestion[];
-        setTickerSuggestions(suggestions);
-        setShowTickerSuggestions(true);
-      } catch (error) {
-        logError("Error fetching ticker suggestions", error);
-      }
+    tickerTimeoutRef.current = setTimeout(() => {
+      void (async () => {
+        try {
+          const suggestions = (await rust.search_ticker({
+            query,
+          })) as TickerSuggestion[];
+          setTickerSuggestions(suggestions);
+          setShowTickerSuggestions(true);
+        } catch (error) {
+          logError("Error fetching ticker suggestions", error);
+        }
+      })();
     }, 300);
   };
 
@@ -491,14 +491,14 @@ export default function AccountDetails({
     setPricePerShare(String(num));
   };
 
-  async function handleRenameAccount(e: React.FormEvent) {
+  async function handleRenameAccount(e: React.SyntheticEvent) {
     e.preventDefault();
-    if (!renameValue?.trim()) return;
+    if (!renameValue.trim()) return;
     try {
       await rust.rename_account({ id: account.id, newName: renameValue });
       setIsRenamingAccount(false);
       setAccountMenuOpen(false);
-      if (onUpdate) onUpdate();
+      onUpdate();
     } catch (e) {
       handleAsyncError({
         context: "Failed to rename account",
@@ -526,7 +526,7 @@ export default function AccountDetails({
 
     try {
       await rust.delete_account({ id: account.id });
-      if (onUpdate) onUpdate();
+      onUpdate();
     } catch (e) {
       handleAsyncError({
         context: "Failed to delete account",
@@ -539,7 +539,7 @@ export default function AccountDetails({
     }
   }
 
-  async function handleAddTransaction(e: React.FormEvent) {
+  async function handleAddTransaction(e: React.SyntheticEvent) {
     e.preventDefault();
     try {
       const target = account.id === "all" ? addTargetAccount : account;
@@ -609,9 +609,9 @@ export default function AccountDetails({
 
       setIsAdding(false);
 
-      fetchTransactions();
-      fetchSuggestions();
-      if (onUpdate) onUpdate();
+      void fetchTransactions();
+      void fetchSuggestions();
+      onUpdate();
     } catch (e) {
       handleAsyncError({
         context: "Failed to create transaction",
@@ -687,8 +687,8 @@ export default function AccountDetails({
       }
 
       setEditingId(null);
-      fetchTransactions();
-      if (onUpdate) onUpdate();
+      void fetchTransactions();
+      onUpdate();
     } catch (e) {
       handleAsyncError({
         context: "Failed to update transaction",
@@ -712,8 +712,8 @@ export default function AccountDetails({
     try {
       await rust.delete_transaction({ id });
       setMenuOpenId(null);
-      fetchTransactions();
-      if (onUpdate) onUpdate();
+      void fetchTransactions();
+      onUpdate();
     } catch (e) {
       handleAsyncError({
         context: "Failed to delete transaction",
@@ -744,8 +744,8 @@ export default function AccountDetails({
         },
       });
       setMenuOpenId(null);
-      fetchTransactions();
-      if (onUpdate) onUpdate();
+      void fetchTransactions();
+      onUpdate();
     } catch (e) {
       handleAsyncError({
         context: "Failed to duplicate transaction",
@@ -789,8 +789,8 @@ export default function AccountDetails({
     if (sortConfig.key !== null) {
       const sortKey = sortConfig.key;
       data.sort((a: Transaction, b: Transaction) => {
-        let aValue: string | number = (a[sortKey] as string | number) ?? "";
-        let bValue: string | number = (b[sortKey] as string | number) ?? "";
+        let aValue: string | number = a[sortKey] as string | number;
+        let bValue: string | number = b[sortKey] as string | number;
 
         // Handle numeric values
         if (["amount", "shares", "price_per_share", "fee"].includes(sortKey)) {
@@ -853,7 +853,9 @@ export default function AccountDetails({
         setIsAdding={handleSetIsAdding}
         accountMenuOpen={accountMenuOpen}
         setAccountMenuOpen={setAccountMenuOpen}
-        handleDeleteAccount={handleDeleteAccount}
+        handleDeleteAccount={() => {
+          void handleDeleteAccount();
+        }}
         availableAccounts={availableAccounts}
       />
 
@@ -1028,8 +1030,12 @@ export default function AccountDetails({
                 setMenuOpenId={setMenuOpenId}
                 menuCoords={menuCoords}
                 setMenuCoords={setMenuCoords}
-                handleApplyOccurrence={handleApplyOccurrence}
-                handleSkipOccurrence={handleSkipOccurrence}
+                handleApplyOccurrence={async (occ, useToday) => {
+                  await handleApplyOccurrence(occ, useToday);
+                }}
+                handleSkipOccurrence={async (occ) => {
+                  await handleSkipOccurrence(occ);
+                }}
                 filteredTransactions={filteredTransactions}
               />
               {filteredTransactions.length === 0 ? (
@@ -1078,8 +1084,12 @@ export default function AccountDetails({
                     setMenuOpenId={setMenuOpenId}
                     menuCoords={menuCoords}
                     setMenuCoords={setMenuCoords}
-                    duplicateTransaction={duplicateTransaction}
-                    deleteTransaction={deleteTransaction}
+                    duplicateTransaction={async (transaction) => {
+                      await duplicateTransaction(transaction);
+                    }}
+                    deleteTransaction={async (id) => {
+                      await deleteTransaction(id);
+                    }}
                     payeeSuggestions={payeeSuggestions}
                     categorySuggestions={categorySuggestions}
                     availableAccounts={availableAccounts}

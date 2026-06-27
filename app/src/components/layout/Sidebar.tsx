@@ -164,15 +164,15 @@ export default function Sidebar({
         valA = a.name.toLowerCase();
         valB = b.name.toLowerCase();
       } else if (sortConfig.field === "balance") {
-        valA = Number(a.balance);
-        valB = Number(b.balance);
+        valA = a.balance;
+        valB = b.balance;
       } else if (sortConfig.field === "value") {
-        const cashA = Number(a.balance);
-        const marketA = marketValues?.[a.id] ? Number(marketValues[a.id]) : 0;
+        const cashA = a.balance;
+        const marketA = marketValues[a.id] ?? 0;
         valA = cashA + marketA;
 
-        const cashB = Number(b.balance);
-        const marketB = marketValues?.[b.id] ? Number(marketValues[b.id]) : 0;
+        const cashB = b.balance;
+        const marketB = marketValues[b.id] ?? 0;
         valB = cashB + marketB;
       }
 
@@ -209,7 +209,7 @@ export default function Sidebar({
   async function handleRenameAccount(id: string | number, newName: string) {
     try {
       await rust.rename_account({ id, newName });
-      if (onUpdate) onUpdate();
+      onUpdate();
     } catch (e) {
       console.error("Failed to rename account:", e);
       showToast(t("error.failed_to_rename"), { type: "error" });
@@ -230,7 +230,7 @@ export default function Sidebar({
     if (!confirmed) return;
     try {
       await rust.delete_account({ id });
-      if (onUpdate) onUpdate();
+      onUpdate();
     } catch (e) {
       console.error("Failed to delete account:", e);
       showToast(t("error.failed_to_delete"), { type: "error" });
@@ -341,7 +341,7 @@ export default function Sidebar({
                 />
                 <span className="font-medium">{t("settings.general")}</span>
               </button>
-              {sidebarVisibility && (
+              {
                 <button
                   onClick={() => onChangeSettingsSection?.("customization")}
                   className={`sidebar-nav-item group ${
@@ -357,7 +357,7 @@ export default function Sidebar({
                     {t("settings.customization")}
                   </span>
                 </button>
-              )}
+              }
               <button
                 onClick={() => onChangeSettingsSection?.("formats")}
                 className={`sidebar-nav-item group ${
@@ -648,8 +648,12 @@ export default function Sidebar({
                 Icon={CreditCard}
                 onReorder={handleReorder}
                 isDraggable={sortConfig.field === "manual"}
-                onRenameAccount={handleRenameAccount}
-                onDeleteAccount={handleDeleteAccount}
+                onRenameAccount={(id, newName) => {
+                  void handleRenameAccount(id, newName);
+                }}
+                onDeleteAccount={(id) => {
+                  void handleDeleteAccount(id);
+                }}
               />
             </div>
           </>

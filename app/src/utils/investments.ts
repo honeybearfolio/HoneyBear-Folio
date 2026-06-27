@@ -62,7 +62,7 @@ export async function computePortfolioTotals(
  * account cash balances that are already in each account's currency. For
  * FX-aware totals in the main app shell, use `fetchMarketValuesForAccounts`.
  */
-export async function computeNetWorthMarketValues(
+export function computeNetWorthMarketValues(
   transactions: InvestmentTransaction[],
   quotes: InvestmentQuote[],
 ): Promise<NetWorthMarketValues> {
@@ -71,10 +71,12 @@ export async function computeNetWorthMarketValues(
 
   const quotePrices: Record<string, number> = {};
   for (const quote of quotes) {
-    quotePrices[quote.symbol.toUpperCase()] = quote.regularMarketPrice ?? 0;
+    quotePrices[quote.symbol.toUpperCase()] = quote.regularMarketPrice;
   }
 
-  return computeMarketValuesWithoutFx(accountHoldings, quotePrices);
+  return Promise.resolve(
+    computeMarketValuesWithoutFx(accountHoldings, quotePrices),
+  );
 }
 
 function computeMarketValuesWithoutFx(

@@ -25,8 +25,8 @@ interface PendingOccurrencesProps {
   handleApplyOccurrence: (
     occ: PendingOccurrenceType,
     useToday: boolean,
-  ) => void;
-  handleSkipOccurrence: (occ: PendingOccurrenceType) => void;
+  ) => Promise<void>;
+  handleSkipOccurrence: (occ: PendingOccurrenceType) => Promise<void>;
   filteredTransactions: Transaction[];
 }
 
@@ -50,6 +50,8 @@ export default function PendingOccurrences({
 
   const colSpan =
     account.id === "all" ? (!hasInvestment ? 7 : 11) : !hasInvestment ? 6 : 10;
+  const getOccurrenceId = (occ: PendingOccurrenceType, idx: number) =>
+    ["sched", String(occ.scheduled_tx_id), occ.date, String(idx)].join("-");
 
   return (
     <>
@@ -66,11 +68,11 @@ export default function PendingOccurrences({
       </tr>
       {pendingOccurrences.map((occ, idx) => (
         <tr
-          key={`sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`}
+          key={getOccurrenceId(occ, idx)}
           className="scheduled-ghost-row group"
           onContextMenu={(e) => {
             e.preventDefault();
-            const occId = `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`;
+            const occId = getOccurrenceId(occ, idx);
             setMenuCoords({ x: e.clientX, y: e.clientY });
             setMenuOpenId(occId);
           }}
@@ -151,7 +153,7 @@ export default function PendingOccurrences({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const occId = `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`;
+                const occId = getOccurrenceId(occ, idx);
                 if (menuOpenId === occId) {
                   setMenuOpenId(null);
                   setMenuCoords(null);
@@ -169,7 +171,7 @@ export default function PendingOccurrences({
                 }
               }}
               className={`p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 ${
-                menuOpenId === `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}`
+                menuOpenId === getOccurrenceId(occ, idx)
                   ? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                   : ""
               }`}
@@ -177,7 +179,7 @@ export default function PendingOccurrences({
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            {menuOpenId === `sched-${occ.scheduled_tx_id}-${occ.date}-${idx}` &&
+            {menuOpenId === getOccurrenceId(occ, idx) &&
               menuCoords &&
               createPortal(
                 <div
@@ -185,20 +187,20 @@ export default function PendingOccurrences({
                   style={{
                     top:
                       menuCoords.x !== undefined
-                        ? `${menuCoords.y}px`
-                        : `${(menuCoords.top ?? 0) + (menuCoords.height ?? 0) + 8}px`,
+                        ? (menuCoords.y ?? 0)
+                        : (menuCoords.top ?? 0) + (menuCoords.height ?? 0) + 8,
                     left:
                       menuCoords.x !== undefined
-                        ? `${Math.min(menuCoords.x, window.innerWidth - 224 - 8)}px`
-                        : `${Math.min(
+                        ? Math.min(menuCoords.x, window.innerWidth - 224 - 8)
+                        : Math.min(
                             Math.max((menuCoords.right ?? 0) - 224, 8),
                             window.innerWidth - 224 - 8,
-                          )}px`,
+                          ),
                   }}
                 >
                   <button
                     onClick={() => {
-                      handleApplyOccurrence(occ, true);
+                      void handleApplyOccurrence(occ, true);
                       setMenuOpenId(null);
                       setMenuCoords(null);
                     }}
@@ -209,7 +211,7 @@ export default function PendingOccurrences({
                   </button>
                   <button
                     onClick={() => {
-                      handleApplyOccurrence(occ, false);
+                      void handleApplyOccurrence(occ, false);
                       setMenuOpenId(null);
                       setMenuCoords(null);
                     }}
@@ -220,7 +222,7 @@ export default function PendingOccurrences({
                   </button>
                   <button
                     onClick={() => {
-                      handleSkipOccurrence(occ);
+                      void handleSkipOccurrence(occ);
                       setMenuOpenId(null);
                       setMenuCoords(null);
                     }}

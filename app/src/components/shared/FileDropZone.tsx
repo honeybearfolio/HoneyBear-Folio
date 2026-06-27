@@ -50,7 +50,7 @@ export default function FileDropZone({
         </>
       ) : (
         <>
-          {file?.name?.endsWith(".json") ? (
+          {file?.name.endsWith(".json") ? (
             <FileJson className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />
           ) : (
             <FileSpreadsheet className="w-12 h-12 text-slate-400 dark:text-slate-600 group-hover:text-brand-500 mb-4 transition-colors" />

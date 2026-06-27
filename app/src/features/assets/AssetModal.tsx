@@ -35,7 +35,7 @@ export default function AssetModal({
   const [currency, setCurrency] = useState(asset?.currency || "");
   const [notes, setNotes] = useState(asset?.notes || "");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const nameTrimmed = name.trim();
     if (!nameTrimmed) {
@@ -44,7 +44,7 @@ export default function AssetModal({
     }
 
     try {
-      if (isEditing && asset) {
+      if (asset) {
         await rust.update_asset({
           id: asset.id,
           name: nameTrimmed,
@@ -87,7 +87,11 @@ export default function AssetModal({
 
   return (
     <Modal onClose={onClose}>
-      <form onSubmit={handleSubmit}>
+      <form
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
+      >
         <ModalHeader onClose={onClose}>
           {isEditing ? t("assets.edit_asset") : t("assets.add_asset")}
         </ModalHeader>

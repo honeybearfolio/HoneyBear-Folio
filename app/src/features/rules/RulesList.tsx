@@ -75,15 +75,11 @@ export default function RulesList() {
   );
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    void (async () => {
       setLoading(true);
       await loadRules("page");
-      if (mounted) setLoading(false);
+      setLoading(false);
     })();
-    return () => {
-      mounted = false;
-    };
   }, [loadRules]);
 
   useEffect(() => {
@@ -150,12 +146,12 @@ export default function RulesList() {
             showToast(message, { type: "error" });
           },
         });
-        loadRules();
+        void loadRules();
       }
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     try {
       const { payload, maxPriority } = toRulePayload(formState, rules);
@@ -165,7 +161,7 @@ export default function RulesList() {
           args: {
             ...payload,
             id: formState.id,
-            priority: Number(formState.priority),
+            priority: formState.priority,
           },
         });
       } else {
@@ -177,7 +173,7 @@ export default function RulesList() {
         });
       }
       resetForm();
-      loadRules();
+      void loadRules();
     } catch (e) {
       handleAsyncError({
         context: "Failed to save rule",
@@ -296,7 +292,7 @@ export default function RulesList() {
           showToast(message, { type: "error" });
         },
       });
-      loadRules();
+      void loadRules();
     }
   };
 
@@ -417,7 +413,7 @@ export default function RulesList() {
           onRetry={() => {
             setFetchError(null);
             setLoading(true);
-            loadRules("page").finally(() => {
+            void loadRules("page").finally(() => {
               setLoading(false);
             });
           }}
@@ -477,7 +473,12 @@ export default function RulesList() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              void handleSubmit(e);
+            }}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Conditions Section */}
               <div className="space-y-4">
@@ -788,7 +789,9 @@ export default function RulesList() {
                     handleDragEnter(e, index);
                   }}
                   onDrop={handleDrop}
-                  onDragEnd={handleDragEnd}
+                  onDragEnd={() => {
+                    void handleDragEnd();
+                  }}
                   data-index={index}
                   onContextMenu={(e) => {
                     e.preventDefault();
@@ -815,7 +818,7 @@ export default function RulesList() {
                           setRules((current) =>
                             reorderRules(current, rule.id, newIndex),
                           );
-                          (async () => {
+                          void (async () => {
                             try {
                               const reordered = reorderRules(
                                 rules,
@@ -834,7 +837,7 @@ export default function RulesList() {
                                   showToast(message, { type: "error" });
                                 },
                               });
-                              loadRules();
+                              void loadRules();
                             }
                           })();
                         }
@@ -889,7 +892,9 @@ export default function RulesList() {
                         <Edit size={16} />
                       </button>
                       <button
-                        onClick={() => handleDelete(rule.id)}
+                        onClick={() => {
+                          void handleDelete(rule.id);
+                        }}
                         className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors text-slate-400 hover:text-rose-500 cursor-pointer"
                         title={t("rules.delete")}
                         aria-label={t("rules.delete")}
@@ -903,8 +908,8 @@ export default function RulesList() {
                         <div
                           className="fixed z-50 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 py-1.5 animate-fade-in rule-action-menu-portal"
                           style={{
-                            top: `${menuCoords.y}px`,
-                            left: `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`,
+                            top: `${String(menuCoords.y)}px`,
+                            left: `${String(Math.min(menuCoords.x, window.innerWidth - 176 - 8))}px`,
                           }}
                         >
                           <button
@@ -923,7 +928,7 @@ export default function RulesList() {
                           </button>
                           <button
                             onClick={() => {
-                              handleDelete(rule.id);
+                              void handleDelete(rule.id);
                               setMenuOpenId(null);
                               setMenuCoords(null);
                             }}

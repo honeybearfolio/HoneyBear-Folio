@@ -34,7 +34,7 @@ describe("CustomSelect", () => {
     expect(screen.getByText("Option Two")).toBeInTheDocument();
   });
 
-  it("opens menu on click and displays options", async () => {
+  it("opens menu on click and displays options", () => {
     render(
       <CustomSelect
         value=""
@@ -53,7 +53,7 @@ describe("CustomSelect", () => {
     expect(screen.getAllByText("Option Three")).toHaveLength(1);
   });
 
-  it("calls onChange when an option is clicked", async () => {
+  it("calls onChange when an option is clicked", () => {
     const handleChange = vi.fn();
     render(
       <CustomSelect
@@ -121,7 +121,7 @@ describe("CustomSelect", () => {
     expect(trigger).toHaveAttribute("aria-label", "Choose option");
   });
 
-  it("renders aria-label on search input when menu is open", async () => {
+  it("renders aria-label on search input when menu is open", () => {
     render(
       <CustomSelect
         value=""
@@ -135,7 +135,7 @@ describe("CustomSelect", () => {
     expect(searchInput).toHaveAttribute("aria-label");
   });
 
-  it("supports Home and End keys for navigation", async () => {
+  it("supports Home and End keys for navigation", () => {
     const handleChange = vi.fn();
     render(
       <CustomSelect

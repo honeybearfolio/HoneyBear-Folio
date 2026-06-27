@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+import type { Account } from "../../../api/types";
 import AccountList from "../../../features/accounts/AccountList";
 
 // Mock dependencies
@@ -34,7 +35,7 @@ describe("AccountList", () => {
   });
 
   it("handles drag and drop reordering", () => {
-    const onReorder = vi.fn();
+    const onReorder = vi.fn<(accounts: Account[]) => void>();
     render(
       <AccountList
         accounts={mockAccounts}
@@ -76,9 +77,12 @@ describe("AccountList", () => {
     // Original: A (id 1), B (id 2)
     // Drag A to B -> B should be first, A second (splice logic)
     expect(onReorder).toHaveBeenCalled();
-    const newItems = onReorder.mock.calls[0]![0];
-    expect(newItems[0].id).toBe("2");
-    expect(newItems[1].id).toBe("1");
+    const newItems = onReorder.mock.calls[0]?.[0];
+    expect(newItems).toBeDefined();
+    if (!newItems) throw new Error("Expected reordered items");
+    expect(newItems).toHaveLength(2);
+    expect(newItems[0]?.id).toBe("2");
+    expect(newItems[1]?.id).toBe("1");
   });
 
   it("calls onSelectAccount when clicked", () => {
@@ -188,7 +192,7 @@ describe("AccountList", () => {
       document
         .querySelector(".account-list-menu-portal")!
         .querySelectorAll("button"),
-    ).find((b) => b.textContent?.includes("Rename"));
+    ).find((b) => b.textContent.includes("Rename"));
     fireEvent.click(renameBtn!);
 
     const input = await screen.findByRole("textbox");
@@ -227,7 +231,7 @@ describe("AccountList", () => {
       document
         .querySelector(".account-list-menu-portal")!
         .querySelectorAll("button"),
-    ).find((b) => b.textContent?.includes("Delete"));
+    ).find((b) => b.textContent.includes("Delete"));
     fireEvent.click(deleteBtn!);
 
     expect(onDeleteAccount).toHaveBeenCalledWith("1");

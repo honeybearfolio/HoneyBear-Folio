@@ -17,6 +17,10 @@ export default tseslint.config(
       globals: { ...globals.node, ...globals.jest },
     },
   },
+  ...tseslint.configs.strictTypeChecked.map((config) => ({
+    ...config,
+    files: ["**/*.{ts,tsx}"],
+  })),
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
@@ -26,6 +30,8 @@ export default tseslint.config(
         ecmaVersion: "latest",
         ecmaFeatures: { jsx: true },
         sourceType: "module",
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     settings: { react: { version: "19" } },

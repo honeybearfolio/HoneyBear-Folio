@@ -34,7 +34,7 @@ export default function CustomRateDialog({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const val = parseFloat(rate);
     if (isNaN(val) || val <= 0) return;

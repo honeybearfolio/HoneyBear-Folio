@@ -115,8 +115,16 @@ const ASSET_SHEET_NAMES = new Set(
   ),
 );
 
+function asText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return "";
+}
+
 export function normalizeAssetCategory(raw: unknown): AssetCategory {
-  const value = normalizeKey(String(raw ?? ""));
+  const value = normalizeKey(asText(raw));
   if ((ASSET_CATEGORIES as readonly string[]).includes(value)) {
     return value as AssetCategory;
   }
@@ -139,11 +147,12 @@ export function isAssetRow(headers: string[]): boolean {
 
 function parseDateValue(raw: unknown): string | null {
   if (raw === null || raw === undefined || raw === "") return null;
-  const parsed = new Date(String(raw));
+  const rawText = asText(raw);
+  const parsed = new Date(rawText);
   if (!isNaN(parsed.getTime())) {
     return parsed.toISOString().slice(0, 10);
   }
-  const normalized = String(raw).replace(/\./g, "/").replace(/-/g, "/");
+  const normalized = rawText.replace(/\./g, "/").replace(/-/g, "/");
   const parts = normalized.split("/");
   if (parts.length === 3) {
     const [p0, p1, p2] = parts;
@@ -171,7 +180,7 @@ function getAssetField(
 export function parseAssetFromRow(
   row: Record<string, unknown>,
 ): ExportAsset | null {
-  const name = String(getAssetField(row, "name") ?? "").trim();
+  const name = asText(getAssetField(row, "name")).trim();
   if (!name) return null;
 
   const category = normalizeAssetCategory(getAssetField(row, "category"));
@@ -190,8 +199,8 @@ export function parseAssetFromRow(
   return {
     name,
     category,
-    currency: currencyRaw ? String(currencyRaw) : null,
-    notes: notesRaw ? String(notesRaw) : null,
+    currency: currencyRaw ? asText(currencyRaw) : null,
+    notes: notesRaw ? asText(notesRaw) : null,
     valuations,
   };
 }
@@ -224,14 +233,14 @@ function parseValuationsFromJson(
 export function parseAssetFromJson(item: unknown): ExportAsset | null {
   if (!item || typeof item !== "object") return null;
   const record = item as Record<string, unknown>;
-  const name = String(record.name ?? "").trim();
+  const name = asText(record.name).trim();
   if (!name) return null;
 
   return {
     name,
     category: normalizeAssetCategory(record.category),
-    currency: record.currency ? String(record.currency) : null,
-    notes: record.notes ? String(record.notes) : null,
+    currency: record.currency ? asText(record.currency) : null,
+    notes: record.notes ? asText(record.notes) : null,
     valuations: parseValuationsFromJson(record),
   };
 }

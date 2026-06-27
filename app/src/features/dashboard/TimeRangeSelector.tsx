@@ -54,8 +54,9 @@ export default function TimeRangeSelector({
             <DatePicker
               selected={customStartDate}
               onChange={(date: Date | null) => {
-                setCustomStartDate(date!);
-                if (date && customEndDate && date > customEndDate) {
+                if (!date) return;
+                setCustomStartDate(date);
+                if (date > customEndDate) {
                   setCustomEndDate(date);
                 }
               }}
@@ -76,7 +77,8 @@ export default function TimeRangeSelector({
             <DatePicker
               selected={customEndDate}
               onChange={(date: Date | null) => {
-                setCustomEndDate(date!);
+                if (!date) return;
+                setCustomEndDate(date);
               }}
               selectsEnd
               startDate={customStartDate}

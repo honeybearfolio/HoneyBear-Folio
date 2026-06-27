@@ -85,7 +85,7 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     options: { value: string; label: string }[];
     placeholder?: string;
   }) => {
-    const p = String(placeholder || "").toLowerCase();
+    const p = (placeholder || "").toLowerCase();
     const testId = p.includes("language")
       ? "language-select"
       : p.includes("theme")

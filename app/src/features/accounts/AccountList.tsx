@@ -167,7 +167,7 @@ export default function AccountList({
       }}
     >
       {accounts.map((account, index) => {
-        const cashBalance = Number(account.balance);
+        const cashBalance = account.balance;
         const marketValue =
           marketValues && marketValues[account.id] !== undefined
             ? Number(marketValues[account.id])
@@ -320,8 +320,8 @@ export default function AccountList({
                   role="menu"
                   aria-label={t("account.context_menu")}
                   style={{
-                    top: `${menuCoords.y}px`,
-                    left: `${Math.min(menuCoords.x, window.innerWidth - 176 - 8)}px`,
+                    top: menuCoords.y,
+                    left: Math.min(menuCoords.x, window.innerWidth - 176 - 8),
                   }}
                 >
                   {onRenameAccount && (

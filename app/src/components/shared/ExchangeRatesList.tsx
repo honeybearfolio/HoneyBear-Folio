@@ -108,7 +108,7 @@ export default function ExchangeRatesList({
     currency: string,
   ) => {
     if (e.key === "Enter") {
-      handleSaveEdit(currency);
+      void handleSaveEdit(currency);
     } else if (e.key === "Escape") {
       handleCancelEdit();
     }
@@ -167,7 +167,9 @@ export default function ExchangeRatesList({
               />
               <button
                 type="button"
-                onClick={() => handleSaveEdit(entry.currency)}
+                onClick={() => {
+                  void handleSaveEdit(entry.currency);
+                }}
                 className="btn-primary btn-sm"
               >
                 {t("confirm.save")}
@@ -199,7 +201,9 @@ export default function ExchangeRatesList({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDelete(entry.currency)}
+                  onClick={() => {
+                    void handleDelete(entry.currency);
+                  }}
                   className="exchange-rate-action-btn exchange-rate-action-delete"
                   title={t("settings.exchange_rate_delete")}
                   aria-label={t("settings.exchange_rate_delete")}

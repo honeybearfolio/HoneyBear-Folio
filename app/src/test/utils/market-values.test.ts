@@ -40,7 +40,7 @@ describe("fetchMarketValuesForAccounts", () => {
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
         // Exchange-rate pairs have "=X" suffix; return empty for them
-        if (a?.tickers?.some((t: string) => t.endsWith("=X")))
+        if (a.tickers.some((t: string) => t.endsWith("=X")))
           return Promise.resolve([]);
         return Promise.resolve([
           { symbol: "AAPL", regularMarketPrice: 150, currency: "USD" },
@@ -63,7 +63,7 @@ describe("fetchMarketValuesForAccounts", () => {
         return Promise.resolve([{ account_id: 1, ticker: "SAP", shares: 5 }]);
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
-        if (a?.tickers?.some((t: string) => t.endsWith("=X")))
+        if (a.tickers.some((t: string) => t.endsWith("=X")))
           // EURUSD=X rate
           return Promise.resolve([
             { symbol: "EURUSD=X", regularMarketPrice: 1.1 },
@@ -110,7 +110,7 @@ describe("fetchMarketValuesForAccounts", () => {
         return Promise.resolve([{ account_id: 99, ticker: "MSFT", shares: 2 }]);
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
-        if (a?.tickers?.some((t: string) => t.endsWith("=X")))
+        if (a.tickers.some((t: string) => t.endsWith("=X")))
           return Promise.resolve([]);
         return Promise.resolve([
           { symbol: "MSFT", regularMarketPrice: 300, currency: "USD" },
@@ -134,7 +134,7 @@ describe("fetchMarketValuesForAccounts", () => {
         ]);
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
-        if (a?.tickers?.some((t: string) => t.endsWith("=X")))
+        if (a.tickers.some((t: string) => t.endsWith("=X")))
           return Promise.resolve([]);
         return Promise.resolve([
           { symbol: "AAPL", regularMarketPrice: 100, currency: "USD" },

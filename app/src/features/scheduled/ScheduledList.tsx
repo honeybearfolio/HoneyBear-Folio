@@ -48,29 +48,23 @@ export default function ScheduledList() {
   const tickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
+    void (async () => {
       setLoading(true);
       try {
         const [scheds, accs] = await Promise.all([
           rust.get_scheduled_transactions(),
           rust.get_accounts(),
         ]);
-        if (mounted) {
-          setSchedules(scheds);
-          setAccounts(accs);
-          setFetchError(null);
-        }
-      } catch (e) {
+        setSchedules(scheds);
+        setAccounts(accs);
+        setFetchError(null);
+      } catch (e: unknown) {
         console.error("Failed to fetch scheduled transactions:", e);
-        if (mounted) setFetchError(String(e));
+        setFetchError(String(e));
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   useEffect(() => {
@@ -133,16 +127,18 @@ export default function ScheduledList() {
       return;
     }
 
-    tickerTimeoutRef.current = setTimeout(async () => {
-      try {
-        const suggestions = (await rust.search_ticker({
-          query,
-        })) as TickerSuggestion[];
-        setTickerSuggestions(suggestions);
-        setShowTickerSuggestions(true);
-      } catch (error) {
-        console.error("Error fetching ticker suggestions:", error);
-      }
+    tickerTimeoutRef.current = setTimeout(() => {
+      void (async () => {
+        try {
+          const suggestions = (await rust.search_ticker({
+            query,
+          })) as TickerSuggestion[];
+          setTickerSuggestions(suggestions);
+          setShowTickerSuggestions(true);
+        } catch (error: unknown) {
+          console.error("Error fetching ticker suggestions:", error);
+        }
+      })();
     }, 300);
   }
 
@@ -188,10 +184,10 @@ export default function ScheduledList() {
         setSchedules((cur) => cur.filter((s) => s.id !== id));
         if (formState.id === id) resetForm();
         showToast(t("scheduled.deleted_success"), { type: "success" });
-      } catch (e) {
+      } catch (e: unknown) {
         console.error("Failed to delete scheduled transaction:", e);
         showToast(t("scheduled.error_generic"), { type: "error" });
-        fetchSchedules();
+        void fetchSchedules();
       }
     }
   }
@@ -225,14 +221,14 @@ export default function ScheduledList() {
           isBuy: sched.is_buy,
         },
       });
-      fetchSchedules();
-    } catch (e) {
+      void fetchSchedules();
+    } catch (e: unknown) {
       console.error("Failed to toggle scheduled transaction:", e);
       showToast(t("scheduled.error_generic"), { type: "error" });
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!formState.accountId) {
       showToast(t("scheduled.validation.account_required"), { type: "error" });
@@ -274,8 +270,8 @@ export default function ScheduledList() {
         showToast(t("scheduled.created_success"), { type: "success" });
       }
       resetForm();
-      fetchSchedules();
-    } catch (e) {
+      void fetchSchedules();
+    } catch (e: unknown) {
       console.error("Failed to save scheduled transaction:", e);
       showToast(t("scheduled.error_generic"), { type: "error" });
     }
@@ -314,7 +310,7 @@ export default function ScheduledList() {
           onRetry={() => {
             setFetchError(null);
             setLoading(true);
-            fetchSchedules().finally(() => {
+            void fetchSchedules().finally(() => {
               setLoading(false);
             });
           }}
@@ -360,7 +356,9 @@ export default function ScheduledList() {
           dateFormat={dateFormat}
           firstDayOfWeek={firstDayOfWeek}
           handleTickerChange={handleTickerChange}
-          handleSubmit={handleSubmit}
+          handleSubmit={(e) => {
+            void handleSubmit(e);
+          }}
           resetForm={resetForm}
           toggleDayOfWeek={toggleDayOfWeek}
         />

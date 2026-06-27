@@ -143,7 +143,7 @@ export async function buildDoughnutChartData({
         data,
         originalData: rawData,
         backgroundColor: rawData.map((v, i) => {
-          if ((v ?? 0) < 0) return "transparent";
+          if (v < 0) return "transparent";
           return colors[i % colors.length]!;
         }),
         borderColor: isDark ? "#474240" : "#ffffff",

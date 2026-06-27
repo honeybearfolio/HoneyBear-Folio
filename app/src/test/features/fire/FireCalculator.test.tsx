@@ -33,7 +33,10 @@ vi.mock("../../../hooks/useIsDark", () => ({
 }));
 
 vi.mock("../../../i18n/i18n", () => ({
-  t: (key: string, params?: Record<string, unknown>) => {
+  t: (
+    key: string,
+    params?: { age?: string | number; count?: string | number },
+  ) => {
     const map: Record<string, string> = {
       "dashboard.current_net_worth": "Current Net Worth",
       "fire.annual_expenses": "Annual Expenses",
@@ -61,12 +64,12 @@ vi.mock("../../../i18n/i18n", () => ({
       "fire.simulation_count": "Simulation Count",
       "fire.simulation_count_hint": "100-10,000 simulations",
       "fire.retirement_age": "Retirement Age",
-      "fire.age_value": `Age ${params?.age || ""}`,
+      "fire.age_value": `Age ${String(params?.age ?? "")}`,
       "fire.success_rate": "Success Rate",
       "fire.monte_carlo": "Monte Carlo",
       "fire.projection": "Projection",
       "fire.projection_subtitle": "Path to financial independence",
-      "fire.simulations_run": `${params?.count || ""} simulations`,
+      "fire.simulations_run": `${String(params?.count ?? "")} simulations`,
       "fire.chart_legend_explanation": "Chart explanation",
       "fire.never_retire": "Unlikely to reach FIRE",
     };
@@ -125,6 +128,12 @@ const renderWithContext = (ui: React.ReactElement) => {
 };
 
 describe("FireCalculator", () => {
+  type SavedFireState = {
+    annualExpenses: number;
+    currentNetWorth: number;
+    userModified: { currentNetWorth: boolean };
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
@@ -216,7 +225,7 @@ describe("FireCalculator", () => {
     await waitFor(() => {
       const saved = sessionStorage.getItem("fireCalculatorState");
       expect(saved).not.toBeNull();
-      expect(JSON.parse(saved!).annualExpenses).toBe(60000);
+      expect((JSON.parse(saved!) as SavedFireState).annualExpenses).toBe(60000);
     });
 
     unmount();
@@ -247,7 +256,7 @@ describe("FireCalculator", () => {
     await waitFor(() => {
       const raw = sessionStorage.getItem("fireCalculatorState");
       expect(raw).not.toBeNull();
-      const saved = JSON.parse(raw!);
+      const saved = JSON.parse(raw!) as SavedFireState;
       expect(saved.currentNetWorth).toBe(75000);
       expect(saved.userModified.currentNetWorth).toBe(true);
     });

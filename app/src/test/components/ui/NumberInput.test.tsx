@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import NumberInput from "../../../components/ui/NumberInput";
 
 // Mock the format hooks
-const mockFormatNumber = vi.fn((val: number) => `FORMATTED_${val}`);
+const mockFormatNumber = vi.fn((val: number) => `FORMATTED_${String(val)}`);
 const mockParseNumber = vi.fn((str: string) => Number(str));
 
 vi.mock("../../../utils/format", () => ({

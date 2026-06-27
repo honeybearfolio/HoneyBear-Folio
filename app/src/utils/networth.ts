@@ -16,7 +16,7 @@ export async function computeNetWorth(
   }
 
   const normalizedMarketValues = Object.fromEntries(
-    Object.entries(marketValues).map(([id, value]) => [String(id), value]),
+    Object.entries(marketValues).map(([id, value]) => [id, value]),
   );
 
   return rust.compute_net_worth({

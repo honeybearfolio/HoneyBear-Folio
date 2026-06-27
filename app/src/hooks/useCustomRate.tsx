@@ -93,7 +93,9 @@ export function useCustomRate(): UseCustomRateReturn {
     <CustomRateDialog
       isOpen={dialogState.isOpen}
       currency={dialogState.currency}
-      onConfirm={handleConfirm}
+      onConfirm={(rate) => {
+        void handleConfirm(rate);
+      }}
       onCancel={handleCancel}
     />
   );

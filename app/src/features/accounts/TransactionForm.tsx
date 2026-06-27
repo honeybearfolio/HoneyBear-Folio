@@ -53,7 +53,7 @@ interface TransactionFormProps {
   handlePricePerShareChange: (num: number) => void;
   payeeSuggestions: AutocompleteSuggestion[];
   categorySuggestions: AutocompleteSuggestion[];
-  handleAddTransaction: (e: React.FormEvent) => void;
+  handleAddTransaction: (e: React.SyntheticEvent) => Promise<void>;
   dateFormat: string;
   firstDayOfWeek: number;
   appCurrency: string;
@@ -161,7 +161,12 @@ export default function TransactionForm({
       </div>
 
       {transactionType === "investment" ? (
-        <form onSubmit={handleAddTransaction} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            void handleAddTransaction(e);
+          }}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="form-label">{t("account.field.date")}</label>
@@ -234,9 +239,11 @@ export default function TransactionForm({
                     setShowTickerSuggestions(false);
                   }, 200)
                 }
-                onFocus={() =>
-                  ticker.length >= 2 && setShowTickerSuggestions(true)
-                }
+                onFocus={() => {
+                  if (ticker.length >= 2) {
+                    setShowTickerSuggestions(true);
+                  }
+                }}
               />
               {showTickerSuggestions && tickerSuggestions.length > 0 && (
                 <div className="absolute z-50 w-full bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 mt-1 max-h-60 overflow-y-auto">
@@ -341,9 +348,11 @@ export default function TransactionForm({
                       label: `${c.code} - ${c.name}`,
                     }))}
                     value={selectedCurrency}
-                    onChange={async (val: string | number) => {
+                    onChange={(val: string | number) => {
                       setSelectedCurrency(String(val));
-                      if (val) await checkAndPrompt(String(val));
+                      if (val) {
+                        void checkAndPrompt(String(val));
+                      }
                     }}
                     placeholder="Select currency"
                   />
@@ -360,7 +369,12 @@ export default function TransactionForm({
           </div>
         </form>
       ) : (
-        <form onSubmit={handleAddTransaction} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            void handleAddTransaction(e);
+          }}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="form-label">{t("account.field.date")}</label>
@@ -395,13 +409,13 @@ export default function TransactionForm({
                 suggestions={categorySuggestions}
                 placeholder={t("import.field.category")}
                 className={`form-input ${
-                  availableAccounts?.some((a) => a.name === payee)
+                  availableAccounts.some((a) => a.name === payee)
                     ? "!bg-slate-100 dark:!bg-slate-800 !text-slate-500 dark:!text-slate-400"
                     : ""
                 }`}
                 value={category}
                 onChange={setCategory}
-                disabled={availableAccounts?.some((a) => a.name === payee)}
+                disabled={availableAccounts.some((a) => a.name === payee)}
               />
             </div>
 
@@ -449,9 +463,11 @@ export default function TransactionForm({
                       label: `${c.code} - ${c.name}`,
                     }))}
                     value={selectedCurrency}
-                    onChange={async (val: string | number) => {
+                    onChange={(val: string | number) => {
                       setSelectedCurrency(String(val));
-                      if (val) await checkAndPrompt(String(val));
+                      if (val) {
+                        void checkAndPrompt(String(val));
+                      }
                     }}
                     placeholder="Select currency"
                   />

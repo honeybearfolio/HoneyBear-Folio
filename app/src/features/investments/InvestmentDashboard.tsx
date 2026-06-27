@@ -64,7 +64,7 @@ export default function InvestmentDashboard() {
   const formatNumber = useFormatNumber();
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, []);
 
   async function fetchData() {
@@ -182,24 +182,26 @@ export default function InvestmentDashboard() {
               const dataset = context.dataset;
               const index = context.dataIndex;
               const tooltipBg = chartColors.tooltipBg;
-              const bg =
+              const bgValue: unknown =
                 Array.isArray(dataset.backgroundColor) &&
                 dataset.backgroundColor[index] !== undefined
                   ? dataset.backgroundColor[index]
                   : dataset.backgroundColor;
-              const border =
+              const borderValue: unknown =
                 Array.isArray(dataset.borderColor) &&
                 dataset.borderColor[index] !== undefined
                   ? dataset.borderColor[index]
                   : dataset.borderColor;
+              const bg = typeof bgValue === "string" ? bgValue : "";
+              const border = typeof borderValue === "string" ? borderValue : "";
               // If the slice has a transparent background (negative sector), use tooltip bg so it blends in
               const backgroundColor =
                 bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
                   ? tooltipBg
                   : bg;
               return {
-                borderColor: String(border),
-                backgroundColor: String(backgroundColor),
+                borderColor: border,
+                backgroundColor: backgroundColor,
                 borderWidth: 2,
               };
             },
@@ -218,7 +220,9 @@ export default function InvestmentDashboard() {
           <p className="hb-header-subtitle">{t("investment.subtitle")}</p>
         </div>
         <button
-          onClick={fetchData}
+          onClick={() => {
+            void fetchData();
+          }}
           className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-xl transition-all duration-200 shadow-sm border border-transparent hover:border-brand-100 dark:hover:border-brand-800"
           title={t("investment.refresh_data")}
           aria-label={t("investment.refresh_data")}
@@ -243,7 +247,9 @@ export default function InvestmentDashboard() {
         <ErrorState
           title={t("investment.error_loading")}
           message={error}
-          onRetry={fetchData}
+          onRetry={() => {
+            void fetchData();
+          }}
           retryLabel={t("error.retry")}
         />
       ) : holdings.length === 0 ? (
@@ -361,7 +367,7 @@ export default function InvestmentDashboard() {
                 <TreeMap
                   items={holdings}
                   totalValue={totalValue}
-                  isDark={isDark ?? false}
+                  isDark={isDark}
                 />
               </div>
             </div>
@@ -520,22 +526,22 @@ function TreeMapNode({
       if (isDark) {
         // Dark Mode: 0% -> Dark (20%), High% -> Vibrant (50%)
         const lightness = 20 + intensity * 30;
-        bgColor = `hsl(160, 84%, ${lightness}%)`;
+        bgColor = `hsl(160, 84%, ${String(lightness)}%)`;
       } else {
         // Light Mode: 0% -> Very Light (95%), High% -> Dark (40%)
         const lightness = 95 - intensity * 55;
-        bgColor = `hsl(160, 84%, ${lightness}%)`;
+        bgColor = `hsl(160, 84%, ${String(lightness)}%)`;
       }
     } else {
       // Rose
       if (isDark) {
         // Dark Mode: 0% -> Dark (15%), High% -> Vibrant (50%)
         const lightness = 15 + intensity * 35;
-        bgColor = `hsl(343, 87%, ${lightness}%)`;
+        bgColor = `hsl(343, 87%, ${String(lightness)}%)`;
       } else {
         // Light Mode: 0% -> Very Light (95%), High% -> Dark (50%)
         const lightness = 95 - intensity * 45;
-        bgColor = `hsl(343, 87%, ${lightness}%)`;
+        bgColor = `hsl(343, 87%, ${String(lightness)}%)`;
       }
     }
 
@@ -553,10 +559,10 @@ function TreeMapNode({
       <div
         style={{
           position: "absolute",
-          left: `${x}%`,
-          top: `${y}%`,
-          width: `${w}%`,
-          height: `${h}%`,
+          left: `${String(x)}%`,
+          top: `${String(y)}%`,
+          width: `${String(w)}%`,
+          height: `${String(h)}%`,
           backgroundColor: bgColor,
           border: isDark ? "1px solid rgb(30, 41, 59)" : "1px solid white",
           overflow: "hidden",

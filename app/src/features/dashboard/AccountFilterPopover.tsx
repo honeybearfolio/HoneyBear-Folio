@@ -124,7 +124,7 @@ export default function AccountFilterPopover({
                   <span className="account-balance ml-auto text-slate-500 dark:text-slate-400 text-xs">
                     <MaskedNumber
                       value={
-                        marketValues && marketValues[acc.id] !== undefined
+                        marketValues[acc.id] !== undefined
                           ? (acc.balance || 0) + marketValues[acc.id]!
                           : acc.balance || 0
                       }

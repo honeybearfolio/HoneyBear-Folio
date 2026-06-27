@@ -78,7 +78,7 @@ export default function FireResultsPanel({
             <p className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider mb-1">
               {t("fire.retirement_age")}
             </p>
-            {neverReached || !fireAge ? (
+            {neverReached || fireAge === null ? (
               <p className="text-lg font-medium text-brand-900 dark:text-brand-100">
                 —
               </p>
@@ -182,15 +182,15 @@ export default function FireResultsPanel({
                         label += ": ";
                       }
 
+                      const parsedValue =
+                        typeof context.parsed === "object" &&
+                        "y" in context.parsed
+                          ? context.parsed.y
+                          : context.parsed;
                       const value =
-                        (context.parsed &&
-                          (context.parsed.y ?? context.parsed)) ??
+                        parsedValue ??
                         context.raw ??
-                        (context.dataset &&
-                        context.dataset.data &&
-                        context.dataIndex != null
-                          ? context.dataset.data[context.dataIndex]
-                          : undefined);
+                        context.dataset.data[context.dataIndex];
 
                       if (
                         value !== undefined &&

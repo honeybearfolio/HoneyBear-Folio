@@ -236,7 +236,7 @@ export default function ChatView() {
 
   // Check if configured on mount and load models
   useEffect(() => {
-    rust.get_llm_settings().then((_s) => {
+    void rust.get_llm_settings().then((_s) => {
       const s = _s;
       const isConfigured = !!(s.ollama_model && s.ollama_model.length > 0);
       setConfigured(isConfigured);
@@ -255,7 +255,7 @@ export default function ChatView() {
 
   // Load conversations
   useEffect(() => {
-    if (configured) loadConversations();
+    if (configured) void loadConversations();
   }, [configured]);
 
   // Set up event listeners for streaming
@@ -266,23 +266,26 @@ export default function ChatView() {
     // Each segment represents one model round: { thinking: string, content: string }
     let segments: StreamingSegment[] = [{ thinking: "", content: "" }];
 
-    listen<{ conversation_id: string; token: string }>("llm-token", (event) => {
-      if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        const last = segments[segments.length - 1];
-        if (!last) return;
-        segments = [
-          ...segments.slice(0, -1),
-          {
-            thinking: last.thinking,
-            content: last.content + event.payload.token,
-            ...(last.toolCalls ? { toolCalls: last.toolCalls } : {}),
-          },
-        ];
-        setStreamingSegments([...segments]);
-      }
-    }).then((u) => unlisteners.push(u));
+    void listen<{ conversation_id: string; token: string }>(
+      "llm-token",
+      (event) => {
+        if (activeConvo && event.payload.conversation_id === activeConvo.id) {
+          const last = segments[segments.length - 1];
+          if (!last) return;
+          segments = [
+            ...segments.slice(0, -1),
+            {
+              thinking: last.thinking,
+              content: last.content + event.payload.token,
+              ...(last.toolCalls ? { toolCalls: last.toolCalls } : {}),
+            },
+          ];
+          setStreamingSegments([...segments]);
+        }
+      },
+    ).then((u) => unlisteners.push(u));
 
-    listen<{ conversation_id: string; token: string }>(
+    void listen<{ conversation_id: string; token: string }>(
       "llm-thinking",
       (event) => {
         if (activeConvo && event.payload.conversation_id === activeConvo.id) {
@@ -301,7 +304,7 @@ export default function ChatView() {
       },
     ).then((u) => unlisteners.push(u));
 
-    listen<{ conversation_id: string; tool_name: string }>(
+    void listen<{ conversation_id: string; tool_name: string }>(
       "llm-tool-call",
       (event) => {
         if (activeConvo && event.payload.conversation_id === activeConvo.id) {
@@ -320,7 +323,7 @@ export default function ChatView() {
       },
     ).then((u) => unlisteners.push(u));
 
-    listen<{ conversation_id: string; status: string }>(
+    void listen<{ conversation_id: string; status: string }>(
       "llm-status",
       (event) => {
         if (activeConvo && event.payload.conversation_id === activeConvo.id) {
@@ -346,30 +349,33 @@ export default function ChatView() {
       setStreamingStatus("thinking");
     };
 
-    listen<{ conversation_id: string }>("llm-done", (event) => {
+    void listen<{ conversation_id: string }>("llm-done", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         resetStreaming();
-        loadMessages(activeConvo.id);
-        loadConversations();
+        void loadMessages(activeConvo.id);
+        void loadConversations();
       }
     }).then((u) => unlisteners.push(u));
 
-    listen<{ conversation_id: string; error: string }>("llm-error", (event) => {
-      if (activeConvo && event.payload.conversation_id === activeConvo.id) {
-        resetStreaming();
-        // Add error as a local pseudo-message
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            role: "assistant",
-            content: `⚠️ ${event.payload.error}`,
-            conversation_id: activeConvo.id,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-      }
-    }).then((u) => unlisteners.push(u));
+    void listen<{ conversation_id: string; error: string }>(
+      "llm-error",
+      (event) => {
+        if (activeConvo && event.payload.conversation_id === activeConvo.id) {
+          resetStreaming();
+          // Add error as a local pseudo-message
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              role: "assistant",
+              content: `⚠️ ${event.payload.error}`,
+              conversation_id: activeConvo.id,
+              created_at: new Date().toISOString(),
+            },
+          ]);
+        }
+      },
+    ).then((u) => unlisteners.push(u));
 
     return () => {
       unlisteners.forEach((u) => {
@@ -517,7 +523,7 @@ export default function ChatView() {
         {
           id: Date.now(),
           role: "assistant",
-          content: `⚠️ ${e}`,
+          content: `⚠️ ${String(e)}`,
           conversation_id: convo.id,
           created_at: new Date().toISOString(),
         },
@@ -535,13 +541,13 @@ export default function ChatView() {
     } catch {
       // ignore
     }
-    loadMessages(activeConvo.id);
+    void loadMessages(activeConvo.id);
   }, [activeConvo]);
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   }
 
@@ -608,7 +614,12 @@ export default function ChatView() {
     <div className="chat-container">
       {/* Conversation sidebar */}
       <div className="chat-sidebar">
-        <button className="chat-new-btn" onClick={handleNewConversation}>
+        <button
+          className="chat-new-btn"
+          onClick={() => {
+            void handleNewConversation();
+          }}
+        >
           <Plus className="w-4 h-4" />
           <span>{t("chat.new_conversation")}</span>
         </button>
@@ -625,7 +636,9 @@ export default function ChatView() {
                 className={`chat-convo-item group ${
                   activeConvo?.id === convo.id ? "chat-convo-active" : ""
                 }`}
-                onClick={() => handleSelectConversation(convo)}
+                onClick={() => {
+                  void handleSelectConversation(convo);
+                }}
               >
                 {editingTitle === convo.id ? (
                   <input
@@ -634,9 +647,11 @@ export default function ChatView() {
                     onChange={(e) => {
                       setEditTitleValue(e.target.value);
                     }}
-                    onBlur={() => handleFinishRename(convo.id)}
+                    onBlur={() => {
+                      void handleFinishRename(convo.id);
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleFinishRename(convo.id);
+                      if (e.key === "Enter") void handleFinishRename(convo.id);
                       if (e.key === "Escape") setEditingTitle(null);
                     }}
                     className="chat-convo-rename-input"
@@ -659,7 +674,9 @@ export default function ChatView() {
                         <Pencil className="w-3 h-3" />
                       </button>
                       <button
-                        onClick={(e) => handleDeleteConversation(convo, e)}
+                        onClick={(e) => {
+                          void handleDeleteConversation(convo, e);
+                        }}
                         title={t("chat.delete_conversation")}
                         aria-label={t("chat.delete_conversation")}
                       >
@@ -782,7 +799,9 @@ export default function ChatView() {
             />
             {streaming ? (
               <button
-                onClick={handleStop}
+                onClick={() => {
+                  void handleStop();
+                }}
                 className="chat-stop-btn"
                 title={t("chat.stop")}
                 aria-label={t("chat.stop")}
@@ -791,7 +810,9 @@ export default function ChatView() {
               </button>
             ) : (
               <button
-                onClick={handleSend}
+                onClick={() => {
+                  void handleSend();
+                }}
                 disabled={!input.trim()}
                 className="chat-send-btn"
                 aria-label={t("chat.send")}
@@ -806,7 +827,9 @@ export default function ChatView() {
             {models.length > 0 && (
               <CustomSelect
                 value={currentModel}
-                onChange={handleModelChange}
+                onChange={(model) => {
+                  void handleModelChange(model);
+                }}
                 options={models.map((m) => ({ value: m.name, label: m.name }))}
                 placeholder={t("chat.model")}
                 fullWidth={true}

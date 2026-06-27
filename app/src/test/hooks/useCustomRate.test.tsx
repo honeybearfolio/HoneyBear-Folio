@@ -96,11 +96,11 @@ describe("useCustomRate", () => {
         <div>
           <button
             data-testid="trigger"
-            onClick={() =>
-              checkAndPrompt("GBP").then((v) => {
+            onClick={() => {
+              void checkAndPrompt("GBP").then((v) => {
                 resolvedValue = v;
-              })
-            }
+              });
+            }}
           />
           {dialog}
         </div>

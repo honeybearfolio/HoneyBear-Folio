@@ -30,8 +30,7 @@ export default function LlmSettingsSection({
   const { showToast } = useToast();
 
   useEffect(() => {
-    rust.get_llm_settings().then((_s) => {
-      const s = _s;
+    void rust.get_llm_settings().then((s) => {
       if (s.ollama_url) setOllamaUrl(s.ollama_url);
       if (s.ollama_model) setOllamaModel(s.ollama_model);
     });
@@ -126,11 +125,15 @@ export default function LlmSettingsSection({
               onChange={(e) => {
                 setOllamaUrl(e.target.value);
               }}
-              onBlur={handleSaveUrl}
+              onBlur={() => {
+                void handleSaveUrl();
+              }}
               className="flex-1 bg-white dark:bg-slate-700 text-slate-700 dark:text-white text-sm py-1 px-2 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all outline-none focus:ring-2 focus:ring-brand-500"
             />
             <button
-              onClick={handleTestConnection}
+              onClick={() => {
+                void handleTestConnection();
+              }}
               disabled={loading}
               className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"
             >
@@ -170,7 +173,9 @@ export default function LlmSettingsSection({
             <div className="relative settings-select">
               <CustomSelect
                 value={ollamaModel}
-                onChange={(v) => handleSaveModel(v)}
+                onChange={(v) => {
+                  void handleSaveModel(v);
+                }}
                 options={models.map((m) => ({
                   value: m.name,
                   label: m.name,
@@ -183,7 +188,9 @@ export default function LlmSettingsSection({
         )}
 
         <button
-          onClick={handleClearHistory}
+          onClick={() => {
+            void handleClearHistory();
+          }}
           className="text-xs text-red-600 dark:text-red-400 hover:underline"
         >
           {t("chat.clear_history")}
