@@ -66,7 +66,8 @@ export async function computeNetWorthMarketValues(
   transactions: InvestmentTransaction[],
   quotes: InvestmentQuote[],
 ): Promise<NetWorthMarketValues> {
-  const { accountHoldings } = buildAccountHoldingsFromTransactions(transactions);
+  const { accountHoldings } =
+    buildAccountHoldingsFromTransactions(transactions);
 
   const quotePrices: Record<string, number> = {};
   for (const quote of quotes) {

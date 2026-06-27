@@ -3,7 +3,10 @@ import type { Transaction } from "../api/types";
 /** Per-account map of ticker symbol to share count. */
 export type AccountHoldingsMap = Record<string, Record<string, number>>;
 
-type HoldingsTransaction = Pick<Transaction, "account_id" | "ticker" | "shares">;
+type HoldingsTransaction = Pick<
+  Transaction,
+  "account_id" | "ticker" | "shares"
+>;
 
 export interface AccountHoldingsResult {
   accountHoldings: AccountHoldingsMap;
