@@ -181,11 +181,9 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
                 openExternal(profileUrl);
               }}
             >
-              <img
-                src={avatarUrl}
-                alt={`${c.username} avatar`}
-                className="about-contributor-avatar"
-              />
+              <div className="about-contributor-avatar">
+                <img src={avatarUrl} alt={`${c.username} avatar`} />
+              </div>
               <div className="about-contributor-info">
                 <span className="about-contributor-name">{c.username}</span>
                 <span className="about-contributor-role">{t(c.roleKey)}</span>
