@@ -44,11 +44,8 @@ fn test_with_db_lock_reentrant_on_same_path() {
     with_db_lock(&db_path, || {
         with_db_lock(&db_path, || {
             let conn = Connection::open(&db_path).map_err(|e| e.to_string())?;
-            conn.execute(
-                "INSERT INTO accounts (name, balance) VALUES ('A', 1.0)",
-                [],
-            )
-            .map_err(|e| e.to_string())?;
+            conn.execute("INSERT INTO accounts (name, balance) VALUES ('A', 1.0)", [])
+                .map_err(|e| e.to_string())?;
             Ok(())
         })
     })
@@ -64,9 +61,14 @@ fn test_with_db_lock_reentrant_on_same_path() {
 #[test]
 fn test_get_accounts_summary_groups_transactions() {
     let (_dir, db_path) = setup_db();
-    let account =
-        crate::create_account_db(&db_path, "Multi".to_string(), 0.0, Some("USD".to_string()), None)
-            .unwrap();
+    let account = crate::create_account_db(
+        &db_path,
+        "Multi".to_string(),
+        0.0,
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
 
     crate::create_transaction_db(
         &db_path,

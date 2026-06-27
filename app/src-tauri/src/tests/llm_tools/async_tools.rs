@@ -1,7 +1,7 @@
 use crate::core::llm_tools::{execute_tool, tool_get_portfolio_holdings};
 use crate::create_account_db;
-use crate::CreateTransactionArgs;
 use crate::tests::common::setup_db;
+use crate::CreateTransactionArgs;
 use rusqlite::Connection;
 use serde_json::json;
 
@@ -66,23 +66,13 @@ async fn test_execute_tool_get_portfolio_and_assets() {
         .unwrap();
     assert!(assets.as_array().unwrap().is_empty());
 
-    let total = execute_tool(
-        &client,
-        &db_path,
-        "get_total_assets_value",
-        &json!({}),
-    )
-    .await
-    .unwrap();
+    let total = execute_tool(&client, &db_path, "get_total_assets_value", &json!({}))
+        .await
+        .unwrap();
     assert_eq!(total["total_value"].as_f64().unwrap(), 0.0);
 
-    let holdings = execute_tool(
-        &client,
-        &db_path,
-        "get_portfolio_holdings",
-        &json!({}),
-    )
-    .await
-    .unwrap();
+    let holdings = execute_tool(&client, &db_path, "get_portfolio_holdings", &json!({}))
+        .await
+        .unwrap();
     assert!(holdings["holdings"].as_array().unwrap().is_empty());
 }

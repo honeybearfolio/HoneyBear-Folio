@@ -1,8 +1,11 @@
+use crate::core::utils::{
+    delete_custom_exchange_rate_db, get_all_exchange_rates_db, get_custom_rates_map,
+};
 use crate::utils::get_system_theme;
-use crate::{calculate_account_balances, Account, create_account_db, get_custom_exchange_rate_db,
-    set_custom_exchange_rate_db};
-use crate::core::utils::{delete_custom_exchange_rate_db, get_all_exchange_rates_db,
-    get_custom_rates_map};
+use crate::{
+    calculate_account_balances, create_account_db, get_custom_exchange_rate_db,
+    set_custom_exchange_rate_db, Account,
+};
 use std::collections::HashMap;
 use tempfile::tempdir;
 
@@ -22,13 +25,8 @@ fn test_same_currency_rate_is_one() {
         exchange_rate: 1.0,
     }];
     let raw_data = vec![(1, "USD".to_string(), 500.0)];
-    let updated = calculate_account_balances(
-        accounts,
-        raw_data,
-        "USD",
-        &HashMap::new(),
-        &HashMap::new(),
-    );
+    let updated =
+        calculate_account_balances(accounts, raw_data, "USD", &HashMap::new(), &HashMap::new());
     assert_eq!(updated[0].balance, 500.0);
     assert_eq!(updated[0].exchange_rate, 1.0);
 }
@@ -45,13 +43,7 @@ fn test_account_without_currency_uses_target() {
     let raw_data = vec![(1, "EUR".to_string(), 100.0)];
     let mut rates = HashMap::new();
     rates.insert("EURUSD=X".to_string(), 1.1);
-    let updated = calculate_account_balances(
-        accounts,
-        raw_data,
-        "USD",
-        &rates,
-        &HashMap::new(),
-    );
+    let updated = calculate_account_balances(accounts, raw_data, "USD", &rates, &HashMap::new());
     assert!((updated[0].balance - 110.0).abs() < 1e-6);
     assert_eq!(updated[0].exchange_rate, 1.0);
 }
@@ -69,13 +61,8 @@ fn test_zero_dst_rate_fallback() {
     let mut custom_rates = HashMap::new();
     custom_rates.insert("EUR".to_string(), 1.2);
     custom_rates.insert("GBP".to_string(), 0.0);
-    let updated = calculate_account_balances(
-        accounts,
-        raw_data,
-        "USD",
-        &HashMap::new(),
-        &custom_rates,
-    );
+    let updated =
+        calculate_account_balances(accounts, raw_data, "USD", &HashMap::new(), &custom_rates);
     // r_dst == 0.0 triggers fallback rate of 1.0 inside compute_rate
     assert!((updated[0].balance - 100.0).abs() < 1e-6);
 }

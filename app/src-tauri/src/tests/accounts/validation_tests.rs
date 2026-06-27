@@ -11,7 +11,8 @@ fn test_create_account_rejects_empty_name() {
 fn test_create_account_rejects_duplicate_name() {
     let (_dir, db_path) = setup_db();
     crate::create_account_db(&db_path, "Savings".to_string(), 0.0, None, None).unwrap();
-    let err = crate::create_account_db(&db_path, "savings".to_string(), 0.0, None, None).unwrap_err();
+    let err =
+        crate::create_account_db(&db_path, "savings".to_string(), 0.0, None, None).unwrap_err();
     assert!(err.contains("already exists"));
 }
 

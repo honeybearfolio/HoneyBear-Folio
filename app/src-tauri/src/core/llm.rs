@@ -1170,7 +1170,10 @@ pub(crate) async fn cancel_llm_chat_for_test(conversation_id: i64) -> Result<(),
 
 #[cfg(test)]
 mod tests {
-    use super::{fetch_ollama_models, ollama_api_url, parse_ollama_models, ping_ollama, validate_ollama_base_url};
+    use super::{
+        fetch_ollama_models, ollama_api_url, parse_ollama_models, ping_ollama,
+        validate_ollama_base_url,
+    };
     use serde_json::json;
 
     #[test]
@@ -1220,9 +1223,8 @@ mod tests {
         let server = httpmock::MockServer::start();
         server.mock(|when, then| {
             when.method(httpmock::Method::GET).path("/api/tags");
-            then.status(200).body(
-                r#"{"models":[{"name":"gemma","size":200,"modified_at":"2024-06-01"}]}"#,
-            );
+            then.status(200)
+                .body(r#"{"models":[{"name":"gemma","size":200,"modified_at":"2024-06-01"}]}"#);
         });
 
         let models = fetch_ollama_models(&server.base_url()).await.unwrap();

@@ -1,9 +1,9 @@
+use crate::core::assets::create_asset_db;
 use crate::core::llm::{
     create_conversation_db, delete_all_conversations_db, delete_conversation_db,
     get_conversation_messages_db, get_conversations_db, rename_conversation_db,
     save_message_db_for_test,
 };
-use crate::core::assets::create_asset_db;
 use crate::create_account_db;
 use crate::tests::common::setup_db;
 
@@ -32,16 +32,7 @@ fn test_conversation_messages() {
     let (_dir, db_path) = setup_db();
     let conv = create_conversation_db(&db_path, "Chat".to_string()).unwrap();
 
-    save_message_db_for_test(
-        &db_path,
-        conv.id,
-        "user",
-        Some("Hello"),
-        None,
-        None,
-        None,
-    )
-    .unwrap();
+    save_message_db_for_test(&db_path, conv.id, "user", Some("Hello"), None, None, None).unwrap();
     save_message_db_for_test(
         &db_path,
         conv.id,

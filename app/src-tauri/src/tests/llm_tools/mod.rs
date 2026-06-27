@@ -207,14 +207,10 @@ async fn test_execute_tool_get_accounts_and_transactions() {
     )
     .unwrap();
 
-    let tool_accounts = crate::core::llm_tools::execute_tool(
-        &client,
-        &db_path,
-        "get_accounts",
-        &json!({}),
-    )
-    .await
-    .unwrap();
+    let tool_accounts =
+        crate::core::llm_tools::execute_tool(&client, &db_path, "get_accounts", &json!({}))
+            .await
+            .unwrap();
     assert_eq!(tool_accounts.as_array().unwrap().len(), 1);
 
     let tool_txs = crate::core::llm_tools::execute_tool(
@@ -234,24 +230,15 @@ async fn test_execute_tool_get_accounts_and_transactions() {
     .unwrap();
     assert_eq!(tool_txs.as_array().unwrap().len(), 1);
 
-    let cats = crate::core::llm_tools::execute_tool(
-        &client,
-        &db_path,
-        "get_categories",
-        &json!({}),
-    )
-    .await
-    .unwrap();
+    let cats =
+        crate::core::llm_tools::execute_tool(&client, &db_path, "get_categories", &json!({}))
+            .await
+            .unwrap();
     assert!(cats.as_array().unwrap().contains(&json!("Food")));
 
-    let payees = crate::core::llm_tools::execute_tool(
-        &client,
-        &db_path,
-        "get_payees",
-        &json!({}),
-    )
-    .await
-    .unwrap();
+    let payees = crate::core::llm_tools::execute_tool(&client, &db_path, "get_payees", &json!({}))
+        .await
+        .unwrap();
     assert!(payees.as_array().unwrap().contains(&json!("Grocery")));
 }
 
@@ -259,14 +246,10 @@ async fn test_execute_tool_get_accounts_and_transactions() {
 async fn test_execute_tool_unknown_name_errors() {
     let (_dir, db_path) = setup_db();
     let client = reqwest::Client::new();
-    let err = crate::core::llm_tools::execute_tool(
-        &client,
-        &db_path,
-        "nonexistent_tool",
-        &json!({}),
-    )
-    .await
-    .unwrap_err();
+    let err =
+        crate::core::llm_tools::execute_tool(&client, &db_path, "nonexistent_tool", &json!({}))
+            .await
+            .unwrap_err();
     assert!(err.contains("Unknown tool"));
 }
 
@@ -275,14 +258,9 @@ async fn test_execute_tool_get_rules_and_scheduled() {
     let (_dir, db_path) = setup_db();
     let client = reqwest::Client::new();
 
-    let rules = crate::core::llm_tools::execute_tool(
-        &client,
-        &db_path,
-        "get_rules",
-        &json!({}),
-    )
-    .await
-    .unwrap();
+    let rules = crate::core::llm_tools::execute_tool(&client, &db_path, "get_rules", &json!({}))
+        .await
+        .unwrap();
     assert!(rules.as_array().unwrap().is_empty());
 
     let sched = crate::core::llm_tools::execute_tool(
