@@ -73,22 +73,38 @@ describe("investment utils wrappers", () => {
     expect(result).toEqual(expected);
   });
 
-  it("calls Rust compute_net_worth_market_values command", async () => {
-    const transactions = [{ account_id: 1, ticker: "AAPL", shares: 5 }];
-    const quotes = [{ symbol: "AAPL", regularMarketPrice: 220 }];
-    const expected = { 1: 1100 };
-
-    vi.mocked(invoke).mockResolvedValue(expected);
+  it("computes per-account market values without FX conversion", async () => {
+    const transactions = [
+      { account_id: 1, ticker: "AAPL", shares: 5 },
+      { account_id: 2, ticker: "GOOG", shares: 2 },
+    ];
+    const quotes = [
+      { symbol: "AAPL", regularMarketPrice: 220 },
+      { symbol: "GOOG", regularMarketPrice: 100 },
+    ];
 
     const result = await computeNetWorthMarketValues(
       transactions as never,
       quotes as never,
     );
 
-    expect(invoke).toHaveBeenCalledWith("compute_net_worth_market_values", {
-      transactions,
-      quotes,
-    });
-    expect(result).toEqual(expected);
+    expect(result["1"]).toBeCloseTo(1100);
+    expect(result["2"]).toBeCloseTo(200);
+    expect(invoke).not.toHaveBeenCalledWith(
+      "compute_net_worth_market_values",
+      expect.anything(),
+    );
+  });
+
+  it("ignores negligible share counts when computing market values", async () => {
+    const transactions = [{ account_id: 1, ticker: "AAPL", shares: 0.00005 }];
+    const quotes = [{ symbol: "AAPL", regularMarketPrice: 200 }];
+
+    const result = await computeNetWorthMarketValues(
+      transactions as never,
+      quotes as never,
+    );
+
+    expect(result["1"]).toBe(0);
   });
 });

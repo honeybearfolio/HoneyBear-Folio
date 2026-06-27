@@ -8,6 +8,10 @@ import type {
   StockQuote,
   Transaction,
 } from "../api/types";
+import {
+  buildAccountHoldingsFromTransactions,
+  type AccountHoldingsMap,
+} from "./account-holdings";
 
 type InvestmentTransaction = Pick<
   Transaction,
@@ -51,12 +55,43 @@ export async function computePortfolioTotals(
   return rust.compute_portfolio_totals({ holdings: finalHoldings });
 }
 
+/**
+ * Computes per-account brokerage market values (shares × quote price).
+ *
+ * Intentionally skips FX conversion: the FIRE calculator uses this alongside
+ * account cash balances that are already in each account's currency. For
+ * FX-aware totals in the main app shell, use `fetchMarketValuesForAccounts`.
+ */
 export async function computeNetWorthMarketValues(
   transactions: InvestmentTransaction[],
   quotes: InvestmentQuote[],
 ): Promise<NetWorthMarketValues> {
-  return rust.compute_net_worth_market_values({
-    transactions: transactions as Transaction[],
-    quotes: quotes as StockQuote[],
-  });
+  const { accountHoldings } = buildAccountHoldingsFromTransactions(transactions);
+
+  const quotePrices: Record<string, number> = {};
+  for (const quote of quotes) {
+    quotePrices[quote.symbol.toUpperCase()] = quote.regularMarketPrice ?? 0;
+  }
+
+  return computeMarketValuesWithoutFx(accountHoldings, quotePrices);
+}
+
+function computeMarketValuesWithoutFx(
+  accountHoldings: AccountHoldingsMap,
+  quotePrices: Record<string, number>,
+): NetWorthMarketValues {
+  const result: NetWorthMarketValues = {};
+
+  for (const [accountId, holdings] of Object.entries(accountHoldings)) {
+    let total = 0;
+    for (const [ticker, shares] of Object.entries(holdings)) {
+      if (shares > 0.0001) {
+        const price = quotePrices[ticker.toUpperCase()] ?? 0;
+        total += shares * price;
+      }
+    }
+    result[accountId] = total;
+  }
+
+  return result;
 }
