@@ -110,7 +110,7 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
           className="about-link"
           onClick={(e) => {
             e.preventDefault();
-            openExternal(EXTERNAL_URLS.LICENSE);
+            openExternal(EXTERNAL_URLS.LICENSE!);
           }}
         >
           <ExternalLink className="w-3.5 h-3.5" />
@@ -142,7 +142,9 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
 
         <div className="mt-2">
           <button
-            onClick={() => setShowAllLicenses(!showAllLicenses)}
+            onClick={() => {
+              setShowAllLicenses(!showAllLicenses);
+            }}
             className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
           >
             {showAllLicenses ? (
@@ -202,7 +204,7 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
-              openExternal(EXTERNAL_URLS.WEBSITE);
+              openExternal(EXTERNAL_URLS.WEBSITE!);
             }}
           >
             <Globe className="w-3.5 h-3.5" />
@@ -213,7 +215,7 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
-              openExternal(EXTERNAL_URLS.GITHUB_REPO);
+              openExternal(EXTERNAL_URLS.GITHUB_REPO!);
             }}
           >
             <svg
@@ -268,7 +270,7 @@ export default function AboutSection({ openExternal }: AboutSectionProps) {
             className="about-link"
             onClick={(e) => {
               e.preventDefault();
-              openExternal(EXTERNAL_URLS.BUY_ME_A_COFFEE);
+              openExternal(EXTERNAL_URLS.BUY_ME_A_COFFEE!);
             }}
           >
             <Coffee className="w-3.5 h-3.5" />

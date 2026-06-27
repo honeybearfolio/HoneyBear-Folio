@@ -34,10 +34,10 @@ fn test_chart_response_parsing_change_percent() {
         .chart_previous_close
         .or(item.meta.previous_close)
         .unwrap_or(price);
-    let change_percent = if prev != 0.0 {
-        ((price - prev) / prev) * 100.0
-    } else {
+    let change_percent = if prev == 0.0 {
         0.0
+    } else {
+        ((price - prev) / prev) * 100.0
     };
 
     assert!((change_percent - 10.0).abs() < 1e-6);

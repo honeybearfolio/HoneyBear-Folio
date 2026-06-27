@@ -76,7 +76,7 @@ describe("AccountList", () => {
     // Original: A (id 1), B (id 2)
     // Drag A to B -> B should be first, A second (splice logic)
     expect(onReorder).toHaveBeenCalled();
-    const newItems = onReorder.mock.calls[0][0];
+    const newItems = onReorder.mock.calls[0]![0];
     expect(newItems[0].id).toBe("2");
     expect(newItems[1].id).toBe("1");
   });

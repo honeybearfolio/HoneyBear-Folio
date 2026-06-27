@@ -4,7 +4,7 @@ import { buildAccountHoldingsFromTransactions } from "../../utils/account-holdin
 describe("buildAccountHoldingsFromTransactions", () => {
   it("returns empty maps when there are no investment transactions", () => {
     const result = buildAccountHoldingsFromTransactions([
-      { account_id: 1, ticker: undefined, shares: undefined },
+      { account_id: 1 },
       { account_id: 1, amount: -50 } as never,
     ]);
 

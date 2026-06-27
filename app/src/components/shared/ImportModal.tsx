@@ -35,7 +35,7 @@ import {
   type ExportAsset,
 } from "../../utils/assets-io";
 import { rowsFromSheetData } from "../../utils/spreadsheet-io";
-import type { Account, AssetWithLatestValue } from "../../api/types";
+import type { Account } from "../../api/types";
 
 export default function ImportModal({
   onClose,
@@ -127,13 +127,11 @@ export default function ImportModal({
         const data = e.target!.result;
 
         if (file.name.endsWith(".csv")) {
-          Papa.parse(data as string, {
+          if (typeof data !== "string") return;
+          Papa.parse<Record<string, unknown>>(data, {
             header: true,
             skipEmptyLines: true,
-            complete: (results: {
-              meta: { fields?: string[] };
-              data: Record<string, unknown>[];
-            }) => {
+            complete: (results) => {
               setColumns(results.meta.fields || []);
               setPreviewRows((results.data || []).slice(0, 5));
               autoMapColumns(results.meta.fields || []);
@@ -188,10 +186,7 @@ export default function ImportModal({
           try {
             const arrayBuffer = e.target!.result as ArrayBuffer;
             const bytes = Array.from(new Uint8Array(arrayBuffer));
-            const result = (await rust.read_xlsx({ data: bytes })) as {
-              data: unknown[][];
-              sheets?: { name: string; data: unknown[][] }[];
-            };
+            const result = await rust.read_xlsx({ data: bytes });
 
             const sheets = result.sheets ?? [
               { name: "Sheet1", data: result.data },
@@ -275,6 +270,7 @@ export default function ImportModal({
         const paths = payload?.paths;
         if (paths && paths.length > 0) {
           const filePath = paths[0];
+          if (!filePath) return;
           // Check if it's a supported file type
           const validExtensions = [".csv", ".xlsx", ".xls", ".json"];
           const hasValidExtension = validExtensions.some((ext) =>
@@ -345,6 +341,7 @@ export default function ImportModal({
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
       const droppedFile = files[0];
+      if (!droppedFile) return;
       const fileName = droppedFile.name.toLowerCase();
       const validExtensions = [".csv", ".xlsx", ".xls", ".json"];
       const hasValidExtension = validExtensions.some((ext) =>
@@ -421,10 +418,7 @@ export default function ImportModal({
         try {
           const arrayBuffer = e.target!.result as ArrayBuffer;
           const bytes = Array.from(new Uint8Array(arrayBuffer));
-          const result = (await rust.read_xlsx({ data: bytes })) as {
-            data: unknown[][];
-            sheets?: { name: string; data: unknown[][] }[];
-          };
+          const result = await rust.read_xlsx({ data: bytes });
 
           const sheets = result.sheets ?? [
             { name: "Sheet1", data: result.data },
@@ -445,11 +439,7 @@ export default function ImportModal({
           const assetSheet = sheets.find(
             (sheet) =>
               isAssetSheetName(sheet.name) ||
-              isAssetRow(
-                (sheet.data[0] as unknown[] | undefined)?.map((h) =>
-                  String(h ?? ""),
-                ) ?? [],
-              ),
+              isAssetRow(sheet.data[0]?.map((h) => String(h ?? "")) ?? []),
           );
           if (assetSheet?.data?.length) {
             xlsxAssetRows = rowsFromSheetData(assetSheet.data);
@@ -495,8 +485,7 @@ export default function ImportModal({
     };
     if (assetsToImport.length > 0) {
       try {
-        const existingAssets =
-          (await rust.get_assets()) as AssetWithLatestValue[];
+        const existingAssets = await rust.get_assets();
         assetImportSummary = await importAssets(
           rust,
           assetsToImport,
@@ -539,6 +528,7 @@ export default function ImportModal({
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      if (!row) continue;
       const mappedAccountValue = mapping.account
         ? row[mapping.account]
         : undefined;
@@ -688,12 +678,15 @@ export default function ImportModal({
               const parts = normalized.split("/");
               let altDate = null;
               if (parts.length === 3) {
-                if (parts[0].length === 4) {
+                const [p0, p1, p2] = parts;
+                if (!p0 || !p1 || !p2) {
+                  date = new Date().toISOString().split("T")[0] ?? "";
+                } else if (p0.length === 4) {
                   // yyyy/mm/dd
-                  altDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
+                  altDate = new Date(`${p0}-${p1}-${p2}`);
                 } else {
                   // dd/mm/yyyy -> yyyy-mm-dd
-                  altDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                  altDate = new Date(`${p2}-${p1}-${p0}`);
                 }
               }
               if (altDate && !isNaN(altDate.getTime())) {
@@ -729,7 +722,7 @@ export default function ImportModal({
             ? row[mapping.fee]
             : row.fee || row.commission || row.Fee;
 
-          let currency = mapping.currency
+          const currency = mapping.currency
             ? row[mapping.currency]
             : row.currency ||
               row.Currency ||
@@ -914,7 +907,9 @@ export default function ImportModal({
 
           {step === 0 ? (
             <button
-              onClick={() => setStep(1)}
+              onClick={() => {
+                setStep(1);
+              }}
               disabled={!file}
               className="btn-primary"
             >
@@ -923,7 +918,9 @@ export default function ImportModal({
           ) : (
             <>
               <button
-                onClick={() => setStep(0)}
+                onClick={() => {
+                  setStep(0);
+                }}
                 disabled={importing}
                 className="btn-secondary"
               >

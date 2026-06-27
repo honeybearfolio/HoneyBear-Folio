@@ -26,7 +26,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     <select
       data-testid="model-select"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        onChange(e.target.value);
+      }}
     />
   ),
 }));
@@ -142,12 +144,12 @@ describe("ChatView", () => {
 
     // Create a conversation to have an active one
     fireEvent.click(screen.getByText("New Chat"));
-    await waitFor(() =>
+    await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith(
         "create_conversation",
         expect.any(Object),
-      ),
-    );
+      );
+    });
 
     const textarea = screen.getByRole("textbox");
     fireEvent.change(textarea, { target: { value: "How much did I spend?" } });

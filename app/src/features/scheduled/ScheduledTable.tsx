@@ -135,7 +135,9 @@ export default function ScheduledTable({
               <td className="px-4 py-2.5 text-right sched-action-menu-container">
                 <div className="flex items-center justify-end gap-0.5">
                   <button
-                    onClick={() => handleToggleEnabled(sched)}
+                    onClick={() => {
+                      handleToggleEnabled(sched);
+                    }}
                     className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={
                       sched.enabled
@@ -155,7 +157,9 @@ export default function ScheduledTable({
                     )}
                   </button>
                   <button
-                    onClick={() => handleEdit(sched)}
+                    onClick={() => {
+                      handleEdit(sched);
+                    }}
                     className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 hover:text-brand-500 cursor-pointer"
                     title={t("scheduled.update")}
                     aria-label={t("scheduled.update")}
@@ -163,7 +167,9 @@ export default function ScheduledTable({
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => handleDelete(sched.id)}
+                    onClick={() => {
+                      handleDelete(sched.id);
+                    }}
                     className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors text-slate-400 hover:text-rose-500 cursor-pointer"
                     title={t("scheduled.delete")}
                     aria-label={t("scheduled.delete")}

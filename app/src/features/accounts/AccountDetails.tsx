@@ -85,10 +85,6 @@ export default function AccountDetails({
   const [renameValue, setRenameValue] = useState(account.name);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
-  useEffect(() => {
-    setRenameValue(account.name);
-  }, [account.name]);
-
   // Close account menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -100,11 +96,15 @@ export default function AccountDetails({
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [accountMenuOpen]);
 
   // Form state
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(
+    () => new Date().toISOString().split("T")[0] ?? "",
+  );
   const [payee, setPayee] = useState("");
   const [category, setCategory] = useState("");
   const [notes, setNotes] = useState("");
@@ -112,12 +112,31 @@ export default function AccountDetails({
   const [transactionType, setTransactionType] = useState("cash");
   const [selectedCurrency, setSelectedCurrency] = useState(appCurrency);
 
-  useEffect(() => {
-    if (isAdding) {
-      const target = account.id === "all" ? addTargetAccount : account;
-      setSelectedCurrency(target?.currency || appCurrency || "USD");
+  const getAddFormCurrency = () => {
+    const target = account.id === "all" ? addTargetAccount : account;
+    return target?.currency || appCurrency || "USD";
+  };
+
+  const handleSetIsAdding = (v: boolean) => {
+    setIsAdding(v);
+    if (v) {
+      setSelectedCurrency(getAddFormCurrency());
     }
-  }, [isAdding, account, addTargetAccount, appCurrency]);
+  };
+
+  const handleAddTargetAccountChange = (v: AvailableAccount | null) => {
+    setAddTargetAccount(v);
+    if (isAdding && account.id === "all" && v) {
+      setSelectedCurrency(v.currency || appCurrency || "USD");
+    }
+  };
+
+  const handlePayeeChange = (val: string) => {
+    setPayee(val);
+    if (availableAccounts.some((a) => a.name === val)) {
+      setCategory("Transfer");
+    }
+  };
 
   // Brokerage Form State
   const [ticker, setTicker] = useState("");
@@ -134,12 +153,12 @@ export default function AccountDetails({
   }>({ key: null, direction: null });
 
   // Rules Engine Logic
-  const prevValues = useRef({
+  const prevValues = useRef<Record<string, string>>({
     payee,
     category,
     notes,
     amount,
-    date,
+    date: date ?? "",
     ticker,
     shares,
     price: pricePerShare,
@@ -165,12 +184,12 @@ export default function AccountDetails({
       fee: { value: fee, set: setFee },
     };
 
-    const currentValues = {
+    const currentValues: Record<string, string> = {
       payee,
       category,
       notes,
       amount,
-      date,
+      date: date ?? "",
       ticker,
       shares,
       price: pricePerShare,
@@ -232,17 +251,22 @@ export default function AccountDetails({
     try {
       const [payees, accountsList, categories, fetchedRules] =
         await Promise.all([
-          rust.get_payees() as Promise<string[]>,
+          rust.get_payees(),
           rust.get_accounts(),
-          rust.get_categories() as Promise<string[]>,
+          rust.get_categories(),
           rust.get_rules() as Promise<Rule[]>,
         ]);
       setRules(fetchedRules);
 
       // Filter out current account from accounts list
-      const otherAccounts = accountsList
+      const otherAccounts: AvailableAccount[] = accountsList
         .filter((a) => a.id !== account.id)
-        .map((a) => ({ name: a.name || "", id: a.id, kind: a.kind }));
+        .map((a) => ({
+          name: a.name || "",
+          id: a.id,
+          ...(a.kind !== undefined ? { kind: a.kind } : {}),
+          ...(a.currency !== undefined ? { currency: a.currency } : {}),
+        }));
 
       setAvailableAccounts(otherAccounts);
 
@@ -252,15 +276,21 @@ export default function AccountDetails({
         otherAccounts.length > 0 &&
         !addTargetAccount
       ) {
-        setAddTargetAccount(otherAccounts[0]);
+        const firstAccount = otherAccounts[0];
+        if (firstAccount) {
+          setAddTargetAccount(firstAccount);
+          if (isAdding) {
+            setSelectedCurrency(firstAccount.currency || appCurrency || "USD");
+          }
+        }
       }
 
-      const accountOptions = otherAccounts.map((acc: AvailableAccount) => ({
+      const accountOptions = otherAccounts.map((acc) => ({
         value: acc.name,
         label: t("import.field.account"),
         type: "account",
       }));
-      const payeeOptions = (payees as string[]).map((name: string) => ({
+      const payeeOptions = payees.map((name: string) => ({
         value: name,
         label: t("import.field.payee"),
         type: "payee",
@@ -284,7 +314,7 @@ export default function AccountDetails({
 
       setPayeeSuggestions(unique);
       setCategorySuggestions(
-        (categories as string[]).map((c: string) => ({
+        categories.map((c: string) => ({
           value: c,
           label: t("import.field.category"),
           type: "category",
@@ -304,7 +334,7 @@ export default function AccountDetails({
           rust.get_accounts(),
         ]);
         // Attach account_name for display in the consolidated view
-        txs = (transactionsList as Transaction[]).map((tx: Transaction) => {
+        txs = transactionsList.map((tx: Transaction) => {
           const acc = accounts.find((a) => a.id === tx.account_id);
           return {
             ...tx,
@@ -312,9 +342,9 @@ export default function AccountDetails({
           };
         });
       } else {
-        txs = (await rust.get_transactions({
+        txs = await rust.get_transactions({
           accountId: account.id,
-        })) as Transaction[];
+        });
       }
       setTransactions(txs);
     } catch (e) {
@@ -322,7 +352,9 @@ export default function AccountDetails({
         context: "Failed to fetch transactions",
         error: e,
         userMessage: t("error.failed_to_load"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -345,9 +377,8 @@ export default function AccountDetails({
     useToday: boolean,
   ) {
     try {
-      const applyDate = useToday
-        ? new Date().toISOString().split("T")[0]
-        : occ.date;
+      const applyDate =
+        (useToday ? new Date().toISOString().split("T")[0] : occ.date) ?? "";
       await rust.apply_scheduled_occurrence({
         scheduledTxId: occ.scheduled_tx_id,
         applyDate,
@@ -359,7 +390,9 @@ export default function AccountDetails({
         context: "Failed to apply scheduled occurrence",
         error: e,
         userMessage: t("error.operation_failed"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -376,16 +409,20 @@ export default function AccountDetails({
         context: "Failed to skip scheduled occurrence",
         error: e,
         userMessage: t("error.operation_failed"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
 
   useEffect(() => {
     if (account) {
-      fetchTransactions();
-      fetchSuggestions();
-      fetchPendingOccurrences();
+      queueMicrotask(() => {
+        void fetchTransactions();
+        void fetchSuggestions();
+        void fetchPendingOccurrences();
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account.id]);
@@ -421,22 +458,6 @@ export default function AccountDetails({
       window.removeEventListener("resize", handleScrollOrResize);
     };
   }, [menuOpenId]);
-
-  // Auto-set category to Transfer if payee is an account
-  useEffect(() => {
-    if (availableAccounts?.some((a) => a.name === payee)) {
-      setCategory("Transfer");
-    }
-  }, [payee, availableAccounts]);
-
-  useEffect(() => {
-    if (
-      editForm.payee &&
-      availableAccounts?.some((a) => a.name === editForm.payee)
-    ) {
-      setEditForm((prev) => ({ ...prev, category: "Transfer" }));
-    }
-  }, [editForm.payee, availableAccounts]);
 
   const tickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -483,7 +504,9 @@ export default function AccountDetails({
         context: "Failed to rename account",
         error: e,
         userMessage: t("error.failed_to_rename"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -509,7 +532,9 @@ export default function AccountDetails({
         context: "Failed to delete account",
         error: e,
         userMessage: t("error.failed_to_delete"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -592,7 +617,9 @@ export default function AccountDetails({
         context: "Failed to create transaction",
         error: e,
         userMessage: t("error.failed_to_save"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -667,7 +694,9 @@ export default function AccountDetails({
         context: "Failed to update transaction",
         error: e,
         userMessage: t("error.failed_to_save"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -690,7 +719,9 @@ export default function AccountDetails({
         context: "Failed to delete transaction",
         error: e,
         userMessage: t("error.failed_to_delete"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -720,7 +751,9 @@ export default function AccountDetails({
         context: "Failed to duplicate transaction",
         error: e,
         userMessage: t("error.operation_failed"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -741,7 +774,7 @@ export default function AccountDetails({
   };
 
   const filteredTransactions = useMemo(() => {
-    let data = transactions.filter((tx: Transaction) => {
+    const data = transactions.filter((tx: Transaction) => {
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -764,8 +797,8 @@ export default function AccountDetails({
           aValue = parseFloat(String(aValue) || "0");
           bValue = parseFloat(String(bValue) || "0");
         } else if (sortConfig.key === "date") {
-          aValue = new Date(aValue as string).getTime();
-          bValue = new Date(bValue as string).getTime();
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
         } else {
           aValue = (aValue || "").toString().toLowerCase();
           bValue = (bValue || "").toString().toLowerCase();
@@ -817,7 +850,7 @@ export default function AccountDetails({
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         isAdding={isAdding}
-        setIsAdding={setIsAdding}
+        setIsAdding={handleSetIsAdding}
         accountMenuOpen={accountMenuOpen}
         setAccountMenuOpen={setAccountMenuOpen}
         handleDeleteAccount={handleDeleteAccount}
@@ -829,13 +862,13 @@ export default function AccountDetails({
           account={account}
           availableAccounts={availableAccounts}
           addTargetAccount={addTargetAccount}
-          setAddTargetAccount={setAddTargetAccount}
+          setAddTargetAccount={handleAddTargetAccountChange}
           transactionType={transactionType}
           setTransactionType={setTransactionType}
           date={date}
           setDate={setDate}
           payee={payee}
-          setPayee={setPayee}
+          setPayee={handlePayeeChange}
           category={category}
           setCategory={setCategory}
           notes={notes}
@@ -877,7 +910,9 @@ export default function AccountDetails({
             <thead className="bg-white dark:bg-slate-800 rounded-t-2xl">
               <tr>
                 <th
-                  onClick={() => handleSort("date")}
+                  onClick={() => {
+                    handleSort("date");
+                  }}
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-32 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
@@ -886,7 +921,9 @@ export default function AccountDetails({
                 </th>
                 {account.id === "all" && (
                   <th
-                    onClick={() => handleSort("account_name")}
+                    onClick={() => {
+                      handleSort("account_name");
+                    }}
                     className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[10rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                   >
                     <div className="flex items-center gap-1">
@@ -895,7 +932,9 @@ export default function AccountDetails({
                   </th>
                 )}
                 <th
-                  onClick={() => handleSort("payee")}
+                  onClick={() => {
+                    handleSort("payee");
+                  }}
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
@@ -903,7 +942,9 @@ export default function AccountDetails({
                   </div>
                 </th>
                 <th
-                  onClick={() => handleSort("category")}
+                  onClick={() => {
+                    handleSort("category");
+                  }}
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[10rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
@@ -911,7 +952,9 @@ export default function AccountDetails({
                   </div>
                 </th>
                 <th
-                  onClick={() => handleSort("notes")}
+                  onClick={() => {
+                    handleSort("notes");
+                  }}
                   className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-1">
@@ -921,7 +964,9 @@ export default function AccountDetails({
                 {hasInvestment && (
                   <>
                     <th
-                      onClick={() => handleSort("ticker")}
+                      onClick={() => {
+                        handleSort("ticker");
+                      }}
                       className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[5rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center gap-1">
@@ -929,7 +974,9 @@ export default function AccountDetails({
                       </div>
                     </th>
                     <th
-                      onClick={() => handleSort("shares")}
+                      onClick={() => {
+                        handleSort("shares");
+                      }}
                       className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -937,7 +984,9 @@ export default function AccountDetails({
                       </div>
                     </th>
                     <th
-                      onClick={() => handleSort("price_per_share")}
+                      onClick={() => {
+                        handleSort("price_per_share");
+                      }}
                       className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -946,7 +995,9 @@ export default function AccountDetails({
                       </div>
                     </th>
                     <th
-                      onClick={() => handleSort("fee")}
+                      onClick={() => {
+                        handleSort("fee");
+                      }}
                       className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-28 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                     >
                       <div className="flex items-center justify-end gap-1">
@@ -956,7 +1007,9 @@ export default function AccountDetails({
                   </>
                 )}
                 <th
-                  onClick={() => handleSort("amount")}
+                  onClick={() => {
+                    handleSort("amount");
+                  }}
                   className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center justify-end gap-1">

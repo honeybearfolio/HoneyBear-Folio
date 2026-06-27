@@ -392,7 +392,7 @@ pub async fn get_accounts(
 
     // 3. Always fetch USD fallback for all yahoo currencies
     for c in &yahoo_currencies {
-        tickers_to_fetch.insert(format!("{}USD=X", c));
+        tickers_to_fetch.insert(format!("{c}USD=X"));
     }
 
     // 4. Also fetch direct pairs if both sides are likely on Yahoo (to prefer direct rate)
@@ -402,7 +402,7 @@ pub async fn get_accounts(
             // If both are yahoo currencies (or USD), try fetching direct pair
             let is_yahoo_or_usd = |c: &String| c == "USD" || yahoo_currencies.contains(c);
             if is_yahoo_or_usd(tx_curr) && is_yahoo_or_usd(acc_currency) {
-                tickers_to_fetch.insert(format!("{}{}=X", tx_curr, acc_currency));
+                tickers_to_fetch.insert(format!("{tx_curr}{acc_currency}=X"));
             }
         }
     }
@@ -413,7 +413,7 @@ pub async fn get_accounts(
             if acc_curr != &target {
                 let is_yahoo_or_usd = |c: &String| c == "USD" || yahoo_currencies.contains(c);
                 if is_yahoo_or_usd(acc_curr) && is_yahoo_or_usd(&target) {
-                    tickers_to_fetch.insert(format!("{}{}=X", acc_curr, target));
+                    tickers_to_fetch.insert(format!("{acc_curr}{target}=X"));
                 }
             }
         }

@@ -22,9 +22,7 @@ export async function computeNetWorth(
   return rust.compute_net_worth({
     accounts: accounts as Account[],
     marketValues: normalizedMarketValues,
-    totalAssetsValue: Number.isFinite(totalAssetsValue)
-      ? totalAssetsValue
-      : undefined,
+    ...(Number.isFinite(totalAssetsValue) ? { totalAssetsValue } : {}),
   });
 }
 

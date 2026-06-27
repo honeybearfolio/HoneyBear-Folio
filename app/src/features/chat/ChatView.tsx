@@ -56,7 +56,9 @@ function ReasoningBlock({
     <div className="chat-reasoning">
       <button
         className="chat-reasoning-toggle"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => {
+          setExpanded((v) => !v);
+        }}
       >
         <Lightbulb className="w-3.5 h-3.5" />
         <span>{t("chat.reasoning")}</span>
@@ -113,7 +115,9 @@ function MessageBubble({ message, toolCalls }: MessageBubbleProps) {
       <div className="chat-tool-result">
         <button
           className="chat-tool-toggle"
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => {
+            setExpanded(!expanded);
+          }}
         >
           {expanded ? (
             <ChevronDown className="w-3.5 h-3.5" />
@@ -191,11 +195,6 @@ interface Conversation {
   created_at?: string;
 }
 
-interface LlmSettings {
-  ollama_url?: string;
-  ollama_model?: string;
-}
-
 interface OllamaModel {
   name: string;
   size?: number;
@@ -238,7 +237,7 @@ export default function ChatView() {
   // Check if configured on mount and load models
   useEffect(() => {
     rust.get_llm_settings().then((_s) => {
-      const s = _s as LlmSettings;
+      const s = _s;
       const isConfigured = !!(s.ollama_model && s.ollama_model.length > 0);
       setConfigured(isConfigured);
       if (s.ollama_model) setCurrentModel(s.ollama_model);
@@ -246,7 +245,9 @@ export default function ChatView() {
       if (isConfigured) {
         rust
           .list_ollama_models()
-          .then((list) => setModels(list as OllamaModel[]))
+          .then((list) => {
+            setModels(list);
+          })
           .catch(() => {});
       }
     });
@@ -268,9 +269,14 @@ export default function ChatView() {
     listen<{ conversation_id: string; token: string }>("llm-token", (event) => {
       if (activeConvo && event.payload.conversation_id === activeConvo.id) {
         const last = segments[segments.length - 1];
+        if (!last) return;
         segments = [
           ...segments.slice(0, -1),
-          { ...last, content: last.content + event.payload.token },
+          {
+            thinking: last.thinking,
+            content: last.content + event.payload.token,
+            ...(last.toolCalls ? { toolCalls: last.toolCalls } : {}),
+          },
         ];
         setStreamingSegments([...segments]);
       }
@@ -281,9 +287,14 @@ export default function ChatView() {
       (event) => {
         if (activeConvo && event.payload.conversation_id === activeConvo.id) {
           const last = segments[segments.length - 1];
+          if (!last) return;
           segments = [
             ...segments.slice(0, -1),
-            { ...last, thinking: last.thinking + event.payload.token },
+            {
+              thinking: last.thinking + event.payload.token,
+              content: last.content,
+              ...(last.toolCalls ? { toolCalls: last.toolCalls } : {}),
+            },
           ];
           setStreamingSegments([...segments]);
         }
@@ -295,10 +306,12 @@ export default function ChatView() {
       (event) => {
         if (activeConvo && event.payload.conversation_id === activeConvo.id) {
           const last = segments[segments.length - 1];
+          if (!last) return;
           segments = [
             ...segments.slice(0, -1),
             {
-              ...last,
+              thinking: last.thinking,
+              content: last.content,
               toolCalls: [...(last.toolCalls || []), event.payload.tool_name],
             },
           ];
@@ -359,7 +372,9 @@ export default function ChatView() {
     }).then((u) => unlisteners.push(u));
 
     return () => {
-      unlisteners.forEach((u) => u());
+      unlisteners.forEach((u) => {
+        u();
+      });
     };
   }, [configured, activeConvo]);
 
@@ -395,9 +410,9 @@ export default function ChatView() {
 
   async function handleNewConversation() {
     try {
-      const convo = (await rust.create_conversation({
+      const convo = await rust.create_conversation({
         title: t("chat.new_conversation"),
-      })) as Conversation;
+      });
       await loadConversations();
       setActiveConvo(convo);
       setMessages([]);
@@ -466,7 +481,7 @@ export default function ChatView() {
     if (!convo) {
       try {
         const title = text.length > 40 ? text.substring(0, 40) + "…" : text;
-        convo = (await rust.create_conversation({ title })) as Conversation;
+        convo = await rust.create_conversation({ title });
         setActiveConvo(convo);
         await loadConversations();
       } catch {
@@ -481,7 +496,7 @@ export default function ChatView() {
         id: Date.now(),
         role: "user",
         content: text,
-        conversation_id: convo!.id,
+        conversation_id: convo.id,
         created_at: new Date().toISOString(),
       },
     ]);
@@ -491,7 +506,7 @@ export default function ChatView() {
 
     try {
       await rust.llm_chat({
-        conversationId: convo!.id,
+        conversationId: convo.id,
         userMessage: text,
         think: thinkEnabled,
       });
@@ -503,7 +518,7 @@ export default function ChatView() {
           id: Date.now(),
           role: "assistant",
           content: `⚠️ ${e}`,
-          conversation_id: convo!.id,
+          conversation_id: convo.id,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -616,14 +631,18 @@ export default function ChatView() {
                   <input
                     autoFocus
                     value={editTitleValue}
-                    onChange={(e) => setEditTitleValue(e.target.value)}
+                    onChange={(e) => {
+                      setEditTitleValue(e.target.value);
+                    }}
                     onBlur={() => handleFinishRename(convo.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleFinishRename(convo.id);
                       if (e.key === "Escape") setEditingTitle(null);
                     }}
                     className="chat-convo-rename-input"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
                   />
                 ) : (
                   <>
@@ -631,7 +650,9 @@ export default function ChatView() {
                     <span className="chat-convo-title">{convo.title}</span>
                     <div className="chat-convo-actions">
                       <button
-                        onClick={(e) => handleStartRename(convo, e)}
+                        onClick={(e) => {
+                          handleStartRename(convo, e);
+                        }}
                         title={t("chat.rename_conversation")}
                         aria-label={t("chat.rename_conversation")}
                       >
@@ -680,9 +701,9 @@ export default function ChatView() {
                 <MessageBubble
                   key={msg.id}
                   message={msg}
-                  toolCalls={
-                    msg.id !== undefined ? toolCallsMap[msg.id] : undefined
-                  }
+                  {...(msg.id !== undefined && toolCallsMap[msg.id]
+                    ? { toolCalls: toolCallsMap[msg.id] }
+                    : {})}
                 />
               ))}
 
@@ -750,7 +771,9 @@ export default function ChatView() {
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+              }}
               onKeyDown={handleKeyDown}
               placeholder={t("chat.input_placeholder")}
               className="chat-input"

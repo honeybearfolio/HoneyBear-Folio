@@ -146,10 +146,12 @@ function parseDateValue(raw: unknown): string | null {
   const normalized = String(raw).replace(/\./g, "/").replace(/-/g, "/");
   const parts = normalized.split("/");
   if (parts.length === 3) {
+    const [p0, p1, p2] = parts;
+    if (!p0 || !p1 || !p2) return null;
     const alt =
-      parts[0].length === 4
-        ? new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
-        : new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+      p0.length === 4
+        ? new Date(`${p0}-${p1}-${p2}`)
+        : new Date(`${p2}-${p1}-${p0}`);
     if (!isNaN(alt.getTime())) return alt.toISOString().slice(0, 10);
   }
   return null;
@@ -317,8 +319,8 @@ export async function importAssets(
       const created = await api.create_asset({
         name: asset.name,
         category: asset.category,
-        currency: asset.currency || undefined,
-        notes: asset.notes || undefined,
+        ...(asset.currency ? { currency: asset.currency } : {}),
+        ...(asset.notes ? { notes: asset.notes } : {}),
       });
 
       for (const valuation of asset.valuations) {

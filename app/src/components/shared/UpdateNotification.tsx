@@ -151,7 +151,9 @@ export default function UpdateNotification() {
           {updateInfo?.body && (
             <div className="mb-2">
               <button
-                onClick={() => setShowNotes(!showNotes)}
+                onClick={() => {
+                  setShowNotes(!showNotes);
+                }}
                 className={`flex items-center gap-1 text-sm text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 font-medium ${
                   showNotes ? "mb-2" : ""
                 }`}

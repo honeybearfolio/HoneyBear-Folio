@@ -171,7 +171,7 @@ describe("FireCalculator", () => {
 
     // Wait for the initial data fetch to complete before interacting
     const inputs = await screen.findAllByRole("textbox");
-    const expensesInput = inputs[1]; // Annual Expenses is 2nd
+    const expensesInput = inputs[1]!; // Annual Expenses is 2nd
 
     // NumberInput commits on blur, so we need the full focus → change → blur sequence
     fireEvent.focus(expensesInput);
@@ -189,7 +189,7 @@ describe("FireCalculator", () => {
     renderWithContext(<FireCalculator />);
 
     const inputs = await screen.findAllByRole("textbox");
-    const netWorthInput = inputs[0]; // Current Net Worth is 1st
+    const netWorthInput = inputs[0]!; // Current Net Worth is 1st
 
     await waitFor(() => {
       expect((netWorthInput as HTMLInputElement).value).toBe("50000");
@@ -201,7 +201,7 @@ describe("FireCalculator", () => {
 
     // Wait for initial load before interacting
     const inputs = await screen.findAllByRole("textbox");
-    const expensesInput = inputs[1];
+    const expensesInput = inputs[1]!;
 
     await waitFor(() => {
       expect((expensesInput as HTMLInputElement).value).toBeDefined();
@@ -231,12 +231,12 @@ describe("FireCalculator", () => {
     // 1. Render and modify Net Worth manually
     const { unmount } = renderWithContext(<FireCalculator />);
     const inputs = await screen.findAllByRole("textbox");
-    const netWorthInput = inputs[0];
+    const netWorthInput = inputs[0]!;
 
     // Wait for initial fetch (50000 from mock)
-    await waitFor(() =>
-      expect((netWorthInput as HTMLInputElement).value).toBe("50000"),
-    );
+    await waitFor(() => {
+      expect((netWorthInput as HTMLInputElement).value).toBe("50000");
+    });
 
     // User changes it to 75000 — NumberInput commits on blur
     fireEvent.focus(netWorthInput);
@@ -259,7 +259,7 @@ describe("FireCalculator", () => {
     renderWithContext(<FireCalculator />);
 
     const inputs2 = await screen.findAllByRole("textbox");
-    const netWorthInput2 = inputs2[0];
+    const netWorthInput2 = inputs2[0]!;
 
     await waitFor(() => {
       expect((netWorthInput2 as HTMLInputElement).value).toBe("75000");

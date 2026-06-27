@@ -50,10 +50,7 @@ export function rowsFromSheetData(
   return data.slice(1).map((row) => {
     const obj: Record<string, unknown> = {};
     headers.forEach((header, index) => {
-      obj[header] =
-        (row as unknown[])[index] !== undefined
-          ? (row as unknown[])[index]
-          : "";
+      obj[header] = row[index] !== undefined ? row[index] : "";
     });
     return obj;
   });

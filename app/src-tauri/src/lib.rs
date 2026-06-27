@@ -1,3 +1,18 @@
+// Pedantic lints listed in `[lints.clippy]` in Cargo.toml; crate-level allows
+// so `-W clippy::pedantic` on the CLI does not re-enable them.
+#![allow(
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::unreadable_literal,
+    clippy::too_many_lines,
+    clippy::needless_pass_by_value,
+    clippy::implicit_hasher,
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+)]
+
 mod core;
 pub use crate::core::{
     accounts, assets, calculations, db_init, io, llm, markets, models, pdf, rules, scheduled,
@@ -95,8 +110,7 @@ pub fn run() {
             // If no db_path is set (fresh install), the frontend will show the
             // session picker and call create_session / open_session which runs init_db.
             let has_session = db_init::read_settings(app.handle())
-                .map(|s| s.db_path.is_some())
-                .unwrap_or(false);
+                .is_ok_and(|s| s.db_path.is_some());
             if has_session {
                 db_init::init_db(app.handle())?;
             }
@@ -114,7 +128,7 @@ pub fn run() {
                         let current =
                             utils::get_system_theme().unwrap_or_else(|_| "light".to_string());
                         if current != last {
-                            last = current.clone();
+                            last.clone_from(&current);
                             let _ = handle.emit("system-theme-changed", current);
                         }
                     }

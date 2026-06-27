@@ -9,8 +9,8 @@ export function evaluateCondition(
   const conditionValue = condition.value;
   const strFieldValue = String(fieldValue ?? "");
   const strCondValue = String(conditionValue ?? "");
-  const numFieldValue = parseFloat(fieldValue);
-  const numCondValue = parseFloat(conditionValue);
+  const numFieldValue = parseFloat(fieldValue ?? "");
+  const numCondValue = parseFloat(String(conditionValue ?? ""));
 
   let matched: boolean;
   switch (condition.operator) {

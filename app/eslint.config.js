@@ -7,8 +7,10 @@ import prettier from "eslint-plugin-prettier";
 import eslintConfigPrettier from "eslint-config-prettier";
 import tseslint from "typescript-eslint";
 
-export default [
-  { ignores: ["dist", "src-tauri/target"] },
+export default tseslint.config(
+  { ignores: ["dist", "coverage", "src-tauri/target"] },
+  js.configs.recommended,
+  ...tseslint.configs.strict,
   {
     files: ["src/test/**/*.{ts,tsx}"],
     languageOptions: {
@@ -20,7 +22,6 @@ export default [
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
-      parser: tseslint.parser,
       parserOptions: {
         ecmaVersion: "latest",
         ecmaFeatures: { jsx: true },
@@ -33,21 +34,15 @@ export default [
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       prettier,
-      "@typescript-eslint": tseslint.plugin,
     },
     rules: {
-      ...js.configs.recommended.rules,
       ...react.configs.recommended.rules,
       ...react.configs["jsx-runtime"].rules,
       ...reactHooks.configs.recommended.rules,
-      "react-hooks/set-state-in-effect": "off",
-      "react/jsx-no-target-blank": "off",
       "react-refresh/only-export-components": [
-        "warn",
+        "error",
         { allowConstantExport: true },
       ],
-      "no-undef": "off",
-      "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -56,8 +51,10 @@ export default [
           destructuredArrayIgnorePattern: "^_",
         },
       ],
+      // noUncheckedIndexedAccess already guards indexed access at compile time.
+      "@typescript-eslint/no-non-null-assertion": "off",
       "prettier/prettier": "error",
     },
   },
   eslintConfigPrettier,
-];
+);

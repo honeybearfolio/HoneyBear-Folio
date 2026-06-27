@@ -138,7 +138,7 @@ export function createDefaultScheduledForm(): ScheduledFormState {
     daysOfWeek: [],
     ordinal: 1,
     weekday: 1,
-    startDate: new Date().toISOString().split("T")[0],
+    startDate: new Date().toISOString().split("T")[0] ?? "",
     endDate: "",
     maxOccurrences: "",
     enabled: true,

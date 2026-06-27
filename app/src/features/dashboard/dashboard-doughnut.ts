@@ -81,8 +81,9 @@ export async function buildDoughnutChartData({
         if (quote) {
           price = quote.regularMarketPrice;
         } else if (dailyPrices[h.ticker]) {
-          const { list } = dailyPrices[h.ticker];
-          if (list.length > 0) price = list[list.length - 1].price;
+          const priceData = dailyPrices[h.ticker];
+          const list = priceData?.list;
+          if (list && list.length > 0) price = list[list.length - 1]!.price;
         }
 
         const val = h.shares * price * exchangeRate;
@@ -142,13 +143,13 @@ export async function buildDoughnutChartData({
         data,
         originalData: rawData,
         backgroundColor: rawData.map((v, i) => {
-          if (v < 0) return "transparent";
-          return colors[i % colors.length];
+          if ((v ?? 0) < 0) return "transparent";
+          return colors[i % colors.length]!;
         }),
         borderColor: isDark ? "#474240" : "#ffffff",
         borderWidth: 4,
         borderDash: (ctx: { dataIndex: number }) => {
-          const val = rawData[ctx.dataIndex];
+          const val = rawData[ctx.dataIndex] ?? 0;
           return val < 0 ? [5, 5] : [];
         },
         hoverOffset: 4,

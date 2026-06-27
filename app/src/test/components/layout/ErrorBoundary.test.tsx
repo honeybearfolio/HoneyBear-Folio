@@ -111,7 +111,7 @@ describe("ErrorBoundary", () => {
     fireEvent.click(screen.getByText("Copy"));
 
     expect(mockWriteText).toHaveBeenCalled();
-    expect(mockWriteText.mock.calls[0][0]).toContain("Clipboard test");
+    expect(mockWriteText.mock.calls[0]![0]).toContain("Clipboard test");
   });
 
   it("reloads page when Reload is clicked", () => {

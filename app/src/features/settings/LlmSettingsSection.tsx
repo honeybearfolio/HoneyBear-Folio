@@ -6,11 +6,6 @@ import { rust } from "../../api/tauri-client";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 
-interface LlmSettings {
-  ollama_url?: string;
-  ollama_model?: string;
-}
-
 interface OllamaModel {
   name: string;
   size?: number;
@@ -36,7 +31,7 @@ export default function LlmSettingsSection({
 
   useEffect(() => {
     rust.get_llm_settings().then((_s) => {
-      const s = _s as LlmSettings;
+      const s = _s;
       if (s.ollama_url) setOllamaUrl(s.ollama_url);
       if (s.ollama_model) setOllamaModel(s.ollama_model);
     });
@@ -47,7 +42,7 @@ export default function LlmSettingsSection({
     try {
       await rust.set_llm_settings({ ollamaUrl, ollamaModel });
       const ok = await rust.check_ollama_connection();
-      setConnected(ok as boolean);
+      setConnected(ok);
       if (ok) {
         const list = (await rust.list_ollama_models()) as OllamaModel[];
         setModels(list);
@@ -128,7 +123,9 @@ export default function LlmSettingsSection({
             <input
               type="text"
               value={ollamaUrl}
-              onChange={(e) => setOllamaUrl(e.target.value)}
+              onChange={(e) => {
+                setOllamaUrl(e.target.value);
+              }}
               onBlur={handleSaveUrl}
               className="flex-1 bg-white dark:bg-slate-700 text-slate-700 dark:text-white text-sm py-1 px-2 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all outline-none focus:ring-2 focus:ring-brand-500"
             />

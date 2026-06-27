@@ -50,9 +50,7 @@ const TRANSACTION_HEADER_HINTS = [
 ];
 
 function sheetHeaders(sheet: XlsxSheet): string[] {
-  return (
-    (sheet.data[0] as unknown[] | undefined)?.map((h) => String(h ?? "")) ?? []
-  );
+  return sheet.data[0]?.map((h) => String(h ?? "")) ?? [];
 }
 
 export function isAccountSheetName(name: string): boolean {
@@ -185,8 +183,8 @@ export async function importAccounts(
       const created = await api.create_account({
         name: account.name,
         balance: account.balance,
-        kind: account.kind || undefined,
-        currency: account.currency || undefined,
+        ...(account.kind ? { kind: account.kind } : {}),
+        ...(account.currency ? { currency: account.currency } : {}),
       });
       knownNames.add(key);
       result.created.push(created);

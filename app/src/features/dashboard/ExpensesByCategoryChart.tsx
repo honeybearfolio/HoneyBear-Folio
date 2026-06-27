@@ -54,10 +54,7 @@ export default function ExpensesByCategoryChart({
             </p>
           </div>
         ) : (
-          <Doughnut
-            options={expensesOptions}
-            data={expensesByCategoryData as ChartData<"doughnut">}
-          />
+          <Doughnut options={expensesOptions} data={expensesByCategoryData} />
         )}
       </div>
     </div>

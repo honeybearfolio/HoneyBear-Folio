@@ -147,7 +147,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
           context: "Failed to delete asset",
           error: e,
           userMessage: t("error.failed_to_delete"),
-          toast: (message) => showToast(message, { type: "error" }),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
         });
       }
     },
@@ -172,7 +174,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
           context: "Failed to delete valuation",
           error: e,
           userMessage: t("error.failed_to_delete"),
-          toast: (message) => showToast(message, { type: "error" }),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
         });
       }
     },
@@ -210,7 +214,9 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
         onRetry={() => {
           setFetchError(null);
           setLoading(true);
-          fetchAssets().finally(() => setLoading(false));
+          fetchAssets().finally(() => {
+            setLoading(false);
+          });
         }}
       />
     );

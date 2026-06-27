@@ -19,9 +19,9 @@ vi.mock("react-datepicker", () => ({
     <input
       data-testid="datepicker"
       value={props.selected ? props.selected.toISOString().split("T")[0] : ""}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-        props.onChange(new Date(e.target.value))
-      }
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        props.onChange(new Date(e.target.value));
+      }}
     />
   ),
 }));
@@ -68,9 +68,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     <select
       data-testid="custom-select"
       value={value || ""}
-      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-        onChange(e.target.value)
-      }
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+        onChange(e.target.value);
+      }}
       aria-label={placeholder}
     >
       <option value="">{placeholder}</option>
@@ -99,9 +99,9 @@ vi.mock("../../../components/ui/NumberInput", () => ({
     <input
       type="number"
       value={value}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-        onChange(e.target.value)
-      }
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.value);
+      }}
       placeholder={placeholder}
       className={className}
     />
@@ -191,7 +191,7 @@ describe("ScheduledList", () => {
     fireEvent.change(screen.getByPlaceholderText("Payee"), {
       target: { value: "Amazon" },
     });
-    const accountSelect = screen.getAllByTestId("custom-select")[0];
+    const accountSelect = screen.getAllByTestId("custom-select")[0]!;
     fireEvent.change(accountSelect, { target: { value: "1" } });
 
     // Submit
@@ -234,7 +234,7 @@ describe("ScheduledList", () => {
     fireEvent.change(tickerInput, {
       target: { value: "AAPL" },
     });
-    const accountSelect2 = screen.getAllByTestId("custom-select")[0];
+    const accountSelect2 = screen.getAllByTestId("custom-select")[0]!;
     fireEvent.change(accountSelect2, { target: { value: "1" } });
 
     // Submit
@@ -297,7 +297,7 @@ describe("ScheduledList", () => {
     await waitFor(() => screen.getByText("Netflix"));
 
     const rows = document.querySelectorAll("tbody tr");
-    fireEvent.contextMenu(rows[0]);
+    fireEvent.contextMenu(rows[0]!);
 
     const portal = document.querySelector(".sched-action-menu-portal");
     expect(portal).toBeInTheDocument();
@@ -310,7 +310,7 @@ describe("ScheduledList", () => {
     await waitFor(() => screen.getByText("Netflix"));
 
     const rows = document.querySelectorAll("tbody tr");
-    fireEvent.contextMenu(rows[0]);
+    fireEvent.contextMenu(rows[0]!);
 
     expect(
       document.querySelector(".sched-action-menu-portal"),

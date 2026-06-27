@@ -197,7 +197,6 @@ describe("assets-io", () => {
         name: "House",
         category: "real_estate",
         currency: "USD",
-        notes: undefined,
         latest_value: 350000,
         latest_date: "2024-06-01",
         exchange_rate: 1,

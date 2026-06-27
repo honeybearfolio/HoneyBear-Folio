@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { rust } from "../../api/tauri-client";
-import type { StockQuote, Transaction } from "../../api/types";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
@@ -71,7 +70,7 @@ export default function InvestmentDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      const transactions = (await rust.get_all_transactions()) as Transaction[];
+      const transactions = await rust.get_all_transactions();
       const { currentHoldings } =
         await buildHoldingsFromTransactions(transactions);
 
@@ -82,15 +81,15 @@ export default function InvestmentDashboard() {
       }
 
       const tickers = currentHoldings.map((h) => h.ticker);
-      const quotes = (await rust.get_stock_quotes({
+      const quotes = await rust.get_stock_quotes({
         tickers,
-      })) as StockQuote[];
+      });
 
       const finalHoldings = await mergeHoldingsWithQuotes(
         currentHoldings,
         quotes,
       );
-      setHoldings(finalHoldings as Holding[]);
+      setHoldings(finalHoldings);
     } catch (e: unknown) {
       console.error("Error fetching investment data:", e);
       setError(String(e));
@@ -122,7 +121,7 @@ export default function InvestmentDashboard() {
           borderColor: isDark ? "#474240" : "#ffffff",
           borderWidth: 4,
           borderDash: (ctx: { dataIndex: number }) => {
-            const val = rawData[ctx.dataIndex];
+            const val = rawData[ctx.dataIndex] ?? 0;
             return val < 0 ? [5, 5] : [];
           },
           hoverOffset: 4,
@@ -362,7 +361,7 @@ export default function InvestmentDashboard() {
                 <TreeMap
                   items={holdings}
                   totalValue={totalValue}
-                  isDark={isDark}
+                  isDark={isDark ?? false}
                 />
               </div>
             </div>
@@ -486,7 +485,7 @@ function TreeMap({ items, totalValue, isDark }: TreeMapProps) {
         w={100}
         h={100}
         totalValue={totalValue}
-        isDark={isDark}
+        isDark={isDark ?? false}
       />
     </div>
   );
@@ -506,7 +505,7 @@ function TreeMapNode({
   if (items.length === 0) return null;
 
   if (items.length === 1) {
-    const item = items[0];
+    const item = items[0]!;
     // Color based on ROI
     // Green for positive, Red for negative. Intensity based on magnitude?
     // Let's use simple thresholds or a gradient.
@@ -588,9 +587,12 @@ function TreeMapNode({
   let splitIndex = 0;
 
   for (let i = 0; i < items.length; i++) {
-    if (currentSum + items[i].currentValue > halfValue && i > 0) {
+    const currentItem = items[i]!;
+    if (currentSum + currentItem.currentValue > halfValue && i > 0) {
       // Check if adding this item makes it closer or further from half
-      const diffWith = Math.abs(currentSum + items[i].currentValue - halfValue);
+      const diffWith = Math.abs(
+        currentSum + currentItem.currentValue - halfValue,
+      );
       const diffWithout = Math.abs(currentSum - halfValue);
       if (diffWith < diffWithout) {
         splitIndex = i + 1;
@@ -599,7 +601,7 @@ function TreeMapNode({
       }
       break;
     }
-    currentSum += items[i].currentValue;
+    currentSum += currentItem.currentValue;
     splitIndex = i + 1;
   }
 
@@ -640,7 +642,7 @@ function TreeMapNode({
         w={wA}
         h={hA}
         totalValue={totalValue}
-        isDark={isDark}
+        isDark={isDark ?? false}
       />
       <TreeMapNode
         items={groupB}
@@ -649,7 +651,7 @@ function TreeMapNode({
         w={wB}
         h={hB}
         totalValue={totalValue}
-        isDark={isDark}
+        isDark={isDark ?? false}
       />
     </>
   );

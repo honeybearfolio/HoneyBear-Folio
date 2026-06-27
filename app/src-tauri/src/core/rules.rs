@@ -16,14 +16,14 @@ pub fn apply_rules_to_transaction(transaction: &mut Transaction, rules: &[Rule])
 }
 
 fn matches_rule(transaction: &Transaction, rule: &Rule) -> bool {
-    let (logic, conditions) = if !rule.conditions.is_empty() {
-        (rule.logic.as_str(), &rule.conditions)
-    } else {
+    let (logic, conditions) = if rule.conditions.is_empty() {
         // Fallback to legacy fields if conditions are empty
         if !rule.match_field.is_empty() && !rule.match_pattern.is_empty() {
             return matches_legacy(transaction, &rule.match_field, &rule.match_pattern);
         }
         return false;
+    } else {
+        (rule.logic.as_str(), &rule.conditions)
     };
 
     if logic == "or" {
@@ -61,7 +61,7 @@ fn matches_condition(transaction: &Transaction, condition: &RuleCondition) -> bo
         "ends_with" => val.to_lowercase().ends_with(&pattern.to_lowercase()),
         "matches_regex" | "not_matches_regex" => {
             // Prepend (?i) for case-insensitive matching, consistent with other text operators
-            let ci_pattern = format!("(?i){}", pattern);
+            let ci_pattern = format!("(?i){pattern}");
             match Regex::new(&ci_pattern) {
                 Ok(re) => {
                     let result = re.is_match(&val);
@@ -107,9 +107,9 @@ fn apply_rule_actions(transaction: &mut Transaction, rule: &Rule) {
 
 fn apply_action(transaction: &mut Transaction, action: &RuleAction) {
     match action.field.as_str() {
-        "category" => transaction.category = Some(action.value.to_string()),
-        "notes" => transaction.notes = Some(action.value.to_string()),
-        "payee" => transaction.payee = action.value.to_string(),
+        "category" => transaction.category = Some(action.value.clone()),
+        "notes" => transaction.notes = Some(action.value.clone()),
+        "payee" => transaction.payee.clone_from(&action.value),
         _ => {}
     }
 }

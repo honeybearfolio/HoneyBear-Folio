@@ -33,6 +33,25 @@ requires = ["libwebkit2gtk-4.1", "libappindicator3", "librsvg2", "gtk3", "patche
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lints.rust]
+warnings = "deny"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+semicolon_if_nothing_returned = "warn"
+# Documentation and style-only pedantic lints (enforced separately if desired).
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+unreadable_literal = "allow"
+too_many_lines = "allow"
+needless_pass_by_value = "allow"
+implicit_hasher = "allow"
+# Numeric casts are reviewed case-by-case; allow until refactored to try_from.
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.

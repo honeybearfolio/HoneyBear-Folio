@@ -29,7 +29,6 @@ import {
   Legend,
   Filler,
 } from "chart.js";
-import type { Transaction } from "../../api/types";
 import type {
   InvestmentQuote,
   ProjectionResult,
@@ -130,7 +129,7 @@ export default function FireCalculator() {
     setLoading(true);
     try {
       const accounts = await rust.get_accounts();
-      const transactions = (await rust.get_all_transactions()) as Transaction[];
+      const transactions = await rust.get_all_transactions();
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =
@@ -140,9 +139,9 @@ export default function FireCalculator() {
       const tickers = currentHoldings.map((h) => h.ticker);
       let quotes: InvestmentQuote[] = [];
       if (tickers.length > 0) {
-        quotes = (await rust.get_stock_quotes({
+        quotes = await rust.get_stock_quotes({
           tickers,
-        })) as InvestmentQuote[];
+        });
       }
 
       // Compute portfolio totals
@@ -166,7 +165,7 @@ export default function FireCalculator() {
           return (
             sum +
             (netWorthMarketValues[acc.id] !== undefined
-              ? netWorthMarketValues[acc.id]
+              ? netWorthMarketValues[acc.id]!
               : acc.balance)
           );
         }
@@ -189,7 +188,7 @@ export default function FireCalculator() {
           0.1,
         );
 
-        let annualizedReturn =
+        const annualizedReturn =
           (Math.pow(1 + totalReturnRate, 1 / yearsInvested) - 1) * 100;
 
         if (
@@ -241,7 +240,9 @@ export default function FireCalculator() {
 
   useEffect(() => {
     if (!savedState) {
-      fetchData();
+      queueMicrotask(() => {
+        void fetchData();
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -325,7 +326,9 @@ export default function FireCalculator() {
       sessionStorage.removeItem("fireCalculatorState");
     };
     window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
   }, []);
 
   // Also listen to Tauri close event in case beforeunload doesn't fire in some environments
@@ -439,7 +442,9 @@ export default function FireCalculator() {
         console.error("Failed to run Monte Carlo simulation:", e);
       });
     }, 300);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [runSimulation]);
 
   // Build chart data combining deterministic and Monte Carlo results

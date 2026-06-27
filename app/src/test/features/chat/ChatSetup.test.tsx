@@ -43,10 +43,8 @@ describe("ChatSetup", () => {
     render(<ChatSetup onComplete={onComplete} />);
 
     await waitFor(() => {
-      const input = screen.getByPlaceholderText(
-        "http://localhost:11434",
-      ) as HTMLInputElement;
-      expect(input.value).toBe("http://my-server:11434");
+      const input = screen.getByPlaceholderText("http://localhost:11434");
+      expect((input as HTMLInputElement).value).toBe("http://my-server:11434");
     });
   });
 
@@ -155,13 +153,13 @@ describe("ChatSetup", () => {
 
     render(<ChatSetup onComplete={onComplete} />);
 
-    await waitFor(() =>
-      expect(screen.getByText("llama3.2")).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByText("llama3.2")).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByText("Select a model"));
-    await waitFor(() =>
-      expect(screen.getByText("Get Started")).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByText("Get Started")).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByText("Get Started"));
 
     await waitFor(() => {
@@ -181,9 +179,9 @@ describe("ChatSetup", () => {
 
     render(<ChatSetup onComplete={onComplete} />);
 
-    await waitFor(() =>
-      expect(screen.getByText("llama3.2")).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByText("llama3.2")).toBeInTheDocument();
+    });
 
     // The back button on the model step has "Test connection" text
     const backBtn = screen.getByText(/Test connection/);

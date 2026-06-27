@@ -78,7 +78,9 @@ export default function CustomSelect({
       }
     };
     document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+    };
   }, []);
 
   useEffect(() => {
@@ -139,7 +141,9 @@ export default function CustomSelect({
     if (!open) return;
     // focus input when menu opens
     const timer = setTimeout(() => searchRef.current?.focus(), 0);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [open]);
 
   const toggle = () => {
@@ -297,7 +301,9 @@ export default function CustomSelect({
                       ? "bg-slate-100 dark:bg-slate-700"
                       : "hover:bg-slate-50 dark:hover:bg-slate-700"
                   } ${isSelected ? "font-semibold" : ""}`}
-                  onMouseEnter={() => setHighlighted(i)}
+                  onMouseEnter={() => {
+                    setHighlighted(i);
+                  }}
                   onClick={() => {
                     onChange(opt.value);
                     setOpen(false);

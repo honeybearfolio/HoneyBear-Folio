@@ -32,7 +32,9 @@ export function useCustomRate(): UseCustomRateReturn {
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(
-          () => reject(new Error("Currency check timed out")),
+          () => {
+            reject(new Error("Currency check timed out"));
+          },
           3000, // 3 second timeout
         ),
       );
@@ -40,14 +42,14 @@ export function useCustomRate(): UseCustomRateReturn {
       try {
         // Check availability
         isAvailable = await Promise.race([
-          rust.check_currency_availability({ currency }) as Promise<boolean>,
+          rust.check_currency_availability({ currency }),
           timeoutPromise,
         ]);
 
         // Check if we already have a custom rate
-        existingRate = (await rust.get_custom_exchange_rate({
+        existingRate = await rust.get_custom_exchange_rate({
           currency,
-        })) as number | null;
+        });
       } catch (e) {
         console.error("Failed to check currency:", e);
         // Fall through to prompt

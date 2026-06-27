@@ -260,7 +260,7 @@ export function formatDateForUI(
         year: "numeric",
       });
     default:
-      return date.toISOString().split("T")[0];
+      return date.toISOString().split("T")[0] ?? "";
   }
 }
 

@@ -39,7 +39,7 @@ describe("networth utils wrapper", () => {
   });
 
   it("returns totalAssetsValue for invalid accounts without calling Rust", async () => {
-    const result = await computeNetWorth(undefined as never, {}, 500);
+    const result = await computeNetWorth(undefined, {}, 500);
     expect(invoke).not.toHaveBeenCalled();
     expect(result).toBe(500);
   });

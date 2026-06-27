@@ -9,11 +9,10 @@ export const APP_COMMIT: string | null =
   typeof __APP_COMMIT__ !== "undefined" ? __APP_COMMIT__ : null;
 
 // A release build is a production build with a version available
-export const IS_RELEASE: boolean =
-  import.meta.env.PROD === true && !!APP_VERSION;
+export const IS_RELEASE: boolean = import.meta.env.PROD && !!APP_VERSION;
 
 export function getDisplayVersion(): string {
-  const isProd = import.meta.env.PROD === true;
+  const isProd = import.meta.env.PROD;
 
   // If this is a production build and we have a version, show it
   if (isProd && APP_VERSION) {

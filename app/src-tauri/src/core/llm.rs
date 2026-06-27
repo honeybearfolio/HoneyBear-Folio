@@ -197,9 +197,8 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
 pub async fn check_ollama_connection(app_handle: AppHandle) -> Result<bool, String> {
     let settings = db_init::read_settings(&app_handle)?;
     let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
-    let url = match ollama_api_url(&base_url, "/api/tags") {
-        Ok(url) => url,
-        Err(_) => return Ok(false),
+    let Ok(url) = ollama_api_url(&base_url, "/api/tags") else {
+        return Ok(false);
     };
 
     match reqwest::get(&url).await {
@@ -638,9 +637,7 @@ fn build_system_prompt(db_path: &PathBuf) -> String {
                 .iter()
                 .map(|a| {
                     let value_str = a
-                        .latest_value
-                        .map(|v| format!("{v:.2}"))
-                        .unwrap_or_else(|| "no valuation".to_string());
+                        .latest_value.map_or_else(|| "no valuation".to_string(), |v| format!("{v:.2}"));
                     let date_str = a.latest_date.as_deref().unwrap_or("unknown");
                     format!(
                         "- {} (ID: {}, category: {}, latest value: {} {}, as of {})",
@@ -709,8 +706,7 @@ pub async fn cancel_llm_chat(conversation_id: i64) -> Result<(), String> {
 fn is_cancelled(conversation_id: i64) -> bool {
     CANCELLED
         .lock()
-        .map(|set| set.contains(&conversation_id))
-        .unwrap_or(false)
+        .is_ok_and(|set| set.contains(&conversation_id))
 }
 
 fn clear_cancelled(conversation_id: i64) {

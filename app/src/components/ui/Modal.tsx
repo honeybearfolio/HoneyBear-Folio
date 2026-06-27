@@ -52,7 +52,9 @@ export function Modal({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [onClose]);
 
   // Prevent scroll on body when modal is open
@@ -77,7 +79,7 @@ export function Modal({
     // Focus the first focusable element, or the container itself as fallback
     const focusable = getFocusable();
     if (focusable.length > 0) {
-      focusable[0].focus();
+      focusable[0]!.focus();
     } else {
       container.focus();
     }
@@ -98,12 +100,12 @@ export function Modal({
           document.activeElement === container
         ) {
           e.preventDefault();
-          last.focus();
+          last!.focus();
         }
       } else {
         if (document.activeElement === last) {
           e.preventDefault();
-          first.focus();
+          first!.focus();
         }
       }
     };
@@ -113,7 +115,7 @@ export function Modal({
       if (!container.contains(e.target as Node)) {
         const focusable = getFocusable();
         if (focusable.length > 0) {
-          focusable[0].focus();
+          focusable[0]!.focus();
         } else {
           container.focus();
         }

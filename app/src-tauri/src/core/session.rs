@@ -20,7 +20,7 @@ fn file_stem_or_default(path: &str) -> String {
 fn enrich_recent_db(entry: &RecentDb) -> RecentDb {
     let path = Path::new(&entry.path);
     let (exists, size) = if path.exists() {
-        let size = fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+        let size = fs::metadata(path).map_or(0, |m| m.len());
         (true, size)
     } else {
         (false, 0)
@@ -127,7 +127,7 @@ pub fn create_session(app_handle: AppHandle, path: String) -> Result<RecentDb, S
 pub fn open_session(app_handle: AppHandle, path: String) -> Result<RecentDb, String> {
     let pb = PathBuf::from(&path);
     if !pb.exists() {
-        return Err(format!("File not found: {}", path));
+        return Err(format!("File not found: {path}"));
     }
 
     // Validate it's a valid SQLite database by trying to open and query it
@@ -187,7 +187,7 @@ mod tests {
 
     fn make_settings(db_path: Option<&str>, recent: Vec<(&str, &str)>) -> AppSettings {
         AppSettings {
-            db_path: db_path.map(|s| s.to_string()),
+            db_path: db_path.map(std::string::ToString::to_string),
             recent_dbs: recent
                 .into_iter()
                 .map(|(p, n)| RecentDb {

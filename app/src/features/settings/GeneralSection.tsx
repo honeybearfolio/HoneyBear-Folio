@@ -50,7 +50,9 @@ export default function GeneralSection({
       <div className="relative settings-select">
         <CustomSelect
           value={uiLanguage}
-          onChange={(v) => setUiLanguage(String(v))}
+          onChange={(v) => {
+            setUiLanguage(String(v));
+          }}
           options={AVAILABLE_LANGUAGES.map(({ code, label }) => ({
             value: code,
             label,

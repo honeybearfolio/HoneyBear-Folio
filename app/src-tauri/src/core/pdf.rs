@@ -131,14 +131,14 @@ fn format_currency(value: f64, symbol: &str) -> String {
     let int_formatted: String = formatted.chars().rev().collect();
 
     if value < 0.0 {
-        format!("-{}{}.{:02}", symbol, int_formatted, frac)
+        format!("-{symbol}{int_formatted}.{frac:02}")
     } else {
-        format!("{}{}.{:02}", symbol, int_formatted, frac)
+        format!("{symbol}{int_formatted}.{frac:02}")
     }
 }
 
 fn format_percent(value: f64) -> String {
-    format!("{:.1}%", value)
+    format!("{value:.1}%")
 }
 
 fn truncate(s: &str, max_chars: usize) -> String {
@@ -146,7 +146,7 @@ fn truncate(s: &str, max_chars: usize) -> String {
         s.to_string()
     } else {
         let truncated: String = s.chars().take(max_chars - 1).collect();
-        format!("{}…", truncated)
+        format!("{truncated}…")
     }
 }
 
@@ -368,7 +368,7 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
 
     // Header: clean white area below accent stripe
     // Icon
-    if let Some((ref icon_id, icon_size_mm, _dpi)) = fonts.icon {
+    if let Some((ref icon_id, icon_size_mm, dpi)) = fonts.icon {
         let translate_y = Mm(PAGE_H
             - ACCENT_STRIPE_H
             - (HEADER_HEIGHT - ACCENT_STRIPE_H - icon_size_mm) / 2.0
@@ -379,7 +379,7 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
             transform: XObjectTransform {
                 translate_x: Some(Mm(MARGIN_LEFT).into_pt()),
                 translate_y: Some(translate_y),
-                dpi: Some(_dpi),
+                dpi: Some(dpi),
                 ..Default::default()
             },
         });
@@ -572,7 +572,7 @@ fn draw_table_row(
     }
     let mut x = MARGIN_LEFT + 1.5;
     for (i, col) in cols.iter().enumerate() {
-        let val = values.get(i).map(|s| s.as_str()).unwrap_or("");
+        let val = values.get(i).map_or("", std::string::String::as_str);
         let display = truncate(val, (col.width / 1.4) as usize);
         if col.align_right {
             write_text_right(
@@ -611,7 +611,7 @@ fn draw_table_totals_row(
     );
     let mut x = MARGIN_LEFT + 1.5;
     for (i, col) in cols.iter().enumerate() {
-        let val = values.get(i).map(|s| s.as_str()).unwrap_or("");
+        let val = values.get(i).map_or("", std::string::String::as_str);
         if col.align_right {
             write_text_right_weight(
                 ops,
@@ -930,7 +930,7 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
 
     // Y-axis labels (5 ticks)
     for i in 0..=4 {
-        let frac = i as f64 / 4.0;
+        let frac = f64::from(i) / 4.0;
         let val = min_val + frac * range;
         let yy = chart_top + chart_h - (frac as f32 * chart_h);
         write_text_right_weight(
@@ -1158,7 +1158,7 @@ fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
 
     // Y-axis
     for i in 0..=4 {
-        let frac = i as f64 / 4.0;
+        let frac = f64::from(i) / 4.0;
         let val = frac * ceiling;
         let yy = chart_top + chart_h - (frac as f32 * chart_h);
         write_text_right_weight(
@@ -2201,9 +2201,9 @@ pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
 #[tauri::command]
 pub fn generate_pdf_report(file_path: String, data: ReportData) -> Result<(), String> {
     let pdf_bytes = generate_report(&data)?;
-    let file = File::create(&file_path).map_err(|e| format!("Failed to create file: {}", e))?;
+    let file = File::create(&file_path).map_err(|e| format!("Failed to create file: {e}"))?;
     let mut writer = BufWriter::new(file);
     std::io::Write::write_all(&mut writer, &pdf_bytes)
-        .map_err(|e| format!("Failed to write PDF: {}", e))?;
+        .map_err(|e| format!("Failed to write PDF: {e}"))?;
     Ok(())
 }

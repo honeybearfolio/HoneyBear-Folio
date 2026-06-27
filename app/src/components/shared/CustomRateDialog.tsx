@@ -26,7 +26,9 @@ export default function CustomRateDialog({
         setRate("");
         inputRef.current?.focus();
       }, 100);
-      return () => clearTimeout(id);
+      return () => {
+        clearTimeout(id);
+      };
     }
   }, [isOpen]);
 
@@ -58,7 +60,9 @@ export default function CustomRateDialog({
             className="form-input"
             placeholder="0.0"
             value={rate}
-            onChange={(e) => setRate(e.target.value)}
+            onChange={(e) => {
+              setRate(e.target.value);
+            }}
             required
             autoFocus
           />

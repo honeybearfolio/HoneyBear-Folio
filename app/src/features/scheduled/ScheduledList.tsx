@@ -57,7 +57,7 @@ export default function ScheduledList() {
           rust.get_accounts(),
         ]);
         if (mounted) {
-          setSchedules(scheds as ScheduleRecord[]);
+          setSchedules(scheds);
           setAccounts(accs);
           setFetchError(null);
         }
@@ -87,7 +87,9 @@ export default function ScheduledList() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, [menuOpenId]);
 
   useEffect(() => {
@@ -312,7 +314,9 @@ export default function ScheduledList() {
           onRetry={() => {
             setFetchError(null);
             setLoading(true);
-            fetchSchedules().finally(() => setLoading(false));
+            fetchSchedules().finally(() => {
+              setLoading(false);
+            });
           }}
           retryLabel={t("error.retry")}
         />

@@ -122,7 +122,9 @@ export default function AccountModal({
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 placeholder={t("account.placeholder.name")}
                 className="form-input"
                 autoFocus
@@ -140,7 +142,9 @@ export default function AccountModal({
                     type="text"
                     inputMode="decimal"
                     value={balanceStr}
-                    onChange={(e) => setBalanceStr(e.target.value)}
+                    onChange={(e) => {
+                      setBalanceStr(e.target.value);
+                    }}
                     placeholder={"0.00"}
                     className="form-input"
                   />

@@ -62,6 +62,8 @@ describe("useIsHighContrast", () => {
   it("cleans up MutationObserver on unmount", () => {
     const { unmount } = renderHook(() => useIsHighContrast());
 
-    expect(() => unmount()).not.toThrow();
+    expect(() => {
+      unmount();
+    }).not.toThrow();
   });
 });

@@ -80,7 +80,7 @@ export default function SettingsView({
     let mounted = true;
     (async () => {
       try {
-        const p = (await rust.get_db_path_command()) as string;
+        const p = await rust.get_db_path_command();
         if (mounted) setDbPath(p);
       } catch (e) {
         console.error("Failed to fetch DB path:", e);
@@ -121,12 +121,12 @@ export default function SettingsView({
     try {
       const defaultPath = dbPath && dbPath.length > 0 ? dbPath : undefined;
       const path = await save({
-        defaultPath,
+        ...(defaultPath ? { defaultPath } : {}),
         filters: [{ name: "SQLite", extensions: ["db", "sqlite"] }],
       });
       if (path) {
         await rust.set_db_path({ path });
-        const p = (await rust.get_db_path_command()) as string;
+        const p = await rust.get_db_path_command();
         setDbPath(p);
       }
     } catch (e) {
@@ -148,7 +148,9 @@ export default function SettingsView({
       if (!confirmed) return;
 
       try {
-        RESETTABLE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+        RESETTABLE_STORAGE_KEYS.forEach((key) => {
+          localStorage.removeItem(key);
+        });
       } catch {
         /* ignore */
       }
@@ -165,7 +167,7 @@ export default function SettingsView({
 
       try {
         await rust.reset_db_path();
-        const p = (await rust.get_db_path_command()) as string;
+        const p = await rust.get_db_path_command();
         setDbPath(p);
       } catch (e) {
         console.error("Failed to reset DB path:", e);

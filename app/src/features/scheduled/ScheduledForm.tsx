@@ -113,12 +113,12 @@ export default function ScheduledForm({
         <div className="toggle-group">
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setFormState((prev) => ({
                 ...prev,
                 transactionType: "regular",
-              }))
-            }
+              }));
+            }}
             className={`toggle-group-btn ${
               formState.transactionType === "regular"
                 ? "toggle-group-btn-active"
@@ -129,12 +129,12 @@ export default function ScheduledForm({
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setFormState((prev) => ({
                 ...prev,
                 transactionType: "investment",
-              }))
-            }
+              }));
+            }}
             className={`toggle-group-btn flex items-center gap-1.5 ${
               formState.transactionType === "investment"
                 ? "toggle-group-btn-active"
@@ -156,12 +156,12 @@ export default function ScheduledForm({
                 </label>
                 <CustomSelect
                   value={formState.accountId ?? undefined}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       accountId: Number(val),
-                    }))
-                  }
+                    }));
+                  }}
                   options={accountOptions}
                   placeholder={t("scheduled.field.account")}
                   className="w-full"
@@ -174,12 +174,12 @@ export default function ScheduledForm({
                 <input
                   type="text"
                   value={formState.payee}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormState((prev) => ({
                       ...prev,
                       payee: e.target.value,
-                    }))
-                  }
+                    }));
+                  }}
                   className="form-input"
                   placeholder={t("scheduled.field.payee")}
                 />
@@ -190,9 +190,9 @@ export default function ScheduledForm({
                 </label>
                 <NumberInput
                   value={formState.amount}
-                  onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, amount: val }))
-                  }
+                  onChange={(val) => {
+                    setFormState((prev) => ({ ...prev, amount: val }));
+                  }}
                   className="form-input"
                   placeholder="0.00"
                 />
@@ -203,12 +203,12 @@ export default function ScheduledForm({
                 </label>
                 <CustomSelect
                   value={formState.currency}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       currency: String(val),
-                    }))
-                  }
+                    }));
+                  }}
                   options={currencyOptions}
                   placeholder={t("scheduled.field.currency")}
                   className="w-full"
@@ -225,12 +225,12 @@ export default function ScheduledForm({
                 <input
                   type="text"
                   value={formState.category}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormState((prev) => ({
                       ...prev,
                       category: e.target.value,
-                    }))
-                  }
+                    }));
+                  }}
                   className="form-input"
                   placeholder={t("scheduled.field.category")}
                 />
@@ -242,12 +242,12 @@ export default function ScheduledForm({
                 <input
                   type="text"
                   value={formState.notes}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormState((prev) => ({
                       ...prev,
                       notes: e.target.value,
-                    }))
-                  }
+                    }));
+                  }}
                   className="form-input"
                   placeholder={t("scheduled.field.notes")}
                 />
@@ -264,12 +264,12 @@ export default function ScheduledForm({
                 </label>
                 <CustomSelect
                   value={formState.accountId ?? undefined}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       accountId: Number(val),
-                    }))
-                  }
+                    }));
+                  }}
                   options={accountOptions}
                   placeholder={t("scheduled.field.account")}
                   className="w-full"
@@ -282,9 +282,9 @@ export default function ScheduledForm({
                 <div className="flex items-center gap-1 p-0.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
                   <button
                     type="button"
-                    onClick={() =>
-                      setFormState((prev) => ({ ...prev, isBuy: true }))
-                    }
+                    onClick={() => {
+                      setFormState((prev) => ({ ...prev, isBuy: true }));
+                    }}
                     className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                       formState.isBuy
                         ? "bg-emerald-500 text-white shadow-sm"
@@ -296,9 +296,9 @@ export default function ScheduledForm({
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      setFormState((prev) => ({ ...prev, isBuy: false }))
-                    }
+                    onClick={() => {
+                      setFormState((prev) => ({ ...prev, isBuy: false }));
+                    }}
                     className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                       !formState.isBuy
                         ? "bg-rose-500 text-white shadow-sm"
@@ -324,7 +324,9 @@ export default function ScheduledForm({
                     setShowTickerSuggestions(true);
                   }}
                   onBlur={() =>
-                    setTimeout(() => setShowTickerSuggestions(false), 200)
+                    setTimeout(() => {
+                      setShowTickerSuggestions(false);
+                    }, 200)
                   }
                   onFocus={() =>
                     formState.ticker.length >= 2 &&
@@ -377,9 +379,9 @@ export default function ScheduledForm({
                 </label>
                 <NumberInput
                   value={formState.shares}
-                  onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, shares: val }))
-                  }
+                  onChange={(val) => {
+                    setFormState((prev) => ({ ...prev, shares: val }));
+                  }}
                   className="form-input"
                   placeholder="0"
                 />
@@ -394,12 +396,12 @@ export default function ScheduledForm({
                 </label>
                 <NumberInput
                   value={formState.pricePerShare}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       pricePerShare: val,
-                    }))
-                  }
+                    }));
+                  }}
                   className="form-input"
                   placeholder="0.00"
                 />
@@ -408,9 +410,9 @@ export default function ScheduledForm({
                 <label className="form-label">{t("scheduled.field.fee")}</label>
                 <NumberInput
                   value={formState.fee}
-                  onChange={(val) =>
-                    setFormState((prev) => ({ ...prev, fee: val }))
-                  }
+                  onChange={(val) => {
+                    setFormState((prev) => ({ ...prev, fee: val }));
+                  }}
                   className="form-input"
                   placeholder="0.00"
                 />
@@ -421,12 +423,12 @@ export default function ScheduledForm({
                 </label>
                 <CustomSelect
                   value={formState.currency}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       currency: String(val),
-                    }))
-                  }
+                    }));
+                  }}
                   options={currencyOptions}
                   placeholder={t("scheduled.field.currency")}
                   className="w-full"
@@ -439,12 +441,12 @@ export default function ScheduledForm({
                 <input
                   type="text"
                   value={formState.notes}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormState((prev) => ({
                       ...prev,
                       notes: e.target.value,
-                    }))
-                  }
+                    }));
+                  }}
                   className="form-input"
                   placeholder={t("scheduled.field.notes")}
                 />
@@ -462,12 +464,12 @@ export default function ScheduledForm({
           <div className="flex flex-wrap items-center gap-3">
             <CustomSelect
               value={formState.recurrenceType}
-              onChange={(val) =>
+              onChange={(val) => {
                 setFormState((prev) => ({
                   ...prev,
                   recurrenceType: String(val),
-                }))
-              }
+                }));
+              }}
               options={recurrenceTypeOptions}
               className="w-52"
             />
@@ -481,22 +483,22 @@ export default function ScheduledForm({
                   type="number"
                   min="1"
                   value={formState.intervalValue}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormState((prev) => ({
                       ...prev,
                       intervalValue: Number(e.target.value) || 1,
-                    }))
-                  }
+                    }));
+                  }}
                   className="form-input !w-16 text-center"
                 />
                 <CustomSelect
                   value={formState.intervalUnit}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       intervalUnit: String(val),
-                    }))
-                  }
+                    }));
+                  }}
                   options={intervalUnitOptions}
                   className="w-32"
                 />
@@ -509,7 +511,9 @@ export default function ScheduledForm({
                   <button
                     key={i}
                     type="button"
-                    onClick={() => toggleDayOfWeek(i)}
+                    onClick={() => {
+                      toggleDayOfWeek(i);
+                    }}
                     className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
                       formState.daysOfWeek.includes(i)
                         ? "bg-brand-500 text-white shadow-sm"
@@ -526,23 +530,23 @@ export default function ScheduledForm({
               <div className="flex items-center gap-2">
                 <CustomSelect
                   value={formState.ordinal}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       ordinal: Number(val),
-                    }))
-                  }
+                    }));
+                  }}
                   options={ordinalOptions}
                   className="w-24"
                 />
                 <CustomSelect
                   value={formState.weekday}
-                  onChange={(val) =>
+                  onChange={(val) => {
                     setFormState((prev) => ({
                       ...prev,
                       weekday: Number(val),
-                    }))
-                  }
+                    }));
+                  }}
                   options={weekdayOptions}
                   className="w-36"
                 />
@@ -563,15 +567,15 @@ export default function ScheduledForm({
                   ? new Date(formState.startDate + "T00:00:00")
                   : null
               }
-              onChange={(date: Date | null) =>
+              onChange={(date: Date | null) => {
                 setFormState((prev) => {
                   if (!date) return { ...prev, startDate: prev.startDate };
                   const year = date.getFullYear();
                   const month = String(date.getMonth() + 1).padStart(2, "0");
                   const day = String(date.getDate()).padStart(2, "0");
                   return { ...prev, startDate: `${year}-${month}-${day}` };
-                })
-              }
+                });
+              }}
               dateFormat={getDatePickerFormat(dateFormat)}
               calendarStartDay={firstDayOfWeek as Day}
               portalId="datepicker-portal"
@@ -588,15 +592,15 @@ export default function ScheduledForm({
                   ? new Date(formState.endDate + "T00:00:00")
                   : null
               }
-              onChange={(date: Date | null) =>
+              onChange={(date: Date | null) => {
                 setFormState((prev) => {
                   if (!date) return { ...prev, endDate: "" };
                   const year = date.getFullYear();
                   const month = String(date.getMonth() + 1).padStart(2, "0");
                   const day = String(date.getDate()).padStart(2, "0");
                   return { ...prev, endDate: `${year}-${month}-${day}` };
-                })
-              }
+                });
+              }}
               dateFormat={getDatePickerFormat(dateFormat)}
               calendarStartDay={firstDayOfWeek as Day}
               isClearable
@@ -612,12 +616,12 @@ export default function ScheduledForm({
               type="number"
               min="1"
               value={formState.maxOccurrences}
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormState((prev) => ({
                   ...prev,
                   maxOccurrences: e.target.value,
-                }))
-              }
+                }));
+              }}
               className="form-input text-center"
               placeholder="∞"
             />

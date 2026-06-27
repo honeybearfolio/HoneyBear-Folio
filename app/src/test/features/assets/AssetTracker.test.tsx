@@ -127,7 +127,7 @@ describe("AssetTracker", () => {
     });
 
     const expandButtons = screen.getAllByTitle("Show valuations");
-    fireEvent.click(expandButtons[0]);
+    fireEvent.click(expandButtons[0]!);
 
     await waitFor(() => {
       expect(screen.getByText("Value History")).toBeInTheDocument();
@@ -159,15 +159,17 @@ describe("AssetTracker", () => {
     });
 
     render(<AssetTracker onUpdate={onUpdate} />);
-    await waitFor(() => expect(screen.getByText("House")).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText("House")).toBeInTheDocument();
+    });
 
     // Open the add valuation modal for the first asset
     const addValuationButtons = screen.getAllByText("Add Valuation");
-    fireEvent.click(addValuationButtons[0]);
+    fireEvent.click(addValuationButtons[0]!);
 
-    await waitFor(() =>
-      expect(screen.getByPlaceholderText("0.00")).toBeInTheDocument(),
-    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("0.00")).toBeInTheDocument();
+    });
 
     // Fill in value and submit
     fireEvent.change(screen.getByPlaceholderText("0.00"), {
@@ -175,7 +177,9 @@ describe("AssetTracker", () => {
     });
     fireEvent.submit(screen.getByPlaceholderText("0.00").closest("form")!);
 
-    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalled();
+    });
   });
 
   it("calls onUpdate after deleting a valuation", async () => {
@@ -192,16 +196,20 @@ describe("AssetTracker", () => {
     mockConfirm.mockResolvedValue(true);
 
     render(<AssetTracker onUpdate={onUpdate} />);
-    await waitFor(() => expect(screen.getByText("House")).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText("House")).toBeInTheDocument();
+    });
 
     // Assets are auto-expanded; wait for the valuation delete button
-    await waitFor(() =>
-      expect(screen.getAllByTitle("Delete").length).toBeGreaterThan(0),
-    );
+    await waitFor(() => {
+      expect(screen.getAllByTitle("Delete").length).toBeGreaterThan(0);
+    });
     const deleteButtons = screen.getAllByTitle("Delete");
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(deleteButtons[0]!);
 
-    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalled();
+    });
   });
 
   it("calls onUpdate after saving an asset", async () => {
@@ -215,10 +223,14 @@ describe("AssetTracker", () => {
     });
 
     render(<AssetTracker onUpdate={onUpdate} />);
-    await waitFor(() => expect(screen.getByText("House")).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText("House")).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByText("Add Asset"));
-    await waitFor(() => expect(screen.getByText("Name")).toBeInTheDocument());
+    await waitFor(() => {
+      expect(screen.getByText("Name")).toBeInTheDocument();
+    });
 
     fireEvent.change(screen.getByPlaceholderText("e.g. Primary Residence"), {
       target: { value: "Boat" },
@@ -227,6 +239,8 @@ describe("AssetTracker", () => {
       screen.getByPlaceholderText("e.g. Primary Residence").closest("form")!,
     );
 
-    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalled();
+    });
   });
 });

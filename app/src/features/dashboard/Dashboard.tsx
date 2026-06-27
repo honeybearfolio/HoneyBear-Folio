@@ -208,7 +208,7 @@ export default function Dashboard({
           prices.forEach((p: DailyPriceEntry) => {
             priceByDate[p.date] = p.price;
           });
-          pricesMap[ticker as string] = { list: prices, map: priceByDate };
+          pricesMap[ticker] = { list: prices, map: priceByDate };
         }
         setDailyPrices(pricesMap);
       } catch (e) {
@@ -265,7 +265,9 @@ export default function Dashboard({
       });
     }, 0);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [accounts]);
 
   const selectedAccountIds = useMemo(() => {
@@ -314,7 +316,9 @@ export default function Dashboard({
       .then((value) => {
         if (!cancelled) setCurrentNetWorth(value);
       })
-      .catch((e) => logError("Failed to compute net worth", e));
+      .catch((e) => {
+        logError("Failed to compute net worth", e);
+      });
     return () => {
       cancelled = true;
     };
@@ -362,7 +366,7 @@ export default function Dashboard({
       const firstTxDate = new Date(
         filteredTransactions.reduce(
           (min, t) => (t.date < min ? t.date : min),
-          filteredTransactions[0].date,
+          filteredTransactions[0]!.date,
         ),
       );
       cutoffDate = firstTxDate;
@@ -377,7 +381,7 @@ export default function Dashboard({
       const firstTxDate = new Date(
         filteredTransactions.reduce(
           (min, t) => (t.date < min ? t.date : min),
-          filteredTransactions[0].date,
+          filteredTransactions[0]!.date,
         ),
       );
       // Normalize to midnight for consistent comparisons
@@ -387,7 +391,7 @@ export default function Dashboard({
     }
 
     const sortedDates: string[] = [];
-    let d = new Date(cutoffDate);
+    const d = new Date(cutoffDate);
     d.setHours(0, 0, 0, 0);
 
     while (d <= endDate) {
@@ -440,7 +444,7 @@ export default function Dashboard({
         );
         // Include all transactions (even stock buys/sells) to get correct cash balance
         const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
-        const cashBalance = initial + cashChange;
+        const cashBalance = (initial ?? 0) + cashChange;
 
         const holdings: Record<string, number> = {};
         accTxs.forEach((t) => {
@@ -451,14 +455,14 @@ export default function Dashboard({
 
         let stockValue = 0;
         for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares as number) > 0.0001) {
+          if (Math.abs(shares) > 0.0001) {
             const price = getPrice(ticker, date);
             const tickerCurr = tickerCurrencies[ticker] || accCurrency;
             const rateToAcc =
               tickerCurr === accCurrency
                 ? 1.0
                 : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += (shares as number) * price * rateToAcc;
+            stockValue += shares * price * rateToAcc;
           }
         }
 
@@ -514,7 +518,7 @@ export default function Dashboard({
         );
         // Include all transactions (even stock buys/sells) to get correct cash balance
         const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
-        const cashBalance = initial + cashChange;
+        const cashBalance = (initial ?? 0) + cashChange;
 
         const holdings: Record<string, number> = {};
         accTxs.forEach((t) => {
@@ -525,14 +529,14 @@ export default function Dashboard({
 
         let stockValue = 0;
         for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares as number) > 0.0001) {
+          if (Math.abs(shares) > 0.0001) {
             const price = getPrice(ticker, date);
             const tickerCurr = tickerCurrencies[ticker] || accCurrency;
             const rateToAcc =
               tickerCurr === accCurrency
                 ? 1.0
                 : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += (shares as number) * price * rateToAcc;
+            stockValue += shares * price * rateToAcc;
           }
         }
 
@@ -578,7 +582,6 @@ export default function Dashboard({
     timeRange,
     customStartDate,
     customEndDate,
-    filteredMarketValues,
     formatDate,
     appCurrency,
     getPrice,
@@ -612,9 +615,9 @@ export default function Dashboard({
       if (!cancelled) setDoughnutData(data);
     }
 
-    computeDoughnutData().catch((e) =>
-      logError("Failed to compute doughnut chart data", e),
-    );
+    computeDoughnutData().catch((e) => {
+      logError("Failed to compute doughnut chart data", e);
+    });
 
     return () => {
       cancelled = true;
@@ -658,8 +661,8 @@ export default function Dashboard({
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
 
-    const startStr = startDate.toISOString().split("T")[0];
-    const endStr = endDate.toISOString().split("T")[0];
+    const startStr = startDate.toISOString().split("T")[0] ?? "";
+    const endStr = endDate.toISOString().split("T")[0] ?? "";
 
     const expenses = filteredTransactions.filter(
       (t) =>
@@ -689,7 +692,7 @@ export default function Dashboard({
     });
 
     const sortedCategories = Object.entries(categoryTotals).sort(
-      ([, a], [, b]) => (b as number) - (a as number),
+      ([, a], [, b]) => b - a,
     );
 
     const colors =
@@ -776,7 +779,8 @@ export default function Dashboard({
       else if (timeRange === "1Y") start.setFullYear(now.getFullYear() - 1);
       else if (timeRange === "ALL") {
         const txDates = filteredTransactions.map((t) => t.date).sort();
-        start = new Date(txDates[0]);
+        const firstDate = txDates[0];
+        if (firstDate) start = new Date(firstDate);
       } else if (timeRange === "CUSTOM") {
         start = new Date(customStartDate);
         end = new Date(customEndDate);
@@ -1311,9 +1315,11 @@ export default function Dashboard({
             setAllAccountsVisibility={setAllAccountsVisibility}
             marketValues={marketValues}
             appCurrency={appCurrency}
-            chartDatasets={
-              chartData?.datasets as AccountChartDataset[] | undefined
-            }
+            {...(chartData?.datasets
+              ? {
+                  chartDatasets: chartData.datasets as AccountChartDataset[],
+                }
+              : {})}
           />
         </div>
       </div>
@@ -1325,10 +1331,7 @@ export default function Dashboard({
       />
 
       {filteredTransactions.length === 0 ? null : (
-        <NetWorthChart
-          chartData={chartData as ChartData<"line"> | null}
-          options={options}
-        />
+        <NetWorthChart chartData={chartData} options={options} />
       )}
 
       <div className="charts-grid">
@@ -1359,9 +1362,7 @@ export default function Dashboard({
         ) : (
           <>
             <IncomeVsExpensesChart
-              incomeVsExpensesData={
-                incomeVsExpensesData as ChartData<"bar"> | null
-              }
+              incomeVsExpensesData={incomeVsExpensesData}
               barOptions={barOptions}
             />
 
@@ -1390,7 +1391,7 @@ export default function Dashboard({
             </div>
 
             <AssetAllocationChart
-              doughnutData={doughnutData as ChartData<"doughnut"> | null}
+              doughnutData={doughnutData}
               doughnutOptions={doughnutOptions}
             />
 

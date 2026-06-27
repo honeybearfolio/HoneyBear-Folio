@@ -45,7 +45,7 @@ export async function mergeHoldingsWithQuotes(
 ): Promise<HoldingWithQuote[]> {
   return rust.merge_holdings_with_quotes({
     holdings,
-    quotes: quotes as StockQuote[],
+    quotes: quotes,
   });
 }
 

@@ -64,7 +64,9 @@ export default function AccountHeader({
               type="text"
               value={renameValue}
               ref={renameInputRef}
-              onChange={(e) => setRenameValue(e.target.value)}
+              onChange={(e) => {
+                setRenameValue(e.target.value);
+              }}
               className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight bg-transparent border-b-2 border-brand-500 focus:outline-none min-w-[200px]"
               autoFocus
               onKeyDown={(e) => {
@@ -180,7 +182,9 @@ export default function AccountHeader({
             placeholder={t("account.search_transactions")}
             className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm transition-all hover:border-slate-300 dark:hover:border-slate-600 text-slate-900 dark:text-slate-100"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
           />
         </div>
         <div className="flex items-center gap-3">
@@ -199,7 +203,9 @@ export default function AccountHeader({
               </button>
             ) : (
               <button
-                onClick={() => setIsAdding(false)}
+                onClick={() => {
+                  setIsAdding(false);
+                }}
                 className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center gap-2 px-3 sm:px-5 py-3 rounded-xl font-semibold text-sm shadow-sm transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -211,7 +217,9 @@ export default function AccountHeader({
         {account.id !== "all" && (
           <div className="relative account-action-menu">
             <button
-              onClick={() => setAccountMenuOpen(!accountMenuOpen)}
+              onClick={() => {
+                setAccountMenuOpen(!accountMenuOpen);
+              }}
               className="p-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100"
             >
               <MoreVertical className="w-5 h-5" />
@@ -220,6 +228,7 @@ export default function AccountHeader({
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 animate-in fade-in zoom-in-95 duration-200">
                 <button
                   onClick={() => {
+                    setRenameValue(account.name);
                     setIsRenamingAccount(true);
                     setAccountMenuOpen(false);
                     setTimeout(() => renameInputRef.current?.focus(), 50);

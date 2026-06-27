@@ -34,16 +34,24 @@ export default function MaskedNumber({
           type="button"
           className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] rounded opacity-40 hover:opacity-100 focus:opacity-100 transition-opacity"
           aria-label={peeking ? t("a11y.hide_value") : t("a11y.show_value")}
-          onMouseDown={() => setPeeking(true)}
-          onMouseUp={() => setPeeking(false)}
-          onMouseLeave={() => setPeeking(false)}
+          onMouseDown={() => {
+            setPeeking(true);
+          }}
+          onMouseUp={() => {
+            setPeeking(false);
+          }}
+          onMouseLeave={() => {
+            setPeeking(false);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               setPeeking((p) => !p);
             }
           }}
-          onBlur={() => setPeeking(false)}
+          onBlur={() => {
+            setPeeking(false);
+          }}
         >
           {peeking ? "🙈" : "👁"}
         </button>

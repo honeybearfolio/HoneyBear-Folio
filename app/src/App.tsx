@@ -377,7 +377,9 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       <UpdateNotification />
       <div
         className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans overflow-hidden"
-        onContextMenu={(e) => e.preventDefault()}
+        onContextMenu={(e) => {
+          e.preventDefault();
+        }}
       >
         <div
           style={{ width: isSidebarOpen ? sidebarWidth : 0 }}
@@ -390,26 +392,21 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
           <div style={{ width: sidebarWidth }} className="h-full relative flex">
             <div className="flex-1 w-full h-full overflow-hidden">
               <Sidebar
-                accounts={
-                  accounts as {
-                    id: string | number;
-                    name: string;
-                    balance: number;
-                    kind: string;
-                  }[]
-                }
+                accounts={accounts}
                 marketValues={marketValues}
                 totalBalance={totalBalance}
                 selectedId={selectedAccountId}
-                onSelectAccount={(id: string | number) =>
-                  setSelectedAccountId(String(id))
-                }
+                onSelectAccount={(id: string | number) => {
+                  setSelectedAccountId(String(id));
+                }}
                 onUpdate={handleAccountUpdate}
-                onClose={() => setIsSidebarOpen(false)}
+                onClose={() => {
+                  setIsSidebarOpen(false);
+                }}
                 sidebarVisibility={sidebarVisibility}
                 settingsSection={settingsSection}
                 onChangeSettingsSection={setSettingsSection}
-                activeSession={activeSession ?? undefined}
+                {...(activeSession ? { activeSession } : {})}
                 onSwitchSession={onSwitchSession}
               />
             </div>
@@ -429,7 +426,9 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
             }`}
           >
             <button
-              onClick={() => setIsSidebarOpen(true)}
+              onClick={() => {
+                setIsSidebarOpen(true);
+              }}
               className="p-2 bg-white dark:bg-slate-800 text-slate-500 hover:text-brand-600 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               title={t("app.show_sidebar")}
               aria-label={t("app.show_sidebar")}
@@ -507,7 +506,9 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
             </button>
             <button
               className="bg-slate-700 text-white text-sm px-3 py-1 rounded"
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                window.location.reload();
+              }}
             >
               Reload
             </button>

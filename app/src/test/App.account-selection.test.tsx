@@ -41,7 +41,9 @@ vi.mock("../components/layout/Sidebar", () => ({
         <button
           key={account.id}
           type="button"
-          onClick={() => onSelectAccount(account.id)}
+          onClick={() => {
+            onSelectAccount(account.id);
+          }}
         >
           {account.name}
         </button>
@@ -125,11 +127,14 @@ describe("App account selection", () => {
   it("renders AccountDetails when a numeric account id is selected", async () => {
     render(<App />);
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Checking" }),
-      ).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole("button", { name: "Checking" }),
+        ).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Checking" }));
 

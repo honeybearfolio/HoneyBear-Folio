@@ -70,7 +70,9 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
   }
 
   useEffect(() => {
-    loadSessions();
+    queueMicrotask(() => {
+      void loadSessions();
+    });
   }, []);
 
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
   async function handleOpenSession(path: string) {
     try {
       setError(null);
-      const session = (await rust.open_session({ path })) as Session;
+      const session = await rust.open_session({ path });
       onSessionReady(session);
     } catch (e) {
       setError(String(e));
@@ -98,7 +100,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         defaultPath: "honeybear.db",
       });
       if (path) {
-        const session = (await rust.create_session({ path })) as Session;
+        const session = await rust.create_session({ path });
         onSessionReady(session);
       }
     } catch (e) {
@@ -114,7 +116,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         multiple: false,
       });
       if (path) {
-        const session = (await rust.open_session({ path })) as Session;
+        const session = await rust.open_session({ path });
         onSessionReady(session);
       }
     } catch (e) {
@@ -218,13 +220,17 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
                         {editingPath === session.path ? (
                           <div
                             className="flex items-center gap-1 flex-1"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
                           >
                             <input
                               ref={renameInputRef}
                               type="text"
                               value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
+                              onChange={(e) => {
+                                setEditName(e.target.value);
+                              }}
                               onKeyDown={handleRenameKeyDown}
                               className="flex-1 px-2 py-0.5 text-sm font-medium rounded border border-brand-300 dark:border-brand-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-brand-500"
                             />
@@ -275,7 +281,9 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         {session.file_exists && (
                           <button
-                            onClick={(e) => startRename(e, session)}
+                            onClick={(e) => {
+                              startRename(e, session);
+                            }}
                             className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             title="Rename"
                           >

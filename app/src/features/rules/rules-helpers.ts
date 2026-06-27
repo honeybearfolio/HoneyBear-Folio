@@ -78,7 +78,7 @@ export function reorderRules(
   }
 
   const newItems = [...rules];
-  const item = newItems[dragIndex];
+  const item = newItems[dragIndex]!;
   newItems.splice(dragIndex, 1);
   newItems.splice(targetIndex, 0, item);
 

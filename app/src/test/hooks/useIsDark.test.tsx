@@ -120,6 +120,8 @@ describe("useIsDark", () => {
     const { unmount } = renderHook(() => useIsDark());
 
     // Should not throw when unmounting
-    expect(() => unmount()).not.toThrow();
+    expect(() => {
+      unmount();
+    }).not.toThrow();
   });
 });

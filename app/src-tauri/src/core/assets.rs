@@ -240,7 +240,7 @@ pub fn delete_valuation_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     })
 }
 
-/// Returns the sum of the latest valuation for each asset, converted via exchange_rate.
+/// Returns the sum of the latest valuation for each asset, converted via `exchange_rate`.
 pub fn get_total_assets_value_db(
     db_path: &PathBuf,
     target_currency: Option<&str>,

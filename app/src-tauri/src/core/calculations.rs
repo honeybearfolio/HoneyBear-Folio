@@ -142,6 +142,7 @@ fn to_numeric(value: &Value) -> Option<f64> {
 
 /// Computes total net worth by summing each account's balance plus its market value,
 /// multiplied by the account's exchange rate, plus any tracked assets not tied to accounts.
+#[must_use]
 pub fn compute_net_worth_logic(
     accounts: &[Account],
     market_values: &HashMap<String, Value>,
@@ -167,6 +168,7 @@ pub fn compute_net_worth_logic(
 
 /// Extracts stock holdings from transactions, computing total shares and cost basis per ticker.
 /// Transactions are processed chronologically; sells reduce shares using average cost basis.
+#[must_use]
 pub fn build_holdings_from_transactions_logic(transactions: &[Transaction]) -> HoldingsResult {
     let mut txs = transactions.to_vec();
     txs.sort_by(|a, b| a.date.cmp(&b.date));
@@ -222,6 +224,7 @@ pub fn build_holdings_from_transactions_logic(transactions: &[Transaction]) -> H
 
 /// Merges holdings with stock quotes to compute current value and ROI for each holding.
 /// Results are sorted by current value in descending order.
+#[must_use]
 pub fn merge_holdings_with_quotes_logic(
     holdings: &[Holding],
     quotes: &[YahooQuote],
@@ -232,7 +235,7 @@ pub fn merge_holdings_with_quotes_logic(
             let quote = quotes
                 .iter()
                 .find(|q| q.symbol.eq_ignore_ascii_case(&h.ticker));
-            let price = quote.map(|q| q.price).unwrap_or(0.0);
+            let price = quote.map_or(0.0, |q| q.price);
             let current_value = h.shares * price;
             let roi = if h.cost_basis > 0.0 {
                 ((current_value - h.cost_basis) / h.cost_basis) * 100.0
@@ -247,7 +250,7 @@ pub fn merge_holdings_with_quotes_logic(
                 price,
                 current_value,
                 roi,
-                change_percent: quote.map(|q| q.change_percent).unwrap_or(0.0),
+                change_percent: quote.map_or(0.0, |q| q.change_percent),
                 quote_type: quote.and_then(|q| q.quote_type.clone()),
             }
         })
@@ -262,6 +265,7 @@ pub fn merge_holdings_with_quotes_logic(
 }
 
 /// Calculates total portfolio value and total cost basis from enriched holdings.
+#[must_use]
 pub fn compute_portfolio_totals_logic(holdings: &[HoldingWithQuote]) -> PortfolioTotals {
     PortfolioTotals {
         total_value: holdings.iter().map(|h| h.current_value).sum(),
@@ -271,6 +275,7 @@ pub fn compute_portfolio_totals_logic(holdings: &[HoldingWithQuote]) -> Portfoli
 
 /// Computes the market value of holdings per account from transactions and current quotes.
 /// Returns a map of account ID to total market value.
+#[must_use]
 pub fn compute_net_worth_market_values_logic(
     transactions: &[Transaction],
     quotes: &[YahooQuote],
@@ -321,6 +326,7 @@ fn random_normal(mean: f64, std_dev: f64) -> f64 {
 }
 
 /// Projects FIRE number and years to financial independence using deterministic real-return growth.
+#[must_use]
 pub fn calculate_deterministic_projection_logic(
     input: &DeterministicProjectionInput,
 ) -> DeterministicProjectionOutput {
@@ -354,6 +360,7 @@ pub fn calculate_deterministic_projection_logic(
 }
 
 /// Runs Monte Carlo simulations for retirement scenarios, returning percentile bands and success rate.
+#[must_use]
 pub fn run_monte_carlo_simulation_logic(input: &MonteCarloInput) -> MonteCarloOutput {
     let years_to_retirement = (input.retirement_age - input.current_age).max(0);
     let total_years = years_to_retirement + input.retirement_duration;
@@ -427,7 +434,7 @@ pub fn run_monte_carlo_simulation_logic(input: &MonteCarloInput) -> MonteCarloOu
     }
 
     MonteCarloOutput {
-        success_rate: (success_count as f64 / input.simulation_count as f64) * 100.0,
+        success_rate: (f64::from(success_count) / f64::from(input.simulation_count)) * 100.0,
         percentiles: MonteCarloPercentiles {
             p10,
             p25,
@@ -459,6 +466,7 @@ fn get_rate(exchange_rates: &HashMap<String, ExchangeRateSeries>, pair: &str, da
 
 /// Aggregates all financial data into a comprehensive report with income, expenses,
 /// savings rate, portfolio summary, category breakdowns, and monthly trends.
+#[must_use]
 pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
     let mut account_map = HashMap::new();
     for a in &input.accounts {
@@ -568,13 +576,13 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         })
         .filter(|v| {
             (v.get("cash_balance")
-                .and_then(|x| x.as_f64())
+                .and_then(serde_json::Value::as_f64)
                 .unwrap_or(0.0))
             .abs()
                 > 0.0
                 || (v
                     .get("market_value")
-                    .and_then(|x| x.as_f64())
+                    .and_then(serde_json::Value::as_f64)
                     .unwrap_or(0.0))
                 .abs()
                     > 0.0
@@ -674,9 +682,9 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         .collect::<Vec<_>>();
     expense_categories.sort_by(|a, b| {
         b.get("amount")
-            .and_then(|x| x.as_f64())
+            .and_then(serde_json::Value::as_f64)
             .unwrap_or(0.0)
-            .partial_cmp(&a.get("amount").and_then(|x| x.as_f64()).unwrap_or(0.0))
+            .partial_cmp(&a.get("amount").and_then(serde_json::Value::as_f64).unwrap_or(0.0))
             .unwrap_or(Ordering::Equal)
     });
 
@@ -692,9 +700,9 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         .collect::<Vec<_>>();
     income_categories.sort_by(|a, b| {
         b.get("amount")
-            .and_then(|x| x.as_f64())
+            .and_then(serde_json::Value::as_f64)
             .unwrap_or(0.0)
-            .partial_cmp(&a.get("amount").and_then(|x| x.as_f64()).unwrap_or(0.0))
+            .partial_cmp(&a.get("amount").and_then(serde_json::Value::as_f64).unwrap_or(0.0))
             .unwrap_or(Ordering::Equal)
     });
 
@@ -848,6 +856,7 @@ pub fn compute_report_data(input: ReportComputeInput) -> Result<Value, String> {
 }
 
 /// Extracts unique ticker symbols from a slice of transactions.
+#[must_use]
 pub fn collect_tickers(transactions: &[Transaction]) -> Vec<String> {
     let mut set = HashSet::new();
     for tx in transactions {

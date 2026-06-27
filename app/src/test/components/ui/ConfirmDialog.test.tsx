@@ -45,7 +45,9 @@ describe("ConfirmDialogContainer", () => {
     const confirmBtn = await screen.findByRole("button", { name: "OK" });
     fireEvent.click(confirmBtn);
 
-    await waitFor(() => expect(result).toBe(true));
+    await waitFor(() => {
+      expect(result).toBe(true);
+    });
   });
 
   it("resolves to false when canceled", async () => {
@@ -64,7 +66,9 @@ describe("ConfirmDialogContainer", () => {
     const cancelBtn = await screen.findByRole("button", { name: /cancel|no/i });
     fireEvent.click(cancelBtn);
 
-    await waitFor(() => expect(result).toBe(false));
+    await waitFor(() => {
+      expect(result).toBe(false);
+    });
   });
 
   it("focuses the Cancel button for destructive (warning) dialogs", async () => {
@@ -77,7 +81,9 @@ describe("ConfirmDialogContainer", () => {
     });
 
     const cancelBtn = await screen.findByRole("button", { name: /cancel/i });
-    await waitFor(() => expect(document.activeElement).toBe(cancelBtn));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(cancelBtn);
+    });
   });
 
   it("focuses the Cancel button for destructive (error) dialogs", async () => {
@@ -90,7 +96,9 @@ describe("ConfirmDialogContainer", () => {
     });
 
     const cancelBtn = await screen.findByRole("button", { name: /cancel/i });
-    await waitFor(() => expect(document.activeElement).toBe(cancelBtn));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(cancelBtn);
+    });
   });
 
   it("focuses the OK button for non-destructive (info) dialogs", async () => {
@@ -101,6 +109,8 @@ describe("ConfirmDialogContainer", () => {
     });
 
     const okBtn = await screen.findByRole("button", { name: "OK" });
-    await waitFor(() => expect(document.activeElement).toBe(okBtn));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(okBtn);
+    });
   });
 });

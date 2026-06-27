@@ -19,19 +19,19 @@ describe("useToastStore", () => {
     useToastStore.getState().showToast("Hello");
     const toasts = useToastStore.getState().toasts;
     expect(toasts).toHaveLength(1);
-    expect(toasts[0].message).toBe("Hello");
-    expect(toasts[0].type).toBe("info");
-    expect(toasts[0].id).toBeDefined();
+    expect(toasts[0]!.message).toBe("Hello");
+    expect(toasts[0]!.type).toBe("info");
+    expect(toasts[0]!.id).toBeDefined();
   });
 
   it("showToast accepts a custom type", () => {
     useToastStore.getState().showToast("Saved!", { type: "success" });
-    expect(useToastStore.getState().toasts[0].type).toBe("success");
+    expect(useToastStore.getState().toasts[0]!.type).toBe("success");
   });
 
   it("showToast accepts error type", () => {
     useToastStore.getState().showToast("Oops", { type: "error" });
-    expect(useToastStore.getState().toasts[0].type).toBe("error");
+    expect(useToastStore.getState().toasts[0]!.type).toBe("error");
   });
 
   it("showToast returns a string id", () => {

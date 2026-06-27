@@ -49,16 +49,16 @@ export default function AssetModal({
           id: asset.id,
           name: nameTrimmed,
           category,
-          currency: currency || undefined,
-          notes: notes.trim() || undefined,
+          ...(currency ? { currency } : {}),
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
         });
         showToast(t("assets.updated"), { type: "success" });
       } else {
         await rust.create_asset({
           name: nameTrimmed,
           category,
-          currency: currency || undefined,
-          notes: notes.trim() || undefined,
+          ...(currency ? { currency } : {}),
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
         });
         showToast(t("assets.created"), { type: "success" });
       }
@@ -68,7 +68,9 @@ export default function AssetModal({
         context: "Failed to save asset",
         error: err,
         userMessage: t("error.failed_to_save"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     }
   }
@@ -99,7 +101,9 @@ export default function AssetModal({
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
                 placeholder={t("assets.placeholder.name")}
                 autoFocus
@@ -114,7 +118,9 @@ export default function AssetModal({
               <CustomSelect
                 options={categoryOptions}
                 value={category}
-                onChange={(v) => setCategory(String(v))}
+                onChange={(v) => {
+                  setCategory(String(v));
+                }}
               />
             </div>
 
@@ -129,7 +135,9 @@ export default function AssetModal({
                   ...currencyOptions,
                 ]}
                 value={currency}
-                onChange={(v) => setCurrency(String(v))}
+                onChange={(v) => {
+                  setCurrency(String(v));
+                }}
               />
             </div>
 
@@ -140,7 +148,9 @@ export default function AssetModal({
               </label>
               <textarea
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => {
+                  setNotes(e.target.value);
+                }}
                 rows={3}
                 className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none resize-none"
                 placeholder={t("assets.placeholder.notes")}

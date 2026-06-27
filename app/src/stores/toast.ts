@@ -35,8 +35,9 @@ export const useToastStore = create<ToastState>((set) => ({
     }
     return id;
   },
-  removeToast: (id: string) =>
-    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  removeToast: (id: string) => {
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+  },
 }));
 
 export interface ToastAPI {

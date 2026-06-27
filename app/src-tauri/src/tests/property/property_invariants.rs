@@ -15,9 +15,9 @@ fn test_randomized_balance_invariants() {
         let bal = if i == 2 {
             0.0
         } else {
-            rng.random_range(0..500) as f64
+            f64::from(rng.random_range(0..500))
         };
-        let acc = crate::create_account_db(&db_path, format!("Acc{}", i), bal, None, None).unwrap();
+        let acc = crate::create_account_db(&db_path, format!("Acc{i}"), bal, None, None).unwrap();
         accounts.push(acc);
     }
 
@@ -30,7 +30,7 @@ fn test_randomized_balance_invariants() {
         if op < 0.45 {
             // create transaction
             let acc_idx = rng.random_range(0..accounts.len());
-            let amount = rng.random_range(-200..200) as f64;
+            let amount = f64::from(rng.random_range(-200..200));
             if amount == 0.0 {
                 continue;
             }
@@ -65,7 +65,7 @@ fn test_randomized_balance_invariants() {
                     payee: accounts[b].name.clone(),
                     notes: Some("XFER".to_string()),
                     category: None,
-                    amount: -rng.random_range(1..150) as f64,
+                    amount: f64::from(-rng.random_range(1..150)),
                     ticker: None,
                     shares: None,
                     price_per_share: None,
@@ -84,9 +84,9 @@ fn test_randomized_balance_invariants() {
 
                 date: "2023-01-01".to_string(),
                 ticker: "RND".to_string(),
-                shares: rng.random_range(1..10) as f64,
-                price_per_share: rng.random_range(1..50) as f64,
-                fee: rng.random_range(0..5) as f64,
+                shares: f64::from(rng.random_range(1..10)),
+                price_per_share: f64::from(rng.random_range(1..50)),
+                fee: f64::from(rng.random_range(0..5)),
                 is_buy: rng.random_bool(0.5),
                 currency: None,
                 payee: None,
@@ -102,7 +102,7 @@ fn test_randomized_balance_invariants() {
                 // fetch tx to get account id
                 let txs = crate::get_all_transactions_db(&db_path).unwrap();
                 if let Some(tx) = txs.iter().find(|t| t.id == tx_id) {
-                    let new_amount = rng.random_range(-300..300) as f64;
+                    let new_amount = f64::from(rng.random_range(-300..300));
                     let args = crate::UpdateTransactionArgs {
                         id: tx.id,
                         account_id: tx.account_id,

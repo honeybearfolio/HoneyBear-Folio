@@ -341,9 +341,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
               // Try to fetch historical daily prices for this currency pair
               let dailyPrices: DailyPrice[] = [];
               try {
-                dailyPrices = (await rust.get_daily_stock_prices({
+                dailyPrices = await rust.get_daily_stock_prices({
                   ticker: pair,
-                })) as DailyPrice[];
+                });
               } catch (e) {
                 logError(
                   `Optional daily prices for ${entry.currency} PDF export`,
@@ -472,7 +472,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         context: "Export failed",
         error: e,
         userMessage: t("error.operation_failed"),
-        toast: (message) => showToast(message, { type: "error" }),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
       });
     } finally {
       setExporting(false);
@@ -488,7 +490,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
         <label className="modal-label">{t("export.select_format")}</label>
         <div className="format-grid">
           <button
-            onClick={() => setFormat("json")}
+            onClick={() => {
+              setFormat("json");
+            }}
             className={`format-button ${
               format === "json"
                 ? "format-button-active"
@@ -501,7 +505,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
             </span>
           </button>
           <button
-            onClick={() => setFormat("csv")}
+            onClick={() => {
+              setFormat("csv");
+            }}
             className={`format-button ${
               format === "csv"
                 ? "format-button-active"
@@ -514,7 +520,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
             </span>
           </button>
           <button
-            onClick={() => setFormat("xlsx")}
+            onClick={() => {
+              setFormat("xlsx");
+            }}
             className={`format-button ${
               format === "xlsx"
                 ? "format-button-active"
@@ -527,7 +535,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
             </span>
           </button>
           <button
-            onClick={() => setFormat("pdf")}
+            onClick={() => {
+              setFormat("pdf");
+            }}
             className={`format-button ${
               format === "pdf"
                 ? "format-button-active"
@@ -549,7 +559,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
             {/* Range type dropdown */}
             <CustomSelect
               value={rangeType}
-              onChange={(v) => setRangeType(String(v))}
+              onChange={(v) => {
+                setRangeType(String(v));
+              }}
               options={[
                 { value: "ytd", label: t("export.pdf.ytd") },
                 { value: "annual", label: t("export.pdf.annual") },
@@ -566,7 +578,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
                 </label>
                 <CustomSelect
                   value={selectedYear}
-                  onChange={(v) => setSelectedYear(Number(v))}
+                  onChange={(v) => {
+                    setSelectedYear(Number(v));
+                  }}
                   options={availableYears.map((yr) => ({
                     value: yr,
                     label: String(yr),
@@ -605,7 +619,9 @@ export default function ExportModal({ onClose }: ExportModalProps) {
                 </label>
                 <CustomSelect
                   value={selectedMonthIndex}
-                  onChange={(v) => setSelectedMonthIndex(Number(v))}
+                  onChange={(v) => {
+                    setSelectedMonthIndex(Number(v));
+                  }}
                   options={availableMonths.map((m) => ({
                     value: m.index,
                     label: m.label,

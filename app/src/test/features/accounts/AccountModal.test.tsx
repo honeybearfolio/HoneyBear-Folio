@@ -68,9 +68,9 @@ vi.mock("../../../components/ui/CustomSelect", () => {
     <select
       data-testid="currency-select"
       value={value}
-      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-        onChange(e.target.value)
-      }
+      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+        onChange(e.target.value);
+      }}
     >
       <option value="">{placeholder}</option>
       {options.map((opt: { value: string; label: string }) => (

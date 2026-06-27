@@ -30,7 +30,7 @@ vi.mock("../../../hooks/useCustomRate", () => ({
 // Mock react-datepicker
 vi.mock("react-datepicker", () => {
   return {
-    default: (props: any) => (
+    default: (props: { onChange: (date: Date) => void; selected?: Date }) => (
       <input
         onChange={(e) => props.onChange(new Date(e.target.value))}
         value={
@@ -52,10 +52,10 @@ describe("AccountDetails", () => {
     currency: "USD",
   };
 
-  const mockFormatNumber = vi.fn((val: number) => `fmt(${val})`);
-  const mockParseNumber = vi.fn((str: string) => Number(str));
-  const mockFormatDate = vi.fn((d: string) =>
-    d ? new Date(d).toISOString().split("T")[0] : "",
+  const mockFormatNumber = vi.fn((val: unknown) => `fmt(${String(val)})`);
+  const mockParseNumber = vi.fn((str: unknown) => Number(str));
+  const mockFormatDate = vi.fn((d: string | Date | null | undefined): string =>
+    d ? (new Date(d).toISOString().split("T")[0] ?? "") : "",
   );
   const mockConfirm = vi.fn();
   const mockInvoke = vi.mocked(invoke);
@@ -64,14 +64,12 @@ describe("AccountDetails", () => {
     vi.resetAllMocks();
 
     vi.mocked(formatInteractions.useFormatNumber).mockReturnValue(
-      mockFormatNumber as any,
+      mockFormatNumber,
     );
     vi.mocked(formatInteractions.useParseNumber).mockReturnValue(
-      mockParseNumber as any,
+      mockParseNumber,
     );
-    vi.mocked(formatInteractions.useFormatDate).mockReturnValue(
-      mockFormatDate as any,
-    );
+    vi.mocked(formatInteractions.useFormatDate).mockReturnValue(mockFormatDate);
 
     vi.mocked(confirmHook.useConfirm).mockReturnValue(mockConfirm);
 
@@ -83,8 +81,9 @@ describe("AccountDetails", () => {
 
     vi.mocked(customRateHook.useCustomRate).mockReturnValue({
       checkAndPrompt: vi.fn().mockResolvedValue(true),
-      dialog: null,
-    } as any);
+      dialog: <></>,
+      isLoading: false,
+    });
 
     // Default API mocks
     mockInvoke.mockImplementation((cmd: string, _args?: unknown) => {

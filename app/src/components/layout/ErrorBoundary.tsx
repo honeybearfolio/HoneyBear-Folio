@@ -66,7 +66,9 @@ export default class ErrorBoundary extends React.Component<
                       (this.state.error && this.state.error.stack) ||
                       String(this.state.error) ||
                       "";
-                    navigator.clipboard && navigator.clipboard.writeText(text);
+                    if (navigator.clipboard) {
+                      void navigator.clipboard.writeText(text);
+                    }
                   } catch {
                     /* ignore clipboard failures */
                   }
@@ -76,7 +78,9 @@ export default class ErrorBoundary extends React.Component<
               </button>
               <button
                 className="inline-flex items-center gap-2 px-3 py-1 rounded bg-rose-600 text-white text-sm"
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  window.location.reload();
+                }}
               >
                 {i18n.t("error.reload")}
               </button>

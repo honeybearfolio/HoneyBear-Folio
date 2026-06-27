@@ -1,14 +1,20 @@
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "vitest";
-import { useToast, useToastStore } from "../../stores/toast";
+import { useToast, useToastStore, type ToastAPI } from "../../stores/toast";
 
 // Test component to consume hook
 function TestComponent() {
   const { showToast } = useToast();
   return (
     <div>
-      <button onClick={() => showToast("Test message")}>Show Toast</button>
+      <button
+        onClick={() => {
+          showToast("Test message");
+        }}
+      >
+        Show Toast
+      </button>
     </div>
   );
 }
@@ -25,7 +31,7 @@ describe("useToast (Zustand store)", () => {
 
   it("showToast does not throw when called", () => {
     const capturedShowToastRef: {
-      current: ((...args: any[]) => void) | null;
+      current: ToastAPI["showToast"] | null;
     } = { current: null };
     function CaptureComponent() {
       const { showToast } = useToast();
@@ -37,7 +43,9 @@ describe("useToast (Zustand store)", () => {
 
     render(<CaptureComponent />);
 
-    expect(() => capturedShowToastRef.current!("message")).not.toThrow();
+    expect(() => {
+      capturedShowToastRef.current!("message");
+    }).not.toThrow();
   });
 
   it("showToast adds a toast to the store", () => {
@@ -48,6 +56,6 @@ describe("useToast (Zustand store)", () => {
     });
 
     expect(useToastStore.getState().toasts).toHaveLength(1);
-    expect(useToastStore.getState().toasts[0].message).toBe("Test message");
+    expect(useToastStore.getState().toasts[0]!.message).toBe("Test message");
   });
 });

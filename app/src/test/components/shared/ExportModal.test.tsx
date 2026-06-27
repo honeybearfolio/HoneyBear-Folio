@@ -60,7 +60,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     <select
       data-testid={`custom-select-${String(value)}`}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => {
+        onChange(e.target.value);
+      }}
     >
       {options.map((opt) => (
         <option key={String(opt.value)} value={String(opt.value)}>

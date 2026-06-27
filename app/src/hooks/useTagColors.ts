@@ -46,8 +46,7 @@ export default function useTagColors(): UseTagColorsReturn {
 
   const removeTagColor = useCallback((categoryName: string) => {
     setTagColors((prev) => {
-      const next = { ...prev };
-      delete next[categoryName];
+      const { [categoryName]: _removed, ...next } = prev;
       writeToStorage(next);
       return next;
     });

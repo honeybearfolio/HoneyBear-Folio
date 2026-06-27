@@ -18,11 +18,6 @@ interface OllamaModel {
   size?: number;
 }
 
-interface LlmSettings {
-  ollama_url?: string;
-  ollama_model?: string;
-}
-
 interface StepIndicatorProps {
   steps: string[];
   current: string;
@@ -94,14 +89,14 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
     setLoading(true);
     setError(null);
     try {
-      const settings = (await rust.get_llm_settings()) as LlmSettings;
+      const settings = await rust.get_llm_settings();
       if (settings.ollama_url) setOllamaUrl(settings.ollama_url);
 
       const ok = await rust.check_ollama_connection();
       if (ok) {
         const list = (await rust.list_ollama_models()) as OllamaModel[];
         setModels(list);
-        if (list.length > 0) setSelectedModel(list[0].name);
+        if (list.length > 0) setSelectedModel(list[0]!.name);
         setStep("model");
       }
     } catch {
@@ -112,7 +107,9 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
   }
 
   useEffect(() => {
-    checkConnection();
+    queueMicrotask(() => {
+      void checkConnection();
+    });
   }, []);
 
   async function handleTestConnection() {
@@ -127,7 +124,7 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
       if (ok) {
         const list = (await rust.list_ollama_models()) as OllamaModel[];
         setModels(list);
-        if (list.length > 0 && !selectedModel) setSelectedModel(list[0].name);
+        if (list.length > 0 && !selectedModel) setSelectedModel(list[0]!.name);
         setStep("model");
       } else {
         setError(t("chat.connection_error"));
@@ -193,7 +190,9 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
               <input
                 type="text"
                 value={ollamaUrl}
-                onChange={(e) => setOllamaUrl(e.target.value)}
+                onChange={(e) => {
+                  setOllamaUrl(e.target.value);
+                }}
                 className="chat-setup-input"
                 placeholder="http://localhost:11434"
               />
@@ -250,7 +249,9 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
                   {models.map((m) => (
                     <button
                       key={m.name}
-                      onClick={() => setSelectedModel(m.name)}
+                      onClick={() => {
+                        setSelectedModel(m.name);
+                      }}
                       className={`chat-setup-model-item ${
                         selectedModel === m.name
                           ? "chat-setup-model-selected"
@@ -342,7 +343,9 @@ export default function ChatSetup({ onComplete }: ChatSetupProps) {
             </button>
 
             <button
-              onClick={() => setStep("model")}
+              onClick={() => {
+                setStep("model");
+              }}
               className="chat-setup-btn-ghost"
             >
               ← {t("chat.model")}

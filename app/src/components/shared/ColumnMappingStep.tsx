@@ -42,7 +42,9 @@ export default function ColumnMappingStep({
           </span>
         </div>
         <button
-          onClick={() => setFile(null)}
+          onClick={() => {
+            setFile(null);
+          }}
           className="text-slate-500 dark:text-slate-400 hover:text-red-400 text-sm"
         >
           {t("import.change_file")}
@@ -71,7 +73,9 @@ export default function ColumnMappingStep({
               <div className="relative">
                 <CustomSelect
                   value={mapping[field as keyof FieldMapping]}
-                  onChange={(v) => setMapping({ ...mapping, [field]: v })}
+                  onChange={(v) => {
+                    setMapping({ ...mapping, [field]: v });
+                  }}
                   options={[
                     { value: "", label: t("import.skip") },
                     ...columns.map((col) => ({
@@ -104,7 +108,7 @@ export default function ColumnMappingStep({
             <table className="w-full min-w-full text-sm table-auto">
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-800">
-                  {Object.keys(previewRows[0]).map((h) => (
+                  {Object.keys(previewRows[0]!).map((h) => (
                     <th
                       key={h}
                       className="text-left pr-4 text-xs font-medium text-slate-700 dark:text-slate-200 uppercase tracking-wide"
@@ -120,7 +124,7 @@ export default function ColumnMappingStep({
                     key={idx}
                     className="hover:bg-slate-100 dark:hover:bg-slate-800 odd:bg-white even:bg-slate-50 dark:odd:bg-slate-900 dark:even:bg-slate-800"
                   >
-                    {Object.keys(previewRows[0]).map((h) => (
+                    {Object.keys(previewRows[0]!).map((h) => (
                       <td
                         key={h}
                         className="pr-4 text-slate-900 dark:text-white whitespace-normal break-words"
