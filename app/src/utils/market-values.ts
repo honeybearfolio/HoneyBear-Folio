@@ -1,33 +1,16 @@
 import { rust } from "../api/tauri-client";
 import type { Account, StockQuote, Transaction } from "../api/types";
+import {
+  buildAccountHoldingsFromTransactions,
+  type AccountHoldingsMap,
+} from "./account-holdings";
 
 type MarketValueAccount = Pick<Account, "id" | "currency">;
 
-type HoldingsMap = Record<string, Record<string, number>>;
 type QuoteMap = Record<string, StockQuote>;
 type RateMap = Record<string, number>;
 type CurrencyMap = Record<number, string>;
 type MarketValueMap = Record<string, number>;
-
-function buildAccountHoldings(transactions: Transaction[]): {
-  accountHoldings: HoldingsMap;
-  allTickers: Set<string>;
-} {
-  const accountHoldings: HoldingsMap = {};
-  const allTickers = new Set<string>();
-
-  transactions.forEach((tx) => {
-    if (tx.ticker && tx.shares) {
-      if (!accountHoldings[tx.account_id]) accountHoldings[tx.account_id] = {};
-      if (!accountHoldings[tx.account_id][tx.ticker])
-        accountHoldings[tx.account_id][tx.ticker] = 0;
-      accountHoldings[tx.account_id][tx.ticker] += tx.shares;
-      allTickers.add(tx.ticker);
-    }
-  });
-
-  return { accountHoldings, allTickers };
-}
 
 function buildQuoteMap(quotes: StockQuote[]): QuoteMap {
   const quoteMap: QuoteMap = {};
@@ -38,7 +21,7 @@ function buildQuoteMap(quotes: StockQuote[]): QuoteMap {
 }
 
 interface FetchExchangeRatesParams {
-  accountHoldings: HoldingsMap;
+  accountHoldings: AccountHoldingsMap;
   accountCcyMap: CurrencyMap;
   appCurrency: string;
   quoteMap: QuoteMap;
@@ -79,7 +62,7 @@ async function fetchExchangeRates({
 }
 
 interface ComputeMarketValuesParams {
-  accountHoldings: HoldingsMap;
+  accountHoldings: AccountHoldingsMap;
   accountCcyMap: CurrencyMap;
   appCurrency: string;
   quoteMap: QuoteMap;
@@ -127,7 +110,8 @@ export async function fetchMarketValuesForAccounts(
   appCurrency: string = "USD",
 ): Promise<MarketValueMap> {
   const transactions = (await rust.get_all_transactions()) as Transaction[];
-  const { accountHoldings, allTickers } = buildAccountHoldings(transactions);
+  const { accountHoldings, allTickers } =
+    buildAccountHoldingsFromTransactions(transactions);
   if (allTickers.size === 0) return {};
 
   const accountCcyMap: CurrencyMap = {};
