@@ -11,17 +11,9 @@ import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { useToast } from "../../stores/toast";
 import { handleAsyncError } from "../../utils/errors";
+import { ASSET_CATEGORIES } from "../../utils/assets-io";
 import type { AssetWithLatestValue } from "../../api/types";
 import "../../styles/Modal.css";
-
-const ASSET_CATEGORIES = [
-  "real_estate",
-  "vehicle",
-  "jewelry",
-  "art",
-  "collectible",
-  "other",
-] as const;
 
 interface AssetModalProps {
   asset?: AssetWithLatestValue | null;
