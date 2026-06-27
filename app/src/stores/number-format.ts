@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { useEffect } from "react";
 import i18n from "../i18n/i18n";
+import { APP_DEFAULTS, STORAGE_KEYS } from "../constants/app";
 
 export interface NumberFormatState {
   locale: string;
@@ -45,29 +46,32 @@ function writeLS(key: string, value: string) {
 }
 
 export const useNumberFormatStore = create<NumberFormatState>((set) => ({
-  locale: readLS("hb_number_format", "en-US"),
+  locale: readLS(STORAGE_KEYS.NUMBER_FORMAT, APP_DEFAULTS.LOCALE),
   setLocale: (v: string) => {
-    writeLS("hb_number_format", v);
+    writeLS(STORAGE_KEYS.NUMBER_FORMAT, v);
     set({ locale: v });
   },
-  currency: readLS("hb_currency", "USD"),
+  currency: readLS(STORAGE_KEYS.CURRENCY, APP_DEFAULTS.CURRENCY),
   setCurrency: (v: string) => {
-    writeLS("hb_currency", v);
+    writeLS(STORAGE_KEYS.CURRENCY, v);
     set({ currency: v });
   },
-  dateFormat: readLS("hb_date_format", "YYYY-MM-DD"),
+  dateFormat: readLS(STORAGE_KEYS.DATE_FORMAT, APP_DEFAULTS.DATE_FORMAT),
   setDateFormat: (v: string) => {
-    writeLS("hb_date_format", v);
+    writeLS(STORAGE_KEYS.DATE_FORMAT, v);
     set({ dateFormat: v });
   },
-  firstDayOfWeek: readLSNumber("hb_first_day_of_week", 1),
+  firstDayOfWeek: readLSNumber(
+    STORAGE_KEYS.FIRST_DAY_OF_WEEK,
+    APP_DEFAULTS.FIRST_DAY_OF_WEEK,
+  ),
   setFirstDayOfWeek: (v: number) => {
-    writeLS("hb_first_day_of_week", String(v));
+    writeLS(STORAGE_KEYS.FIRST_DAY_OF_WEEK, String(v));
     set({ firstDayOfWeek: v });
   },
-  uiLanguage: readLS("hb_ui_language", "en"),
+  uiLanguage: readLS(STORAGE_KEYS.UI_LANGUAGE, APP_DEFAULTS.UI_LANGUAGE),
   setUiLanguage: (v: string) => {
-    writeLS("hb_ui_language", v);
+    writeLS(STORAGE_KEYS.UI_LANGUAGE, v);
     set({ uiLanguage: v });
   },
 }));

@@ -2,6 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react";
 import { create } from "zustand";
 import { rust } from "../api/tauri-client";
+import { APP_DEFAULTS, STORAGE_KEYS } from "../constants/app";
 
 export interface ThemeState {
   theme: string;
@@ -11,12 +12,12 @@ export interface ThemeState {
 export const useThemeStore = create<ThemeState>((set) => ({
   theme: (() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("hb_theme") || "system";
+      return localStorage.getItem(STORAGE_KEYS.THEME) || APP_DEFAULTS.THEME;
     }
-    return "system";
+    return APP_DEFAULTS.THEME;
   })(),
   setTheme: (newTheme: string) => {
-    localStorage.setItem("hb_theme", newTheme);
+    localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
     set({ theme: newTheme });
   },
 }));

@@ -9,6 +9,11 @@ export const STORAGE_KEYS = {
   FIRST_DAY_OF_WEEK: "hb_first_day_of_week",
   UI_LANGUAGE: "hb_ui_language",
   CHAT_THINK: "hb_chat_think",
+  PRIVACY_MODE: "hb_privacy_mode",
+  FIRST_RUN_COMPLETED: "hb_first_run_completed",
+  ACCOUNT_SORT_CONFIG: "hb_account_sort_config",
+  ACCOUNT_ORDER: "hb_account_order",
+  TAG_COLORS: "hb_tag_colors",
 } as const;
 
 export const FIRE_DEFAULTS = {

@@ -110,9 +110,7 @@ export default function AccountDetails({
   const [notes, setNotes] = useState("");
   const [amount, setAmount] = useState("");
   const [transactionType, setTransactionType] = useState("cash");
-  const [selectedCurrency, setSelectedCurrency] = useState(
-    () => localStorage.getItem("hb_currency") || "USD",
-  );
+  const [selectedCurrency, setSelectedCurrency] = useState(appCurrency);
 
   useEffect(() => {
     if (isAdding) {
@@ -559,7 +557,7 @@ export default function AccountDetails({
         setShares("");
         setPricePerShare("");
         setFee("");
-        setSelectedCurrency(localStorage.getItem("hb_currency") || "USD");
+        setSelectedCurrency(appCurrency);
       } else {
         await rust.create_transaction({
           args: {
@@ -581,7 +579,7 @@ export default function AccountDetails({
         setCategory("");
         setNotes("");
         setAmount("");
-        setSelectedCurrency(localStorage.getItem("hb_currency") || "USD");
+        setSelectedCurrency(appCurrency);
       }
 
       setIsAdding(false);

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { STORAGE_KEYS } from "../constants/app";
 
 export interface PrivacyState {
   isPrivacyMode: boolean;
@@ -8,7 +9,7 @@ export interface PrivacyState {
 export const usePrivacyStore = create<PrivacyState>((set) => ({
   isPrivacyMode: (() => {
     try {
-      return localStorage.getItem("hb_privacy_mode") === "true";
+      return localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === "true";
     } catch {
       return false;
     }
@@ -17,7 +18,7 @@ export const usePrivacyStore = create<PrivacyState>((set) => ({
     set((state) => {
       const next = !state.isPrivacyMode;
       try {
-        localStorage.setItem("hb_privacy_mode", String(next));
+        localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, String(next));
       } catch {
         // ignore
       }

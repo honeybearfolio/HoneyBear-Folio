@@ -20,7 +20,7 @@ import { ToastContainer } from "./components/ui/Toast";
 import { useToast } from "./stores/toast";
 import { ConfirmDialogContainer } from "./components/ui/ConfirmDialog";
 import ErrorBoundary from "./components/layout/ErrorBoundary";
-import { NumberFormatEffects } from "./stores/number-format";
+import { NumberFormatEffects, useNumberFormat } from "./stores/number-format";
 import { ThemeEffects } from "./stores/theme";
 import ChartNumberFormatSync from "./components/shared/ChartNumberFormatSync";
 import UpdateNotification from "./components/shared/UpdateNotification";
@@ -112,6 +112,7 @@ interface MainAppProps {
 function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { currency } = useNumberFormat();
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH);
@@ -218,8 +219,6 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
 
   const fetchAccounts = useCallback(async (): Promise<Account[]> => {
     try {
-      const currency =
-        localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
       const accs = await rust.get_accounts({
         targetCurrency: currency,
       });
@@ -231,7 +230,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       showToast(t("error.failed_to_load"), { type: "error" });
       return [];
     }
-  }, [showToast, t]);
+  }, [showToast, t, currency]);
 
   const fetchMarketValues = useCallback(
     async (currentAccounts: Account[] = [], force = false) => {
@@ -244,11 +243,9 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       }
       lastMarketFetchRef.current = now;
       try {
-        const appCurrency =
-          localStorage.getItem(STORAGE_KEYS.CURRENCY) || APP_DEFAULTS.CURRENCY;
         const values = await fetchMarketValuesForAccounts(
           currentAccounts,
-          appCurrency,
+          currency,
         );
         setMarketValues(values);
       } catch (e) {
@@ -256,7 +253,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
         showToast(t("error.failed_to_load"), { type: "error" });
       }
     },
-    [showToast, t],
+    [showToast, t, currency],
   );
 
   useEffect(() => {
@@ -267,9 +264,8 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       await fetchMarketValues(accs, refreshTrigger === 0);
       // Fetch total value of tracked assets for net worth
       try {
-        const appCurrency = localStorage.getItem("hb_currency") || "USD";
         const val = await rust.get_total_assets_value({
-          targetCurrency: appCurrency,
+          targetCurrency: currency,
         });
         setTotalAssetsValue(val);
       } catch {
@@ -277,7 +273,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       }
     };
     loadData();
-  }, [refreshTrigger, fetchAccounts, fetchMarketValues]);
+  }, [refreshTrigger, fetchAccounts, fetchMarketValues, currency]);
 
   useEffect(() => {
     let cancelled = false;

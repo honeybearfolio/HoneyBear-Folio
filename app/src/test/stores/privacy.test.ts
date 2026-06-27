@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { usePrivacyStore } from "../../stores/privacy";
+import { STORAGE_KEYS } from "../../constants/app";
 
 describe("usePrivacyStore", () => {
   beforeEach(() => {
@@ -25,7 +26,7 @@ describe("usePrivacyStore", () => {
   it("togglePrivacyMode persists to localStorage", () => {
     usePrivacyStore.getState().togglePrivacyMode();
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "hb_privacy_mode",
+      STORAGE_KEYS.PRIVACY_MODE,
       "true",
     );
   });
@@ -34,7 +35,7 @@ describe("usePrivacyStore", () => {
     usePrivacyStore.setState({ isPrivacyMode: true });
     usePrivacyStore.getState().togglePrivacyMode();
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "hb_privacy_mode",
+      STORAGE_KEYS.PRIVACY_MODE,
       "false",
     );
   });

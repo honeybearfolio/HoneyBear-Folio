@@ -2,6 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "./en.json";
 import es from "./es.json";
+import { APP_DEFAULTS, STORAGE_KEYS } from "../constants/app";
 
 interface LanguageOption {
   code: string;
@@ -27,7 +28,7 @@ i18n.use(initReactI18next).init({
     en: { translation: en },
     es: { translation: es },
   },
-  lng: readLS("hb_ui_language", "en"),
+  lng: readLS(STORAGE_KEYS.UI_LANGUAGE, APP_DEFAULTS.UI_LANGUAGE),
   fallbackLng: "en",
   keySeparator: false,
   nsSeparator: false,

@@ -92,7 +92,11 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       });
   }, []);
 
-  const { dateFormat, firstDayOfWeek } = useNumberFormat();
+  const {
+    dateFormat,
+    firstDayOfWeek,
+    currency: appCurrency,
+  } = useNumberFormat();
 
   // Compute the effective date range for the PDF export
   const pdfDateRange = useMemo(() => {
@@ -325,7 +329,6 @@ export default function ExportModal({ onClose }: ExportModalProps) {
           string,
           { map: Record<string, number>; list: DailyPrice[] }
         > = {};
-        const appCurrency = localStorage.getItem("hb_currency") || "USD";
 
         try {
           const allRates = await rust.get_all_exchange_rates({

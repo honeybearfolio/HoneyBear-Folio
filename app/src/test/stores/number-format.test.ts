@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useNumberFormatStore } from "../../stores/number-format";
+import { STORAGE_KEYS } from "../../constants/app";
 
 describe("useNumberFormatStore", () => {
   beforeEach(() => {
@@ -26,7 +27,7 @@ describe("useNumberFormatStore", () => {
     useNumberFormatStore.getState().setLocale("de-DE");
     expect(useNumberFormatStore.getState().locale).toBe("de-DE");
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "hb_number_format",
+      STORAGE_KEYS.NUMBER_FORMAT,
       "de-DE",
     );
   });
@@ -34,14 +35,17 @@ describe("useNumberFormatStore", () => {
   it("setCurrency updates currency and persists", () => {
     useNumberFormatStore.getState().setCurrency("EUR");
     expect(useNumberFormatStore.getState().currency).toBe("EUR");
-    expect(localStorage.setItem).toHaveBeenCalledWith("hb_currency", "EUR");
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      STORAGE_KEYS.CURRENCY,
+      "EUR",
+    );
   });
 
   it("setDateFormat updates dateFormat and persists", () => {
     useNumberFormatStore.getState().setDateFormat("MM/DD/YYYY");
     expect(useNumberFormatStore.getState().dateFormat).toBe("MM/DD/YYYY");
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "hb_date_format",
+      STORAGE_KEYS.DATE_FORMAT,
       "MM/DD/YYYY",
     );
   });
@@ -50,7 +54,7 @@ describe("useNumberFormatStore", () => {
     useNumberFormatStore.getState().setFirstDayOfWeek(0);
     expect(useNumberFormatStore.getState().firstDayOfWeek).toBe(0);
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      "hb_first_day_of_week",
+      STORAGE_KEYS.FIRST_DAY_OF_WEEK,
       "0",
     );
   });
@@ -58,6 +62,9 @@ describe("useNumberFormatStore", () => {
   it("setUiLanguage updates uiLanguage and persists", () => {
     useNumberFormatStore.getState().setUiLanguage("es");
     expect(useNumberFormatStore.getState().uiLanguage).toBe("es");
-    expect(localStorage.setItem).toHaveBeenCalledWith("hb_ui_language", "es");
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      STORAGE_KEYS.UI_LANGUAGE,
+      "es",
+    );
   });
 });

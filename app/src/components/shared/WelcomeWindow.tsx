@@ -10,6 +10,7 @@ import { Check } from "lucide-react";
 import "../../styles/Modal.css";
 import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
 import { getDevSetting } from "../../config/dev-settings";
+import { STORAGE_KEYS } from "../../constants/app";
 
 export default function WelcomeWindow() {
   const { t } = useTranslation();
@@ -18,7 +19,7 @@ export default function WelcomeWindow() {
     if (forced === true) return true;
 
     try {
-      return !localStorage.getItem("hb_first_run_completed");
+      return !localStorage.getItem(STORAGE_KEYS.FIRST_RUN_COMPLETED);
     } catch {
       // In environments where localStorage is unavailable, default to hidden
       return false;
@@ -52,7 +53,7 @@ export default function WelcomeWindow() {
   ];
 
   const handleComplete = () => {
-    localStorage.setItem("hb_first_run_completed", "true");
+    localStorage.setItem(STORAGE_KEYS.FIRST_RUN_COMPLETED, "true");
     setIsVisible(false);
   };
 
