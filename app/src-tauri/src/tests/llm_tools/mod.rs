@@ -259,14 +259,10 @@ async fn test_execute_tool_get_exchange_rates() {
     crate::set_custom_exchange_rate_db(&db_path, "GBP".to_string(), 1.27).unwrap();
 
     let client = reqwest::Client::new();
-    let rates = crate::core::llm_tools::execute_tool(
-        &client,
-        &db_path,
-        "get_exchange_rates",
-        &json!({}),
-    )
-    .await
-    .unwrap();
+    let rates =
+        crate::core::llm_tools::execute_tool(&client, &db_path, "get_exchange_rates", &json!({}))
+            .await
+            .unwrap();
     let arr = rates.as_array().unwrap();
     assert_eq!(arr.len(), 1);
     assert_eq!(arr[0]["currency"], "GBP");

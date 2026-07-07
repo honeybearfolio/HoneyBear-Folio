@@ -33,5 +33,5 @@ pub mod llm;
 
 pub mod utils;
 
-pub mod models;
 pub mod coverage_boost;
+pub mod models;

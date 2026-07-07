@@ -52,15 +52,22 @@ fn test_conversation_messages_with_tool_calls() {
     assert!(messages[0].tool_calls.is_some());
 
     delete_all_conversations_db(&db_path).unwrap();
-    assert!(get_conversation_messages_db(&db_path, conv.id).unwrap().is_empty());
+    assert!(get_conversation_messages_db(&db_path, conv.id)
+        .unwrap()
+        .is_empty());
 }
 
 #[test]
 fn test_create_account_zero_balance_skips_opening_transaction() {
     let (_dir, db_path) = setup_db();
-    let account =
-        crate::create_account_db(&db_path, "Empty".to_string(), 0.0, Some("USD".to_string()), None)
-            .unwrap();
+    let account = crate::create_account_db(
+        &db_path,
+        "Empty".to_string(),
+        0.0,
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
     let txs = crate::get_transactions_db(&db_path, account.id).unwrap();
     assert!(txs.is_empty());
 }
