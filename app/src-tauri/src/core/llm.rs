@@ -4,9 +4,9 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 
 // Global set of conversation IDs that should be cancelled.
 static CANCELLED: std::sync::LazyLock<Mutex<HashSet<i64>>> =
@@ -47,55 +47,13 @@ pub struct ChatMessage {
     pub thinking: Option<String>,
 }
 
-/// Payload emitted to the frontend for each streamed token.
-#[derive(Serialize, Clone)]
-struct LlmTokenEvent {
-    conversation_id: i64,
-    token: String,
-}
-
-/// Payload emitted when tool calls start.
-#[derive(Serialize, Clone)]
-struct LlmToolCallEvent {
-    conversation_id: i64,
-    tool_name: String,
-}
-
-/// Payload emitted when the assistant message is done.
-#[derive(Serialize, Clone)]
-struct LlmDoneEvent {
-    conversation_id: i64,
-    full_content: String,
-}
-
-/// Payload emitted on error.
-#[derive(Serialize, Clone)]
-struct LlmErrorEvent {
-    conversation_id: i64,
-    error: String,
-}
-
-/// Payload emitted for each streamed thinking token.
-#[derive(Serialize, Clone)]
-struct LlmThinkingEvent {
-    conversation_id: i64,
-    token: String,
-}
-
-/// Payload emitted to report status changes (thinking, querying tools, etc.).
-#[derive(Serialize, Clone)]
-struct LlmStatusEvent {
-    conversation_id: i64,
-    status: String,
-}
-
 // ── Settings Commands ───────────────────────────────────────────────
 
-fn default_ollama_url() -> String {
+pub(crate) fn default_ollama_url() -> String {
     "http://localhost:11434".to_string()
 }
 
-fn validate_ollama_base_url(base_url: &str) -> Result<reqwest::Url, String> {
+pub(crate) fn validate_ollama_base_url(base_url: &str) -> Result<reqwest::Url, String> {
     let trimmed = base_url.trim();
     if trimmed.is_empty() {
         return Err("Ollama URL cannot be empty.".to_string());
@@ -131,7 +89,7 @@ fn validate_ollama_base_url(base_url: &str) -> Result<reqwest::Url, String> {
     Ok(parsed)
 }
 
-fn ollama_api_url(base_url: &str, endpoint: &str) -> Result<String, String> {
+pub(crate) fn ollama_api_url(base_url: &str, endpoint: &str) -> Result<String, String> {
     let mut parsed = validate_ollama_base_url(base_url)?;
     parsed.set_path(endpoint);
     Ok(parsed.to_string())
@@ -162,12 +120,9 @@ pub fn set_llm_settings(
     Ok(())
 }
 
-/// Fetches the list of available models from the configured Ollama server.
-#[tauri::command]
-pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel>, String> {
-    let settings = db_init::read_settings(&app_handle)?;
-    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
-    let url = ollama_api_url(&base_url, "/api/tags")?;
+/// Fetches the list of available models from an Ollama server base URL.
+pub(crate) async fn fetch_ollama_models(base_url: &str) -> Result<Vec<OllamaModel>, String> {
+    let url = ollama_api_url(base_url, "/api/tags")?;
 
     let resp = reqwest::get(&url)
         .await
@@ -178,7 +133,11 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
         .await
         .map_err(|e| format!("Invalid response from Ollama: {e}"))?;
 
-    let models = body["models"]
+    Ok(parse_ollama_models(&body))
+}
+
+pub(crate) fn parse_ollama_models(body: &Value) -> Vec<OllamaModel> {
+    body["models"]
         .as_array()
         .unwrap_or(&vec![])
         .iter()
@@ -187,9 +146,27 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
             size: m["size"].as_u64(),
             modified_at: m["modified_at"].as_str().map(String::from),
         })
-        .collect();
+        .collect()
+}
 
-    Ok(models)
+/// Returns whether the Ollama server at `base_url` responds successfully.
+pub(crate) async fn ping_ollama(base_url: &str) -> bool {
+    let Ok(url) = ollama_api_url(base_url, "/api/tags") else {
+        return false;
+    };
+
+    match reqwest::get(&url).await {
+        Ok(resp) => resp.status().is_success(),
+        Err(_) => false,
+    }
+}
+
+/// Fetches the list of available models from the configured Ollama server.
+#[tauri::command]
+pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel>, String> {
+    let settings = db_init::read_settings(&app_handle)?;
+    let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
+    fetch_ollama_models(&base_url).await
 }
 
 /// Validates that the Ollama server is reachable at the configured URL.
@@ -197,14 +174,7 @@ pub async fn list_ollama_models(app_handle: AppHandle) -> Result<Vec<OllamaModel
 pub async fn check_ollama_connection(app_handle: AppHandle) -> Result<bool, String> {
     let settings = db_init::read_settings(&app_handle)?;
     let base_url = settings.ollama_url.unwrap_or_else(default_ollama_url);
-    let Ok(url) = ollama_api_url(&base_url, "/api/tags") else {
-        return Ok(false);
-    };
-
-    match reqwest::get(&url).await {
-        Ok(resp) => Ok(resp.status().is_success()),
-        Err(_) => Ok(false),
-    }
+    Ok(ping_ollama(&base_url).await)
 }
 
 // ── Conversation CRUD ───────────────────────────────────────────────
@@ -217,7 +187,7 @@ pub fn get_conversations(app_handle: AppHandle) -> Result<Vec<Conversation>, Str
 }
 
 /// Queries all conversations from the database, ordered by most recent first.
-pub fn get_conversations_db(db_path: &PathBuf) -> Result<Vec<Conversation>, String> {
+pub fn get_conversations_db(db_path: &Path) -> Result<Vec<Conversation>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
@@ -248,7 +218,7 @@ pub fn create_conversation(app_handle: AppHandle, title: String) -> Result<Conve
 }
 
 /// Inserts a new conversation into the database and returns it.
-pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conversation, String> {
+pub fn create_conversation_db(db_path: &Path, title: String) -> Result<Conversation, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
@@ -271,9 +241,13 @@ pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conver
 #[tauri::command]
 pub fn delete_conversation(app_handle: AppHandle, conversation_id: i64) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
-    let db_ref = db_path.as_path();
-    crate::db_locked!(db_ref, {
-        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
+    delete_conversation_db(&db_path, conversation_id)
+}
+
+/// Deletes a conversation and all its associated messages from the database.
+pub fn delete_conversation_db(db_path: &Path, conversation_id: i64) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| e.to_string())?;
         conn.execute(
@@ -293,9 +267,17 @@ pub fn rename_conversation(
     title: String,
 ) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
-    let db_ref = db_path.as_path();
-    crate::db_locked!(db_ref, {
-        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
+    rename_conversation_db(&db_path, conversation_id, title)
+}
+
+/// Updates the title of an existing conversation in the database.
+pub fn rename_conversation_db(
+    db_path: &Path,
+    conversation_id: i64,
+    title: String,
+) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE chat_conversations SET title = ?1, updated_at = ?2 WHERE id = ?3",
@@ -318,7 +300,7 @@ pub fn get_conversation_messages(
 
 /// Queries all messages for a conversation from the database, ordered chronologically.
 pub fn get_conversation_messages_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     conversation_id: i64,
 ) -> Result<Vec<ChatMessage>, String> {
     crate::db_locked!(db_path, {
@@ -348,8 +330,8 @@ pub fn get_conversation_messages_db(
     })
 }
 
-fn save_message_db(
-    db_path: &PathBuf,
+pub(crate) fn save_message_db(
+    db_path: &Path,
     conversation_id: i64,
     role: &str,
     content: Option<&str>,
@@ -381,9 +363,13 @@ fn save_message_db(
 #[tauri::command]
 pub fn delete_all_conversations(app_handle: AppHandle) -> Result<(), String> {
     let db_path = db_init::get_db_path(&app_handle)?;
-    let db_ref = db_path.as_path();
-    crate::db_locked!(db_ref, {
-        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
+    delete_all_conversations_db(&db_path)
+}
+
+/// Deletes all conversations and their messages from the database.
+pub fn delete_all_conversations_db(db_path: &Path) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| e.to_string())?;
         conn.execute("DELETE FROM chat_conversations", [])
@@ -394,7 +380,7 @@ pub fn delete_all_conversations(app_handle: AppHandle) -> Result<(), String> {
 
 // ── Tool Definitions ────────────────────────────────────────────────
 
-fn build_tool_definitions() -> Vec<Value> {
+pub(crate) fn build_tool_definitions() -> Vec<Value> {
     vec![
         json!({
             "type": "function",
@@ -598,7 +584,7 @@ fn build_tool_definitions() -> Vec<Value> {
 
 // ── System Prompt ───────────────────────────────────────────────────
 
-fn build_system_prompt(db_path: &PathBuf) -> String {
+pub(crate) fn build_system_prompt(db_path: &PathBuf) -> String {
     let mut context_parts = vec![
         "You are a helpful financial assistant for HoneyBear Folio, a personal finance app.".to_string(),
         "You can query the user's financial data using the available tools.".to_string(),
@@ -661,39 +647,6 @@ fn build_system_prompt(db_path: &PathBuf) -> String {
     context_parts.join("\n")
 }
 
-// ── Ollama Streaming Chat ───────────────────────────────────────────
-
-#[derive(Deserialize, Debug)]
-struct OllamaChatChunk {
-    #[serde(default)]
-    message: Option<OllamaMessage>,
-    #[serde(default)]
-    #[allow(dead_code)]
-    done: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct OllamaMessage {
-    role: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    content: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    thinking: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tool_calls: Option<Vec<OllamaToolCall>>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct OllamaToolCall {
-    function: OllamaFunctionCall,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct OllamaFunctionCall {
-    name: String,
-    arguments: Value,
-}
-
 /// Marks a conversation's LLM chat stream as cancelled.
 #[tauri::command]
 pub async fn cancel_llm_chat(conversation_id: i64) -> Result<(), String> {
@@ -704,401 +657,82 @@ pub async fn cancel_llm_chat(conversation_id: i64) -> Result<(), String> {
     Ok(())
 }
 
-fn is_cancelled(conversation_id: i64) -> bool {
+pub(crate) fn is_cancelled(conversation_id: i64) -> bool {
     CANCELLED
         .lock()
         .is_ok_and(|set| set.contains(&conversation_id))
 }
 
-fn clear_cancelled(conversation_id: i64) {
+pub(crate) fn clear_cancelled(conversation_id: i64) {
     if let Ok(mut set) = CANCELLED.lock() {
         set.remove(&conversation_id);
     }
 }
 
-/// Streams an LLM response from the Ollama backend for the given conversation.
-#[tauri::command]
-pub async fn llm_chat(
-    app_handle: AppHandle,
+#[cfg(test)]
+pub(crate) fn save_message_db_for_test(
+    db_path: &Path,
     conversation_id: i64,
-    user_message: String,
-    think: Option<bool>,
-) -> Result<(), String> {
-    let settings = db_init::read_settings(&app_handle)?;
-    let base_url =
-        validate_ollama_base_url(&settings.ollama_url.unwrap_or_else(default_ollama_url))?
-            .to_string();
-    let model = settings
-        .ollama_model
-        .filter(|m| !m.is_empty())
-        .ok_or_else(|| "No Ollama model configured. Please set one in Settings.".to_string())?;
-
-    let db_path = db_init::get_db_path(&app_handle)?;
-
-    // Clear any stale cancellation flag for this conversation
-    clear_cancelled(conversation_id);
-
-    // Save user message
+    role: &str,
+    content: Option<&str>,
+    tool_calls: Option<&str>,
+    tool_call_id: Option<&str>,
+    thinking: Option<&str>,
+) -> Result<i64, String> {
     save_message_db(
-        &db_path,
+        db_path,
         conversation_id,
-        "user",
-        Some(&user_message),
-        None,
-        None,
-        None,
-    )?;
-
-    // Load conversation history
-    let history = get_conversation_messages_db(&db_path, conversation_id)?;
-
-    // Build messages array for Ollama
-    let system_prompt = build_system_prompt(&db_path);
-    let tools = build_tool_definitions();
-
-    let mut messages: Vec<Value> = vec![json!({
-        "role": "system",
-        "content": system_prompt,
-    })];
-
-    // Add conversation history (skip tool/system messages for simplicity in history replay,
-    // but include user and assistant messages with content)
-    for msg in &history {
-        let mut m = json!({ "role": msg.role });
-        if let Some(ref content) = msg.content {
-            m["content"] = json!(content);
-        }
-        if let Some(ref tc) = msg.tool_calls {
-            if let Ok(parsed) = serde_json::from_str::<Value>(tc) {
-                m["tool_calls"] = parsed;
-            }
-        }
-        if let Some(ref tcid) = msg.tool_call_id {
-            m["tool_call_id"] = json!(tcid);
-        }
-        messages.push(m);
-    }
-
-    // Run the chat loop (may loop if tool calls happen)
-    let result = run_chat_loop(
-        &app_handle,
-        &base_url,
-        &model,
-        &db_path,
-        conversation_id,
-        &mut messages,
-        &tools,
-        think.unwrap_or(false),
+        role,
+        content,
+        tool_calls,
+        tool_call_id,
+        thinking,
     )
-    .await;
-
-    if let Err(ref e) = result {
-        let _ = app_handle.emit(
-            "llm-error",
-            LlmErrorEvent {
-                conversation_id,
-                error: e.clone(),
-            },
-        );
-    }
-
-    result
 }
 
-#[allow(clippy::too_many_arguments)]
-async fn run_chat_loop(
-    app_handle: &AppHandle,
-    base_url: &str,
-    model: &str,
-    db_path: &PathBuf,
-    conversation_id: i64,
-    messages: &mut Vec<Value>,
-    tools: &[Value],
-    think: bool,
-) -> Result<(), String> {
-    let client = reqwest::Client::new();
-    let url = ollama_api_url(base_url, "/api/chat")?;
+#[cfg(test)]
+pub(crate) fn build_system_prompt_for_test(db_path: &PathBuf) -> String {
+    build_system_prompt(db_path)
+}
 
-    // Allow up to 10 rounds of tool calls to prevent infinite loops
-    for round in 0..10 {
-        // Check cancellation before starting a round
-        if is_cancelled(conversation_id) {
-            clear_cancelled(conversation_id);
-            let _ = app_handle.emit(
-                "llm-done",
-                LlmDoneEvent {
-                    conversation_id,
-                    full_content: String::new(),
-                },
-            );
-            return Ok(());
-        }
+#[cfg(test)]
+pub(crate) fn build_tool_definitions_for_test() -> Vec<Value> {
+    build_tool_definitions()
+}
 
-        // Emit status: thinking when starting a new round
-        let _ = app_handle.emit(
-            "llm-status",
-            LlmStatusEvent {
-                conversation_id,
-                status: if round == 0 {
-                    "thinking".to_string()
-                } else {
-                    "thinking_tools".to_string()
-                },
-            },
-        );
+#[cfg(test)]
+pub(crate) fn is_cancelled_for_test(conversation_id: i64) -> bool {
+    is_cancelled(conversation_id)
+}
 
-        let body = json!({
-            "model": model,
-            "messages": messages,
-            "tools": tools,
-            "stream": true,
-            "think": think,
-        });
+#[cfg(test)]
+pub(crate) fn clear_cancelled_for_test(conversation_id: i64) {
+    clear_cancelled(conversation_id);
+}
 
-        let resp = client
-            .post(&url)
-            .json(&body)
-            .send()
-            .await
-            .map_err(|e| format!("Failed to connect to Ollama: {e}"))?;
-
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(format!("Ollama returned {status}: {text}"));
-        }
-
-        // Stream the response
-        let mut full_content = String::new();
-        let mut full_thinking = String::new();
-        let mut tool_calls: Vec<OllamaToolCall> = Vec::new();
-        let mut buffer = String::new();
-
-        let mut first_token = true;
-
-        let mut stream = resp;
-        while let Some(chunk) = stream.chunk().await.map_err(|e| e.to_string())? {
-            // Check cancellation between chunks
-            if is_cancelled(conversation_id) {
-                clear_cancelled(conversation_id);
-                // Save whatever content we have so far
-                if !full_content.is_empty() || !full_thinking.is_empty() {
-                    let _ = save_message_db(
-                        db_path,
-                        conversation_id,
-                        "assistant",
-                        if full_content.is_empty() {
-                            None
-                        } else {
-                            Some(&full_content)
-                        },
-                        None,
-                        None,
-                        if full_thinking.is_empty() {
-                            None
-                        } else {
-                            Some(&full_thinking)
-                        },
-                    );
-                }
-                let _ = app_handle.emit(
-                    "llm-done",
-                    LlmDoneEvent {
-                        conversation_id,
-                        full_content,
-                    },
-                );
-                return Ok(());
-            }
-
-            buffer.push_str(&String::from_utf8_lossy(&chunk));
-
-            // Process complete lines from buffer
-            while let Some(newline_pos) = buffer.find('\n') {
-                let line = buffer[..newline_pos].trim().to_string();
-                buffer = buffer[newline_pos + 1..].to_string();
-
-                if line.is_empty() {
-                    continue;
-                }
-
-                if let Ok(chunk_data) = serde_json::from_str::<OllamaChatChunk>(&line) {
-                    if let Some(ref msg) = chunk_data.message {
-                        // Accumulate thinking tokens
-                        if let Some(ref thinking) = msg.thinking {
-                            if !thinking.is_empty() {
-                                full_thinking.push_str(thinking);
-                                let _ = app_handle.emit(
-                                    "llm-thinking",
-                                    LlmThinkingEvent {
-                                        conversation_id,
-                                        token: thinking.clone(),
-                                    },
-                                );
-                            }
-                        }
-
-                        // Accumulate content tokens
-                        if let Some(ref content) = msg.content {
-                            if !content.is_empty() {
-                                if first_token {
-                                    first_token = false;
-                                    let _ = app_handle.emit(
-                                        "llm-status",
-                                        LlmStatusEvent {
-                                            conversation_id,
-                                            status: "generating".to_string(),
-                                        },
-                                    );
-                                }
-                                full_content.push_str(content);
-                                let _ = app_handle.emit(
-                                    "llm-token",
-                                    LlmTokenEvent {
-                                        conversation_id,
-                                        token: content.clone(),
-                                    },
-                                );
-                            }
-                        }
-
-                        // Accumulate tool calls
-                        if let Some(ref tcs) = msg.tool_calls {
-                            tool_calls.extend(tcs.clone());
-                        }
-                    }
-                }
-            }
-        }
-
-        // If there are tool calls, execute them and continue the loop
-        if !tool_calls.is_empty() {
-            let _ = app_handle.emit(
-                "llm-status",
-                LlmStatusEvent {
-                    conversation_id,
-                    status: "querying_tools".to_string(),
-                },
-            );
-            // Save assistant message with tool calls
-            let tc_json = serde_json::to_string(&tool_calls).unwrap_or_default();
-            save_message_db(
-                db_path,
-                conversation_id,
-                "assistant",
-                if full_content.is_empty() {
-                    None
-                } else {
-                    Some(&full_content)
-                },
-                Some(&tc_json),
-                None,
-                if full_thinking.is_empty() {
-                    None
-                } else {
-                    Some(&full_thinking)
-                },
-            )?;
-
-            // Add assistant message with tool calls to messages
-            let mut assistant_msg = json!({ "role": "assistant" });
-            if !full_content.is_empty() {
-                assistant_msg["content"] = json!(full_content);
-            }
-            assistant_msg["tool_calls"] =
-                serde_json::to_value(&tool_calls).map_err(|e| e.to_string())?;
-            messages.push(assistant_msg);
-
-            // Execute each tool call and add results
-            for tc in &tool_calls {
-                let tool_name = &tc.function.name;
-                let _ = app_handle.emit(
-                    "llm-tool-call",
-                    LlmToolCallEvent {
-                        conversation_id,
-                        tool_name: tool_name.clone(),
-                    },
-                );
-
-                let result = match super::llm_tools::execute_tool(
-                    &client,
-                    db_path,
-                    tool_name,
-                    &tc.function.arguments,
-                )
-                .await
-                {
-                    Ok(val) => serde_json::to_string(&val).unwrap_or_default(),
-                    Err(e) => format!("Error executing {tool_name}: {e}"),
-                };
-
-                // Save tool result message
-                save_message_db(
-                    db_path,
-                    conversation_id,
-                    "tool",
-                    Some(&result),
-                    None,
-                    Some(tool_name),
-                    None,
-                )?;
-
-                messages.push(json!({
-                    "role": "tool",
-                    "content": result,
-                }));
-            }
-
-            // Reset for next iteration
-            full_content = String::new();
-            full_thinking = String::new();
-            tool_calls = Vec::new();
-            continue;
-        }
-
-        // No tool calls — save the final assistant message and emit done
-        if !full_content.is_empty() || !full_thinking.is_empty() {
-            save_message_db(
-                db_path,
-                conversation_id,
-                "assistant",
-                if full_content.is_empty() {
-                    None
-                } else {
-                    Some(&full_content)
-                },
-                None,
-                None,
-                if full_thinking.is_empty() {
-                    None
-                } else {
-                    Some(&full_thinking)
-                },
-            )?;
-        }
-
-        let _ = app_handle.emit(
-            "llm-done",
-            LlmDoneEvent {
-                conversation_id,
-                full_content,
-            },
-        );
-
-        return Ok(());
-    }
-
-    Err("Too many tool call rounds — aborting to prevent infinite loop.".to_string())
+#[cfg(test)]
+pub(crate) async fn cancel_llm_chat_for_test(conversation_id: i64) -> Result<(), String> {
+    cancel_llm_chat(conversation_id).await
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ollama_api_url, validate_ollama_base_url};
+    use super::{
+        fetch_ollama_models, ollama_api_url, parse_ollama_models, ping_ollama,
+        validate_ollama_base_url,
+    };
+    use serde_json::json;
 
     #[test]
     fn validate_ollama_base_url_accepts_http_and_https_hosts() {
         assert!(validate_ollama_base_url("http://localhost:11434").is_ok());
         assert!(validate_ollama_base_url("https://example.com").is_ok());
+    }
+
+    #[test]
+    fn validate_ollama_base_url_rejects_empty_string() {
+        let err = validate_ollama_base_url("   ").unwrap_err();
+        assert!(err.contains("empty"));
     }
 
     #[test]
@@ -1120,5 +754,52 @@ mod tests {
     fn ollama_api_url_builds_expected_endpoint_url() {
         let url = ollama_api_url("http://localhost:11434", "/api/tags").unwrap();
         assert_eq!(url, "http://localhost:11434/api/tags");
+    }
+
+    #[test]
+    fn parse_ollama_models_handles_empty_and_populated_payloads() {
+        assert!(parse_ollama_models(&json!({})).is_empty());
+        let models = parse_ollama_models(&json!({
+            "models": [
+                {"name": "llama3", "size": 100, "modified_at": "2024-01-01"},
+                {"size": 50}
+            ]
+        }));
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0].name, "llama3");
+        assert_eq!(models[0].size, Some(100));
+        assert_eq!(models[1].name, "");
+    }
+
+    #[tokio::test]
+    async fn fetch_ollama_models_uses_mock_server() {
+        let server = httpmock::MockServer::start();
+        server.mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/api/tags");
+            then.status(200)
+                .body(r#"{"models":[{"name":"gemma","size":200,"modified_at":"2024-06-01"}]}"#);
+        });
+
+        let models = fetch_ollama_models(&server.base_url()).await.unwrap();
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].name, "gemma");
+    }
+
+    #[tokio::test]
+    async fn ping_ollama_reports_reachability() {
+        let server = httpmock::MockServer::start();
+        server.mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/api/tags");
+            then.status(200);
+        });
+        assert!(ping_ollama(&server.base_url()).await);
+
+        let down = httpmock::MockServer::start();
+        down.mock(|when, then| {
+            when.method(httpmock::Method::GET).path("/api/tags");
+            then.status(503);
+        });
+        assert!(!ping_ollama(&down.base_url()).await);
+        assert!(!ping_ollama("not-a-valid-url").await);
     }
 }

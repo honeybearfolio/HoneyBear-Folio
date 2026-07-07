@@ -155,10 +155,15 @@ pub fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     Ok(app_dir.join("honeybear.db"))
 }
 
-/// Creates all database tables and indexes, and runs schema migrations for new columns.
-pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
-    let db_path = get_db_path(app_handle)?;
-    let db_ref = db_path.as_path();
+/// Creates all database tables and indexes at `db_path`, and runs schema migrations.
+pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
+    if let Some(parent) = db_path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+    }
+
+    let db_ref = db_path;
     crate::db_locked!(db_ref, {
         let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
 
@@ -446,6 +451,12 @@ pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
 
         Ok(())
     })
+}
+
+/// Creates all database tables and indexes, and runs migrations for new columns.
+pub fn init_db(app_handle: &AppHandle) -> Result<(), String> {
+    let db_path = get_db_path(app_handle)?;
+    init_db_at_path(db_path.as_path())
 }
 
 /// Tauri command: sets a custom database path in settings and initializes the database there.

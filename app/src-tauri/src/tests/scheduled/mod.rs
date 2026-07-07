@@ -2,6 +2,8 @@ use crate::core::scheduled::compute_occurrences;
 use crate::models::ScheduledTransaction;
 use chrono::NaiveDate;
 
+pub mod db_tests;
+
 fn create_base_schedule() -> ScheduledTransaction {
     ScheduledTransaction {
         id: 1,
@@ -123,22 +125,25 @@ fn test_max_occurrences_limit() {
     let mut schedule = create_base_schedule();
     schedule.recurrence_type = "every_n".to_string();
     schedule.interval_value = Some(1);
-    schedule.interval_unit = Some("month".to_string());
+    schedule.interval_unit = Some("day".to_string());
     schedule.start_date = "2023-01-01".to_string();
-    schedule.max_occurrences = Some(3); // Only 3 total allowed
-                                        // Suppose 1 already happened
-    schedule.occurrences_count = 1;
+    schedule.max_occurrences = Some(3);
 
-    let _from = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-    let _to = NaiveDate::from_ymd_opt(2023, 6, 1).unwrap();
+    let from = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
+    let to = NaiveDate::from_ymd_opt(2023, 1, 31).unwrap();
 
-    // Occurrences logic handles `occurrences_count`.
-    // It should skip the ones already counted?
-    // Wait, `compute_occurrences` logic needs to be checked.
-    // Reading code of `compute_occurrences` showed it reads `max_occurrences` but it *doesn't* seem to subtract `occurrences_count` automatically unless logic inside does it.
-    // Let's re-read the implementation to be sure.
-    // Based on `app/src-tauri/src/core/scheduled.rs`:
-    // It iterates and checks: `if let Some(max) = schedule.max_occurrences { if count >= max { break; } }`
-    // where `count` is local counter starting at 0? Or is it `schedule.occurrences_count`?
-    // I need to verify that.
+    let dates = compute_occurrences(&schedule, from, to);
+    assert_eq!(dates.len(), 3);
+    assert_eq!(dates[0], NaiveDate::from_ymd_opt(2023, 1, 1).unwrap());
+    assert_eq!(dates[1], NaiveDate::from_ymd_opt(2023, 1, 2).unwrap());
+    assert_eq!(dates[2], NaiveDate::from_ymd_opt(2023, 1, 3).unwrap());
+}
+
+#[test]
+fn test_unknown_recurrence_type_returns_empty() {
+    let mut schedule = create_base_schedule();
+    schedule.recurrence_type = "unsupported".to_string();
+    let from = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
+    let to = NaiveDate::from_ymd_opt(2023, 1, 31).unwrap();
+    assert!(compute_occurrences(&schedule, from, to).is_empty());
 }

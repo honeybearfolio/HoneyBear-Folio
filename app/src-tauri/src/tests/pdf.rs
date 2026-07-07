@@ -1,4 +1,8 @@
-use crate::core::models::{ReportCashFlow, ReportData, ReportLabels, ReportSummary};
+use crate::core::models::{
+    ReportAccountBalance, ReportAccountTransactions, ReportCashFlow, ReportCategoryAmount,
+    ReportData, ReportDataPoint, ReportHolding, ReportLabels, ReportMonthlyData, ReportPortfolio,
+    ReportSummary, ReportTransaction,
+};
 use crate::core::pdf::{generate_pdf_report, generate_report};
 use std::fs;
 
@@ -108,4 +112,98 @@ fn test_generate_pdf_report_writes_file() {
 
     // cleanup
     let _ = fs::remove_file(&tmp);
+}
+
+#[test]
+fn test_generate_report_with_full_data() {
+    let mut data = make_empty_report();
+    data.labels.title = "Annual Report".into();
+    data.summary = ReportSummary {
+        net_worth: 125000.0,
+        total_income: 85000.0,
+        total_expenses: 42000.0,
+        net_savings: 43000.0,
+        savings_rate: 50.6,
+        account_count: 2,
+    };
+    data.account_balances = vec![ReportAccountBalance {
+        name: "Brokerage".into(),
+        currency: "USD".into(),
+        currency_symbol: "$".into(),
+        cash_balance: 5000.0,
+        market_value: 45000.0,
+        total: 50000.0,
+        exchange_rate: 1.0,
+    }];
+    data.net_worth_points = vec![
+        ReportDataPoint {
+            label: "Jan".into(),
+            value: 100000.0,
+        },
+        ReportDataPoint {
+            label: "Jun".into(),
+            value: 125000.0,
+        },
+    ];
+    data.monthly_income_expenses = vec![ReportMonthlyData {
+        label: "January".into(),
+        income: 7000.0,
+        expenses: 3500.0,
+    }];
+    data.expense_categories = vec![ReportCategoryAmount {
+        category: "Food".into(),
+        amount: 800.0,
+        percentage: 40.0,
+    }];
+    data.income_categories = vec![ReportCategoryAmount {
+        category: "Salary".into(),
+        amount: 7000.0,
+        percentage: 100.0,
+    }];
+    data.cash_flow = ReportCashFlow {
+        total_income: 85000.0,
+        total_expenses: 42000.0,
+        total_investments: 15000.0,
+        surplus_or_deficit: 28000.0,
+        expense_categories: data.expense_categories.clone(),
+        investment_categories: vec![ReportCategoryAmount {
+            category: "Stocks".into(),
+            amount: 15000.0,
+            percentage: 100.0,
+        }],
+    };
+    data.portfolio = Some(ReportPortfolio {
+        total_value: 45000.0,
+        total_cost_basis: 40000.0,
+        overall_roi: 12.5,
+        holdings: vec![ReportHolding {
+            ticker: "AAPL".into(),
+            shares: 100.0,
+            price: 180.0,
+            current_value: 18000.0,
+            cost_basis: 15000.0,
+            roi: 20.0,
+        }],
+    });
+    data.accounts_transactions = vec![ReportAccountTransactions {
+        account_name: "Checking".into(),
+        currency: "USD".into(),
+        currency_symbol: "$".into(),
+        exchange_rate: 1.0,
+        transactions: vec![ReportTransaction {
+            date: "2024-01-15".into(),
+            payee: "Employer".into(),
+            category: "Salary".into(),
+            amount: 7000.0,
+            notes: String::new(),
+            ticker: String::new(),
+            shares: 0.0,
+            price_per_share: 0.0,
+            fee: 0.0,
+        }],
+    }];
+
+    let bytes = generate_report(&data).expect("full report generation failed");
+    assert!(bytes.starts_with(b"%PDF"));
+    assert!(bytes.len() > 5000);
 }

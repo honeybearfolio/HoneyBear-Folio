@@ -85,151 +85,8 @@ pub async fn get_stock_quotes_with_client(
     app_handle: tauri::AppHandle,
     tickers: Vec<String>,
 ) -> Result<Vec<YahooQuote>, String> {
-    if tickers.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    let mut tasks = Vec::new();
-
-    for ticker in &tickers {
-        let ticker = ticker.clone();
-        let client = client.clone();
-        let base_url = base_url.clone();
-        tasks.push(tokio::spawn(async move {
-            let url = format!("{base_url}/v8/finance/chart/{ticker}?interval=1d&range=1d");
-            let res = client.get(&url)
-                .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .send()
-                .await;
-
-            match res {
-                Ok(resp) => {
-                    if resp.status().is_success() {
-                        let text_res = resp.text().await;
-                        match text_res {
-                            Ok(text) => {
-                                let json: Result<YahooChartResponse, _> = serde_json::from_str(&text);
-                                match json {
-                                    Ok(data) => {
-                                        if let Some(results) = data.chart.result {
-                                            if let Some(item) = results.first() {
-                                                let price = item.meta.regular_market_price.unwrap_or(0.0);
-                                                let prev = item.meta.chart_previous_close
-                                                    .or(item.meta.previous_close)
-                                                    .unwrap_or(price);
-
-                                                let change_percent = if prev == 0.0 {
-                                                    0.0
-                                                } else {
-                                                    ((price - prev) / prev) * 100.0
-                                                };
-                                                return Some(YahooQuote {
-                                                    symbol: item.meta.symbol.clone(),
-                                                    price,
-                                                    change_percent,
-                                                    currency: item.meta.currency.clone(),
-                                                    quote_type: item.meta.instrument_type.clone(),
-                                                });
-                                            }
-                                        }
-                                    },
-                                    Err(err) => {
-                                        let description = err.to_string();
-                                        log::warn!(
-                                            "Failed to parse JSON for {ticker}: {description}"
-                                        );
-                                    }
-                                }
-                            },
-                            Err(err) => {
-                                let description = err.to_string();
-                                log::warn!("Failed to get text for {ticker}: {description}");
-                            }
-                        }
-                    } else {
-                        log::warn!("Request failed for {}: {}", ticker, resp.status());
-                    }
-                },
-                Err(err) => {
-                    let description = err.to_string();
-                    log::warn!("Request error for {ticker}: {description}");
-                }
-            }
-            None
-        }));
-    }
-
-    let mut quotes = Vec::new();
-    for task in tasks {
-        if let Ok(Some(quote)) = task.await {
-            quotes.push(quote);
-        }
-    }
-
-    // Update DB with new quotes
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    let db_ref = db_path.as_path();
-    let quote_prices: Vec<(String, f64)> =
-        quotes.iter().map(|q| (q.symbol.clone(), q.price)).collect();
-    crate::db_locked!(db_ref, {
-        let mut conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
-        let tx = conn.transaction().map_err(|e| e.to_string())?;
-
-        {
-            let mut stmt = tx.prepare("INSERT OR REPLACE INTO stock_prices (ticker, price, last_updated) VALUES (?1, ?2, datetime('now'))").map_err(|e| e.to_string())?;
-            for (symbol, price) in &quote_prices {
-                stmt.execute(params![symbol, price])
-                    .map_err(|e| e.to_string())?;
-            }
-        }
-        tx.commit().map_err(|e| e.to_string())?;
-        Ok::<(), String>(())
-    })?;
-
-    // If we missed some tickers, try to fetch from DB
-    let found_symbols: Vec<String> = quotes.iter().map(|q| q.symbol.clone()).collect();
-    let missing_tickers: Vec<String> = tickers
-        .into_iter()
-        .filter(|t| !found_symbols.iter().any(|s| s.eq_ignore_ascii_case(t)))
-        .collect();
-
-    if !missing_tickers.is_empty() {
-        let additional: Vec<YahooQuote> = crate::db_locked!(db_ref, {
-            let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
-            let placeholders: String = missing_tickers
-                .iter()
-                .map(|_| "?")
-                .collect::<Vec<_>>()
-                .join(",");
-            let query = format!(
-                "SELECT ticker, price FROM stock_prices WHERE ticker COLLATE NOCASE IN ({placeholders})"
-            );
-            let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
-
-            let rows = stmt
-                .query_map(rusqlite::params_from_iter(missing_tickers.iter()), |row| {
-                    Ok((row.get::<_, String>(0)?, row.get::<_, f64>(1)?))
-                })
-                .map_err(|e| e.to_string())?;
-
-            let mut additional = Vec::new();
-            for row in rows {
-                let (symbol, price) = row.map_err(|e| e.to_string())?;
-                additional.push(YahooQuote {
-                    symbol,
-                    price,
-                    change_percent: 0.0,
-                    currency: None,
-                    quote_type: None,
-                });
-            }
-
-            Ok::<Vec<YahooQuote>, String>(additional)
-        })?;
-        quotes.extend(additional);
-    }
-
-    Ok(quotes)
+    get_stock_quotes_with_client_and_db(client, base_url, db_path.as_path(), tickers).await
 }
 
 /// Fetches stock quotes from Yahoo Finance and caches them in the database.
@@ -558,6 +415,24 @@ pub fn get_daily_stock_prices(
 }
 
 /// Verifies whether a currency pair is available on Yahoo Finance.
+pub async fn check_currency_availability_with_client_and_db(
+    client: reqwest::Client,
+    base_url: String,
+    db_path: &std::path::Path,
+    currency: String,
+) -> Result<bool, String> {
+    if currency == "USD" {
+        return Ok(true);
+    }
+
+    let ticker = format!("{currency}USD=X");
+    let quotes =
+        get_stock_quotes_with_client_and_db(client, base_url, db_path, vec![ticker]).await?;
+
+    Ok(!quotes.is_empty())
+}
+
+/// Verifies whether a currency pair is available on Yahoo Finance.
 #[tauri::command]
 pub async fn check_currency_availability(
     app_handle: tauri::AppHandle,
@@ -567,19 +442,17 @@ pub async fn check_currency_availability(
         return Ok(true);
     }
 
-    let ticker = format!("{currency}USD=X");
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()
         .map_err(|e| e.to_string())?;
 
-    let quotes = get_stock_quotes_with_client(
+    check_currency_availability_with_client_and_db(
         client,
         "https://query1.finance.yahoo.com".to_string(),
-        app_handle,
-        vec![ticker],
+        db_path.as_path(),
+        currency,
     )
-    .await?;
-
-    Ok(!quotes.is_empty())
+    .await
 }

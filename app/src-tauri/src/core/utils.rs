@@ -314,24 +314,16 @@ pub struct ExchangeRateEntry {
 }
 
 /// Get all exchange rates: custom rates + all currencies used in accounts.
-/// Currencies with custom rates are marked `is_custom: true`.
-/// Account currencies without a custom rate are included with `is_custom: false`
-/// and `rate: 0.0` so the UI can offer an override option.
-#[tauri::command]
-pub fn get_all_exchange_rates(
-    app_handle: AppHandle,
+pub fn get_all_exchange_rates_db(
+    db_path: &PathBuf,
     app_currency: Option<String>,
 ) -> Result<Vec<ExchangeRateEntry>, String> {
-    let db_path = crate::db_init::get_db_path(&app_handle)?;
-    let custom_rates = get_custom_rates_map(&db_path)?;
-
-    // Collect all unique currencies from accounts
-    let account_currencies = get_account_currencies(&db_path)?;
+    let custom_rates = get_custom_rates_map(db_path)?;
+    let account_currencies = get_account_currencies(db_path)?;
 
     let mut seen = std::collections::HashSet::new();
     let mut entries = Vec::new();
 
-    // Add custom rates first
     for (currency, rate) in &custom_rates {
         seen.insert(currency.clone());
         entries.push(ExchangeRateEntry {
@@ -341,8 +333,6 @@ pub fn get_all_exchange_rates(
         });
     }
 
-    // Add account currencies that don't have a custom rate (Yahoo-based).
-    // USD is the pivot currency, so skip it — its rate is always 1.0.
     for currency in account_currencies {
         if currency != "USD" && !seen.contains(&currency) {
             seen.insert(currency.clone());
@@ -354,8 +344,6 @@ pub fn get_all_exchange_rates(
         }
     }
 
-    // Ensure the app's default currency appears so the user can override its
-    // rate to USD even when no account uses it directly.
     if let Some(ref app_curr) = app_currency {
         if app_curr != "USD" && !seen.contains(app_curr) {
             entries.push(ExchangeRateEntry {
@@ -367,6 +355,19 @@ pub fn get_all_exchange_rates(
     }
 
     Ok(entries)
+}
+
+/// Get all exchange rates: custom rates + all currencies used in accounts.
+/// Currencies with custom rates are marked `is_custom: true`.
+/// Account currencies without a custom rate are included with `is_custom: false`
+/// and `rate: 0.0` so the UI can offer an override option.
+#[tauri::command]
+pub fn get_all_exchange_rates(
+    app_handle: AppHandle,
+    app_currency: Option<String>,
+) -> Result<Vec<ExchangeRateEntry>, String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    get_all_exchange_rates_db(&db_path, app_currency)
 }
 
 /// Get all unique currencies used across accounts

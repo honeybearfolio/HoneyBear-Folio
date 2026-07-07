@@ -15,8 +15,8 @@
 
 mod core;
 pub use crate::core::{
-    accounts, assets, calculations, db_init, io, llm, markets, models, pdf, rules, scheduled,
-    session, transactions, utils,
+    accounts, assets, calculations, db_init, io, llm, llm_chat, markets, models, pdf, rules,
+    scheduled, session, transactions, utils,
 };
 
 pub use crate::models::{
@@ -204,7 +204,7 @@ pub fn run() {
             llm::delete_conversation,
             llm::rename_conversation,
             llm::delete_all_conversations,
-            llm::llm_chat,
+            llm_chat::llm_chat,
             llm::cancel_llm_chat,
             assets::create_asset,
             assets::get_assets,
