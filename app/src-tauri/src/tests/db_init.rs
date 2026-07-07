@@ -118,3 +118,21 @@ fn test_db_locks_are_per_path() {
         });
     });
 }
+
+#[test]
+fn test_init_db_at_path_is_idempotent() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("idempotent.db");
+    init_db_at_path(&db_path).unwrap();
+    init_db_at_path(&db_path).unwrap();
+
+    let conn = Connection::open(&db_path).unwrap();
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(count >= 10);
+}

@@ -125,3 +125,71 @@ fn test_delete_custom_exchange_rate_db() {
         None
     );
 }
+
+#[test]
+fn test_direct_rate_pair_conversion() {
+    let accounts = vec![Account {
+        id: 1,
+        name: "EUR".to_string(),
+        balance: 0.0,
+        currency: Some("EUR".to_string()),
+        exchange_rate: 1.0,
+    }];
+    let raw_data = vec![(1, "GBP".to_string(), 100.0)];
+    let mut rates = HashMap::new();
+    rates.insert("GBPEUR=X".to_string(), 1.15);
+    let updated = calculate_account_balances(accounts, raw_data, "USD", &rates, &HashMap::new());
+    assert!((updated[0].balance - 115.0).abs() < 1e-6);
+}
+
+#[test]
+fn test_custom_rate_usd_pivot_conversion() {
+    let accounts = vec![Account {
+        id: 1,
+        name: "EUR".to_string(),
+        balance: 0.0,
+        currency: Some("EUR".to_string()),
+        exchange_rate: 1.0,
+    }];
+    let raw_data = vec![(1, "JPY".to_string(), 1000.0)];
+    let mut custom_rates = HashMap::new();
+    custom_rates.insert("EUR".to_string(), 1.1);
+    custom_rates.insert("JPY".to_string(), 0.0067);
+    let updated = calculate_account_balances(
+        accounts,
+        raw_data,
+        "USD",
+        &HashMap::new(),
+        &custom_rates,
+    );
+    // 1000 JPY -> USD via pivot -> EUR account currency
+    assert!(updated[0].balance > 0.0);
+    assert!(updated[0].exchange_rate > 0.0);
+}
+
+#[test]
+fn test_get_custom_rates_map_returns_stored_rates() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("rates.db");
+    crate::init_db_at_path(&db_path).unwrap();
+    set_custom_exchange_rate_db(&db_path, "CAD".to_string(), 0.75).unwrap();
+    let map = get_custom_rates_map(&db_path).unwrap();
+    assert_eq!(map.get("CAD").copied(), Some(0.75));
+}
+
+#[test]
+fn test_get_all_exchange_rates_db_omits_usd_from_accounts() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("usd.db");
+    crate::init_db_at_path(&db_path).unwrap();
+    create_account_db(
+        &db_path,
+        "USD Only".to_string(),
+        0.0,
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
+    let entries = get_all_exchange_rates_db(&db_path, None).unwrap();
+    assert!(entries.iter().all(|e| e.currency != "USD"));
+}

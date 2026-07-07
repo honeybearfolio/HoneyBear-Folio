@@ -227,3 +227,129 @@ fn test_delete_asset_cascades_valuations() {
     let valuations = get_valuations_db(&db_path, asset_id).unwrap();
     assert_eq!(valuations.len(), 0);
 }
+
+#[test]
+fn test_create_asset_rejects_empty_name() {
+    let (_dir, db_path) = setup_db();
+    let err = create_asset_db(
+        &db_path,
+        "   ".to_string(),
+        "other".to_string(),
+        None,
+        None,
+    )
+    .unwrap_err();
+    assert!(err.contains("empty"));
+}
+
+#[test]
+fn test_get_assets_applies_custom_exchange_rate_for_target() {
+    let (_dir, db_path) = setup_db();
+    crate::set_custom_exchange_rate_db(&db_path, "EUR".to_string(), 1.2).unwrap();
+    create_asset_db(
+        &db_path,
+        "Flat".to_string(),
+        "real_estate".to_string(),
+        Some("EUR".to_string()),
+        None,
+    )
+    .unwrap();
+    let asset_id = get_assets_db(&db_path, None).unwrap()[0].id;
+    create_valuation_db(&db_path, asset_id, "2024-01-01".to_string(), 100000.0).unwrap();
+
+    let assets = get_assets_db(&db_path, Some("USD")).unwrap();
+    assert_eq!(assets[0].exchange_rate, 1.2);
+}
+
+#[test]
+fn test_update_asset_rejects_empty_name_and_missing_id() {
+    let (_dir, db_path) = setup_db();
+    create_asset_db(
+        &db_path,
+        "Item".to_string(),
+        "other".to_string(),
+        None,
+        None,
+    )
+    .unwrap();
+    let id = get_assets_db(&db_path, None).unwrap()[0].id;
+
+    let err = update_asset_db(
+        &db_path,
+        id,
+        "  ".to_string(),
+        "other".to_string(),
+        None,
+        None,
+    )
+    .unwrap_err();
+    assert!(err.contains("empty"));
+
+    let err = update_asset_db(
+        &db_path,
+        9999,
+        "New".to_string(),
+        "other".to_string(),
+        None,
+        None,
+    )
+    .unwrap_err();
+    assert!(err.contains("not found"));
+}
+
+#[test]
+fn test_delete_missing_asset_errors() {
+    let (_dir, db_path) = setup_db();
+    let err = delete_asset_db(&db_path, 9999).unwrap_err();
+    assert!(err.contains("not found"));
+}
+
+#[test]
+fn test_get_valuations_empty_for_unknown_asset() {
+    let (_dir, db_path) = setup_db();
+    let valuations = get_valuations_db(&db_path, 9999).unwrap();
+    assert!(valuations.is_empty());
+}
+
+#[test]
+fn test_get_assets_same_target_currency_has_unit_exchange_rate() {
+    let (_dir, db_path) = setup_db();
+    create_asset_db(
+        &db_path,
+        "EU Home".to_string(),
+        "real_estate".to_string(),
+        Some("EUR".to_string()),
+        None,
+    )
+    .unwrap();
+    let assets = get_assets_db(&db_path, Some("EUR")).unwrap();
+    assert_eq!(assets[0].exchange_rate, 1.0);
+}
+
+#[test]
+fn test_valuation_update_and_delete_not_found() {
+    let (_dir, db_path) = setup_db();
+    let err = update_valuation_db(&db_path, 9999, "2024-01-01".to_string(), 1.0).unwrap_err();
+    assert!(err.contains("not found"));
+    let err = delete_valuation_db(&db_path, 9999).unwrap_err();
+    assert!(err.contains("not found"));
+}
+
+#[test]
+fn test_get_total_assets_value_applies_exchange_rate() {
+    let (_dir, db_path) = setup_db();
+    crate::set_custom_exchange_rate_db(&db_path, "EUR".to_string(), 1.25).unwrap();
+    create_asset_db(
+        &db_path,
+        "Apartment".to_string(),
+        "real_estate".to_string(),
+        Some("EUR".to_string()),
+        None,
+    )
+    .unwrap();
+    let asset_id = get_assets_db(&db_path, None).unwrap()[0].id;
+    create_valuation_db(&db_path, asset_id, "2024-01-01".to_string(), 200000.0).unwrap();
+
+    let total = get_total_assets_value_db(&db_path, Some("USD")).unwrap();
+    assert!((total - 250000.0).abs() < 0.01);
+}

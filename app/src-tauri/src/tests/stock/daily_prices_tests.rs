@@ -117,3 +117,69 @@ fn test_get_daily_stock_prices_from_path_ordering() {
     assert_eq!(prices[1].date, "2021-01-02");
     assert_eq!(prices[2].date, "2021-01-03");
 }
+
+#[tokio::test]
+async fn test_update_daily_skips_when_already_current() {
+    let (_dir, db_path) = setup_db();
+    crate::init_db_at_path(&db_path).unwrap();
+
+    let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let conn = Connection::open(&db_path).unwrap();
+    conn.execute(
+        "INSERT INTO daily_stock_prices (ticker, date, price) VALUES (?1, ?2, ?3)",
+        rusqlite::params!["FOO", today, 100.0],
+    )
+    .unwrap();
+
+    let server = MockServer::start();
+    let client = reqwest::Client::builder().build().unwrap();
+    crate::update_daily_stock_prices_with_client_and_base(
+        &db_path,
+        &client,
+        &server.base_url(),
+        vec!["FOO".to_string()],
+    )
+    .await
+    .unwrap();
+
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM daily_stock_prices WHERE ticker = 'FOO'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(count, 1);
+}
+
+#[tokio::test]
+async fn test_update_daily_http_failure_is_skipped() {
+    let (_dir, db_path) = setup_db();
+    crate::init_db_at_path(&db_path).unwrap();
+
+    let server = MockServer::start();
+    server.mock(|when, then| {
+        when.method(GET).path("/v8/finance/chart/FOO");
+        then.status(500);
+    });
+
+    let client = reqwest::Client::builder().build().unwrap();
+    crate::update_daily_stock_prices_with_client_and_base(
+        &db_path,
+        &client,
+        &server.base_url(),
+        vec!["FOO".to_string()],
+    )
+    .await
+    .unwrap();
+
+    let conn = Connection::open(&db_path).unwrap();
+    let count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM daily_stock_prices WHERE ticker = 'FOO'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(count, 0);
+}

@@ -32,3 +32,5 @@ pub mod io;
 pub mod llm;
 
 pub mod utils;
+
+pub mod models;

@@ -1,5 +1,6 @@
 pub use super::common;
 
+pub mod edge_cases;
 pub mod all_network_fail_no_db;
 pub mod concurrency_stress;
 pub mod daily_prices_tests;

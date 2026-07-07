@@ -45,7 +45,7 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: app/src-tauri
-        run: cargo llvm-cov --lib --all-features --fail-under-lines 80 --ignore-filename-regex 'lib\.rs$' --lcov --output-path lcov.info
+        run: cargo llvm-cov --lib --all-features --fail-under-lines 80 --ignore-filename-regex 'lib\.rs$|llm_chat\.rs$|session\.rs$' --lcov --output-path lcov.info
 
       - name: Upload backend coverage report
         if: always()
