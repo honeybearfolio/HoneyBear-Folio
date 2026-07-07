@@ -4,7 +4,7 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::AppHandle;
 
@@ -187,7 +187,7 @@ pub fn get_conversations(app_handle: AppHandle) -> Result<Vec<Conversation>, Str
 }
 
 /// Queries all conversations from the database, ordered by most recent first.
-pub fn get_conversations_db(db_path: &PathBuf) -> Result<Vec<Conversation>, String> {
+pub fn get_conversations_db(db_path: &Path) -> Result<Vec<Conversation>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let mut stmt = conn
@@ -218,7 +218,7 @@ pub fn create_conversation(app_handle: AppHandle, title: String) -> Result<Conve
 }
 
 /// Inserts a new conversation into the database and returns it.
-pub fn create_conversation_db(db_path: &PathBuf, title: String) -> Result<Conversation, String> {
+pub fn create_conversation_db(db_path: &Path, title: String) -> Result<Conversation, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
@@ -245,10 +245,9 @@ pub fn delete_conversation(app_handle: AppHandle, conversation_id: i64) -> Resul
 }
 
 /// Deletes a conversation and all its associated messages from the database.
-pub fn delete_conversation_db(db_path: &PathBuf, conversation_id: i64) -> Result<(), String> {
-    let db_ref = db_path.as_path();
-    crate::db_locked!(db_ref, {
-        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
+pub fn delete_conversation_db(db_path: &Path, conversation_id: i64) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| e.to_string())?;
         conn.execute(
@@ -273,13 +272,12 @@ pub fn rename_conversation(
 
 /// Updates the title of an existing conversation in the database.
 pub fn rename_conversation_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     conversation_id: i64,
     title: String,
 ) -> Result<(), String> {
-    let db_ref = db_path.as_path();
-    crate::db_locked!(db_ref, {
-        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         let now = Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE chat_conversations SET title = ?1, updated_at = ?2 WHERE id = ?3",
@@ -302,7 +300,7 @@ pub fn get_conversation_messages(
 
 /// Queries all messages for a conversation from the database, ordered chronologically.
 pub fn get_conversation_messages_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     conversation_id: i64,
 ) -> Result<Vec<ChatMessage>, String> {
     crate::db_locked!(db_path, {
@@ -333,7 +331,7 @@ pub fn get_conversation_messages_db(
 }
 
 pub(crate) fn save_message_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     conversation_id: i64,
     role: &str,
     content: Option<&str>,
@@ -369,10 +367,9 @@ pub fn delete_all_conversations(app_handle: AppHandle) -> Result<(), String> {
 }
 
 /// Deletes all conversations and their messages from the database.
-pub fn delete_all_conversations_db(db_path: &PathBuf) -> Result<(), String> {
-    let db_ref = db_path.as_path();
-    crate::db_locked!(db_ref, {
-        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
+pub fn delete_all_conversations_db(db_path: &Path) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
         conn.execute("PRAGMA foreign_keys = ON", [])
             .map_err(|e| e.to_string())?;
         conn.execute("DELETE FROM chat_conversations", [])
@@ -674,7 +671,7 @@ pub(crate) fn clear_cancelled(conversation_id: i64) {
 
 #[cfg(test)]
 pub(crate) fn save_message_db_for_test(
-    db_path: &PathBuf,
+    db_path: &Path,
     conversation_id: i64,
     role: &str,
     content: Option<&str>,
@@ -710,7 +707,7 @@ pub(crate) fn is_cancelled_for_test(conversation_id: i64) -> bool {
 
 #[cfg(test)]
 pub(crate) fn clear_cancelled_for_test(conversation_id: i64) {
-    clear_cancelled(conversation_id)
+    clear_cancelled(conversation_id);
 }
 
 #[cfg(test)]
