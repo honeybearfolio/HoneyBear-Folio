@@ -155,13 +155,8 @@ fn test_custom_rate_usd_pivot_conversion() {
     let mut custom_rates = HashMap::new();
     custom_rates.insert("EUR".to_string(), 1.1);
     custom_rates.insert("JPY".to_string(), 0.0067);
-    let updated = calculate_account_balances(
-        accounts,
-        raw_data,
-        "USD",
-        &HashMap::new(),
-        &custom_rates,
-    );
+    let updated =
+        calculate_account_balances(accounts, raw_data, "USD", &HashMap::new(), &custom_rates);
     // 1000 JPY -> USD via pivot -> EUR account currency
     assert!(updated[0].balance > 0.0);
     assert!(updated[0].exchange_rate > 0.0);

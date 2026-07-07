@@ -231,14 +231,8 @@ fn test_delete_asset_cascades_valuations() {
 #[test]
 fn test_create_asset_rejects_empty_name() {
     let (_dir, db_path) = setup_db();
-    let err = create_asset_db(
-        &db_path,
-        "   ".to_string(),
-        "other".to_string(),
-        None,
-        None,
-    )
-    .unwrap_err();
+    let err =
+        create_asset_db(&db_path, "   ".to_string(), "other".to_string(), None, None).unwrap_err();
     assert!(err.contains("empty"));
 }
 

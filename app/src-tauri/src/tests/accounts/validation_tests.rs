@@ -88,8 +88,7 @@ fn test_update_account_name_and_currency() {
 #[test]
 fn test_update_account_rejects_empty_name() {
     let (_dir, db_path) = setup_db();
-    let account =
-        crate::create_account_db(&db_path, "Test".to_string(), 0.0, None, None).unwrap();
+    let account = crate::create_account_db(&db_path, "Test".to_string(), 0.0, None, None).unwrap();
     let err =
         crate::core::accounts::update_account_db(&db_path, account.id, "   ".to_string(), None)
             .unwrap_err();
