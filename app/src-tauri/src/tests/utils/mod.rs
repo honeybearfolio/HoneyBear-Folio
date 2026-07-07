@@ -16,6 +16,14 @@ fn test_get_system_theme_returns_dark_or_light() {
 }
 
 #[test]
+fn test_get_system_theme_respects_gtk_theme_env() {
+    std::env::set_var("GTK_THEME", "Adwaita-dark");
+    let theme = get_system_theme().unwrap();
+    assert_eq!(theme, "dark");
+    std::env::remove_var("GTK_THEME");
+}
+
+#[test]
 fn test_same_currency_rate_is_one() {
     let accounts = vec![Account {
         id: 1,

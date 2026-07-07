@@ -730,6 +730,12 @@ mod tests {
     }
 
     #[test]
+    fn validate_ollama_base_url_rejects_empty_string() {
+        let err = validate_ollama_base_url("   ").unwrap_err();
+        assert!(err.contains("empty"));
+    }
+
+    #[test]
     fn validate_ollama_base_url_rejects_invalid_scheme_or_missing_host() {
         assert!(validate_ollama_base_url("ftp://localhost:11434").is_err());
         let missing_host_err = validate_ollama_base_url("http:///api/tags").unwrap_err();

@@ -45,7 +45,29 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: app/src-tauri
-        run: cargo llvm-cov --lib --all-features --fail-under-lines 80 --ignore-filename-regex 'lib\.rs$|llm_chat\.rs$|session\.rs$' --lcov --output-path lcov.info
+        run: |
+          set -o pipefail
+          cargo llvm-cov --lib --all-features --fail-under-lines 80 \
+            --ignore-filename-regex 'lib\.rs$|llm_chat\.rs$|session\.rs$' \
+            --lcov --output-path lcov.info --summary-only 2>&1 | tee coverage-summary.txt
+
+      - name: Report backend coverage
+        if: always()
+        working-directory: app/src-tauri
+        run: |
+          if [ -f coverage-summary.txt ]; then
+            LINE_COV=$(awk '/^TOTAL/ {print $10}' coverage-summary.txt | tr -d '%')
+            echo "Backend line coverage: ${LINE_COV}%"
+            {
+              echo "## Backend line coverage"
+              echo ""
+              echo "**${LINE_COV}%** line coverage (threshold: 80%)"
+              echo ""
+              echo '```'
+              awk '/^TOTAL|^(accounts|assets|calculations|db_init|io|llm|llm_tools|markets|pdf|rules|scheduled|transactions|utils)\.rs/' coverage-summary.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload backend coverage report
         if: always()
