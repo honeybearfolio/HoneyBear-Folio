@@ -86,16 +86,17 @@ describe("AboutSection", () => {
 
   it("calls openExternal for feature request, issue report, and coffee links", async () => {
     const user = userEvent.setup();
+    const githubRepoUrl = EXTERNAL_URLS.GITHUB_REPO ?? "";
     render(<AboutSection openExternal={openExternal} />);
 
     await user.click(screen.getByRole("link", { name: /Request a Feature/i }));
     expect(openExternal).toHaveBeenCalledWith(
-      `${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=feature_request.md`,
+      `${githubRepoUrl}/issues/new?template=feature_request.md`,
     );
 
     await user.click(screen.getByRole("link", { name: /Report an Issue/i }));
     expect(openExternal).toHaveBeenCalledWith(
-      `${EXTERNAL_URLS.GITHUB_REPO}/issues/new?template=bug_report.md`,
+      `${githubRepoUrl}/issues/new?template=bug_report.md`,
     );
 
     await user.click(screen.getByRole("link", { name: /Buy Me a Coffee/i }));
