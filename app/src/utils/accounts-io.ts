@@ -3,6 +3,7 @@ import { isAssetRow, isAssetSheetName } from "./assets-io";
 import {
   getField,
   headerMatchesAlias,
+  headerMatchesFieldAlias,
   normalizeKey,
   parseNumericValue,
 } from "./spreadsheet-io";
@@ -36,17 +37,55 @@ const ACCOUNT_FIELD_ALIASES = {
   currency: ["currency", "moneda"],
 } as const;
 
-const TRANSACTION_HEADER_HINTS = [
+/** Column header aliases for transaction import auto-mapping (English + Spanish). */
+export const TRANSACTION_FIELD_ALIASES = {
+  date: ["date", "fecha"],
+  payee: [
+    "payee",
+    "description",
+    "merchant",
+    "descripcion",
+    "descripción",
+    "beneficiario",
+  ],
+  amount: ["amount", "value", "importe"],
+  category: ["category", "categoría", "categoria"],
+  notes: ["notes", "note", "memo", "notas", "nota"],
+  account: ["account", "acc", "cuenta"],
+  ticker: ["ticker", "symbol", "símbolo", "simbolo"],
+  shares: ["shares", "quantity", "qty", "acciones", "cantidad"],
+  price: ["price", "price_per_share", "precio"],
+  fee: ["fee", "commission", "comisión", "comision"],
+  currency: ["currency", "curr", "moneda"],
+} as const;
+
+export type TransactionImportField = keyof typeof TRANSACTION_FIELD_ALIASES;
+
+export type ImportColumnMapping = Record<TransactionImportField, string>;
+
+const TRANSACTION_SHEET_HINT_FIELDS = [
   "date",
-  "fecha",
   "payee",
-  "description",
-  "merchant",
   "amount",
-  "importe",
   "category",
-  "categoría",
-  "categoria",
+] as const satisfies readonly TransactionImportField[];
+
+const TRANSACTION_HEADER_HINTS = TRANSACTION_SHEET_HINT_FIELDS.flatMap(
+  (field) => TRANSACTION_FIELD_ALIASES[field],
+);
+
+const IMPORT_FIELD_PRIORITY: readonly TransactionImportField[] = [
+  "date",
+  "payee",
+  "amount",
+  "category",
+  "notes",
+  "account",
+  "ticker",
+  "shares",
+  "price",
+  "fee",
+  "currency",
 ];
 
 function asText(value: unknown): string {
@@ -63,6 +102,24 @@ function sheetHeaders(sheet: XlsxSheet): string[] {
 
 export function isAccountSheetName(name: string): boolean {
   return ACCOUNT_SHEET_NAMES.has(normalizeKey(name));
+}
+
+/** Auto-map spreadsheet column headers to transaction import fields. */
+export function autoMapImportColumns(
+  columns: string[],
+): Partial<ImportColumnMapping> {
+  const mapping: Partial<ImportColumnMapping> = {};
+
+  for (const column of columns) {
+    for (const field of IMPORT_FIELD_PRIORITY) {
+      if (headerMatchesFieldAlias(column, TRANSACTION_FIELD_ALIASES[field])) {
+        mapping[field] = column;
+        break;
+      }
+    }
+  }
+
+  return mapping;
 }
 
 export function isAccountRow(headers: string[]): boolean {

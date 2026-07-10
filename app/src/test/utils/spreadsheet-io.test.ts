@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getField,
   headerMatchesAlias,
+  headerMatchesFieldAlias,
   normalizeKey,
   parseNumericValue,
   rowsFromSheetData,
@@ -24,6 +25,23 @@ describe("spreadsheet-io", () => {
     expect(headerMatchesAlias("Balance", ["balance", "saldo"])).toBe(true);
     expect(headerMatchesAlias("Saldo", ["balance", "saldo"])).toBe(true);
     expect(headerMatchesAlias("Amount", ["balance", "saldo"])).toBe(false);
+  });
+
+  it("matches headers with exact or substring alias (field auto-mapping)", () => {
+    expect(headerMatchesFieldAlias("Date", ["date", "fecha"])).toBe(true);
+    expect(headerMatchesFieldAlias("Transaction Date", ["date", "fecha"])).toBe(
+      true,
+    );
+    expect(headerMatchesFieldAlias("FECHA", ["date", "fecha"])).toBe(true);
+    expect(
+      headerMatchesFieldAlias("Categoría", ["category", "categoria"]),
+    ).toBe(true);
+    expect(headerMatchesFieldAlias("Importe", ["amount", "importe"])).toBe(
+      true,
+    );
+    expect(headerMatchesFieldAlias("Balance", ["amount", "importe"])).toBe(
+      false,
+    );
   });
 
   it("reads fields with exact and normalized keys", () => {
