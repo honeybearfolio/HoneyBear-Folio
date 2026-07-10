@@ -74,4 +74,13 @@ describe("spreadsheet-io", () => {
       { Name: "Car", Value: "" },
     ]);
   });
+
+  it("stringifies numeric and boolean header cells", () => {
+    expect(
+      rowsFromSheetData([
+        [42, true, "Label"],
+        ["a", "b", "c"],
+      ]),
+    ).toEqual([{ "42": "a", true: "b", Label: "c" }]);
+  });
 });

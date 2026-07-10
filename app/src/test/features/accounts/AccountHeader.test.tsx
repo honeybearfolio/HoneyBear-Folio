@@ -86,6 +86,15 @@ describe("AccountHeader", () => {
     expect(props.setIsAdding).toHaveBeenCalledWith(true);
   });
 
+  it("calls setIsAdding(false) when cancel is clicked while adding", async () => {
+    const user = userEvent.setup();
+    const { props } = renderHeader({ isAdding: true });
+
+    await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(props.setIsAdding).toHaveBeenCalledWith(false);
+  });
+
   it("renders rename mode with input instead of heading", () => {
     renderHeader({
       isRenamingAccount: true,

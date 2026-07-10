@@ -175,6 +175,34 @@ describe("ScheduledTable", () => {
     expect(setMenuCoords).toHaveBeenCalledWith(null);
   });
 
+  it("calls handleToggleEnabled from context menu and closes menu", async () => {
+    const user = userEvent.setup();
+    const setMenuOpenId = vi.fn();
+    const setMenuCoords = vi.fn();
+    const handleToggleEnabled = vi.fn().mockResolvedValue(undefined);
+
+    renderTable({
+      menuOpenId: 1,
+      menuCoords: { x: 120, y: 200 },
+      setMenuOpenId,
+      setMenuCoords,
+      handleToggleEnabled,
+    });
+
+    const portalButtons = document.querySelectorAll(
+      ".sched-action-menu-portal button",
+    );
+    const toggleBtn = Array.from(portalButtons).find((btn) =>
+      btn.textContent.includes("Enabled"),
+    );
+    expect(toggleBtn).toBeDefined();
+    await user.click(toggleBtn!);
+
+    expect(handleToggleEnabled).toHaveBeenCalledWith(schedules[0]);
+    expect(setMenuOpenId).toHaveBeenCalledWith(null);
+    expect(setMenuCoords).toHaveBeenCalledWith(null);
+  });
+
   it("sets menu state on row context menu", () => {
     const setMenuOpenId = vi.fn();
     const setMenuCoords = vi.fn();
