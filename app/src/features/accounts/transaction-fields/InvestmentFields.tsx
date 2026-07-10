@@ -116,7 +116,7 @@ function PricePerShareField({
         minimumFractionDigits: 2,
       })}
       maximumFractionDigits={variant === "inline" ? 8 : 4}
-      minimumFractionDigits={variant === "form" ? 2 : undefined}
+      {...(variant === "form" ? { minimumFractionDigits: 2 } : {})}
       useGrouping={false}
     />
   );
@@ -164,7 +164,7 @@ function FeeField({
         minimumFractionDigits: 2,
       })}
       maximumFractionDigits={2}
-      minimumFractionDigits={variant === "inline" ? 2 : undefined}
+      {...(variant === "inline" ? { minimumFractionDigits: 2 } : {})}
     />
   );
 
@@ -210,6 +210,9 @@ export default function InvestmentFields({
 }: InvestmentFieldsProps) {
   const inlineClass = inputClassName ?? getInputClassName("inline");
 
+  const inlineFieldProps =
+    variant === "inline" ? { className: inlineClass } : {};
+
   const tickerField = (
     <TickerField
       value={ticker}
@@ -222,7 +225,7 @@ export default function InvestmentFields({
       onShowSuggestionsChange={onShowTickerSuggestionsChange}
       onSuggestionSelect={onTickerSuggestionSelect}
       variant={variant}
-      className={variant === "inline" ? inlineClass : undefined}
+      {...inlineFieldProps}
       required={variant === "form"}
     />
   );
@@ -232,7 +235,7 @@ export default function InvestmentFields({
       value={shares}
       onChange={onSharesChange}
       variant={variant}
-      className={variant === "inline" ? inlineClass : undefined}
+      {...inlineFieldProps}
     />
   );
 
@@ -241,7 +244,7 @@ export default function InvestmentFields({
       value={pricePerShare}
       onChange={onPricePerShareChange}
       variant={variant}
-      className={variant === "inline" ? inlineClass : undefined}
+      {...inlineFieldProps}
     />
   );
 
@@ -250,7 +253,7 @@ export default function InvestmentFields({
       value={fee}
       onChange={onFeeChange}
       variant={variant}
-      className={variant === "inline" ? inlineClass : undefined}
+      {...inlineFieldProps}
     />
   );
 
@@ -287,7 +290,7 @@ export default function InvestmentFields({
         <CurrencyField
           value={currency}
           onChange={onCurrencyChange}
-          onCurrencySelected={onCurrencySelected}
+          {...(onCurrencySelected ? { onCurrencySelected } : {})}
           variant="form"
         />
       </div>

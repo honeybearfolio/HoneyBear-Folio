@@ -88,7 +88,7 @@ export function TransactionAmountFields({
         <CurrencyField
           value={currency}
           onChange={onCurrencyChange}
-          onCurrencySelected={onCurrencySelected}
+          {...(onCurrencySelected ? { onCurrencySelected } : {})}
           variant="form"
         />
       </div>
@@ -100,7 +100,7 @@ export function TransactionAmountFields({
       value={amount}
       onChange={onAmountChange}
       variant="inline"
-      className={amountClassName}
+      {...(amountClassName ? { className: amountClassName } : {})}
     />
   );
 }
