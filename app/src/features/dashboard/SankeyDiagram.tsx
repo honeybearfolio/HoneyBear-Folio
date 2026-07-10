@@ -6,11 +6,7 @@ import {
   Title,
   LinearScale,
 } from "chart.js";
-import type {
-  ChartOptions,
-  ChartData,
-  ScriptableContext,
-} from "chart.js";
+import type { ChartOptions, ChartData, ScriptableContext } from "chart.js";
 import { SankeyController, Flow } from "chartjs-chart-sankey";
 import { Chart } from "react-chartjs-2";
 import { useFormatNumber } from "../../utils/format";

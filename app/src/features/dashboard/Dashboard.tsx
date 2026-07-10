@@ -1126,8 +1126,6 @@ export default function Dashboard({
                 return label;
               },
               getValue: (context) => {
-                if (context.parsed.y === null) return undefined;
-
                 const ds = context.dataset as typeof context.dataset & {
                   accountCurrency?: string;
                   originalData?: number[];
@@ -1136,7 +1134,7 @@ export default function Dashboard({
                   const nativeVal = ds.originalData?.[context.dataIndex];
                   if (nativeVal !== undefined) return nativeVal;
                 }
-                return context.parsed.y ?? undefined;
+                return context.parsed.y;
               },
               getFormatOptions: (context) => {
                 const ds = context.dataset as typeof context.dataset & {
