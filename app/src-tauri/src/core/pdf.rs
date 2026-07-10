@@ -1972,7 +1972,7 @@ fn draw_transactions_pages(
         top = draw_section_title(
             &mut ops,
             fonts,
-            &format!("{} — {}", &account_txs.account_name, &account_txs.currency),
+            &format!("{} — {}", account_txs.account_name, account_txs.currency),
             top,
         );
 
