@@ -193,7 +193,7 @@ function renderRow(overrides: Record<string, unknown> = {}) {
 
   return {
     props,
-  saveEdit,
+    saveEdit,
     ...render(
       <table>
         <tbody>
@@ -291,7 +291,14 @@ describe("TransactionRow coverage", () => {
     const user = userEvent.setup();
     const { props } = renderRow({
       menuOpenId: "tx1",
-      menuCoords: { top: 100, left: 100, width: 20, height: 20, right: 120, bottom: 120 },
+      menuCoords: {
+        top: 100,
+        left: 100,
+        width: 20,
+        height: 20,
+        right: 120,
+        bottom: 120,
+      },
     });
 
     await user.click(await screen.findByRole("button", { name: "Duplicate" }));

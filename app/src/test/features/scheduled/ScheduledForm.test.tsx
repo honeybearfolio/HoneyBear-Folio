@@ -216,7 +216,7 @@ describe("ScheduledForm", () => {
     expect(handleTickerChange).toHaveBeenCalled();
   });
 
-  it("selects ticker suggestion and sets currency", async () => {
+  it("selects ticker suggestion and sets currency", () => {
     renderScheduledForm(
       { transactionType: "investment", ticker: "AA" },
       {
@@ -236,7 +236,7 @@ describe("ScheduledForm", () => {
     expect(screen.getByDisplayValue("AAPL")).toBeInTheDocument();
   });
 
-  it("toggles day-of-week buttons for day_of_week recurrence", async () => {
+  it("toggles day-of-week buttons for day_of_week recurrence", () => {
     const { toggleDayOfWeek } = renderScheduledForm({
       recurrenceType: "day_of_week",
     });

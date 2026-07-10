@@ -3,7 +3,10 @@ import { buildDoughnutChartData } from "../../../features/dashboard/dashboard-do
 import { buildHoldingsFromTransactions } from "../../../utils/investments";
 import i18n from "../../../i18n/i18n";
 import type { Account } from "../../../api/types";
-import type { Quote, Transaction } from "../../../features/dashboard/dashboard-types";
+import type {
+  Quote,
+  Transaction,
+} from "../../../features/dashboard/dashboard-types";
 
 vi.mock("../../../utils/investments", () => ({
   buildHoldingsFromTransactions: vi.fn(),
@@ -131,13 +134,55 @@ describe("buildDoughnutChartData", () => {
     });
 
     const quotes: Quote[] = [
-      { ticker: "AAPL", symbol: "AAPL", price: 100, regularMarketPrice: 100, quoteType: "EQUITY" },
-      { ticker: "SPY", symbol: "SPY", price: 100, regularMarketPrice: 100, quoteType: "ETF" },
-      { ticker: "BTC-USD", symbol: "BTC-USD", price: 100, regularMarketPrice: 100, quoteType: "CRYPTOCURRENCY" },
-      { ticker: "VFIAX", symbol: "VFIAX", price: 100, regularMarketPrice: 100, quoteType: "MUTUALFUND" },
-      { ticker: "ES=F", symbol: "ES=F", price: 100, regularMarketPrice: 100, quoteType: "FUTURE" },
-      { ticker: "^GSPC", symbol: "^GSPC", price: 100, regularMarketPrice: 100, quoteType: "INDEX" },
-      { ticker: "GC=F", symbol: "GC=F", price: 100, regularMarketPrice: 100, quoteType: "COMMODITY" },
+      {
+        ticker: "AAPL",
+        symbol: "AAPL",
+        price: 100,
+        regularMarketPrice: 100,
+        quoteType: "EQUITY",
+      },
+      {
+        ticker: "SPY",
+        symbol: "SPY",
+        price: 100,
+        regularMarketPrice: 100,
+        quoteType: "ETF",
+      },
+      {
+        ticker: "BTC-USD",
+        symbol: "BTC-USD",
+        price: 100,
+        regularMarketPrice: 100,
+        quoteType: "CRYPTOCURRENCY",
+      },
+      {
+        ticker: "VFIAX",
+        symbol: "VFIAX",
+        price: 100,
+        regularMarketPrice: 100,
+        quoteType: "MUTUALFUND",
+      },
+      {
+        ticker: "ES=F",
+        symbol: "ES=F",
+        price: 100,
+        regularMarketPrice: 100,
+        quoteType: "FUTURE",
+      },
+      {
+        ticker: "^GSPC",
+        symbol: "^GSPC",
+        price: 100,
+        regularMarketPrice: 100,
+        quoteType: "INDEX",
+      },
+      {
+        ticker: "GC=F",
+        symbol: "GC=F",
+        price: 100,
+        regularMarketPrice: 100,
+        quoteType: "COMMODITY",
+      },
     ];
 
     const result = await buildDoughnutChartData({

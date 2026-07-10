@@ -162,7 +162,7 @@ describe("transaction-fields", () => {
   });
 
   describe("PayeeField", () => {
-    it("renders form variant with label and forwards changes", async () => {
+    it("renders form variant with label and forwards changes", () => {
       const onChange = vi.fn();
       render(
         <PayeeField
@@ -275,9 +275,7 @@ describe("transaction-fields", () => {
     });
 
     it("renders inline variant with NumberInput mock", () => {
-      render(
-        <AmountField value={100} onChange={vi.fn()} variant="inline" />,
-      );
+      render(<AmountField value={100} onChange={vi.fn()} variant="inline" />);
       expect(screen.getByTestId("number-input")).toBeInTheDocument();
     });
   });
@@ -341,7 +339,7 @@ describe("transaction-fields", () => {
   });
 
   describe("TickerField", () => {
-    it("uppercases ticker input and shows suggestions", async () => {
+    it("uppercases ticker input and shows suggestions", () => {
       const onChange = vi.fn();
       const onShowChange = vi.fn();
       render(
@@ -362,7 +360,7 @@ describe("transaction-fields", () => {
       expect(screen.getByText("AAPL")).toBeInTheDocument();
     });
 
-    it("selects a suggestion", async () => {
+    it("selects a suggestion", () => {
       const onSelect = vi.fn();
       const onShowChange = vi.fn();
       render(

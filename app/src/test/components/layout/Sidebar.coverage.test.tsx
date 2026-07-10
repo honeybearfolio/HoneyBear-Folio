@@ -125,7 +125,9 @@ describe("Sidebar coverage", () => {
       .filter((btn) => btn.className.includes("sidebar-nav-item"));
 
     const clickNav = (label: string) => {
-      const button = navButtons.find((btn) => btn.textContent?.includes(label));
+      const button = navButtons.find((btn) =>
+        (btn.textContent ?? "").includes(label),
+      );
       fireEvent.click(button!);
     };
 

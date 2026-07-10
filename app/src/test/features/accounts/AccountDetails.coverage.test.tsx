@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AccountDetails from "../../../features/accounts/AccountDetails";
 import { invoke } from "@tauri-apps/api/core";
@@ -266,7 +272,7 @@ describe("AccountDetails coverage", () => {
     overrides: Partial<Record<string, () => Promise<unknown>>> = {},
   ) {
     mockInvoke.mockImplementation((cmd: string, _args?: unknown) => {
-      if (overrides[cmd]) return overrides[cmd]!();
+      if (overrides[cmd]) return overrides[cmd]();
       if (cmd === "get_transactions") return Promise.resolve(cashTransactions);
       if (cmd === "get_all_transactions") {
         return Promise.resolve([
@@ -281,15 +287,22 @@ describe("AccountDetails coverage", () => {
       if (cmd === "get_categories") return Promise.resolve(["Food", "Income"]);
       if (cmd === "get_accounts") {
         return Promise.resolve([
-          { id: "acc1", name: "Test Account", kind: "brokerage", currency: "USD" },
+          {
+            id: "acc1",
+            name: "Test Account",
+            kind: "brokerage",
+            currency: "USD",
+          },
           { id: "acc2", name: "Savings", kind: "cash", currency: "USD" },
         ]);
       }
       if (cmd === "get_rules") return Promise.resolve([]);
       if (cmd === "create_transaction") return Promise.resolve(undefined);
-      if (cmd === "create_investment_transaction") return Promise.resolve(undefined);
+      if (cmd === "create_investment_transaction")
+        return Promise.resolve(undefined);
       if (cmd === "update_transaction") return Promise.resolve(undefined);
-      if (cmd === "update_investment_transaction") return Promise.resolve(undefined);
+      if (cmd === "update_investment_transaction")
+        return Promise.resolve(undefined);
       return Promise.resolve([]);
     });
   }
@@ -333,15 +346,15 @@ describe("AccountDetails coverage", () => {
     await user.click(await screen.findByRole("button", { name: "Duplicate" }));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            payee: "Grocery Store",
-            amount: -50,
-          }),
-        }),
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_transaction",
       );
+      expect(createCall?.[1]).toMatchObject({
+        args: {
+          payee: "Grocery Store",
+          amount: -50,
+        },
+      });
     });
     expect(onUpdate).toHaveBeenCalled();
   });
@@ -365,20 +378,22 @@ describe("AccountDetails coverage", () => {
     });
 
     fireEvent.submit(
-      screen.getByRole("button", { name: /save transaction/i }).closest("form")!,
+      screen
+        .getByRole("button", { name: /save transaction/i })
+        .closest("form")!,
     );
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_investment_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            ticker: "MSFT",
-            shares: 5,
-            pricePerShare: 300,
-          }),
-        }),
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_investment_transaction",
       );
+      expect(createCall?.[1]).toMatchObject({
+        args: {
+          ticker: "MSFT",
+          shares: 5,
+          pricePerShare: 300,
+        },
+      });
     });
   });
 
@@ -397,15 +412,15 @@ describe("AccountDetails coverage", () => {
     await user.click(saveButton);
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "update_investment_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            id: "tx-inv",
-            ticker: "AAPL",
-          }),
-        }),
+      const updateCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "update_investment_transaction",
       );
+      expect(updateCall?.[1]).toMatchObject({
+        args: {
+          id: "tx-inv",
+          ticker: "AAPL",
+        },
+      });
     });
   });
 
@@ -555,15 +570,15 @@ describe("AccountDetails coverage", () => {
     await user.click(await screen.findByRole("button", { name: "Duplicate" }));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            ticker: "AAPL",
-            shares: 10,
-          }),
-        }),
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_transaction",
       );
+      expect(createCall?.[1]).toMatchObject({
+        args: {
+          ticker: "AAPL",
+          shares: 10,
+        },
+      });
     });
   });
 });

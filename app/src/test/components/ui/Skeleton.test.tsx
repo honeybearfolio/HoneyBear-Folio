@@ -21,7 +21,9 @@ describe("Skeleton", () => {
   it("renders SkeletonCard with placeholder blocks", () => {
     const { container } = render(<SkeletonCard />);
 
-    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThanOrEqual(3);
+    expect(
+      container.querySelectorAll(".animate-pulse").length,
+    ).toBeGreaterThanOrEqual(3);
   });
 
   it("renders SkeletonChart with title and chart area", () => {
@@ -33,14 +35,21 @@ describe("Skeleton", () => {
   it("renders SkeletonTable with default row count", () => {
     const { container } = render(<SkeletonTable />);
 
-    expect(container.querySelectorAll(".flex.items-center.gap-4").length).toBe(6);
+    expect(container.querySelectorAll(".flex.items-center.gap-4").length).toBe(
+      6,
+    );
   });
 
   it("renders DashboardSkeleton layout sections", () => {
     const { container } = render(<DashboardSkeleton />);
 
-    expect(container.querySelector(".summary-cards-grid") ?? container.querySelector(".grid")).toBeTruthy();
-    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(5);
+    expect(
+      container.querySelector(".summary-cards-grid") ??
+        container.querySelector(".grid"),
+    ).toBeTruthy();
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(
+      5,
+    );
   });
 
   it("renders ListSkeleton with optional title", () => {
@@ -49,10 +58,14 @@ describe("Skeleton", () => {
     expect(screen.getByText("Accounts")).toBeInTheDocument();
   });
 
-  it("renders ErrorState with retry action", async () => {
+  it("renders ErrorState with retry action", () => {
     const onRetry = vi.fn();
     render(
-      <ErrorState title="Failed to load" message="Network error" onRetry={onRetry} />,
+      <ErrorState
+        title="Failed to load"
+        message="Network error"
+        onRetry={onRetry}
+      />,
     );
 
     expect(screen.getByText("Failed to load")).toBeInTheDocument();

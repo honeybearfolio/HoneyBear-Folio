@@ -3,7 +3,11 @@ import { describe, it, expect, vi } from "vitest";
 
 const mockChart = vi.fn(
   ({ type, data }: { type: string; data: { datasets: unknown[] } }) => (
-    <div data-testid="sankey-chart" data-type={type} data-flows={data.datasets.length}>
+    <div
+      data-testid="sankey-chart"
+      data-type={type}
+      data-flows={data.datasets.length}
+    >
       Sankey Chart
     </div>
   ),

@@ -87,14 +87,10 @@ describe("InvestmentDashboard extended", () => {
   });
 
   it("shows loading state initially", () => {
-    vi.mocked(invoke).mockImplementation(
-      () => new Promise(() => {}),
-    );
+    vi.mocked(invoke).mockImplementation(() => new Promise(() => {}));
 
     render(<InvestmentDashboard />);
-    expect(
-      screen.getByText("Loading investment data..."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Loading investment data...")).toBeInTheDocument();
   });
 
   it("renders summary cards and holdings table when data loads", async () => {
@@ -110,9 +106,7 @@ describe("InvestmentDashboard extended", () => {
       expect(screen.getByTestId("doughnut-chart")).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByText("Total Portfolio Value"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Total Portfolio Value")).toBeInTheDocument();
     expect(screen.getByText("$3000")).toBeInTheDocument();
     expect(screen.getByText("Top Performer")).toBeInTheDocument();
     expect(screen.getAllByText("AAPL").length).toBeGreaterThan(0);

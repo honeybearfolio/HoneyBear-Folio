@@ -4,7 +4,13 @@ import userEvent from "@testing-library/user-event";
 import AccountFilterPopover from "../../../features/dashboard/AccountFilterPopover";
 
 const accounts = [
-  { id: "acc1", name: "Checking", balance: 1000, currency: "USD", kind: "cash" },
+  {
+    id: "acc1",
+    name: "Checking",
+    balance: 1000,
+    currency: "USD",
+    kind: "cash",
+  },
   { id: "acc2", name: "Savings", balance: 5000, currency: "USD", kind: "cash" },
 ];
 
@@ -27,7 +33,12 @@ function renderPopover(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 
-  return { props, toggleAccountVisibility, setAllAccountsVisibility, ...render(<AccountFilterPopover {...props} />) };
+  return {
+    props,
+    toggleAccountVisibility,
+    setAllAccountsVisibility,
+    ...render(<AccountFilterPopover {...props} />),
+  };
 }
 
 describe("AccountFilterPopover", () => {
@@ -38,7 +49,9 @@ describe("AccountFilterPopover", () => {
   it("renders filter trigger button", () => {
     renderPopover();
 
-    expect(screen.getByRole("button", { name: /accounts/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /accounts/i }),
+    ).toBeInTheDocument();
   });
 
   it("shows badge when not all accounts are selected", () => {
@@ -58,8 +71,12 @@ describe("AccountFilterPopover", () => {
 
     expect(screen.getByLabelText("Checking")).toBeInTheDocument();
     expect(screen.getByLabelText("Savings")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show all" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Hide all" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Show all" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Hide all" }),
+    ).toBeInTheDocument();
   });
 
   it("toggles account visibility via checkbox", async () => {

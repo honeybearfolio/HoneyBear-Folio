@@ -52,15 +52,19 @@ describe("AboutSection", () => {
     render(<AboutSection openExternal={openExternal} />);
 
     const showButton = screen.getByRole("button", {
-      name: new RegExp(`Show all \\(${THIRD_PARTY_LICENSES.length}\\)`),
+      name: new RegExp(`Show all \\(${String(THIRD_PARTY_LICENSES.length)}\\)`),
     });
-    expect(screen.queryByText(THIRD_PARTY_LICENSES[0]!.name)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(THIRD_PARTY_LICENSES[0]!.name),
+    ).not.toBeInTheDocument();
 
     await user.click(showButton);
     expect(screen.getByText(THIRD_PARTY_LICENSES[0]!.name)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Hide/i }));
-    expect(screen.queryByText(THIRD_PARTY_LICENSES[0]!.name)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(THIRD_PARTY_LICENSES[0]!.name),
+    ).not.toBeInTheDocument();
   });
 
   it("calls openExternal when a license link is clicked", async () => {
@@ -69,7 +73,7 @@ describe("AboutSection", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: new RegExp(`Show all \\(${THIRD_PARTY_LICENSES.length}\\)`),
+        name: new RegExp(`Show all \\(${String(THIRD_PARTY_LICENSES.length)}\\)`),
       }),
     );
 

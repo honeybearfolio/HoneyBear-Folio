@@ -145,9 +145,9 @@ describe("evaluateRule with multiple conditions", () => {
     expect(evaluateRule(orRule, { payee: "Salary", category: "Other" })).toBe(
       true,
     );
-    expect(evaluateRule(orRule, { payee: "Employer", category: "Income" })).toBe(
-      true,
-    );
+    expect(
+      evaluateRule(orRule, { payee: "Employer", category: "Income" }),
+    ).toBe(true);
   });
 
   it("does not match when no OR conditions are satisfied", () => {

@@ -43,7 +43,7 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     placeholder?: string;
   }) => (
     <select
-      data-testid={`mapping-select-${placeholder}`}
+      data-testid={`mapping-select-${placeholder ?? "column"}`}
       aria-label={placeholder}
       value={value}
       onChange={(e) => {
@@ -183,30 +183,32 @@ describe("ImportModal coverage", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "read_xlsx",
-        expect.objectContaining({ data: expect.any(Array) }),
+      const readCall = mockInvoke.mock.calls.find(([cmd]) => cmd === "read_xlsx");
+      const readArgs = readCall?.[1] as { data?: unknown };
+      expect(Array.isArray(readArgs?.data)).toBe(true);
+
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_transaction",
       );
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            payee: "XLSX Store",
-            amount: 42,
-          }),
-        }),
-      );
+      expect(createCall?.[1]).toMatchObject({
+        args: {
+          payee: "XLSX Store",
+          amount: 42,
+        },
+      });
       expect(onImportComplete).toHaveBeenCalled();
     });
   });
 
   it("shows excel parse error when read_xlsx fails", async () => {
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "read_xlsx") {
-        return Promise.reject(new Error("Corrupt workbook"));
-      }
-      return defaultInvokeHandler(cmd, args);
-    });
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "read_xlsx") {
+          return Promise.reject(new Error("Corrupt workbook"));
+        }
+        return defaultInvokeHandler(cmd, args);
+      },
+    );
 
     const file = new File([new ArrayBuffer(4)], "broken.xlsx", {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -241,30 +243,32 @@ describe("ImportModal coverage", () => {
         balance: 0,
         kind: "brokerage",
       });
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            payee: "Buy",
-            ticker: "AAPL",
-          }),
-        }),
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_transaction",
       );
+      expect(createCall?.[1]).toMatchObject({
+        args: {
+          payee: "Buy",
+          ticker: "AAPL",
+        },
+      });
     });
   });
 
   it("skips duplicate assets and reports asset import errors", async () => {
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "get_assets") {
-        return Promise.resolve([
-          { id: 1, name: "House", category: "real_estate" },
-        ]);
-      }
-      if (cmd === "create_asset") {
-        return Promise.reject(new Error("Asset DB locked"));
-      }
-      return defaultInvokeHandler(cmd, args);
-    });
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "get_assets") {
+          return Promise.resolve([
+            { id: 1, name: "House", category: "real_estate" },
+          ]);
+        }
+        if (cmd === "create_asset") {
+          return Promise.reject(new Error("Asset DB locked"));
+        }
+        return defaultInvokeHandler(cmd, args);
+      },
+    );
 
     const exportPayload = {
       accounts: [{ id: 1, name: "Checking", balance: 0, kind: "cash" }],
@@ -313,16 +317,17 @@ describe("ImportModal coverage", () => {
   });
 
   it("records row failures when create_account fails during import", async () => {
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "create_account") {
-        return Promise.reject(new Error("Name already taken"));
-      }
-      if (cmd === "get_accounts") return Promise.resolve([]);
-      return defaultInvokeHandler(cmd, args);
-    });
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "create_account") {
+          return Promise.reject(new Error("Name already taken"));
+        }
+        if (cmd === "get_accounts") return Promise.resolve([]);
+        return defaultInvokeHandler(cmd, args);
+      },
+    );
 
-    const csv =
-      "date,payee,amount,account\n2024-05-01,Store,10,New Account";
+    const csv = "date,payee,amount,account\n2024-05-01,Store,10,New Account";
     const file = new File([csv], "create-fail.csv", { type: "text/csv" });
 
     render(<ImportModal onClose={vi.fn()} onImportComplete={vi.fn()} />);
@@ -332,7 +337,9 @@ describe("ImportModal coverage", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      expect(screen.getByText("Import completed with errors")).toBeInTheDocument();
+      expect(
+        screen.getByText("Import completed with errors"),
+      ).toBeInTheDocument();
       expect(screen.getByText(/Name already taken/)).toBeInTheDocument();
     });
   });
@@ -348,7 +355,9 @@ describe("ImportModal coverage", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      expect(screen.getByText("Import completed with errors")).toBeInTheDocument();
+      expect(
+        screen.getByText("Import completed with errors"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -373,36 +382,38 @@ describe("ImportModal coverage", () => {
   });
 
   it("imports accounts and assets from xlsx sheets during import", async () => {
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "read_xlsx") {
-        return Promise.resolve({
-          sheets: [
-            {
-              name: "Transactions",
-              data: [
-                ["date", "payee", "amount", "account"],
-                ["2024-07-01", "Shop", "20", "Checking"],
-              ],
-            },
-            {
-              name: "Accounts",
-              data: [
-                ["name", "balance", "kind", "currency"],
-                ["New Savings", "2500", "cash", "USD"],
-              ],
-            },
-            {
-              name: "Assets",
-              data: [
-                ["name", "category", "currency", "value", "date"],
-                ["Boat", "vehicle", "USD", "15000", "2024-07-01"],
-              ],
-            },
-          ],
-        });
-      }
-      return defaultInvokeHandler(cmd, args);
-    });
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "read_xlsx") {
+          return Promise.resolve({
+            sheets: [
+              {
+                name: "Transactions",
+                data: [
+                  ["date", "payee", "amount", "account"],
+                  ["2024-07-01", "Shop", "20", "Checking"],
+                ],
+              },
+              {
+                name: "Accounts",
+                data: [
+                  ["name", "balance", "kind", "currency"],
+                  ["New Savings", "2500", "cash", "USD"],
+                ],
+              },
+              {
+                name: "Assets",
+                data: [
+                  ["name", "category", "currency", "value", "date"],
+                  ["Boat", "vehicle", "USD", "15000", "2024-07-01"],
+                ],
+              },
+            ],
+          });
+        }
+        return defaultInvokeHandler(cmd, args);
+      },
+    );
 
     const file = new File([new ArrayBuffer(8)], "full.xlsx", {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -426,7 +437,7 @@ describe("ImportModal coverage", () => {
     });
   });
 
-  it("ignores unsupported files dropped via browser drag-and-drop", async () => {
+  it("ignores unsupported files dropped via browser drag-and-drop", () => {
     const file = new File(["data"], "notes.txt", { type: "text/plain" });
 
     render(<ImportModal onClose={vi.fn()} onImportComplete={vi.fn()} />);

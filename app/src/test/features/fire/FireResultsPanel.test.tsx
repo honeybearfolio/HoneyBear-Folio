@@ -22,7 +22,9 @@ vi.mock("../../../hooks/useChartColors", () => ({
 
 vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (val: number, opts?: { style?: string }) =>
-    opts?.style === "currency" ? `$${val.toLocaleString("en-US")}` : String(val),
+    opts?.style === "currency"
+      ? `$${val.toLocaleString("en-US")}`
+      : String(val),
 }));
 
 const chartData: ChartData<"line", number[], string> = {

@@ -12,12 +12,14 @@ import ChatView from "../../../features/chat/ChatView";
 const eventHandlers = new Map<string, (event: { payload: unknown }) => void>();
 
 vi.mock("@tauri-apps/api/event", () => ({
-  listen: vi.fn((eventName: string, handler: (event: { payload: unknown }) => void) => {
-    eventHandlers.set(eventName, handler);
-    return Promise.resolve(() => {
-      eventHandlers.delete(eventName);
-    });
-  }),
+  listen: vi.fn(
+    (eventName: string, handler: (event: { payload: unknown }) => void) => {
+      eventHandlers.set(eventName, handler);
+      return Promise.resolve(() => {
+        eventHandlers.delete(eventName);
+      });
+    },
+  ),
 }));
 
 vi.mock("react-markdown", () => ({
@@ -63,30 +65,35 @@ function makeInvokeMock({
   messages?: unknown[];
   models?: Array<{ name: string }>;
 } = {}) {
-  return vi.fn().mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-    if (cmd === "get_llm_settings")
-      return Promise.resolve(
-        configured
-          ? { ollama_model: "llama3.2", ollama_url: "http://localhost:11434" }
-          : {},
-      );
-    if (cmd === "list_ollama_models") return Promise.resolve(models);
-    if (cmd === "get_conversations") return Promise.resolve(conversations);
-    if (cmd === "get_conversation_messages") return Promise.resolve(messages);
-    if (cmd === "create_conversation")
-      return Promise.resolve({ id: "conv-new", title: "New Chat" });
-    if (cmd === "delete_conversation") return Promise.resolve(null);
-    if (cmd === "rename_conversation") return Promise.resolve(null);
-    if (cmd === "set_llm_settings") return Promise.resolve(null);
-    if (cmd === "llm_chat") {
-      if (args && (args as { userMessage?: string }).userMessage === "fail me") {
-        return Promise.reject(new Error("Model unavailable"));
+  return vi
+    .fn()
+    .mockImplementation((cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "get_llm_settings")
+        return Promise.resolve(
+          configured
+            ? { ollama_model: "llama3.2", ollama_url: "http://localhost:11434" }
+            : {},
+        );
+      if (cmd === "list_ollama_models") return Promise.resolve(models);
+      if (cmd === "get_conversations") return Promise.resolve(conversations);
+      if (cmd === "get_conversation_messages") return Promise.resolve(messages);
+      if (cmd === "create_conversation")
+        return Promise.resolve({ id: "conv-new", title: "New Chat" });
+      if (cmd === "delete_conversation") return Promise.resolve(null);
+      if (cmd === "rename_conversation") return Promise.resolve(null);
+      if (cmd === "set_llm_settings") return Promise.resolve(null);
+      if (cmd === "llm_chat") {
+        if (
+          args &&
+          (args as { userMessage?: string }).userMessage === "fail me"
+        ) {
+          return Promise.reject(new Error("Model unavailable"));
+        }
+        return Promise.resolve(null);
       }
+      if (cmd === "cancel_llm_chat") return Promise.resolve(null);
       return Promise.resolve(null);
-    }
-    if (cmd === "cancel_llm_chat") return Promise.resolve(null);
-    return Promise.resolve(null);
-  });
+    });
 }
 
 describe("ChatView coverage", () => {

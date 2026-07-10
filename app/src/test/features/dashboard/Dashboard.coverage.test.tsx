@@ -265,7 +265,9 @@ describe("Dashboard coverage", () => {
         });
       }
       if (cmd === "get_stock_quotes") {
-        return Promise.resolve([{ ticker: "AAPL", price: 150, currency: "USD" }]);
+        return Promise.resolve([
+          { ticker: "AAPL", price: 150, currency: "USD" },
+        ]);
       }
       if (cmd === "compute_net_worth") return Promise.resolve(7000);
       return Promise.resolve(null);
@@ -317,12 +319,11 @@ describe("Dashboard coverage", () => {
     render(<Dashboard accounts={eurAccounts} />);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith(
-        "update_daily_stock_prices",
-        expect.objectContaining({
-          tickers: expect.arrayContaining(["EURUSD=X"]),
-        }),
-      );
+      const pricesCall = vi
+        .mocked(invoke)
+        .mock.calls.find(([cmd]) => cmd === "update_daily_stock_prices");
+      const pricesArgs = pricesCall?.[1] as { tickers?: string[] };
+      expect(pricesArgs?.tickers).toContain("EURUSD=X");
     });
   });
 });

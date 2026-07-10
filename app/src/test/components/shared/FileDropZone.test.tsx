@@ -41,7 +41,9 @@ describe("FileDropZone", () => {
     expect(
       screen.getByText("Drag and drop or click to select file"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Supports .csv, .xlsx, .xls, .json")).toBeInTheDocument();
+    expect(
+      screen.getByText("Supports .csv, .xlsx, .xls, .json"),
+    ).toBeInTheDocument();
   });
 
   it("shows drop-active state when dragging", () => {
@@ -52,7 +54,9 @@ describe("FileDropZone", () => {
 
   it("forwards drag events to handlers", () => {
     const { props } = renderDropZone();
-    const zone = screen.getByText("Drag and drop or click to select file").closest("div")!;
+    const zone = screen
+      .getByText("Drag and drop or click to select file")
+      .closest("div")!;
 
     fireEvent.dragEnter(zone);
     fireEvent.dragOver(zone);
@@ -67,7 +71,10 @@ describe("FileDropZone", () => {
 
   it("triggers file input click when zone is clicked", () => {
     const { fileInputRef } = renderDropZone();
-    const clickSpy = vi.spyOn(fileInputRef.current ?? { click: () => {} }, "click");
+    const clickSpy = vi.spyOn(
+      fileInputRef.current ?? { click: () => {} },
+      "click",
+    );
 
     if (fileInputRef.current) {
       fileInputRef.current.click = clickSpy;
@@ -83,8 +90,12 @@ describe("FileDropZone", () => {
   it("calls handleFileChange when a file is selected", () => {
     const { handleFileChange } = renderDropZone();
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [new File(["a"], "test.csv")] } });
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(["a"], "test.csv")] },
+    });
 
     expect(handleFileChange).toHaveBeenCalled();
   });

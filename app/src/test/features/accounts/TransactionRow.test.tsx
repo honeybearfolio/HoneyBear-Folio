@@ -56,7 +56,16 @@ function renderRow(overrides: Record<string, unknown> = {}) {
     setEditingId: vi.fn(),
     menuOpenId: null as string | number | null,
     setMenuOpenId: vi.fn(),
-    menuCoords: null as { x?: number; y?: number; top?: number; left?: number; right?: number; bottom?: number; width?: number; height?: number } | null,
+    menuCoords: null as {
+      x?: number;
+      y?: number;
+      top?: number;
+      left?: number;
+      right?: number;
+      bottom?: number;
+      width?: number;
+      height?: number;
+    } | null,
     setMenuCoords: vi.fn(),
     duplicateTransaction: vi.fn().mockResolvedValue(undefined),
     deleteTransaction: vi.fn().mockResolvedValue(undefined),
@@ -113,7 +122,9 @@ describe("TransactionRow", () => {
       menuCoords: { x: 100, y: 200 },
     });
 
-    expect(screen.getByRole("button", { name: "Duplicate" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Duplicate" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
   });
 
@@ -145,7 +156,12 @@ describe("TransactionRow", () => {
   it("renders inline edit fields when editing", () => {
     renderRow({
       editingId: "tx1",
-      editForm: { date: "2024-01-15", payee: "Grocery Store", category: "Food", amount: -42.5 },
+      editForm: {
+        date: "2024-01-15",
+        payee: "Grocery Store",
+        category: "Food",
+        amount: -42.5,
+      },
     });
 
     expect(screen.getByTestId("edit-payee")).toBeInTheDocument();

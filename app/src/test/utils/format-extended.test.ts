@@ -104,7 +104,10 @@ describe("format hooks", () => {
   it("useFormatNumber masks values in privacy mode", () => {
     usePrivacyStore.setState({ isPrivacyMode: true });
     const { result } = renderHook(() => useFormatNumber());
-    const masked = result.current(1234.56, { style: "currency", currency: "USD" });
+    const masked = result.current(1234.56, {
+      style: "currency",
+      currency: "USD",
+    });
     expect(masked).toContain("•");
     expect(masked).toContain("$");
   });

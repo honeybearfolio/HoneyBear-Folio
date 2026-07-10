@@ -76,7 +76,10 @@ describe("LlmSettingsSection", () => {
     });
 
     render(
-      <LlmSettingsSection showTooltip={showTooltip} hideTooltip={hideTooltip} />,
+      <LlmSettingsSection
+        showTooltip={showTooltip}
+        hideTooltip={hideTooltip}
+      />,
     );
 
     await waitFor(() => {
@@ -95,7 +98,10 @@ describe("LlmSettingsSection", () => {
     ]);
 
     render(
-      <LlmSettingsSection showTooltip={showTooltip} hideTooltip={hideTooltip} />,
+      <LlmSettingsSection
+        showTooltip={showTooltip}
+        hideTooltip={hideTooltip}
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /Test connection/i }));
@@ -115,7 +121,10 @@ describe("LlmSettingsSection", () => {
     vi.mocked(rust.check_ollama_connection).mockResolvedValue(false);
 
     render(
-      <LlmSettingsSection showTooltip={showTooltip} hideTooltip={hideTooltip} />,
+      <LlmSettingsSection
+        showTooltip={showTooltip}
+        hideTooltip={hideTooltip}
+      />,
     );
 
     await user.click(screen.getByRole("button", { name: /Test connection/i }));

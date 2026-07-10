@@ -45,7 +45,9 @@ describe("Dashboard chart components", () => {
     });
 
     it("renders line chart when chartData is provided", () => {
-      render(<NetWorthChart chartData={sampleLineData} options={lineOptions} />);
+      render(
+        <NetWorthChart chartData={sampleLineData} options={lineOptions} />,
+      );
 
       expect(screen.getByText("Net Worth Evolution")).toBeInTheDocument();
       expect(screen.getByTestId("line-chart")).toBeInTheDocument();

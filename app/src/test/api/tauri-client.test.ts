@@ -88,7 +88,9 @@ describe("tauri-client", () => {
         marketValues: { AAPL: 100 },
       });
 
-      const transactions = [{ id: 1, account_id: 1, amount: 10, date: "2024-01-01" }];
+      const transactions = [
+        { id: 1, account_id: 1, amount: 10, date: "2024-01-01" },
+      ];
       await rust.build_holdings_from_transactions({ transactions });
       expect(invoke).toHaveBeenCalledWith("build_holdings_from_transactions", {
         transactions,
@@ -120,9 +122,12 @@ describe("tauri-client", () => {
     it("forwards projection commands", async () => {
       const input = { currentAge: 30 };
       await rust.calculate_deterministic_projection({ input });
-      expect(invoke).toHaveBeenCalledWith("calculate_deterministic_projection", {
-        input,
-      });
+      expect(invoke).toHaveBeenCalledWith(
+        "calculate_deterministic_projection",
+        {
+          input,
+        },
+      );
 
       await rust.run_monte_carlo_simulation({ input });
       expect(invoke).toHaveBeenCalledWith("run_monte_carlo_simulation", {
@@ -146,7 +151,10 @@ describe("tauri-client", () => {
       await rust.compute_report_data({ input });
       expect(invoke).toHaveBeenCalledWith("compute_report_data", { input });
 
-      const data = { date_range_start: "2024-01-01", date_range_end: "2024-12-31" };
+      const data = {
+        date_range_start: "2024-01-01",
+        date_range_end: "2024-12-31",
+      };
       await rust.generate_pdf_report({ filePath: "/tmp/report.pdf", data });
       expect(invoke).toHaveBeenCalledWith("generate_pdf_report", {
         filePath: "/tmp/report.pdf",
@@ -158,7 +166,9 @@ describe("tauri-client", () => {
   describe("accounts", () => {
     it("forwards all account commands", async () => {
       await rust.create_account({ name: "Checking" });
-      expect(invoke).toHaveBeenCalledWith("create_account", { name: "Checking" });
+      expect(invoke).toHaveBeenCalledWith("create_account", {
+        name: "Checking",
+      });
 
       await rust.get_accounts({ targetCurrency: "EUR" });
       expect(invoke).toHaveBeenCalledWith("get_accounts", {
@@ -221,7 +231,10 @@ describe("tauri-client", () => {
       expect(invoke).toHaveBeenCalledWith("create_transaction", txArgs);
 
       await rust.create_investment_transaction(txArgs);
-      expect(invoke).toHaveBeenCalledWith("create_investment_transaction", txArgs);
+      expect(invoke).toHaveBeenCalledWith(
+        "create_investment_transaction",
+        txArgs,
+      );
 
       await rust.get_transactions({ accountId: 1 });
       expect(invoke).toHaveBeenCalledWith("get_transactions", { accountId: 1 });
@@ -233,7 +246,10 @@ describe("tauri-client", () => {
       expect(invoke).toHaveBeenCalledWith("update_transaction", txArgs);
 
       await rust.update_investment_transaction(txArgs);
-      expect(invoke).toHaveBeenCalledWith("update_investment_transaction", txArgs);
+      expect(invoke).toHaveBeenCalledWith(
+        "update_investment_transaction",
+        txArgs,
+      );
 
       await rust.delete_transaction({ id: 5 });
       expect(invoke).toHaveBeenCalledWith("delete_transaction", { id: 5 });
@@ -266,13 +282,19 @@ describe("tauri-client", () => {
     it("forwards all scheduled transaction commands", async () => {
       const schedArgs = { args: { payee: "Rent" } };
       await rust.create_scheduled_transaction(schedArgs);
-      expect(invoke).toHaveBeenCalledWith("create_scheduled_transaction", schedArgs);
+      expect(invoke).toHaveBeenCalledWith(
+        "create_scheduled_transaction",
+        schedArgs,
+      );
 
       await rust.get_scheduled_transactions();
       expect(invoke).toHaveBeenCalledWith("get_scheduled_transactions");
 
       await rust.update_scheduled_transaction(schedArgs);
-      expect(invoke).toHaveBeenCalledWith("update_scheduled_transaction", schedArgs);
+      expect(invoke).toHaveBeenCalledWith(
+        "update_scheduled_transaction",
+        schedArgs,
+      );
 
       await rust.delete_scheduled_transaction({ id: 3 });
       expect(invoke).toHaveBeenCalledWith("delete_scheduled_transaction", {
@@ -445,7 +467,11 @@ describe("tauri-client", () => {
       await rust.delete_asset({ id: 1 });
       expect(invoke).toHaveBeenCalledWith("delete_asset", { id: 1 });
 
-      await rust.create_valuation({ assetId: 1, date: "2024-01-01", value: 100 });
+      await rust.create_valuation({
+        assetId: 1,
+        date: "2024-01-01",
+        value: 100,
+      });
       expect(invoke).toHaveBeenCalledWith("create_valuation", {
         assetId: 1,
         date: "2024-01-01",

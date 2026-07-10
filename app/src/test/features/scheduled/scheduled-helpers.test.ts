@@ -140,12 +140,7 @@ describe("getRecurrenceSummary", () => {
 
 describe("getAccountName", () => {
   it("returns account name when found", () => {
-    expect(
-      getAccountName(
-        [{ id: 1, name: "Checking" }],
-        1,
-      ),
-    ).toBe("Checking");
+    expect(getAccountName([{ id: 1, name: "Checking" }], 1)).toBe("Checking");
   });
 
   it("returns id as string when account missing", () => {

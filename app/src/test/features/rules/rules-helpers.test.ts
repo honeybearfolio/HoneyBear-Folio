@@ -24,7 +24,14 @@ describe("rules-helpers", () => {
       match_pattern: "old",
       action_field: "category",
       action_value: "Food",
-      conditions: [{ field: "payee", operator: "contains", value: "Coffee", negated: false }],
+      conditions: [
+        {
+          field: "payee",
+          operator: "contains",
+          value: "Coffee",
+          negated: false,
+        },
+      ],
       actions: [{ field: "category", value: "Drinks" }],
     };
 
@@ -42,25 +49,30 @@ describe("rules-helpers", () => {
       match_pattern: "Rent",
       action_field: "category",
       action_value: "Housing",
-    } as RuleRecord);
+    });
 
     expect(form.conditions[0]).toMatchObject({
       field: "payee",
       operator: "equals",
       value: "Rent",
     });
-    expect(form.actions[0]).toMatchObject({ field: "category", value: "Housing" });
+    expect(form.actions[0]).toMatchObject({
+      field: "category",
+      value: "Housing",
+    });
   });
 
   it("toRulePayload builds API payload and max priority", () => {
     const form = createDefaultRuleFormState();
-    form.conditions = [{ field: "payee", operator: "equals", value: "Salary", negated: false }];
+    form.conditions = [
+      { field: "payee", operator: "equals", value: "Salary", negated: false },
+    ];
     form.actions = [{ field: "category", value: "Income" }];
     form.logic = "and";
 
     const { payload, maxPriority } = toRulePayload(form, [
-      { id: 1, priority: 5 } as RuleRecord,
-      { id: 2, priority: 3 } as RuleRecord,
+      { id: 1, priority: 5 },
+      { id: 2, priority: 3 },
     ]);
 
     expect(payload.match_field).toBe("payee");
@@ -108,7 +120,12 @@ describe("rules-helpers", () => {
 
     expect(
       formatCondition(
-        { field: "payee", operator: "matches_regex", value: "foo", negated: false },
+        {
+          field: "payee",
+          operator: "matches_regex",
+          value: "foo",
+          negated: false,
+        },
         t,
       ),
     ).toContain("/foo/");

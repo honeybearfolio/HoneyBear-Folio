@@ -48,7 +48,7 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     placeholder?: string;
   }) => (
     <select
-      data-testid={`mapping-select-${placeholder}`}
+      data-testid={`mapping-select-${placeholder ?? "column"}`}
       aria-label={placeholder}
       value={value}
       onChange={(e) => {
@@ -174,16 +174,16 @@ describe("ImportModal extended", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({
-            payee: "Store",
-            amount: -25,
-            category: "Food",
-          }),
-        }),
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_transaction",
       );
+      expect(createCall?.[1]).toMatchObject({
+        args: {
+          payee: "Store",
+          amount: -25,
+          category: "Food",
+        },
+      });
       expect(onImportComplete).toHaveBeenCalled();
     });
   });
@@ -194,10 +194,12 @@ describe("ImportModal extended", () => {
       resolveCreate = resolve;
     });
 
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "create_transaction") return createPromise;
-      return defaultInvokeHandler(cmd, args);
-    });
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "create_transaction") return createPromise;
+        return defaultInvokeHandler(cmd, args);
+      },
+    );
 
     const csv =
       "date,payee,amount,account\n2024-01-15,Store,10,Checking\n2024-01-16,Shop,20,Checking";
@@ -221,16 +223,18 @@ describe("ImportModal extended", () => {
 
   it("shows error summary when some rows fail to import", async () => {
     let callCount = 0;
-    mockInvoke.mockImplementation((cmd: string, args?: Record<string, unknown>) => {
-      if (cmd === "create_transaction") {
-        callCount += 1;
-        if (callCount === 2) {
-          return Promise.reject(new Error("Invalid amount"));
+    mockInvoke.mockImplementation(
+      (cmd: string, args?: Record<string, unknown>) => {
+        if (cmd === "create_transaction") {
+          callCount += 1;
+          if (callCount === 2) {
+            return Promise.reject(new Error("Invalid amount"));
+          }
+          return Promise.resolve({});
         }
-        return Promise.resolve({});
-      }
-      return defaultInvokeHandler(cmd, args);
-    });
+        return defaultInvokeHandler(cmd, args);
+      },
+    );
 
     const csv =
       "date,payee,amount,account\n2024-01-15,Store,10,Checking\n2024-01-16,Bad,20,Checking";
@@ -243,7 +247,9 @@ describe("ImportModal extended", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      expect(screen.getByText("Import completed with errors")).toBeInTheDocument();
+      expect(
+        screen.getByText("Import completed with errors"),
+      ).toBeInTheDocument();
       expect(screen.getByText(/Invalid amount/)).toBeInTheDocument();
     });
 
@@ -276,12 +282,12 @@ describe("ImportModal extended", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({ payee: "Array Store", amount: 55 }),
-        }),
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_transaction",
       );
+      expect(createCall?.[1]).toMatchObject({
+        args: { payee: "Array Store", amount: 55 },
+      });
       expect(onImportComplete).toHaveBeenCalled();
     });
   });
@@ -311,29 +317,31 @@ describe("ImportModal extended", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith(
-        "create_transaction",
-        expect.objectContaining({
-          args: expect.objectContaining({ payee: "Data Store", amount: 75 }),
-        }),
+      const createCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "create_transaction",
       );
+      expect(createCall?.[1]).toMatchObject({
+        args: { payee: "Data Store", amount: 75 },
+      });
       expect(onImportComplete).toHaveBeenCalled();
     });
   });
 
   it("shows unsupported JSON structure error on the mapping step", async () => {
-    const file = new File([JSON.stringify({ meta: "only metadata" })], "bad.json", {
-      type: "application/json",
-    });
+    const file = new File(
+      [JSON.stringify({ meta: "only metadata" })],
+      "bad.json",
+      {
+        type: "application/json",
+      },
+    );
 
     render(<ImportModal onClose={vi.fn()} onImportComplete={vi.fn()} />);
 
     uploadFile(file);
     await goToMappingStep();
 
-    expect(
-      screen.getByText(/unsupported json structure/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/unsupported json structure/i)).toBeInTheDocument();
   });
 
   it("shows JSON parse error for invalid JSON files", async () => {
@@ -358,7 +366,9 @@ describe("ImportModal extended", () => {
     uploadFile(file);
     await goToMappingStep();
 
-    const startImportButton = screen.getByText("Start Import").closest("button");
+    const startImportButton = screen
+      .getByText("Start Import")
+      .closest("button");
     expect(startImportButton).toBeDisabled();
 
     fireEvent.click(screen.getByText("Start Import"));
@@ -382,9 +392,7 @@ describe("ImportModal extended", () => {
 
     fireEvent.click(screen.getByText("Back"));
 
-    expect(
-      screen.getByText(/file loaded/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/file loaded/i)).toBeInTheDocument();
     expect(screen.queryByText("Map Columns")).not.toBeInTheDocument();
   });
 });

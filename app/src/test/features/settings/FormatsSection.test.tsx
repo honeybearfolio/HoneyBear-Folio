@@ -38,7 +38,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
         value={value}
         onChange={(e) => {
           onChange(
-            testId === "first-day-select" ? Number(e.target.value) : e.target.value,
+            testId === "first-day-select"
+              ? Number(e.target.value)
+              : e.target.value,
           );
         }}
       >
@@ -132,7 +134,10 @@ describe("FormatsSection", () => {
     const user = userEvent.setup();
     render(<FormatsSection {...defaultProps} />);
 
-    await user.selectOptions(screen.getByTestId("date-format-select"), "DD/MM/YYYY");
+    await user.selectOptions(
+      screen.getByTestId("date-format-select"),
+      "DD/MM/YYYY",
+    );
 
     expect(setDateFormat).toHaveBeenCalledWith("DD/MM/YYYY");
   });

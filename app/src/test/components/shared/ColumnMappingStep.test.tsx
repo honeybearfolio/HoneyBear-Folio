@@ -18,7 +18,7 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
     placeholder?: string;
   }) => (
     <select
-      data-testid={`mapping-select-${placeholder}`}
+      data-testid={`mapping-select-${placeholder ?? "column"}`}
       aria-label={placeholder}
       value={value}
       onChange={(e) => {
@@ -48,9 +48,13 @@ const defaultMapping: FieldMapping = {
   currency: "",
 };
 
-const file = new File(["date,payee,amount\n2024-01-01,Store,-10"], "transactions.csv", {
-  type: "text/csv",
-});
+const file = new File(
+  ["date,payee,amount\n2024-01-01,Store,-10"],
+  "transactions.csv",
+  {
+    type: "text/csv",
+  },
+);
 
 function renderStep(overrides: Record<string, unknown> = {}) {
   const setMapping = vi.fn();
@@ -62,7 +66,9 @@ function renderStep(overrides: Record<string, unknown> = {}) {
     mapping: defaultMapping,
     setMapping,
     setFile,
-    previewRows: [{ date: "2024-01-01", payee: "Store", amount: "-10", category: "Food" }],
+    previewRows: [
+      { date: "2024-01-01", payee: "Store", amount: "-10", category: "Food" },
+    ],
     parseError: null,
     importing: false,
     progress: { current: 0, total: 0, success: 0, failed: 0 },
@@ -71,7 +77,12 @@ function renderStep(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 
-  return { props, setMapping, setFile, ...render(<ColumnMappingStep {...props} />) };
+  return {
+    props,
+    setMapping,
+    setFile,
+    ...render(<ColumnMappingStep {...props} />),
+  };
 }
 
 describe("ColumnMappingStep", () => {
@@ -102,7 +113,10 @@ describe("ColumnMappingStep", () => {
     const selects = screen.getAllByLabelText("Select column");
     await user.selectOptions(selects[0]!, "date");
 
-    expect(setMapping).toHaveBeenCalledWith({ ...defaultMapping, date: "date" });
+    expect(setMapping).toHaveBeenCalledWith({
+      ...defaultMapping,
+      date: "date",
+    });
   });
 
   it("clears file when change file is clicked", async () => {
@@ -128,7 +142,9 @@ describe("ColumnMappingStep", () => {
 
     expect(screen.getByText("Importing...")).toBeInTheDocument();
     expect(screen.getByText("5 / 10")).toBeInTheDocument();
-    const progressSection = screen.getByText("Importing...").closest(".bg-slate-100");
+    const progressSection = screen
+      .getByText("Importing...")
+      .closest(".bg-slate-100");
     expect(progressSection?.textContent).toContain("Success");
     expect(progressSection?.textContent).toContain("Import failed");
   });
@@ -139,7 +155,9 @@ describe("ColumnMappingStep", () => {
       importErrors: [{ row: 2, error: "Invalid amount" }],
     });
 
-    expect(screen.getByText("Import completed with errors")).toBeInTheDocument();
+    expect(
+      screen.getByText("Import completed with errors"),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Invalid amount/)).toBeInTheDocument();
     expect(screen.getByText(/Row 3/)).toBeInTheDocument();
   });

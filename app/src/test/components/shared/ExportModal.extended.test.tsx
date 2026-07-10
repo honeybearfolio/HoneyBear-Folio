@@ -12,19 +12,19 @@ const { mockGetDatePickerFormat, mockDatePicker } = vi.hoisted(() => ({
   ),
 }));
 
-const {
-  mockInvoke,
-  mockSave,
-  mockWriteTextFile,
-  mockShowToast,
-} = vi.hoisted(() => ({
-  mockInvoke:
-    vi.fn<(cmd: string, args?: Record<string, unknown>) => Promise<unknown>>(),
-  mockSave: vi.fn<(opts?: Record<string, unknown>) => Promise<string | null>>(),
-  mockWriteTextFile:
-    vi.fn<(filePath: string, content: string) => Promise<void>>(),
-  mockShowToast: vi.fn(),
-}));
+const { mockInvoke, mockSave, mockWriteTextFile, mockShowToast } = vi.hoisted(
+  () => ({
+    mockInvoke:
+      vi.fn<
+        (cmd: string, args?: Record<string, unknown>) => Promise<unknown>
+      >(),
+    mockSave:
+      vi.fn<(opts?: Record<string, unknown>) => Promise<string | null>>(),
+    mockWriteTextFile:
+      vi.fn<(filePath: string, content: string) => Promise<void>>(),
+    mockShowToast: vi.fn(),
+  }),
+);
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: mockInvoke,
@@ -205,7 +205,7 @@ describe("ExportModal extended", () => {
     });
   });
 
-  it("shows annual year selector for PDF annual range", async () => {
+  it("shows annual year selector for PDF annual range", () => {
     render(<ExportModal {...defaultProps} />);
 
     fireEvent.click(screen.getByText("PDF Report"));
@@ -217,7 +217,7 @@ describe("ExportModal extended", () => {
     expect(screen.getByTestId("custom-select-2026")).toBeInTheDocument();
   });
 
-  it("shows month selector for PDF monthly range", async () => {
+  it("shows month selector for PDF monthly range", () => {
     render(<ExportModal {...defaultProps} />);
 
     fireEvent.click(screen.getByText("PDF Report"));
@@ -261,10 +261,9 @@ describe("ExportModal extended", () => {
     fireEvent.click(screen.getByText("Select Location & Export"));
 
     await waitFor(() => {
-      expect(mockShowToast).toHaveBeenCalledWith(
-        expect.any(String),
-        { type: "error" },
-      );
+      expect(mockShowToast).toHaveBeenCalledWith(expect.any(String), {
+        type: "error",
+      });
     });
     expect(defaultProps.onClose).not.toHaveBeenCalled();
   });

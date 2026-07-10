@@ -40,7 +40,14 @@ function renderPending(overrides: Record<string, unknown> = {}) {
     hasInvestment: false,
     menuOpenId: null as string | null,
     setMenuOpenId,
-    menuCoords: null as { top: number; left: number; right: number; bottom: number; width: number; height: number } | null,
+    menuCoords: null as {
+      top: number;
+      left: number;
+      right: number;
+      bottom: number;
+      width: number;
+      height: number;
+    } | null,
     setMenuCoords,
     handleApplyOccurrence,
     handleSkipOccurrence,
@@ -77,7 +84,9 @@ describe("PendingOccurrences", () => {
   it("renders pending transactions header and occurrence row", () => {
     renderPending();
 
-    expect(screen.getByText("Pending scheduled transactions")).toBeInTheDocument();
+    expect(
+      screen.getByText("Pending scheduled transactions"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Rent")).toBeInTheDocument();
     expect(screen.getByText("Housing")).toBeInTheDocument();
     expect(screen.getByText("Upcoming")).toBeInTheDocument();

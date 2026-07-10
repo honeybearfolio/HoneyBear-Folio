@@ -115,12 +115,36 @@ vi.mock("../../../features/accounts/transaction-fields", () => ({
 
 function createDefaultProps() {
   return {
-    account: { id: "acc1", name: "Checking", kind: "cash", balance: 1000, currency: "USD" },
+    account: {
+      id: "acc1",
+      name: "Checking",
+      kind: "cash",
+      balance: 1000,
+      currency: "USD",
+    },
     availableAccounts: [
-      { id: "acc1", name: "Checking", kind: "cash", balance: 1000, currency: "USD" },
-      { id: "acc2", name: "Savings", kind: "cash", balance: 5000, currency: "USD" },
+      {
+        id: "acc1",
+        name: "Checking",
+        kind: "cash",
+        balance: 1000,
+        currency: "USD",
+      },
+      {
+        id: "acc2",
+        name: "Savings",
+        kind: "cash",
+        balance: 5000,
+        currency: "USD",
+      },
     ],
-    addTargetAccount: null as { id: string; name: string; kind: string; balance: number; currency: string } | null,
+    addTargetAccount: null as {
+      id: string;
+      name: string;
+      kind: string;
+      balance: number;
+      currency: string;
+    } | null,
     setAddTargetAccount: vi.fn(),
     transactionType: "cash",
     setTransactionType: vi.fn(),
@@ -173,7 +197,9 @@ describe("TransactionForm", () => {
     expect(screen.getByText("New Transaction")).toBeInTheDocument();
     expect(screen.getByTestId("payee-field")).toBeInTheDocument();
     expect(screen.getByTestId("category-field")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /save transaction/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /save transaction/i }),
+    ).toBeInTheDocument();
   });
 
   it("switches to investment fields when investment type is selected", async () => {
@@ -187,7 +213,12 @@ describe("TransactionForm", () => {
   });
 
   it("shows investment fields when transaction type is investment", () => {
-    render(<TransactionForm {...createDefaultProps()} transactionType="investment" />);
+    render(
+      <TransactionForm
+        {...createDefaultProps()}
+        transactionType="investment"
+      />,
+    );
 
     expect(screen.getByTestId("investment-fields")).toBeInTheDocument();
     expect(screen.queryByTestId("payee-field")).not.toBeInTheDocument();
@@ -196,7 +227,13 @@ describe("TransactionForm", () => {
   it("shows account selector when viewing all accounts", async () => {
     const user = userEvent.setup();
     const props = createDefaultProps();
-    props.account = { id: "all", name: "All", kind: "cash", balance: 0, currency: "USD" };
+    props.account = {
+      id: "all",
+      name: "All",
+      kind: "cash",
+      balance: 0,
+      currency: "USD",
+    };
 
     render(<TransactionForm {...props} />);
 
@@ -212,7 +249,11 @@ describe("TransactionForm", () => {
     const props = createDefaultProps();
     render(<TransactionForm {...props} />);
 
-    fireEvent.submit(screen.getByRole("button", { name: /save transaction/i }).closest("form")!);
+    fireEvent.submit(
+      screen
+        .getByRole("button", { name: /save transaction/i })
+        .closest("form")!,
+    );
 
     expect(props.handleAddTransaction).toHaveBeenCalled();
   });

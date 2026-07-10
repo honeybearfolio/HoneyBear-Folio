@@ -35,7 +35,9 @@ function renderHeader(overrides: Record<string, unknown> = {}) {
     accountMenuOpen: false,
     setAccountMenuOpen: vi.fn(),
     handleDeleteAccount: vi.fn(),
-    availableAccounts: [{ id: 2, name: "Savings", kind: "savings", currency: "USD" }],
+    availableAccounts: [
+      { id: 2, name: "Savings", kind: "savings", currency: "USD" },
+    ],
     ...overrides,
   };
 
@@ -54,7 +56,9 @@ describe("AccountHeader", () => {
   it("renders account name", () => {
     renderHeader();
 
-    expect(screen.getByRole("heading", { name: "Main Checking" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Main Checking" }),
+    ).toBeInTheDocument();
   });
 
   it("renders search input", () => {
@@ -88,9 +92,13 @@ describe("AccountHeader", () => {
       renameValue: "Renamed Account",
     });
 
-    expect(screen.queryByRole("heading", { name: "Main Checking" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Main Checking" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByDisplayValue("Renamed Account")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save Name" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Save Name" }),
+    ).toBeInTheDocument();
   });
 
   it("opens account menu and calls handleDeleteAccount", async () => {
@@ -134,7 +142,7 @@ describe("AccountHeader", () => {
 
     const menuButtons = screen.getAllByRole("button");
     const moreButton = menuButtons.find(
-      (btn) => !btn.textContent?.includes("Add Transaction"),
+      (btn) => !(btn.textContent ?? "").includes("Add Transaction"),
     );
     expect(moreButton).toBeDefined();
     await user.click(moreButton!);

@@ -120,7 +120,9 @@ describe("SessionPicker coverage", () => {
     render(<SessionPicker onSessionReady={mockOnSessionReady} />);
 
     await waitFor(() => {
-      expect(screen.getByText("Error: Registry unavailable")).toBeInTheDocument();
+      expect(
+        screen.getByText("Error: Registry unavailable"),
+      ).toBeInTheDocument();
     });
   });
 

@@ -36,7 +36,9 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
 }));
 
 vi.mock("../../../components/shared/ExchangeRatesList", () => ({
-  default: () => <div data-testid="exchange-rates-list">Exchange Rates List</div>,
+  default: () => (
+    <div data-testid="exchange-rates-list">Exchange Rates List</div>
+  ),
 }));
 
 vi.mock("../../../features/settings/LlmSettingsSection", () => ({

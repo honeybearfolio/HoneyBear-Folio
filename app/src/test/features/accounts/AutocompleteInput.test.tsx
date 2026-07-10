@@ -54,7 +54,7 @@ describe("AutocompleteInput", () => {
     expect(screen.getByText("Salary")).toBeInTheDocument();
   });
 
-  it("selects a suggestion on click", async () => {
+  it("selects a suggestion on click", () => {
     const onChange = vi.fn();
     render(
       <AutocompleteInput

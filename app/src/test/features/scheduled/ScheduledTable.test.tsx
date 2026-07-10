@@ -3,7 +3,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ScheduledTable from "../../../features/scheduled/ScheduledTable";
-import type { ScheduleRecord, AccountRecord } from "../../../features/scheduled/scheduled-types";
+import type {
+  ScheduleRecord,
+  AccountRecord,
+} from "../../../features/scheduled/scheduled-types";
 import { useNumberFormatStore } from "../../../stores/number-format";
 
 vi.mock("../../../utils/format", () => ({
@@ -78,7 +81,9 @@ describe("ScheduledTable", () => {
   it("renders empty state when no schedules", () => {
     renderTable({ schedules: [] });
 
-    expect(screen.getByText("No scheduled transactions defined")).toBeInTheDocument();
+    expect(
+      screen.getByText("No scheduled transactions defined"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Create a recurring transaction to get started"),
     ).toBeInTheDocument();
@@ -161,7 +166,7 @@ describe("ScheduledTable", () => {
       ".sched-action-menu-portal button",
     );
     const editBtn = Array.from(portalButtons).find((btn) =>
-      btn.textContent?.includes("Update"),
+      (btn.textContent ?? "").includes("Update"),
     );
     expect(editBtn).toBeDefined();
     await user.click(editBtn!);

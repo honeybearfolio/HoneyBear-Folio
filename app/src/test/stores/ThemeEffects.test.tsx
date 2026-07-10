@@ -35,7 +35,9 @@ describe("ThemeEffects", () => {
     useThemeStore.setState({ theme: "high-contrast-dark" });
     render(<ThemeEffects />);
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    expect(document.documentElement.classList.contains("high-contrast")).toBe(true);
+    expect(document.documentElement.classList.contains("high-contrast")).toBe(
+      true,
+    );
   });
 
   it("applies ink theme classes", () => {
