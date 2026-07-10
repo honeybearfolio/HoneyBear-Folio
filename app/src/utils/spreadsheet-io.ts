@@ -24,6 +24,18 @@ export function headerMatchesAlias(
   return aliases.some((alias) => normalizeKey(alias) === normalized);
 }
 
+/** Exact alias match, or normalized header contains a normalized alias (e.g. "Transaction Date" → date). */
+export function headerMatchesFieldAlias(
+  header: string,
+  aliases: readonly string[],
+): boolean {
+  if (headerMatchesAlias(header, aliases)) return true;
+  const normalized = normalizeKey(header);
+  return aliases.some((alias) =>
+    normalized.includes(normalizeKey(alias)),
+  );
+}
+
 export function getField(
   row: Record<string, unknown>,
   ...keys: string[]

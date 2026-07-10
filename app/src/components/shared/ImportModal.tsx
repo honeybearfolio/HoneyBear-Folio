@@ -19,6 +19,7 @@ import type {
 import FileDropZone from "./FileDropZone";
 import ColumnMappingStep from "./ColumnMappingStep";
 import {
+  autoMapImportColumns,
   extractAccountsFromHoneyBearJson,
   importAccounts,
   parseAccountFromRow,
@@ -113,40 +114,10 @@ export default function ImportModal({
   const [showImportSummary, setShowImportSummary] = useState(false);
 
   const autoMapColumns = useCallback((cols: string[]) => {
-    setMapping((prevMapping) => {
-      const newMapping = { ...prevMapping };
-      cols.forEach((col) => {
-        const lower = col.toLowerCase();
-        if (lower.includes("date")) newMapping.date = col;
-        else if (
-          lower.includes("payee") ||
-          lower.includes("description") ||
-          lower.includes("merchant")
-        )
-          newMapping.payee = col;
-        else if (lower.includes("amount") || lower.includes("value"))
-          newMapping.amount = col;
-        else if (lower.includes("category")) newMapping.category = col;
-        else if (lower.includes("note") || lower.includes("memo"))
-          newMapping.notes = col;
-        else if (lower.includes("account") || lower.includes("acc"))
-          newMapping.account = col;
-        else if (lower.includes("ticker") || lower.includes("symbol"))
-          newMapping.ticker = col;
-        else if (
-          lower.includes("shares") ||
-          lower.includes("quantity") ||
-          lower.includes("qty")
-        )
-          newMapping.shares = col;
-        else if (lower.includes("price")) newMapping.price = col;
-        else if (lower.includes("fee") || lower.includes("commission"))
-          newMapping.fee = col;
-        else if (lower.includes("currency") || lower === "curr")
-          newMapping.currency = col;
-      });
-      return newMapping;
-    });
+    setMapping((prevMapping) => ({
+      ...prevMapping,
+      ...autoMapImportColumns(cols),
+    }));
   }, []);
 
   const parseFile = useCallback(

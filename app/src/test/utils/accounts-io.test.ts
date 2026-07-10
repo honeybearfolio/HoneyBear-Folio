@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+  autoMapImportColumns,
   extractAccountsFromHoneyBearJson,
   importAccounts,
   isAccountRow,
@@ -19,6 +20,81 @@ describe("accounts-io", () => {
     expect(isAccountRow(["id", "name", "balance", "currency"])).toBe(true);
     expect(isAccountRow(["Date", "Account", "Payee", "Amount"])).toBe(false);
     expect(isAccountRow(["Name", "Category", "Value", "Date"])).toBe(false);
+    expect(isAccountRow(["Nombre", "Saldo", "Moneda"])).toBe(true);
+    expect(isAccountRow(["Fecha", "Cuenta", "Importe"])).toBe(false);
+  });
+
+  it("auto-maps import columns from English and Spanish headers", () => {
+    expect(
+      autoMapImportColumns([
+        "Date",
+        "Account",
+        "Payee",
+        "Amount",
+        "Category",
+        "Notes",
+        "Ticker",
+        "Shares",
+        "Price",
+        "Fee",
+        "Currency",
+      ]),
+    ).toEqual({
+      date: "Date",
+      account: "Account",
+      payee: "Payee",
+      amount: "Amount",
+      category: "Category",
+      notes: "Notes",
+      ticker: "Ticker",
+      shares: "Shares",
+      price: "Price",
+      fee: "Fee",
+      currency: "Currency",
+    });
+  });
+
+  it("auto-maps mixed-case and non-English transaction headers", () => {
+    expect(
+      autoMapImportColumns([
+        "FECHA",
+        "CUENTA",
+        "DESCRIPCIÓN",
+        "IMPORTE",
+        "Categoría",
+        "Notas",
+        "Símbolo",
+        "Cantidad",
+        "Precio",
+        "Comisión",
+        "Moneda",
+      ]),
+    ).toEqual({
+      date: "FECHA",
+      account: "CUENTA",
+      payee: "DESCRIPCIÓN",
+      amount: "IMPORTE",
+      category: "Categoría",
+      notes: "Notas",
+      ticker: "Símbolo",
+      shares: "Cantidad",
+      price: "Precio",
+      fee: "Comisión",
+      currency: "Moneda",
+    });
+  });
+
+  it("prefers date over account when a header contains both hints", () => {
+    expect(autoMapImportColumns(["Account Date", "Amount"])).toEqual({
+      date: "Account Date",
+      amount: "Amount",
+    });
+  });
+
+  it("uses last matching column when multiple headers map to the same field", () => {
+    expect(autoMapImportColumns(["Date", "Transaction Date"])).toEqual({
+      date: "Transaction Date",
+    });
   });
 
   it("parses accounts from JSON", () => {
