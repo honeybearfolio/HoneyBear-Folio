@@ -1,4 +1,4 @@
-import React from "react";
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Sidebar from "../../../components/layout/Sidebar";
@@ -125,9 +125,7 @@ describe("Sidebar coverage", () => {
       .filter((btn) => btn.className.includes("sidebar-nav-item"));
 
     const clickNav = (label: string) => {
-      const button = navButtons.find((btn) =>
-        (btn.textContent ?? "").includes(label),
-      );
+      const button = navButtons.find((btn) => btn.textContent.includes(label));
       fireEvent.click(button!);
     };
 

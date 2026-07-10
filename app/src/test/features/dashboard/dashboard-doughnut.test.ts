@@ -89,7 +89,7 @@ describe("buildDoughnutChartData", () => {
     ];
 
     vi.mocked(buildHoldingsFromTransactions).mockResolvedValue({
-      currentHoldings: [{ ticker: "AAPL", shares: 10 }],
+      currentHoldings: [{ ticker: "AAPL", shares: 10, costBasis: 1000 }],
       firstTradeDate: "2024-01-01",
     });
 
@@ -122,13 +122,13 @@ describe("buildDoughnutChartData", () => {
 
     vi.mocked(buildHoldingsFromTransactions).mockResolvedValue({
       currentHoldings: [
-        { ticker: "AAPL", shares: 1 },
-        { ticker: "SPY", shares: 1 },
-        { ticker: "BTC-USD", shares: 1 },
-        { ticker: "VFIAX", shares: 1 },
-        { ticker: "ES=F", shares: 1 },
-        { ticker: "^GSPC", shares: 1 },
-        { ticker: "GC=F", shares: 1 },
+        { ticker: "AAPL", shares: 1, costBasis: 100 },
+        { ticker: "SPY", shares: 1, costBasis: 100 },
+        { ticker: "BTC-USD", shares: 1, costBasis: 100 },
+        { ticker: "VFIAX", shares: 1, costBasis: 100 },
+        { ticker: "ES=F", shares: 1, costBasis: 100 },
+        { ticker: "^GSPC", shares: 1, costBasis: 100 },
+        { ticker: "GC=F", shares: 1, costBasis: 100 },
       ],
       firstTradeDate: "2024-01-01",
     });

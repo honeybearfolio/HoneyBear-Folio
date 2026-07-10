@@ -104,7 +104,7 @@ describe("TimeRangeSelector", () => {
       />,
     );
 
-    const [startPicker] = screen.getAllByTestId("datepicker");
+    const startPicker = screen.getAllByTestId("datepicker")[0]!;
     await user.clear(startPicker);
     await user.type(startPicker, "2024-12-01");
 

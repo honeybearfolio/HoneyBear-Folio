@@ -1,4 +1,4 @@
-import React, { createRef } from "react";
+import { createRef } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -142,7 +142,7 @@ describe("AccountHeader", () => {
 
     const menuButtons = screen.getAllByRole("button");
     const moreButton = menuButtons.find(
-      (btn) => !(btn.textContent ?? "").includes("Add Transaction"),
+      (btn) => !btn.textContent.includes("Add Transaction"),
     );
     expect(moreButton).toBeDefined();
     await user.click(moreButton!);

@@ -1,4 +1,3 @@
-import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -33,6 +32,7 @@ const tx = {
   notes: "Weekly shop",
   cleared: true,
   currency: "USD",
+  account_id: "acc1",
 };
 
 const account = {
@@ -177,7 +177,7 @@ describe("TransactionRow", () => {
     });
 
     const buttons = screen.getAllByRole("button");
-    const cancelBtn = buttons[buttons.length - 1];
+    const cancelBtn = buttons[buttons.length - 1]!;
     await user.click(cancelBtn);
 
     expect(props.setEditingId).toHaveBeenCalledWith(null);

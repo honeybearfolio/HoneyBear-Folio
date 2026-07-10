@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { TFunction } from "i18next";
 import {
   toScheduledPayload,
   getRecurrenceSummary,
@@ -6,12 +7,12 @@ import {
 } from "../../../features/scheduled/scheduled-helpers";
 import { createDefaultScheduledForm } from "../../../constants/app";
 
-const t = (key: string, opts?: Record<string, unknown>) => {
+const t = ((key: string, opts?: Record<string, unknown>) => {
   if (opts) {
     return `${key}:${JSON.stringify(opts)}`;
   }
   return key;
-};
+}) as TFunction;
 
 describe("toScheduledPayload", () => {
   it("maps cash transaction fields", () => {

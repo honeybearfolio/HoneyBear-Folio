@@ -84,9 +84,9 @@ describe("rules-helpers", () => {
 
   it("reorderRules moves item and reassigns priorities", () => {
     const rules = [
-      { id: 1, priority: 3, name: "A" },
-      { id: 2, priority: 2, name: "B" },
-      { id: 3, priority: 1, name: "C" },
+      { id: 1, priority: 3 },
+      { id: 2, priority: 2 },
+      { id: 3, priority: 1 },
     ] as RuleRecord[];
 
     const reordered = reorderRules(rules, 1, 2);

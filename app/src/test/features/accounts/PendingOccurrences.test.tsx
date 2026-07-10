@@ -51,7 +51,15 @@ function renderPending(overrides: Record<string, unknown> = {}) {
     setMenuCoords,
     handleApplyOccurrence,
     handleSkipOccurrence,
-    filteredTransactions: [{ id: "tx1" }],
+    filteredTransactions: [
+      {
+        id: "tx1",
+        date: "2024-01-01",
+        payee: "Store",
+        amount: -10,
+        account_id: "acc1",
+      },
+    ],
     ...overrides,
   };
 

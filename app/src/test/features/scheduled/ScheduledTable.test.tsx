@@ -1,4 +1,3 @@
-import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -166,7 +165,7 @@ describe("ScheduledTable", () => {
       ".sched-action-menu-portal button",
     );
     const editBtn = Array.from(portalButtons).find((btn) =>
-      (btn.textContent ?? "").includes("Update"),
+      btn.textContent.includes("Update"),
     );
     expect(editBtn).toBeDefined();
     await user.click(editBtn!);

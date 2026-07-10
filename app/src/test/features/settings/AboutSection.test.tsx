@@ -73,7 +73,9 @@ describe("AboutSection", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: new RegExp(`Show all \\(${String(THIRD_PARTY_LICENSES.length)}\\)`),
+        name: new RegExp(
+          `Show all \\(${String(THIRD_PARTY_LICENSES.length)}\\)`,
+        ),
       }),
     );
 

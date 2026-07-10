@@ -322,8 +322,8 @@ describe("Dashboard coverage", () => {
       const pricesCall = vi
         .mocked(invoke)
         .mock.calls.find(([cmd]) => cmd === "update_daily_stock_prices");
-      const pricesArgs = pricesCall?.[1] as { tickers?: string[] };
-      expect(pricesArgs?.tickers).toContain("EURUSD=X");
+      const pricesArgs = pricesCall![1] as { tickers?: string[] };
+      expect(pricesArgs.tickers).toContain("EURUSD=X");
     });
   });
 });

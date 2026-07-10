@@ -134,6 +134,7 @@ const cashTx = {
   notes: "Weekly shop",
   cleared: true,
   currency: "USD",
+  account_id: "acc1",
 };
 
 const investmentTx = {
@@ -149,6 +150,7 @@ const investmentTx = {
   shares: 10,
   price_per_share: 50,
   fee: 1.5,
+  account_id: "acc1",
 };
 
 const account = {

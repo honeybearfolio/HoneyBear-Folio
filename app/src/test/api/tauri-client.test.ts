@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { callRust, rust } from "../../api/tauri-client";
+import type {
+  HoldingWithQuote,
+  ReportComputeInput,
+  ReportData,
+  StockQuote,
+  Transaction,
+} from "../../api/types";
 
 describe("tauri-client", () => {
   beforeEach(() => {
@@ -88,8 +95,14 @@ describe("tauri-client", () => {
         marketValues: { AAPL: 100 },
       });
 
-      const transactions = [
-        { id: 1, account_id: 1, amount: 10, date: "2024-01-01" },
+      const transactions: Transaction[] = [
+        {
+          id: 1,
+          account_id: 1,
+          amount: 10,
+          date: "2024-01-01",
+          payee: "Store",
+        },
       ];
       await rust.build_holdings_from_transactions({ transactions });
       expect(invoke).toHaveBeenCalledWith("build_holdings_from_transactions", {
@@ -97,14 +110,26 @@ describe("tauri-client", () => {
       });
 
       const holdings = [{ ticker: "AAPL", shares: 1, costBasis: 100 }];
-      const quotes = [{ ticker: "AAPL", price: 150 }];
+      const quotes: StockQuote[] = [
+        { symbol: "AAPL", regularMarketPrice: 150 },
+      ];
       await rust.merge_holdings_with_quotes({ holdings, quotes });
       expect(invoke).toHaveBeenCalledWith("merge_holdings_with_quotes", {
         holdings,
         quotes,
       });
 
-      const merged = [{ ticker: "AAPL", shares: 1, currentValue: 150 }];
+      const merged: HoldingWithQuote[] = [
+        {
+          ticker: "AAPL",
+          shares: 1,
+          costBasis: 100,
+          price: 150,
+          currentValue: 150,
+          roi: 50,
+          changePercent: 50,
+        },
+      ];
       await rust.compute_portfolio_totals({ holdings: merged });
       expect(invoke).toHaveBeenCalledWith("compute_portfolio_totals", {
         holdings: merged,
@@ -147,14 +172,14 @@ describe("tauri-client", () => {
         exchangeRates: {},
         quotes: [],
         labels: {},
-      };
+      } as unknown as ReportComputeInput;
       await rust.compute_report_data({ input });
       expect(invoke).toHaveBeenCalledWith("compute_report_data", { input });
 
       const data = {
         date_range_start: "2024-01-01",
         date_range_end: "2024-12-31",
-      };
+      } as unknown as ReportData;
       await rust.generate_pdf_report({ filePath: "/tmp/report.pdf", data });
       expect(invoke).toHaveBeenCalledWith("generate_pdf_report", {
         filePath: "/tmp/report.pdf",

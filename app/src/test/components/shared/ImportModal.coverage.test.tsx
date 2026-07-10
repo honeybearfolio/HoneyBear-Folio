@@ -183,9 +183,11 @@ describe("ImportModal coverage", () => {
     fireEvent.click(screen.getByText("Start Import"));
 
     await waitFor(() => {
-      const readCall = mockInvoke.mock.calls.find(([cmd]) => cmd === "read_xlsx");
-      const readArgs = readCall?.[1] as { data?: unknown };
-      expect(Array.isArray(readArgs?.data)).toBe(true);
+      const readCall = mockInvoke.mock.calls.find(
+        ([cmd]) => cmd === "read_xlsx",
+      );
+      const readArgs = readCall![1] as { data?: unknown };
+      expect(Array.isArray(readArgs.data)).toBe(true);
 
       const createCall = mockInvoke.mock.calls.find(
         ([cmd]) => cmd === "create_transaction",
