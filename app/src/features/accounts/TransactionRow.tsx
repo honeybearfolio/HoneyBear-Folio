@@ -1,18 +1,9 @@
 import type { Dispatch, SetStateAction } from "react";
-import DatePicker from "react-datepicker";
-import type { Day } from "date-fns";
 import { createPortal } from "react-dom";
 import { MoreVertical, Copy, Trash2, Check, X } from "lucide-react";
-import NumberInput from "../../components/ui/NumberInput";
 import MaskedNumber from "../../components/ui/MaskedNumber";
-import AutocompleteInput from "./AutocompleteInput";
 import { useTranslation } from "react-i18next";
-import {
-  useFormatNumber,
-  useParseNumber,
-  useFormatDate,
-  getDatePickerFormat,
-} from "../../utils/format";
+import { useParseNumber, useFormatDate } from "../../utils/format";
 import type {
   AccountDetailsAccount,
   Transaction,
@@ -22,6 +13,19 @@ import type {
   TickerSuggestion,
   MenuCoords,
 } from "./account-details-types";
+import {
+  TransactionDateField,
+  PayeeField,
+  CategoryField,
+  NotesField,
+  TransactionAmountFields,
+  BuySellField,
+  TickerField,
+  SharesField,
+  PricePerShareField,
+  FeeField,
+  resolveInlineBuySell,
+} from "./transaction-fields";
 
 interface TransactionRowProps {
   tx: Transaction;
@@ -49,6 +53,31 @@ interface TransactionRowProps {
   dateFormat: string;
   firstDayOfWeek: number;
   getTagClasses: (tag: string) => string;
+}
+
+function EditActions({
+  onSave,
+  onCancel,
+}: {
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <button
+        onClick={onSave}
+        className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+      >
+        <Check className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onCancel}
+        className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
 }
 
 export default function TransactionRow({
@@ -79,9 +108,18 @@ export default function TransactionRow({
   getTagClasses,
 }: TransactionRowProps) {
   const { t } = useTranslation();
-  const formatNumber = useFormatNumber();
   const parseNumber = useParseNumber();
   const formatDate = useFormatDate();
+
+  const updateEditForm = (patch: Partial<TransactionEditForm>) => {
+    setEditForm((current) => ({ ...current, ...patch }));
+  };
+
+  const isBuy = resolveInlineBuySell(
+    editForm.payee,
+    editForm.shares,
+    parseNumber,
+  );
 
   return (
     <tr
@@ -98,19 +136,14 @@ export default function TransactionRow({
       {editingId === tx.id ? (
         <>
           <td className="px-6 py-3">
-            <DatePicker
-              selected={editForm.date ? new Date(editForm.date) : null}
-              onChange={(date: Date | null) => {
-                setEditForm({
-                  ...editForm,
-                  date: date ? (date.toISOString().split("T")[0] ?? "") : "",
-                });
+            <TransactionDateField
+              value={editForm.date ?? ""}
+              onChange={(date) => {
+                updateEditForm({ date });
               }}
-              dateFormat={getDatePickerFormat(dateFormat)}
-              calendarStartDay={firstDayOfWeek as Day}
-              shouldCloseOnSelect={false}
-              portalId="datepicker-portal"
-              className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
+              dateFormat={dateFormat}
+              firstDayOfWeek={firstDayOfWeek}
+              variant="inline"
             />
           </td>
 
@@ -126,47 +159,14 @@ export default function TransactionRow({
           {hasInvestment && editForm.ticker ? (
             <>
               <td className="px-6 py-3">
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`txType-${String(tx.id)}`}
-                      checked={
-                        editForm.payee === "Buy" ||
-                        (editForm.payee !== "Sell" &&
-                          (parseNumber(editForm.shares) || 0) > 0)
-                      }
-                      onChange={() => {
-                        setEditForm({ ...editForm, payee: "Buy" });
-                      }}
-                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
-                    />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">
-                      {t("transaction.type.buy")}
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`txType-${String(tx.id)}`}
-                      checked={
-                        editForm.payee === "Sell" ||
-                        (editForm.payee !== "Buy" &&
-                          (parseNumber(editForm.shares) || 0) < 0)
-                      }
-                      onChange={() => {
-                        setEditForm({
-                          ...editForm,
-                          payee: "Sell",
-                        });
-                      }}
-                      className="w-4 h-4 text-slate-600 dark:text-slate-400 accent-brand-500"
-                    />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">
-                      {t("transaction.type.sell")}
-                    </span>
-                  </label>
-                </div>
+                <BuySellField
+                  isBuy={isBuy}
+                  onChange={(nextIsBuy) => {
+                    updateEditForm({ payee: nextIsBuy ? "Buy" : "Sell" });
+                  }}
+                  variant="inline"
+                  radioName={`txType-${String(tx.id)}`}
+                />
               </td>
 
               <td className="px-6 py-3">
@@ -174,142 +174,85 @@ export default function TransactionRow({
                   type="text"
                   className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
                   value={editForm.category || "Investment"}
-                  onChange={(e) => {
-                    setEditForm({
-                      ...editForm,
-                      category: e.target.value,
-                    });
+                  onChange={(event) => {
+                    updateEditForm({ category: event.target.value });
                   }}
                 />
               </td>
 
               <td className="px-6 py-3">
-                <input
-                  type="text"
-                  className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
+                <NotesField
                   value={editForm.notes || ""}
-                  onChange={(e) => {
-                    setEditForm({
-                      ...editForm,
-                      notes: e.target.value,
-                    });
+                  onChange={(notes) => {
+                    updateEditForm({ notes });
                   }}
-                  placeholder={t("account.notes_placeholder")}
+                  variant="inline"
                 />
               </td>
 
               <td className="px-6 py-3">
-                <div className="relative">
-                  <input
-                    type="text"
-                    className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none uppercase"
-                    value={editForm.ticker || ""}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase();
-                      setEditForm({
-                        ...editForm,
-                        ticker: val,
-                      });
-                      handleTickerChange(val);
-                    }}
-                  />
-                  {tickerSuggestions.length > 0 && (
-                    <div className="absolute z-[100] w-64 mt-1 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
-                      {tickerSuggestions.map((suggestion) => (
-                        <button
-                          key={suggestion.symbol}
-                          type="button"
-                          className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 flex flex-col gap-0.5 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0"
-                          onClick={() => {
-                            setEditForm({
-                              ...editForm,
-                              ticker: suggestion.symbol,
-                              ...(suggestion.currency || editForm.currency
-                                ? {
-                                    currency:
-                                      suggestion.currency || editForm.currency,
-                                  }
-                                : {}),
-                            });
-                            setTickerSuggestions([]);
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-900 dark:text-slate-100 uppercase">
-                              {suggestion.symbol}
-                            </span>
-                            {suggestion.currency && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                {suggestion.currency}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {suggestion.shortname || suggestion.longname}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <TickerField
+                  value={editForm.ticker || ""}
+                  onChange={(ticker) => {
+                    updateEditForm({ ticker });
+                    handleTickerChange(ticker);
+                  }}
+                  suggestions={tickerSuggestions}
+                  showSuggestions={tickerSuggestions.length > 0}
+                  onShowSuggestionsChange={() => {}}
+                  onSuggestionSelect={(suggestion) => {
+                    updateEditForm({
+                      ticker: suggestion.symbol,
+                      ...(suggestion.currency || editForm.currency
+                        ? {
+                            currency: suggestion.currency || editForm.currency,
+                          }
+                        : {}),
+                    });
+                    setTickerSuggestions([]);
+                  }}
+                  variant="inline"
+                />
               </td>
 
               <td className="px-6 py-3">
-                <NumberInput
+                <SharesField
                   value={editForm.shares}
-                  onChange={(num) => {
-                    setEditForm({
-                      ...editForm,
-                      shares: num,
-                    });
+                  onChange={(shares) => {
+                    updateEditForm({ shares });
                   }}
-                  className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-right"
-                  maximumFractionDigits={6}
-                  useGrouping={false}
+                  variant="inline"
                 />
               </td>
 
               <td className="px-6 py-3">
-                <div className="relative">
-                  <NumberInput
-                    value={editForm.price_per_share}
-                    onChange={(num) => {
-                      setEditForm({
-                        ...editForm,
-                        price_per_share: num,
-                      });
-                    }}
-                    className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-right"
-                    maximumFractionDigits={8}
-                    useGrouping={false}
-                  />
-                </div>
+                <PricePerShareField
+                  value={editForm.price_per_share}
+                  onChange={(pricePerShare) => {
+                    updateEditForm({ price_per_share: pricePerShare });
+                  }}
+                  variant="inline"
+                />
               </td>
 
               <td className="px-6 py-3">
-                <div className="relative">
-                  <NumberInput
-                    value={editForm.fee}
-                    onChange={(num) => {
-                      setEditForm({
-                        ...editForm,
-                        fee: num,
-                      });
-                    }}
-                    className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-right"
-                    maximumFractionDigits={2}
-                    minimumFractionDigits={2}
-                  />
-                </div>
+                <FeeField
+                  value={editForm.fee}
+                  onChange={(fee) => {
+                    updateEditForm({ fee });
+                  }}
+                  variant="inline"
+                />
               </td>
 
               <td className="px-6 py-3 text-right font-bold text-slate-900 dark:text-slate-100">
                 <div className="flex flex-col items-end">
                   {(() => {
-                    const s = parseNumber(editForm.shares) || 0;
-                    const p = parseNumber(editForm.price_per_share) || 0;
-                    const totalNum = Math.abs(s) * p;
-                    const sign = editForm.payee === "Sell" || s < 0 ? "" : "+";
+                    const sharesNum = parseNumber(editForm.shares) || 0;
+                    const price = parseNumber(editForm.price_per_share) || 0;
+                    const totalNum = Math.abs(sharesNum) * price;
+                    const sign =
+                      editForm.payee === "Sell" || sharesNum < 0 ? "" : "+";
                     return (
                       <span className="flex items-center gap-1 justify-end">
                         {sign}
@@ -335,78 +278,53 @@ export default function TransactionRow({
               </td>
 
               <td className="px-6 py-3 text-center">
-                <div className="flex items-center justify-center gap-1">
-                  <button
-                    onClick={() => {
-                      void saveEdit();
-                    }}
-                    className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingId(null);
-                    }}
-                    className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <EditActions
+                  onSave={() => {
+                    void saveEdit();
+                  }}
+                  onCancel={() => {
+                    setEditingId(null);
+                  }}
+                />
               </td>
             </>
           ) : (
             <>
               <td className="px-6 py-3">
-                <AutocompleteInput
-                  suggestions={payeeSuggestions}
-                  className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
-                  value={editForm.payee as string}
-                  onChange={(val) => {
-                    const isTransfer = availableAccounts.some(
-                      (a) => a.name === val,
-                    );
-                    setEditForm({
-                      ...editForm,
-                      payee: val,
+                <PayeeField
+                  value={(editForm.payee as string) || ""}
+                  onChange={(payee, isTransfer) => {
+                    updateEditForm({
+                      payee,
                       ...(isTransfer ? { category: "Transfer" } : {}),
                     });
                   }}
+                  suggestions={payeeSuggestions}
+                  availableAccounts={availableAccounts}
+                  variant="inline"
                 />
               </td>
 
               <td className="px-6 py-3">
-                <AutocompleteInput
-                  suggestions={categorySuggestions}
-                  className={`w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none ${
-                    availableAccounts.some((a) => a.name === editForm.payee)
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                      : ""
-                  }`}
+                <CategoryField
                   value={(editForm.category as string) || ""}
-                  onChange={(val) => {
-                    setEditForm({
-                      ...editForm,
-                      category: val,
-                    });
+                  onChange={(category) => {
+                    updateEditForm({ category });
                   }}
-                  disabled={availableAccounts.some(
-                    (a) => a.name === editForm.payee,
-                  )}
+                  suggestions={categorySuggestions}
+                  payee={(editForm.payee as string) || ""}
+                  availableAccounts={availableAccounts}
+                  variant="inline"
                 />
               </td>
 
               <td className="px-6 py-3">
-                <input
-                  type="text"
-                  className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none"
+                <NotesField
                   value={editForm.notes || ""}
-                  onChange={(e) => {
-                    setEditForm({
-                      ...editForm,
-                      notes: e.target.value,
-                    });
+                  onChange={(notes) => {
+                    updateEditForm({ notes });
                   }}
+                  variant="inline"
                 />
               </td>
 
@@ -436,42 +354,27 @@ export default function TransactionRow({
               )}
 
               <td className="px-6 py-3">
-                <NumberInput
-                  value={editForm.amount}
-                  onChange={(num) => {
-                    setEditForm({
-                      ...editForm,
-                      amount: num,
-                    });
+                <TransactionAmountFields
+                  amount={editForm.amount}
+                  onAmountChange={(amount) => {
+                    updateEditForm({ amount });
                   }}
-                  placeholder={formatNumber(0, {
-                    maximumFractionDigits: 2,
-                    minimumFractionDigits: 2,
-                  })}
-                  className="w-full p-2 text-sm border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-right"
-                  maximumFractionDigits={2}
-                  minimumFractionDigits={2}
+                  currency={editForm.currency || appCurrency}
+                  onCurrencyChange={(currency) => {
+                    updateEditForm({ currency });
+                  }}
+                  variant="inline"
                 />
               </td>
               <td className="px-6 py-3 text-center">
-                <div className="flex items-center justify-center gap-1">
-                  <button
-                    onClick={() => {
-                      void saveEdit();
-                    }}
-                    className="p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingId(null);
-                    }}
-                    className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+                <EditActions
+                  onSave={() => {
+                    void saveEdit();
+                  }}
+                  onCancel={() => {
+                    setEditingId(null);
+                  }}
+                />
               </td>
             </>
           )}
