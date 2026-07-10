@@ -12,9 +12,10 @@ vi.mock("../../../utils/format", () => ({
 }));
 
 type TooltipCallback = (ctx: {
-  dataset: { label?: string };
+  dataset: { label?: string; data?: number[] };
   parsed: { y?: number } | null;
   raw?: unknown;
+  dataIndex?: number;
 }) => string;
 
 type TickCallback = (
@@ -123,6 +124,25 @@ describe("ChartNumberFormatSync", () => {
     const _result = callback(ctx);
 
     expect(_result).toBe("Test: ");
+  });
+
+  it("tooltip callback falls back to dataset.data when raw is missing", () => {
+    render(<ChartNumberFormatSync />);
+
+    const callback: TooltipCallback = (ctx) =>
+      (ChartJS.defaults.plugins.tooltip.callbacks.label as TooltipCallback)(
+        ctx,
+      );
+    const ctx = {
+      dataset: { label: "Series", data: [750] },
+      parsed: null,
+      dataIndex: 0,
+    };
+
+    const result = callback(ctx);
+
+    expect(mockFormatNumber).toHaveBeenCalledWith(750, { style: "currency" });
+    expect(result).toBe("Series: $750.00");
   });
 
   it("tick callback formats numeric values", () => {
