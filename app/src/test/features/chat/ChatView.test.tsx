@@ -215,4 +215,106 @@ describe("ChatView", () => {
       });
     });
   });
+
+  it("renders loaded messages in the conversation view", async () => {
+    vi.mocked(invoke).mockImplementation(
+      makeInvokeMock({
+        configured: true,
+        conversations: [{ id: "c1", title: "Budget Chat" }],
+        messages: [
+          {
+            id: 1,
+            role: "user",
+            content: "How much did I spend on food?",
+            conversation_id: "c1",
+          },
+          {
+            id: 2,
+            role: "assistant",
+            content: "You spent $320 on food this month.",
+            conversation_id: "c1",
+          },
+        ],
+      }),
+    );
+
+    render(<ChatView />);
+    await waitFor(() => screen.getByText("Budget Chat"));
+    fireEvent.click(screen.getByText("Budget Chat"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("How much did I spend on food?"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("You spent $320 on food this month."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("renders the message input and disables send when empty", async () => {
+    vi.mocked(invoke).mockImplementation(
+      makeInvokeMock({ configured: true, conversations: [] }),
+    );
+
+    render(<ChatView />);
+    await waitFor(() => screen.getByText("New Chat"));
+
+    const textarea = screen.getByRole("textbox");
+    expect(textarea).toBeInTheDocument();
+    expect(textarea).toHaveAttribute("placeholder", "Type a message...");
+
+    const sendBtn = screen.getByLabelText("Send");
+    expect(sendBtn).toBeDisabled();
+  });
+
+  it("sends a message when the send button is clicked", async () => {
+    vi.mocked(invoke).mockImplementation(
+      makeInvokeMock({
+        configured: true,
+        conversations: [{ id: "c1", title: "Active Chat" }],
+        messages: [],
+      }),
+    );
+
+    render(<ChatView />);
+    await waitFor(() => screen.getByText("Active Chat"));
+    fireEvent.click(screen.getByText("Active Chat"));
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "Summarize my spending" } });
+    fireEvent.click(screen.getByLabelText("Send"));
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith(
+        "llm_chat",
+        expect.objectContaining({
+          conversationId: "c1",
+          userMessage: "Summarize my spending",
+        }),
+      );
+    });
+  });
+
+  it("shows the user message optimistically after sending", async () => {
+    vi.mocked(invoke).mockImplementation(
+      makeInvokeMock({
+        configured: true,
+        conversations: [{ id: "c1", title: "Active Chat" }],
+        messages: [],
+      }),
+    );
+
+    render(<ChatView />);
+    await waitFor(() => screen.getByText("Active Chat"));
+    fireEvent.click(screen.getByText("Active Chat"));
+
+    const textarea = screen.getByRole("textbox");
+    fireEvent.change(textarea, { target: { value: "What is my net worth?" } });
+    fireEvent.keyDown(textarea, { key: "Enter", shiftKey: false });
+
+    await waitFor(() => {
+      expect(screen.getByText("What is my net worth?")).toBeInTheDocument();
+    });
+  });
 });

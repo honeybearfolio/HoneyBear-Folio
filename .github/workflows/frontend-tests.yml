@@ -38,7 +38,26 @@ jobs:
       run: bun install
 
     - name: Run tests with coverage
-      run: bun run coverage
+      run: |
+        set -o pipefail
+        bun run coverage 2>&1 | tee coverage-summary.txt
+
+    - name: Report frontend coverage
+      if: always()
+      run: |
+        if [ -f coverage-summary.txt ]; then
+          LINE_COV=$(awk '/^Lines/ {gsub(/%/,"",$3); print $3}' coverage-summary.txt | tail -1)
+          echo "Frontend line coverage: ${LINE_COV}%"
+          {
+            echo "## Frontend line coverage"
+            echo ""
+            echo "**${LINE_COV}%** line coverage (threshold: 80%)"
+            echo ""
+            echo '```'
+            awk '/^All files|^File|^src\//,/^---/' coverage-summary.txt | tail -n +1 | head -40
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
 
     - name: Upload frontend coverage report
       if: always()
