@@ -112,9 +112,7 @@ export function autoMapImportColumns(
 
   for (const column of columns) {
     for (const field of IMPORT_FIELD_PRIORITY) {
-      if (
-        headerMatchesFieldAlias(column, TRANSACTION_FIELD_ALIASES[field])
-      ) {
+      if (headerMatchesFieldAlias(column, TRANSACTION_FIELD_ALIASES[field])) {
         mapping[field] = column;
         break;
       }

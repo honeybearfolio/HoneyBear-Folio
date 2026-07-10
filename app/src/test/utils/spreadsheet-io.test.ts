@@ -33,9 +33,9 @@ describe("spreadsheet-io", () => {
       true,
     );
     expect(headerMatchesFieldAlias("FECHA", ["date", "fecha"])).toBe(true);
-    expect(headerMatchesFieldAlias("Categoría", ["category", "categoria"])).toBe(
-      true,
-    );
+    expect(
+      headerMatchesFieldAlias("Categoría", ["category", "categoria"]),
+    ).toBe(true);
     expect(headerMatchesFieldAlias("Importe", ["amount", "importe"])).toBe(
       true,
     );

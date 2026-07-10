@@ -31,9 +31,7 @@ export function headerMatchesFieldAlias(
 ): boolean {
   if (headerMatchesAlias(header, aliases)) return true;
   const normalized = normalizeKey(header);
-  return aliases.some((alias) =>
-    normalized.includes(normalizeKey(alias)),
-  );
+  return aliases.some((alias) => normalized.includes(normalizeKey(alias)));
 }
 
 export function getField(
