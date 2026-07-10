@@ -131,13 +131,6 @@ export default function AccountDetails({
     }
   };
 
-  const handlePayeeChange = (val: string) => {
-    setPayee(val);
-    if (availableAccounts.some((a) => a.name === val)) {
-      setCategory("Transfer");
-    }
-  };
-
   // Brokerage Form State
   const [ticker, setTicker] = useState("");
   const [shares, setShares] = useState("");
@@ -870,7 +863,7 @@ export default function AccountDetails({
           date={date}
           setDate={setDate}
           payee={payee}
-          setPayee={handlePayeeChange}
+          setPayee={setPayee}
           category={category}
           setCategory={setCategory}
           notes={notes}
