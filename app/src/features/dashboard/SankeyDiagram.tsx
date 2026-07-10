@@ -9,12 +9,12 @@ import {
 import type {
   ChartOptions,
   ChartData,
-  TooltipItem,
   ScriptableContext,
 } from "chart.js";
 import { SankeyController, Flow } from "chartjs-chart-sankey";
 import { Chart } from "react-chartjs-2";
 import { useFormatNumber } from "../../utils/format";
+import { createChartTooltipLabel } from "../../utils/chartTooltip";
 import { useTranslation } from "react-i18next";
 import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
@@ -333,21 +333,27 @@ export default function SankeyDiagram({
           size: 12,
         },
         callbacks: {
-          label: function (context: TooltipItem<"sankey">) {
-            const item = context.raw as {
-              from: string;
-              to: string;
-              flow: number;
-            };
-            const ds = context.chart.data
-              .datasets[0] as (typeof context.chart.data.datasets)[0] & {
-              labels?: Record<string, string>;
-            };
-            const labels = ds.labels ?? {};
-            const fromLabel = labels[item.from] || item.from;
-            const toLabel = labels[item.to] || item.to;
-            return `${fromLabel} -> ${toLabel}: ${formatNumber(item.flow, { style: "currency", ignorePrivacy: true })}`;
-          },
+          label: createChartTooltipLabel(formatNumber, {
+            getValue: (context) => {
+              const item = context.raw as { flow: number };
+              return Number.isFinite(item.flow) ? item.flow : undefined;
+            },
+            formatLabel: (context, formatted) => {
+              const item = context.raw as {
+                from: string;
+                to: string;
+                flow: number;
+              };
+              const ds = context.chart.data
+                .datasets[0] as (typeof context.chart.data.datasets)[0] & {
+                labels?: Record<string, string>;
+              };
+              const labels = ds.labels ?? {};
+              const fromLabel = labels[item.from] || item.from;
+              const toLabel = labels[item.to] || item.to;
+              return `${fromLabel} -> ${toLabel}: ${formatted}`;
+            },
+          }),
         },
       },
     },

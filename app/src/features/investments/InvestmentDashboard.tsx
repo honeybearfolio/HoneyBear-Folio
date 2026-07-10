@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { rust } from "../../api/tauri-client";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
+import { createDoughnutSliceTooltipLabel } from "../../utils/chartTooltip";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { ErrorState } from "../../components/ui/Skeleton";
 import {
@@ -162,22 +163,7 @@ export default function InvestmentDashboard() {
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context: TooltipItem<"doughnut">) {
-              const prefix = context.label ? context.label + ": " : "";
-              const dataset = context.dataset as typeof context.dataset & {
-                originalData?: number[];
-              };
-              const value = dataset.originalData
-                ? dataset.originalData[context.dataIndex]
-                : (context.raw ?? 0);
-              return (
-                prefix +
-                formatNumber(Number(value) || 0, {
-                  style: "currency",
-                  ignorePrivacy: true,
-                })
-              );
-            },
+            label: createDoughnutSliceTooltipLabel(formatNumber),
             labelColor: function (context: TooltipItem<"doughnut">) {
               const dataset = context.dataset;
               const index = context.dataIndex;

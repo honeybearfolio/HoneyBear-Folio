@@ -19,6 +19,10 @@ import type { ChartOptions, ChartData, TooltipItem } from "chart.js";
 import "../../styles/Dashboard.css";
 import { computeNetWorth } from "../../utils/networth";
 import { useFormatNumber, useFormatDate } from "../../utils/format";
+import {
+  createChartTooltipLabel,
+  createDoughnutSliceTooltipLabel,
+} from "../../utils/chartTooltip";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
 import {
   buildDoughnutChartData,
@@ -897,26 +901,7 @@ export default function Dashboard({
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context: TooltipItem<"doughnut">) {
-              const dataset = context.dataset as typeof context.dataset & {
-                originalData?: number[];
-              };
-              const value = dataset.originalData
-                ? dataset.originalData[context.dataIndex]
-                : context.raw;
-
-              let label = context.label || "";
-              if (label) {
-                label += ": ";
-              }
-              if (value !== null && value !== undefined) {
-                label += formatNumber(Number(value), {
-                  style: "currency",
-                  ignorePrivacy: true,
-                });
-              }
-              return label;
-            },
+            label: createDoughnutSliceTooltipLabel(formatNumber),
             labelColor: function (context: TooltipItem<"doughnut">) {
               const dataset = context.dataset;
               const index = context.dataIndex;
@@ -985,17 +970,10 @@ export default function Dashboard({
           titleFont: { family: "Inter", size: 13 },
           bodyFont: { family: "Inter", size: 12 },
           callbacks: {
-            label: function (context: TooltipItem<"doughnut">) {
-              const value = context.raw ?? 0;
-
-              let label = context.label || "";
-              if (label) label += ": ";
-              label += formatNumber(Number(value) || 0, {
-                style: "currency",
-                ignorePrivacy: true,
-              });
-              return label;
-            },
+            label: createDoughnutSliceTooltipLabel(formatNumber, (context) => {
+              const num = Number(context.raw ?? 0);
+              return Number.isFinite(num) ? num : undefined;
+            }),
             labelColor: function (context: TooltipItem<"doughnut">) {
               const dataset = context.dataset;
               const index = context.dataIndex;
@@ -1065,21 +1043,6 @@ export default function Dashboard({
           bodyFont: {
             family: "Inter",
             size: 12,
-          },
-          callbacks: {
-            label: function (context: TooltipItem<"bar">) {
-              let label = context.dataset.label || "";
-              if (label) {
-                label += ": ";
-              }
-              if (context.parsed.y !== null) {
-                label += formatNumber(context.parsed.y, {
-                  style: "currency",
-                  ignorePrivacy: true,
-                });
-              }
-              return label;
-            },
           },
         },
       },
@@ -1156,42 +1119,34 @@ export default function Dashboard({
           },
           displayColors: false,
           callbacks: {
-            label: function (context: TooltipItem<"line">) {
-              let label = context.dataset.label || "";
-              if (label) {
-                label += ": ";
-              }
-              if (context.parsed.y !== null) {
-                // If this dataset represents an individual account, prefer
-                // showing the value in the account's native currency when available.
+            label: createChartTooltipLabel(formatNumber, {
+              getPrefix: (context) => {
+                let label = context.dataset.label || "";
+                if (label) label += ": ";
+                return label;
+              },
+              getValue: (context) => {
+                if (context.parsed.y === null) return undefined;
+
                 const ds = context.dataset as typeof context.dataset & {
                   accountCurrency?: string;
                   originalData?: number[];
                 };
                 if (ds.accountCurrency) {
-                  const nativeVal =
-                    ds.originalData && ds.originalData[context.dataIndex];
-                  if (nativeVal !== undefined) {
-                    label += formatNumber(nativeVal, {
-                      style: "currency",
-                      currency: ds.accountCurrency,
-                      ignorePrivacy: true,
-                    });
-                  } else {
-                    label += formatNumber(context.parsed.y, {
-                      style: "currency",
-                      ignorePrivacy: true,
-                    });
-                  }
-                } else {
-                  label += formatNumber(context.parsed.y, {
-                    style: "currency",
-                    ignorePrivacy: true,
-                  });
+                  const nativeVal = ds.originalData?.[context.dataIndex];
+                  if (nativeVal !== undefined) return nativeVal;
                 }
-              }
-              return label;
-            },
+                return context.parsed.y ?? undefined;
+              },
+              getFormatOptions: (context) => {
+                const ds = context.dataset as typeof context.dataset & {
+                  accountCurrency?: string;
+                };
+                return ds.accountCurrency
+                  ? { currency: ds.accountCurrency }
+                  : {};
+              },
+            }),
           },
         },
       },

@@ -2,7 +2,7 @@ import { useNumberFormat } from "../stores/number-format";
 import { usePrivacy } from "../stores/privacy";
 import { CURRENCIES } from "./currencies";
 
-interface NumberFormatOptions extends Intl.NumberFormatOptions {
+export interface NumberFormatOptions extends Intl.NumberFormatOptions {
   ignorePrivacy?: boolean;
 }
 

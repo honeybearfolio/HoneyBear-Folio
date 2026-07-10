@@ -176,35 +176,6 @@ export default function FireResultsPanel({
                         borderWidth: 2,
                       };
                     },
-                    label: function (context) {
-                      let label = context.dataset.label || "";
-                      if (label) {
-                        label += ": ";
-                      }
-
-                      const parsedValue =
-                        typeof context.parsed === "object" &&
-                        "y" in context.parsed
-                          ? context.parsed.y
-                          : context.parsed;
-                      const value =
-                        parsedValue ??
-                        context.raw ??
-                        context.dataset.data[context.dataIndex];
-
-                      if (
-                        value !== undefined &&
-                        value !== null &&
-                        !Number.isNaN(Number(value))
-                      ) {
-                        label += formatNumber(Number(value), {
-                          style: "currency",
-                          ignorePrivacy: true,
-                        });
-                      }
-
-                      return label;
-                    },
                   },
                 },
               },
