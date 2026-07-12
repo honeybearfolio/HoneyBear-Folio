@@ -68,7 +68,7 @@ jobs:
         if-no-files-found: error
 
     - name: Type check
-      run: bunx tsc --noEmit
+      run: bun run typecheck
 
     - name: Build
       run: bun run build

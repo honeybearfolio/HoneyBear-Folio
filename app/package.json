@@ -17,10 +17,21 @@
     "tauri": "tauri",
     "test": "vitest",
     "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
+    "prepare": "cd .. && husky || true",
     "version:sync": "node -e \"const fs=require('fs');const pkg=require('./package.json');const tauri=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8'));tauri.version=pkg.version;fs.writeFileSync('src-tauri/tauri.conf.json',JSON.stringify(tauri,null,2));const cargo=fs.readFileSync('src-tauri/Cargo.toml','utf8');fs.writeFileSync('src-tauri/Cargo.toml',cargo.replace(/^version\\s*=\\s*\\\"[^\\\"]+\\\"/m,'version = \\\"'+pkg.version+'\\\"'));console.log('Version synced to',pkg.version)\"",
     "version": "bun run --bun npm version"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --max-warnings 0",
+      "prettier --write"
+    ],
+    "*.{js,json,css,md}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
@@ -81,7 +92,9 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.0",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.5.12",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.2.4",
