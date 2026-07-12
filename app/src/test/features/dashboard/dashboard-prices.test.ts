@@ -52,6 +52,7 @@ describe("dashboard-prices", () => {
         id: 1,
         account_id: 1,
         date: "2024-01-01",
+        payee: "",
         amount: -100,
         ticker: "AAPL",
         currency: "USD",

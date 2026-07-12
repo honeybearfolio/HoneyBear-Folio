@@ -73,6 +73,7 @@ describe("buildDoughnutChartData", () => {
         id: 1,
         account_id: 2,
         date: "2024-01-01",
+        payee: "",
         amount: -1500,
         ticker: "AAPL",
         shares: 10,

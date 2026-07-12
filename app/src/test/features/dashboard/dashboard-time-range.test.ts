@@ -9,8 +9,8 @@ import {
 import type { Transaction } from "../../../features/dashboard/dashboard-types";
 
 const transactions: Transaction[] = [
-  { id: 1, account_id: 1, date: "2024-06-15", amount: 100 },
-  { id: 2, account_id: 1, date: "2024-07-01", amount: -50 },
+  { id: 1, account_id: 1, date: "2024-06-15", payee: "", amount: 100 },
+  { id: 2, account_id: 1, date: "2024-07-01", payee: "", amount: -50 },
 ];
 
 describe("dashboard-time-range", () => {
