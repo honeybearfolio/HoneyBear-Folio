@@ -1,9 +1,12 @@
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ScheduledList from "../../../features/scheduled/ScheduledList";
-import { useNumberFormatStore } from "../../../stores/number-format";
 import { invoke } from "@tauri-apps/api/core";
+import {
+  mockNumberFormat,
+  mockTauri,
+  renderWithStores,
+} from "../../helpers/render";
 
 // Mock dependencies
 vi.mock("../../../utils/currencies", () => ({
@@ -110,25 +113,11 @@ vi.mock("../../../components/ui/NumberInput", () => ({
 
 vi.mock(
   "../../../utils/format",
-  async (
-    importOriginal: () => Promise<typeof import("../../../utils/format")>,
-  ) => {
-    const actual = await importOriginal();
-    return {
-      ...actual,
-      useFormatNumber: () => (val: number) => String(val),
-      useFormatDate: () => (date: string) => date.split("T")[0],
-    };
+  async (importOriginal) => {
+    const { extendFormatUtilsMock } = await import("../../helpers/format-mocks");
+    return extendFormatUtilsMock(importOriginal);
   },
 );
-
-const renderWithContext = (ui: React.ReactElement) => {
-  useNumberFormatStore.setState({
-    dateFormat: "YYYY-MM-DD",
-    firstDayOfWeek: 0,
-  });
-  return render(ui);
-};
 
 describe("ScheduledList", () => {
   const mockSchedules = [
@@ -154,16 +143,15 @@ describe("ScheduledList", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_scheduled_transactions")
-        return Promise.resolve(mockSchedules);
-      if (cmd === "get_accounts") return Promise.resolve(mockAccounts);
-      return Promise.resolve(null);
+    mockNumberFormat({ dateFormat: "YYYY-MM-DD", firstDayOfWeek: 0 });
+    mockTauri({
+      get_scheduled_transactions: mockSchedules,
+      get_accounts: mockAccounts,
     });
   });
 
   it("renders list of schedules", async () => {
-    renderWithContext(<ScheduledList />);
+    renderWithStores(<ScheduledList />);
 
     await waitFor(() => {
       expect(screen.getByText("Netflix")).toBeInTheDocument();
@@ -172,7 +160,7 @@ describe("ScheduledList", () => {
   });
 
   it("opens form when Create button is clicked", async () => {
-    renderWithContext(<ScheduledList />);
+    renderWithStores(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
     const createButton = screen.getByText("Create");
@@ -186,7 +174,7 @@ describe("ScheduledList", () => {
   });
 
   it("handles creating a new schedule", async () => {
-    renderWithContext(<ScheduledList />);
+    renderWithStores(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
     // Open form
@@ -223,7 +211,7 @@ describe("ScheduledList", () => {
   });
 
   it("handles creating an investment schedule", async () => {
-    renderWithContext(<ScheduledList />);
+    renderWithStores(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
     // Open form and toggle to investment type
@@ -273,7 +261,7 @@ describe("ScheduledList", () => {
   it("handles deleting a schedule", async () => {
     mockConfirm.mockResolvedValue(true);
 
-    renderWithContext(<ScheduledList />);
+    renderWithStores(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
     const trashBtn = screen.getByTestId("trash-icon").closest("button")!;
@@ -298,7 +286,7 @@ describe("ScheduledList", () => {
   });
 
   it("shows context menu with toggle/edit/delete on right-click", async () => {
-    renderWithContext(<ScheduledList />);
+    renderWithStores(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
     const rows = document.querySelectorAll("tbody tr");
@@ -311,7 +299,7 @@ describe("ScheduledList", () => {
   });
 
   it("dismisses context menu on outside click", async () => {
-    renderWithContext(<ScheduledList />);
+    renderWithStores(<ScheduledList />);
     await waitFor(() => screen.getByText("Netflix"));
 
     const rows = document.querySelectorAll("tbody tr");

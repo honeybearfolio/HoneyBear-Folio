@@ -1,17 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ScheduledTable from "../../../features/scheduled/ScheduledTable";
 import type {
   ScheduleRecord,
   AccountRecord,
 } from "../../../features/scheduled/scheduled-types";
-import { useNumberFormatStore } from "../../../stores/number-format";
+import {
+  mockNumberFormat,
+  renderWithStores,
+} from "../../helpers/render";
 
-vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val: number, opts?: { style?: string }) =>
-    opts?.style === "currency" ? `$${val.toFixed(2)}` : String(val),
-}));
+vi.mock("../../../utils/format", async () => {
+  const { createFormatUtilsMock, currencyFixedFormatNumber } = await import(
+    "../../helpers/format-mocks"
+  );
+  return createFormatUtilsMock({ formatNumber: currencyFixedFormatNumber });
+});
 
 const accounts: AccountRecord[] = [
   { id: 1, name: "Checking" },
@@ -68,13 +73,13 @@ function renderTable(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 
-  return { props, ...render(<ScheduledTable {...props} />) };
+  return { props, ...renderWithStores(<ScheduledTable {...props} />) };
 }
 
 describe("ScheduledTable", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useNumberFormatStore.setState({ locale: "en-US", currency: "USD" });
+    mockNumberFormat();
   });
 
   it("renders empty state when no schedules", () => {
