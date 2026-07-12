@@ -1,4 +1,9 @@
-import type { Account, DailyPrice, StockQuote, Transaction } from "../../api/types";
+import type {
+  Account,
+  DailyPrice,
+  StockQuote,
+  Transaction,
+} from "../../api/types";
 
 export type { Transaction };
 export type Quote = StockQuote;

@@ -323,7 +323,7 @@ export default function AccountDetails({
       let txs: Transaction[];
       if (account.id === "all") {
         const [transactionsList, accounts] = await Promise.all([
-          rust.get_all_transactions() as Promise<Transaction[]>,
+          rust.get_all_transactions(),
           rust.get_accounts(),
         ]);
         // Attach account_name for display in the consolidated view
@@ -355,9 +355,9 @@ export default function AccountDetails({
   async function fetchPendingOccurrences() {
     try {
       const accountId = account.id === "all" ? null : account.id;
-      const occs = (await rust.get_pending_occurrences({
+      const occs = await rust.get_pending_occurrences({
         accountId,
-      })) as PendingOccurrence[];
+      });
       setPendingOccurrences(occs);
     } catch (e) {
       logError("Failed to fetch pending occurrences", e);
@@ -463,9 +463,9 @@ export default function AccountDetails({
     tickerTimeoutRef.current = setTimeout(() => {
       void (async () => {
         try {
-          const suggestions = (await rust.search_ticker({
+          const suggestions = await rust.search_ticker({
             query,
-          })) as TickerSuggestion[];
+          });
           setTickerSuggestions(suggestions);
           setShowTickerSuggestions(true);
         } catch (error) {

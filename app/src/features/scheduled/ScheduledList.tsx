@@ -103,7 +103,7 @@ export default function ScheduledList() {
 
   async function fetchSchedules() {
     try {
-      const r = (await rust.get_scheduled_transactions()) as ScheduleRecord[];
+      const r = await rust.get_scheduled_transactions();
       setSchedules(r);
     } catch (e) {
       console.error("Failed to fetch scheduled transactions:", e);
@@ -130,9 +130,9 @@ export default function ScheduledList() {
     tickerTimeoutRef.current = setTimeout(() => {
       void (async () => {
         try {
-          const suggestions = (await rust.search_ticker({
+          const suggestions = await rust.search_ticker({
             query,
-          })) as TickerSuggestion[];
+          });
           setTickerSuggestions(suggestions);
           setShowTickerSuggestions(true);
         } catch (error: unknown) {
