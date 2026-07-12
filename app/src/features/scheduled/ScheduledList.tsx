@@ -9,10 +9,8 @@ import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
 import "../../styles/Dashboard.css";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
-import {
-  createDefaultScheduledForm,
-  toScheduledPayload,
-} from "./scheduled-helpers";
+import { createDefaultScheduledForm } from "../../constants/app";
+import { toScheduledPayload } from "./scheduled-helpers";
 import type {
   ScheduleRecord,
   AccountRecord,

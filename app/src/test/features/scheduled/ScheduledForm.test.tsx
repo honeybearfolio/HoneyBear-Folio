@@ -3,8 +3,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ScheduledForm from "../../../features/scheduled/ScheduledForm";
-import { createDefaultScheduledForm } from "../../../constants/app";
-import type { ScheduledFormState } from "../../../features/scheduled/scheduled-helpers";
+import {
+  createDefaultScheduledForm,
+  type ScheduledFormState,
+} from "../../../constants/app";
 
 vi.mock("react-datepicker", () => ({
   default: ({

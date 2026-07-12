@@ -2,16 +2,8 @@ import type { RuleAction, RuleCondition, RuleRecord } from "../../api/types";
 import {
   DEFAULT_RULE_ACTION,
   DEFAULT_RULE_CONDITION,
-  createDefaultRuleFormState,
   type RuleFormState,
 } from "../../constants/app";
-
-export {
-  createDefaultRuleFormState,
-  DEFAULT_RULE_CONDITION,
-  DEFAULT_RULE_ACTION,
-};
-export type { RuleAction, RuleCondition, RuleFormState };
 
 type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
 

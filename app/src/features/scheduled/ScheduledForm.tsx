@@ -12,11 +12,10 @@ import {
 import { useTranslation } from "react-i18next";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
+import { WEEKDAY_KEYS, type ScheduledFormState } from "../../constants/app";
 import { getDatePickerFormat } from "../../utils/format";
-import { WEEKDAY_KEYS } from "./scheduled-helpers";
 import { currencyOptions } from "./scheduled-types";
 import type { TickerSuggestion } from "./scheduled-types";
-import type { ScheduledFormState } from "./scheduled-helpers";
 import type { RefObject } from "react";
 
 interface ScheduledFormProps {
