@@ -330,9 +330,7 @@ describe("applyMatchingRules", () => {
     const rules: EvaluatableRule[] = [
       {
         priority: 10,
-        conditions: [
-          { field: "payee", operator: "contains", value: "coffee" },
-        ],
+        conditions: [{ field: "payee", operator: "contains", value: "coffee" }],
         actions: [{ field: "category", value: "Coffee" }],
       },
     ];
@@ -352,9 +350,7 @@ describe("applyMatchingRules", () => {
     const rules: EvaluatableRule[] = [
       {
         priority: 10,
-        conditions: [
-          { field: "payee", operator: "contains", value: "coffee" },
-        ],
+        conditions: [{ field: "payee", operator: "contains", value: "coffee" }],
         actions: [{ field: "category", value: "Coffee" }],
       },
     ];
