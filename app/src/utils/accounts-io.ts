@@ -1,4 +1,4 @@
-import type { Account } from "../api/types";
+import type { Account, XlsxSheetRows } from "../api/types";
 import { isAssetRow, isAssetSheetName } from "./assets-io";
 import {
   getField,
@@ -20,11 +20,6 @@ export interface ImportAccountResult {
   skipped: number;
   errors: string[];
   created: Account[];
-}
-
-export interface XlsxSheet {
-  name: string;
-  data: unknown[][];
 }
 
 const ACCOUNT_SHEET_NAMES = new Set(
@@ -96,7 +91,7 @@ function asText(value: unknown): string {
   return "";
 }
 
-function sheetHeaders(sheet: XlsxSheet): string[] {
+function sheetHeaders(sheet: XlsxSheetRows): string[] {
   return sheet.data[0]?.map((h) => asText(h)) ?? [];
 }
 
@@ -139,8 +134,8 @@ export function isAccountRow(headers: string[]): boolean {
 }
 
 export function pickTransactionSheet(
-  sheets: XlsxSheet[],
-): XlsxSheet | undefined {
+  sheets: XlsxSheetRows[],
+): XlsxSheetRows | undefined {
   const match = sheets.find((sheet) => {
     const headers = sheetHeaders(sheet);
     if (!headers.length) return false;
@@ -151,7 +146,9 @@ export function pickTransactionSheet(
   return match ?? sheets[0];
 }
 
-export function pickAccountSheet(sheets: XlsxSheet[]): XlsxSheet | undefined {
+export function pickAccountSheet(
+  sheets: XlsxSheetRows[],
+): XlsxSheetRows | undefined {
   return sheets.find((sheet) => {
     const headers = sheetHeaders(sheet);
     return (
