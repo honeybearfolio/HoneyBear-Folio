@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../../styles/Modal.css";
 import "../../styles/Settings.css";
-import { Modal, ModalHeader, ModalBody, ModalFooter } from "../ui/Modal";
+import { Modal, ModalHeader, ModalBody } from "../ui/Modal";
 import type { ImportModalProps } from "./import-types";
 import FileDropZone from "./FileDropZone";
 import ColumnMappingStep from "./ColumnMappingStep";
+import ImportFileReviewStep from "./ImportFileReviewStep";
+import SpreadsheetWizardFooter from "./SpreadsheetWizardFooter";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
-import { useImportParser } from "../../hooks/useImportParser";
+import { useSpreadsheetImport } from "../../hooks/useSpreadsheetImport";
 import { useImportRunner } from "../../hooks/useImportRunner";
 
 export default function ImportModal({
@@ -34,7 +36,7 @@ export default function ImportModal({
     handleDrop,
     handleFileChange,
     clearFile,
-  } = useImportParser(applyAutoMap);
+  } = useSpreadsheetImport(applyAutoMap);
   const { importing, progress, importErrors, showImportSummary, runImport } =
     useImportRunner({ onImportComplete, onClose });
 
@@ -101,76 +103,34 @@ export default function ImportModal({
             importErrors={importErrors}
           />
         ) : (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-3">
-                <FileSpreadsheet className="w-5 h-5 text-green-500" />
-                <span className="text-slate-900 dark:text-white font-medium">
-                  {file.name}
-                </span>
-              </div>
-              <button
-                onClick={handleClearFile}
-                className="text-slate-500 dark:text-slate-400 hover:text-red-400 text-sm"
-              >
-                {t("import.change_file")}
-              </button>
-            </div>
-            <div className="p-3 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300">
-              {t("import.file_loaded_review") ||
-                "File loaded — click Next to review mappings and preview"}
-            </div>
-          </div>
+          <ImportFileReviewStep
+            fileName={file.name}
+            onChangeFile={handleClearFile}
+          />
         )}
       </ModalBody>
 
-      <div className="px-6 pb-6 pt-0">
-        <ModalFooter className="mt-0 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <button
-            onClick={onClose}
-            className="btn-secondary"
-            disabled={importing}
-          >
-            {t("account.cancel")}
-          </button>
-
-          {step === 0 ? (
-            <button
-              onClick={() => {
-                setStep(1);
-              }}
-              disabled={!file}
-              className="btn-primary"
-            >
-              <span className="text-white">{t("import.next") || "Next"}</span>
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={() => {
-                  setStep(0);
-                }}
-                disabled={importing}
-                className="btn-secondary"
-              >
-                {t("import.back") || "Back"}
-              </button>
-
-              <button
-                onClick={() => {
-                  if (file) void runImport(file, mapping);
-                }}
-                disabled={!canStartImport}
-                className="btn-primary"
-              >
-                <span className="text-white">
-                  {importing ? t("import.importing") : t("import.start_import")}
-                </span>
-              </button>
-            </>
-          )}
-        </ModalFooter>
-      </div>
+      <SpreadsheetWizardFooter
+        step={step}
+        onClose={onClose}
+        onBack={() => {
+          setStep(0);
+        }}
+        onNext={() => {
+          setStep(1);
+        }}
+        onPrimary={() => {
+          if (file) void runImport(file, mapping);
+        }}
+        importing={importing}
+        canGoNext={Boolean(file)}
+        canStartPrimary={canStartImport}
+        cancelLabel={t("account.cancel")}
+        nextLabel={t("import.next") || "Next"}
+        backLabel={t("import.back") || "Back"}
+        primaryLabel={t("import.start_import")}
+        importingLabel={t("import.importing")}
+      />
     </Modal>
   );
 }
