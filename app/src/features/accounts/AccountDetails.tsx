@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import { rust } from "../../api/tauri-client";
-import { Search, ArrowUp, ArrowDown } from "lucide-react";
 import { useParseNumber } from "../../utils/format";
 import { useNumberFormat } from "../../stores/number-format";
 import { useConfirm } from "../../stores/confirm";
@@ -18,18 +17,15 @@ import type {
   TransactionEditForm,
   PendingOccurrence,
   TickerSuggestion,
-  RuleAction,
   Rule,
   AvailableAccount,
   MenuCoords,
-  FormFieldKey,
   SortableTransactionKey,
 } from "./account-details-types";
-import { evaluateRule } from "./account-rules-evaluation";
 import AccountHeader from "./AccountHeader";
 import TransactionForm from "./TransactionForm";
-import PendingOccurrences from "./PendingOccurrences";
-import TransactionRow from "./TransactionRow";
+import TransactionList from "./TransactionList";
+import { useFormRules } from "./useFormRules";
 import { handleAsyncError, logError } from "../../utils/errors";
 
 export default function AccountDetails({
@@ -145,100 +141,20 @@ export default function AccountDetails({
     direction: string | null;
   }>({ key: null, direction: null });
 
-  // Rules Engine Logic
-  const prevValues = useRef<Record<string, string>>({
-    payee,
-    category,
-    notes,
-    amount,
-    date,
-    ticker,
-    shares,
-    price: pricePerShare,
-    fee,
+  useFormRules(rules, {
+    payee: { value: payee, set: setPayee },
+    category: { value: category, set: setCategory },
+    notes: { value: notes, set: setNotes },
+    amount: { value: amount, set: setAmount },
+    date: { value: date, set: setDate },
+    ticker: { value: ticker, set: setTicker },
+    shares: { value: shares, set: setShares },
+    price: { value: pricePerShare, set: setPricePerShare },
+    fee: { value: fee, set: setFee },
   });
 
   // Ref for the account rename input (avoid string-based querySelector + escaping)
   const renameInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!rules.length) return;
-
-    // Map rule field names to state values and setters
-    const fieldMap = {
-      payee: { value: payee, set: setPayee },
-      category: { value: category, set: setCategory },
-      notes: { value: notes, set: setNotes },
-      amount: { value: amount, set: setAmount },
-      date: { value: date, set: setDate },
-      ticker: { value: ticker, set: setTicker },
-      shares: { value: shares, set: setShares },
-      price: { value: pricePerShare, set: setPricePerShare },
-      fee: { value: fee, set: setFee },
-    };
-
-    const currentValues: Record<string, string> = {
-      payee,
-      category,
-      notes,
-      amount,
-      date,
-      ticker,
-      shares,
-      price: pricePerShare,
-      fee,
-    };
-
-    const sortedRules = [...rules].sort((a, b) => b.priority - a.priority);
-
-    // Apply all actions for a rule
-    const applyRuleActions = (rule: Rule) => {
-      // Handle new format with actions array
-      if (rule.actions && rule.actions.length > 0) {
-        rule.actions.forEach((action: RuleAction) => {
-          const target = fieldMap[action.field as FormFieldKey];
-          if (target.value !== action.value) {
-            target.set(action.value);
-          }
-        });
-      } else {
-        // Legacy format: single action_field/action_value
-        const target = fieldMap[rule.action_field as FormFieldKey];
-        if (target.value !== rule.action_value) {
-          target.set(rule.action_value ?? "");
-        }
-      }
-    };
-
-    // Identify changed fields
-    const changedFields = Object.keys(currentValues).filter(
-      (k) =>
-        currentValues[k as FormFieldKey] !==
-        prevValues.current[k as FormFieldKey],
-    );
-
-    // Only apply rules if something changed
-    if (changedFields.length > 0) {
-      sortedRules.forEach((rule) => {
-        if (evaluateRule(rule, currentValues)) {
-          applyRuleActions(rule);
-        }
-      });
-    }
-
-    prevValues.current = currentValues;
-  }, [
-    payee,
-    category,
-    notes,
-    rules,
-    amount,
-    date,
-    ticker,
-    shares,
-    pricePerShare,
-    fee,
-  ]);
 
   async function fetchSuggestions() {
     try {
@@ -815,21 +731,6 @@ export default function AccountDetails({
     );
   }, [transactions]);
 
-  const getSortIcon = (key: string) => {
-    const active = sortConfig.key === key;
-    const direction = active ? sortConfig.direction : null;
-
-    return (
-      <span className={`inline-flex w-4 h-4 ${!direction ? "invisible" : ""}`}>
-        {direction === "descending" ? (
-          <ArrowDown className="w-4 h-4" />
-        ) : (
-          <ArrowUp className="w-4 h-4" />
-        )}
-      </span>
-    );
-  };
-
   return (
     <div className="page-container account-details-scaled-container">
       <AccountHeader
@@ -898,208 +799,39 @@ export default function AccountDetails({
         />
       )}
 
-      {/* Transactions Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 overflow-visible hover:shadow-lg transition-shadow duration-300 px-4 lg:px-6">
-        <div className="overflow-x-auto">
-          <table className="account-transactions-table min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-            <thead className="bg-white dark:bg-slate-800 rounded-t-2xl">
-              <tr>
-                <th
-                  onClick={() => {
-                    handleSort("date");
-                  }}
-                  className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-32 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    {t("import.field.date")} {getSortIcon("date")}
-                  </div>
-                </th>
-                {account.id === "all" && (
-                  <th
-                    onClick={() => {
-                      handleSort("account_name");
-                    }}
-                    className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[10rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <div className="flex items-center gap-1">
-                      {t("import.field.account")} {getSortIcon("account_name")}
-                    </div>
-                  </th>
-                )}
-                <th
-                  onClick={() => {
-                    handleSort("payee");
-                  }}
-                  className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    {t("import.field.payee")} {getSortIcon("payee")}
-                  </div>
-                </th>
-                <th
-                  onClick={() => {
-                    handleSort("category");
-                  }}
-                  className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[10rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    {t("import.field.category")} {getSortIcon("category")}
-                  </div>
-                </th>
-                <th
-                  onClick={() => {
-                    handleSort("notes");
-                  }}
-                  className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center gap-1">
-                    {t("import.field.notes")} {getSortIcon("notes")}
-                  </div>
-                </th>
-                {hasInvestment && (
-                  <>
-                    <th
-                      onClick={() => {
-                        handleSort("ticker");
-                      }}
-                      className="px-6 py-4 text-left text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider min-w-[5rem] cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center gap-1">
-                        {t("import.field.ticker")} {getSortIcon("ticker")}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => {
-                        handleSort("shares");
-                      }}
-                      className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        {t("import.field.shares")} {getSortIcon("shares")}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => {
-                        handleSort("price_per_share");
-                      }}
-                      className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        {t("import.field.price")}{" "}
-                        {getSortIcon("price_per_share")}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => {
-                        handleSort("fee");
-                      }}
-                      className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-28 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <div className="flex items-center justify-end gap-1">
-                        {t("import.field.fee")} {getSortIcon("fee")}
-                      </div>
-                    </th>
-                  </>
-                )}
-                <th
-                  onClick={() => {
-                    handleSort("amount");
-                  }}
-                  className="px-6 py-4 text-right text-xs font-bold !text-slate-700 dark:!text-slate-300 uppercase tracking-wider w-36 cursor-pointer select-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    {t("import.field.amount")} {getSortIcon("amount")}
-                  </div>
-                </th>
-                <th className="w-16"></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
-              <PendingOccurrences
-                pendingOccurrences={pendingOccurrences}
-                account={account}
-                hasInvestment={hasInvestment}
-                menuOpenId={menuOpenId}
-                setMenuOpenId={setMenuOpenId}
-                menuCoords={menuCoords}
-                setMenuCoords={setMenuCoords}
-                handleApplyOccurrence={async (occ, useToday) => {
-                  await handleApplyOccurrence(occ, useToday);
-                }}
-                handleSkipOccurrence={async (occ) => {
-                  await handleSkipOccurrence(occ);
-                }}
-                filteredTransactions={filteredTransactions}
-              />
-              {filteredTransactions.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={
-                      account.id === "all"
-                        ? !hasInvestment
-                          ? 7
-                          : 11
-                        : !hasInvestment
-                          ? 6
-                          : 10
-                    }
-                    className="px-3 py-4 text-center"
-                  >
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-full">
-                        <Search className="w-8 h-8 text-slate-300 dark:text-slate-500" />
-                      </div>
-                      <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                        {t("account.no_transactions_found")}
-                      </p>
-                      <p className="text-sm text-slate-400 dark:text-slate-500">
-                        {searchQuery
-                          ? t("account.search_try_adjust")
-                          : t("account.add_transaction_get_started")}
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredTransactions.map((tx) => (
-                  <TransactionRow
-                    key={tx.id}
-                    tx={tx}
-                    account={account}
-                    hasInvestment={hasInvestment}
-                    editingId={editingId}
-                    editForm={editForm}
-                    setEditForm={setEditForm}
-                    startEditing={startEditing}
-                    saveEdit={saveEdit}
-                    setEditingId={setEditingId}
-                    menuOpenId={menuOpenId}
-                    setMenuOpenId={setMenuOpenId}
-                    menuCoords={menuCoords}
-                    setMenuCoords={setMenuCoords}
-                    duplicateTransaction={async (transaction) => {
-                      await duplicateTransaction(transaction);
-                    }}
-                    deleteTransaction={async (id) => {
-                      await deleteTransaction(id);
-                    }}
-                    payeeSuggestions={payeeSuggestions}
-                    categorySuggestions={categorySuggestions}
-                    availableAccounts={availableAccounts}
-                    tickerSuggestions={tickerSuggestions}
-                    handleTickerChange={handleTickerChange}
-                    setTickerSuggestions={setTickerSuggestions}
-                    appCurrency={appCurrency}
-                    dateFormat={dateFormat}
-                    firstDayOfWeek={firstDayOfWeek}
-                    getTagClasses={getTagClasses}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <TransactionList
+        account={account}
+        hasInvestment={hasInvestment}
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        pendingOccurrences={pendingOccurrences}
+        filteredTransactions={filteredTransactions}
+        searchQuery={searchQuery}
+        menuOpenId={menuOpenId}
+        setMenuOpenId={setMenuOpenId}
+        menuCoords={menuCoords}
+        setMenuCoords={setMenuCoords}
+        handleApplyOccurrence={handleApplyOccurrence}
+        handleSkipOccurrence={handleSkipOccurrence}
+        editingId={editingId}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        startEditing={startEditing}
+        saveEdit={saveEdit}
+        setEditingId={setEditingId}
+        duplicateTransaction={duplicateTransaction}
+        deleteTransaction={deleteTransaction}
+        payeeSuggestions={payeeSuggestions}
+        categorySuggestions={categorySuggestions}
+        availableAccounts={availableAccounts}
+        tickerSuggestions={tickerSuggestions}
+        handleTickerChange={handleTickerChange}
+        setTickerSuggestions={setTickerSuggestions}
+        appCurrency={appCurrency}
+        dateFormat={dateFormat}
+        firstDayOfWeek={firstDayOfWeek}
+        getTagClasses={getTagClasses}
+      />
       {dialog}
     </div>
   );
