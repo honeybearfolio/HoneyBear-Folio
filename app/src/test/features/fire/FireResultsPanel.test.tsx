@@ -3,10 +3,7 @@ import { screen } from "@testing-library/react";
 import FireResultsPanel from "../../../features/fire/FireResultsPanel";
 import type { ChartData } from "chart.js";
 import type { MonteCarloResult } from "../../../features/fire/fire-types";
-import {
-  mockNumberFormat,
-  renderWithStores,
-} from "../../helpers/render";
+import { mockNumberFormat, renderWithStores } from "../../helpers/render";
 
 vi.mock("react-chartjs-2", () => ({
   Line: () => <div data-testid="fire-projection-chart">Chart</div>,
@@ -23,9 +20,8 @@ vi.mock("../../../hooks/useChartColors", () => ({
 }));
 
 vi.mock("../../../utils/format", async () => {
-  const { createFormatUtilsMock, currencyFormatNumber } = await import(
-    "../../helpers/format-mocks"
-  );
+  const { createFormatUtilsMock, currencyFormatNumber } =
+    await import("../../helpers/format-mocks");
   return createFormatUtilsMock({ formatNumber: currencyFormatNumber });
 });
 

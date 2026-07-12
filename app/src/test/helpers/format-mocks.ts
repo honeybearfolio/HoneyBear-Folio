@@ -2,12 +2,15 @@
  * Vi.mock-safe format utilities (no React, stores, or Tauri imports).
  * Import via dynamic `import()` inside `vi.mock` factories to avoid hoisting issues.
  */
+import type { NumberFormatOptions } from "../../utils/format";
 
 /** Lightweight formatter used by {@link createFormatUtilsMock}. */
 export type FormatNumberFn = (
   value: unknown,
-  options?: { style?: string },
+  options?: NumberFormatOptions,
 ) => string;
+
+export type FormatDateFn = (value: string | Date | null | undefined) => string;
 
 /** Stringify numbers for simple component tests. */
 export const defaultFormatNumber: FormatNumberFn = (value) =>
@@ -31,22 +34,25 @@ export const currencyFixedFormatNumber: FormatNumberFn = (value, options) =>
 
 export type FormatUtilsMockOptions = {
   formatNumber?: FormatNumberFn;
-  formatDate?: (date: string) => string;
+  formatDate?: FormatDateFn;
+};
+
+const defaultFormatDate: FormatDateFn = (value) => {
+  if (value == null) return "";
+  const date = typeof value === "string" ? value : value.toISOString();
+  return date.split("T")[0] ?? "";
 };
 
 /**
  * Vi.mock factory for `utils/format` hooks.
  * Keeps `useFormatNumber` / `useFormatDate` stubs consistent across tests.
  */
-export function createFormatUtilsMock(
-  options: FormatUtilsMockOptions = {},
-): {
+export function createFormatUtilsMock(options: FormatUtilsMockOptions = {}): {
   useFormatNumber: () => FormatNumberFn;
-  useFormatDate: () => (date: string) => string;
+  useFormatDate: () => FormatDateFn;
 } {
   const formatNumber = options.formatNumber ?? defaultFormatNumber;
-  const formatDate =
-    options.formatDate ?? ((date: string) => date.split("T")[0]);
+  const formatDate = options.formatDate ?? defaultFormatDate;
 
   return {
     useFormatNumber: () => formatNumber,

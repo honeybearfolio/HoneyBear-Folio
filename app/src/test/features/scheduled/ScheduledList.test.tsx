@@ -111,13 +111,10 @@ vi.mock("../../../components/ui/NumberInput", () => ({
   ),
 }));
 
-vi.mock(
-  "../../../utils/format",
-  async (importOriginal) => {
-    const { extendFormatUtilsMock } = await import("../../helpers/format-mocks");
-    return extendFormatUtilsMock(importOriginal);
-  },
-);
+vi.mock("../../../utils/format", async (importOriginal) => {
+  const { extendFormatUtilsMock } = await import("../../helpers/format-mocks");
+  return extendFormatUtilsMock(importOriginal);
+});
 
 describe("ScheduledList", () => {
   const mockSchedules = [

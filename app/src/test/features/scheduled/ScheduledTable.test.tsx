@@ -6,15 +6,11 @@ import type {
   ScheduleRecord,
   AccountRecord,
 } from "../../../features/scheduled/scheduled-types";
-import {
-  mockNumberFormat,
-  renderWithStores,
-} from "../../helpers/render";
+import { mockNumberFormat, renderWithStores } from "../../helpers/render";
 
 vi.mock("../../../utils/format", async () => {
-  const { createFormatUtilsMock, currencyFixedFormatNumber } = await import(
-    "../../helpers/format-mocks"
-  );
+  const { createFormatUtilsMock, currencyFixedFormatNumber } =
+    await import("../../helpers/format-mocks");
   return createFormatUtilsMock({ formatNumber: currencyFixedFormatNumber });
 });
 

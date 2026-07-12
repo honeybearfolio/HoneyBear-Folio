@@ -6,9 +6,8 @@ import { renderWithStores } from "../../helpers/render";
 
 // Mock dependencies
 vi.mock("../../../utils/format", async () => {
-  const { createFormatUtilsMock, prefixedFormatNumber } = await import(
-    "../../helpers/format-mocks"
-  );
+  const { createFormatUtilsMock, prefixedFormatNumber } =
+    await import("../../helpers/format-mocks");
   return createFormatUtilsMock({ formatNumber: prefixedFormatNumber });
 });
 vi.mock("../../../stores/privacy", () => ({

@@ -1,12 +1,8 @@
-import React from "react";
 import { screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import FireCalculator from "../../../features/fire/FireCalculator";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  mockTauri,
-  renderWithStores,
-} from "../../helpers/render";
+import { mockTauri, renderWithStores } from "../../helpers/render";
 
 // Mock dependencies
 vi.mock("react-chartjs-2", () => ({
