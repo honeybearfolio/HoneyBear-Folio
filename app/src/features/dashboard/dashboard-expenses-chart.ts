@@ -1,7 +1,10 @@
 import type { TFunction } from "i18next";
 import type { Account } from "../../api/types";
 import type { ChartColors } from "../../hooks/useChartColors";
-import { DEFAULT_EXPENSE_CHART_PALETTE } from "./dashboard-constants";
+import {
+  DEFAULT_EXPENSE_CHART_PALETTE,
+  type DashboardTimeRange,
+} from "./dashboard-constants";
 import type { GetPriceFn } from "./dashboard-prices";
 import { computeExpenseDateRange } from "./dashboard-time-range";
 import type { Transaction } from "./dashboard-types";
@@ -20,7 +23,7 @@ export interface ExpensesByCategoryChartData {
 
 interface BuildExpensesByCategoryDataArgs {
   filteredTransactions: Transaction[];
-  timeRange: string;
+  timeRange: DashboardTimeRange;
   customStartDate: Date;
   customEndDate: Date;
   accountMap: Record<string | number, Account>;

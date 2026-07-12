@@ -4,10 +4,7 @@ import { rust } from "../../api/tauri-client";
 import type { Account } from "../../api/types";
 import { buildHoldingsFromTransactions } from "../../utils/investments";
 import { handleAsyncError, logError } from "../../utils/errors";
-import {
-  collectDailyPriceTickers,
-  createGetPrice,
-} from "./dashboard-prices";
+import { collectDailyPriceTickers, createGetPrice } from "./dashboard-prices";
 import type {
   DailyPriceEntry,
   DailyPriceData,
@@ -43,34 +40,44 @@ export function useDashboardFetch({
     return map;
   }, [accounts]);
 
-  const fetchCoreData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const txs = (await rust.get_all_transactions()) as Transaction[];
-      setTransactions(txs);
+  const loadCoreData = useCallback(async () => {
+    const txs = (await rust.get_all_transactions()) as Transaction[];
+    setTransactions(txs);
 
-      if (propAccounts.length > 0) {
-        setAccounts(propAccounts);
-      } else {
-        const accs = await rust.get_accounts();
-        setAccounts(accs);
-      }
-    } catch (e: unknown) {
-      handleAsyncError({
-        context: "Failed to fetch dashboard data",
-        error: e,
-        setError,
-        detailFallback: t("error.failed_to_load"),
-      });
-    } finally {
-      setLoading(false);
+    if (propAccounts.length > 0) {
+      setAccounts(propAccounts);
+    } else {
+      const accs = await rust.get_accounts();
+      setAccounts(accs);
     }
-  }, [propAccounts, t]);
+    setError(null);
+  }, [propAccounts]);
 
   useEffect(() => {
-    void fetchCoreData();
-  }, [fetchCoreData]);
+    void (async () => {
+      try {
+        const txs = (await rust.get_all_transactions()) as Transaction[];
+        setTransactions(txs);
+
+        if (propAccounts.length > 0) {
+          setAccounts(propAccounts);
+        } else {
+          const accs = await rust.get_accounts();
+          setAccounts(accs);
+        }
+        setError(null);
+      } catch (e: unknown) {
+        handleAsyncError({
+          context: "Failed to fetch dashboard data",
+          error: e,
+          setError,
+          detailFallback: t("error.failed_to_load"),
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [propAccounts, t]);
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -136,15 +143,26 @@ export function useDashboardFetch({
     }
   }, [transactions, accounts, appCurrency]);
 
-  const getPrice = useMemo(
-    () => createGetPrice(dailyPrices),
-    [dailyPrices],
-  );
+  const getPrice = useMemo(() => createGetPrice(dailyPrices), [dailyPrices]);
 
   const retryFetch = useCallback(() => {
     setError(null);
-    void fetchCoreData();
-  }, [fetchCoreData]);
+    setLoading(true);
+    void (async () => {
+      try {
+        await loadCoreData();
+      } catch (e: unknown) {
+        handleAsyncError({
+          context: "Failed to fetch dashboard data",
+          error: e,
+          setError,
+          detailFallback: t("error.failed_to_load"),
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [loadCoreData, t]);
 
   return {
     accounts,

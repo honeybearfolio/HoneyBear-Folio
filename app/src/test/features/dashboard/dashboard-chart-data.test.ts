@@ -80,8 +80,12 @@ describe("dashboard chart data builders", () => {
 
     expect(result).not.toBeNull();
     expect(result!.datasets.length).toBeGreaterThanOrEqual(2);
-    expect(result!.datasets[0]!.label).toBe(t("dashboard.datasets.total_net_worth"));
-    expect(result!.datasets[result!.datasets.length - 1]!.label).toBe("Checking");
+    expect(result!.datasets[0]!.label).toBe(
+      t("dashboard.datasets.total_net_worth"),
+    );
+    expect(result!.datasets[result!.datasets.length - 1]!.label).toBe(
+      "Checking",
+    );
   });
 
   it("buildExpensesByCategoryData marks empty expense periods", () => {
@@ -144,8 +148,14 @@ describe("dashboard chart data builders", () => {
     });
 
     expect(result).not.toBeNull();
-    const incomeTotal = result!.datasets[0]!.data.reduce((sum, v) => sum + v, 0);
-    const expenseTotal = result!.datasets[1]!.data.reduce((sum, v) => sum + v, 0);
+    const incomeTotal = result!.datasets[0]!.data.reduce(
+      (sum, v) => sum + v,
+      0,
+    );
+    const expenseTotal = result!.datasets[1]!.data.reduce(
+      (sum, v) => sum + v,
+      0,
+    );
     expect(incomeTotal).toBe(100);
     expect(expenseTotal).toBe(40);
   });

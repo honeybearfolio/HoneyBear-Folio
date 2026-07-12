@@ -1,6 +1,5 @@
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
-import type { ChartData } from "chart.js";
 import "../../styles/Dashboard.css";
 import { useFormatNumber, useFormatDate } from "../../utils/format";
 import { useNumberFormat } from "../../stores/number-format";
@@ -17,7 +16,7 @@ import AssetAllocationChart from "./AssetAllocationChart";
 import ExpensesByCategoryChart from "./ExpensesByCategoryChart";
 import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
 import { registerDashboardCharts } from "./dashboard-chart-config";
-import type { AccountChartDataset, DashboardProps } from "./dashboard-types";
+import type { DashboardProps } from "./dashboard-types";
 import { useDashboardFetch } from "./useDashboardFetch";
 import { useDashboardFilters } from "./useDashboardFilters";
 import { useDashboardSummaries } from "./useDashboardSummaries";
@@ -169,9 +168,7 @@ export default function Dashboard({
             marketValues={marketValues}
             appCurrency={appCurrency}
             {...(chartData?.datasets
-              ? {
-                  chartDatasets: chartData.datasets as AccountChartDataset[],
-                }
+              ? { chartDatasets: chartData.datasets }
               : {})}
           />
         </div>
@@ -248,11 +245,7 @@ export default function Dashboard({
             />
 
             <ExpensesByCategoryChart
-              expensesByCategoryData={
-                expensesByCategoryData as
-                  | (ChartData<"doughnut"> & { empty?: boolean })
-                  | null
-              }
+              expensesByCategoryData={expensesByCategoryData}
               expensesOptions={expensesOptions}
             />
           </>

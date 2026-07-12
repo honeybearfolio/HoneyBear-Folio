@@ -3,6 +3,7 @@ import type { Account } from "../../api/types";
 import type { ChartColors } from "../../hooks/useChartColors";
 import {
   DEFAULT_LINE_CHART_PALETTE,
+  type DashboardTimeRange,
 } from "./dashboard-constants";
 import type { GetPriceFn } from "./dashboard-prices";
 import { computeNetWorthDateRange } from "./dashboard-time-range";
@@ -13,8 +14,14 @@ export interface NetWorthChartDataset {
   data: number[];
   originalData?: number[];
   accountCurrency?: string;
-  borderColor: string | ((context: { chart: { ctx: CanvasRenderingContext2D } }) => string);
-  backgroundColor: string | ((context: { chart: { ctx: CanvasRenderingContext2D } }) => CanvasGradient | string);
+  borderColor:
+    | string
+    | ((context: { chart: { ctx: CanvasRenderingContext2D } }) => string);
+  backgroundColor:
+    | string
+    | ((context: {
+        chart: { ctx: CanvasRenderingContext2D };
+      }) => CanvasGradient | string);
   borderWidth: number;
   tension: number;
   fill: boolean;
@@ -37,7 +44,7 @@ export interface NetWorthChartData {
 interface BuildNetWorthChartDataArgs {
   filteredAccounts: Account[];
   filteredTransactions: Transaction[];
-  timeRange: string;
+  timeRange: DashboardTimeRange;
   customStartDate: Date;
   customEndDate: Date;
   formatDate: (date: string) => string;

@@ -13,6 +13,7 @@ import {
 import { buildExpensesByCategoryData } from "./dashboard-expenses-chart";
 import { buildIncomeVsExpensesData } from "./dashboard-income-expenses-chart";
 import { buildNetWorthChartData } from "./dashboard-networth-chart";
+import type { DashboardTimeRange } from "./dashboard-constants";
 import type { GetPriceFn } from "./dashboard-prices";
 import type { Transaction } from "./dashboard-types";
 
@@ -20,7 +21,7 @@ interface UseDashboardChartsArgs {
   filteredAccounts: Account[];
   filteredTransactions: Transaction[];
   accountMap: Record<string | number, Account>;
-  timeRange: string;
+  timeRange: DashboardTimeRange;
   customStartDate: Date;
   customEndDate: Date;
   formatDate: (date: string) => string;

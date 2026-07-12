@@ -24,7 +24,7 @@ export function buildSortedLocalDates(start: Date, end: Date): string[] {
 }
 
 export function computeNetWorthDateRange(
-  timeRange: DashboardTimeRange | string,
+  timeRange: DashboardTimeRange,
   customStartDate: Date,
   customEndDate: Date,
   filteredTransactions: Transaction[],
@@ -37,8 +37,7 @@ export function computeNetWorthDateRange(
   if (timeRange === "1M") cutoffDate.setMonth(now.getMonth() - 1);
   else if (timeRange === "3M") cutoffDate.setMonth(now.getMonth() - 3);
   else if (timeRange === "6M") cutoffDate.setMonth(now.getMonth() - 6);
-  else if (timeRange === "YTD")
-    cutoffDate = new Date(now.getFullYear(), 0, 1);
+  else if (timeRange === "YTD") cutoffDate = new Date(now.getFullYear(), 0, 1);
   else if (timeRange === "1Y") cutoffDate.setFullYear(now.getFullYear() - 1);
   else if (timeRange === "CUSTOM") {
     cutoffDate = new Date(customStartDate);
@@ -87,7 +86,7 @@ export interface ExpenseDateRange {
 }
 
 export function computeExpenseDateRange(
-  timeRange: DashboardTimeRange | string,
+  timeRange: DashboardTimeRange,
   customStartDate: Date,
   customEndDate: Date,
 ): ExpenseDateRange {
@@ -124,7 +123,7 @@ export function computeExpenseDateRange(
 }
 
 export function isDayBucketRange(
-  timeRange: DashboardTimeRange | string,
+  timeRange: DashboardTimeRange,
   customStartDate: Date,
   customEndDate: Date,
 ): boolean {
@@ -144,7 +143,7 @@ export interface IncomeExpenseBuckets {
 }
 
 export function computeIncomeExpenseBuckets(
-  timeRange: DashboardTimeRange | string,
+  timeRange: DashboardTimeRange,
   customStartDate: Date,
   customEndDate: Date,
   filteredTransactions: Transaction[],

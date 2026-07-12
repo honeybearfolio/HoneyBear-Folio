@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import type { Account } from "../../api/types";
 import type { ChartColors } from "../../hooks/useChartColors";
+import type { DashboardTimeRange } from "./dashboard-constants";
 import type { GetPriceFn } from "./dashboard-prices";
 import { computeIncomeExpenseBuckets } from "./dashboard-time-range";
 import type { Transaction } from "./dashboard-types";
@@ -19,7 +20,7 @@ export interface IncomeVsExpensesChartData {
 
 interface BuildIncomeVsExpensesDataArgs {
   filteredTransactions: Transaction[];
-  timeRange: string;
+  timeRange: DashboardTimeRange;
   customStartDate: Date;
   customEndDate: Date;
   formatDate: (date: string) => string;

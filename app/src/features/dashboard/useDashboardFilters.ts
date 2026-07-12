@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import type { Account } from "../../api/types";
+import type { DashboardTimeRange } from "./dashboard-constants";
 
 interface UseDashboardFiltersArgs {
   accounts: Account[];
@@ -14,7 +15,7 @@ export function useDashboardFilters({
   transactions,
   marketValues,
 }: UseDashboardFiltersArgs) {
-  const [timeRange, setTimeRange] = useState("1Y");
+  const [timeRange, setTimeRange] = useState<DashboardTimeRange>("1Y");
   const [customStartDate, setCustomStartDate] = useState(
     new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
   );

@@ -34,7 +34,11 @@ describe("dashboard-chart-config", () => {
   });
 
   it("createDoughnutChartOptions wires doughnut tooltip callbacks", () => {
-    const options = createDoughnutChartOptions(false, formatNumber, chartColors);
+    const options = createDoughnutChartOptions(
+      false,
+      formatNumber,
+      chartColors,
+    );
     const label = options.plugins?.tooltip?.callbacks?.label;
     expect(label).toBeTypeOf("function");
     expect(options.plugins?.tooltip?.callbacks?.labelColor).toBeTypeOf(

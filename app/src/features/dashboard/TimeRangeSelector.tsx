@@ -2,11 +2,12 @@ import DatePicker from "react-datepicker";
 import type { Day } from "date-fns";
 import { Calendar } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { DashboardTimeRange } from "./dashboard-constants";
 import { getDatePickerFormat } from "../../utils/format";
 
 interface TimeRangeSelectorProps {
-  timeRange: string;
-  setTimeRange: (range: string) => void;
+  timeRange: DashboardTimeRange;
+  setTimeRange: (range: DashboardTimeRange) => void;
   customStartDate: Date;
   customEndDate: Date;
   setCustomStartDate: (date: Date) => void;
@@ -26,11 +27,20 @@ export default function TimeRangeSelector({
   firstDayOfWeek,
 }: TimeRangeSelectorProps) {
   const { t } = useTranslation();
+  const ranges: DashboardTimeRange[] = [
+    "1M",
+    "3M",
+    "6M",
+    "1Y",
+    "YTD",
+    "ALL",
+    "CUSTOM",
+  ];
 
   return (
     <>
       <div className="time-range-selector min-w-0">
-        {["1M", "3M", "6M", "1Y", "YTD", "ALL", "CUSTOM"].map((range) => (
+        {ranges.map((range) => (
           <button
             key={range}
             onClick={() => {
