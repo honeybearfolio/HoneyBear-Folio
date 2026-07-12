@@ -11,7 +11,7 @@ import { asText } from "./import-parser";
 
 export interface TransactionImportCallbacks {
   parseNumber: (value: unknown) => number;
-  t: (key: string, options?: Record<string, unknown>) => string;
+  t: (key: string) => string;
   onProgress: (progress: ImportProgress) => void;
 }
 
