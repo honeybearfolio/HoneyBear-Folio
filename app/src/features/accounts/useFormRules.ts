@@ -10,22 +10,20 @@ export function useFormRules(
   fields: Record<string, FormFieldTarget>,
 ): void {
   const prevValues = useRef<Record<string, string>>({});
-  const fieldsRef = useRef(fields);
-  fieldsRef.current = fields;
 
-  const valueSnapshot = Object.fromEntries(
-    Object.entries(fields).map(([key, field]) => [key, field.value]),
+  const valueKey = JSON.stringify(
+    Object.fromEntries(
+      Object.entries(fields).map(([key, field]) => [key, field.value]),
+    ),
   );
-  const valueKey = JSON.stringify(valueSnapshot);
 
   useEffect(() => {
-    const fieldMap = fieldsRef.current;
     const currentValues = Object.fromEntries(
-      Object.entries(fieldMap).map(([key, field]) => [key, field.value]),
+      Object.entries(fields).map(([key, field]) => [key, field.value]),
     );
-    applyMatchingRules(rules, currentValues, prevValues.current, fieldMap);
+    applyMatchingRules(rules, currentValues, prevValues.current, fields);
     prevValues.current = currentValues;
-    // valueKey captures field value changes; field setters are stable refs
+    // fields identity changes each render; valueKey tracks value changes. Setters are stable.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rules, valueKey]);
 }
