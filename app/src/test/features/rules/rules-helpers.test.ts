@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { TFunction } from "i18next";
 import {
   toRuleFormState,
   toRulePayload,
@@ -12,7 +13,7 @@ import {
 import { createDefaultRuleFormState } from "../../../constants/app";
 import type { RuleRecord } from "../../../api/types";
 
-const t = (key: string) => key;
+const t = ((key: string) => key) as TFunction;
 
 describe("rules-helpers", () => {
   it("toRuleFormState prefers explicit conditions and actions", () => {

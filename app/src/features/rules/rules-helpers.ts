@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { RuleAction, RuleCondition, RuleRecord } from "../../api/types";
 import {
   DEFAULT_RULE_ACTION,
@@ -13,7 +14,7 @@ export {
 };
 export type { RuleAction, RuleCondition, RuleFormState };
 
-type TranslateFn = (key: string, vars?: Record<string, unknown>) => string;
+type TranslateFn = TFunction;
 
 export function toRuleFormState(rule: RuleRecord): RuleFormState {
   const conditions: RuleCondition[] =
