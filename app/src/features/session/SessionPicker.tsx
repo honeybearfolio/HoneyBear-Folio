@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import { save, open } from "@tauri-apps/plugin-dialog";
 import {
@@ -57,7 +57,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
   const [editName, setEditName] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
 
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
     try {
       setLoading(true);
       const recent = (await rust.get_recent_sessions()) as Session[];
@@ -72,13 +72,13 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
 
   useEffect(() => {
     queueMicrotask(() => {
       void loadSessions();
     });
-  }, []);
+  }, [loadSessions]);
 
   useEffect(() => {
     if (editingPath && renameInputRef.current) {

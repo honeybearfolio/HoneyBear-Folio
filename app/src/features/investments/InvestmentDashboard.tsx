@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
@@ -65,11 +65,7 @@ export default function InvestmentDashboard() {
 
   const formatNumber = useFormatNumber();
 
-  useEffect(() => {
-    void fetchData();
-  }, []);
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const transactions = await rust.get_all_transactions();
@@ -102,7 +98,13 @@ export default function InvestmentDashboard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void fetchData();
+    });
+  }, [fetchData]);
 
   const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
 
