@@ -1,51 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { rust } from "../../api/tauri-client";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  ArcElement,
-  BarElement,
-} from "chart.js";
-import type { ChartOptions, ChartData, TooltipItem } from "chart.js";
 import "../../styles/Dashboard.css";
-import { computeNetWorth } from "../../utils/networth";
 import { useFormatNumber, useFormatDate } from "../../utils/format";
-import {
-  createChartTooltipLabel,
-  createDoughnutSliceTooltipLabel,
-} from "../../utils/chartTooltip";
-import { buildHoldingsFromTransactions } from "../../utils/investments";
-import {
-  buildDoughnutChartData,
-  type DoughnutChartData,
-} from "./dashboard-doughnut";
 import { useNumberFormat } from "../../stores/number-format";
 import { DashboardSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { useTranslation } from "react-i18next";
-import { handleAsyncError, logError } from "../../utils/errors";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  ArcElement,
-  BarElement,
-);
-
 import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
 import SankeyDiagram from "./SankeyDiagram";
@@ -56,15 +15,14 @@ import NetWorthChart from "./NetWorthChart";
 import AssetAllocationChart from "./AssetAllocationChart";
 import ExpensesByCategoryChart from "./ExpensesByCategoryChart";
 import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
-import type {
-  Transaction,
-  Quote,
-  DailyPriceEntry,
-  DailyPriceData,
-  DashboardProps,
-  AccountChartDataset,
-} from "./dashboard-types";
-import type { Account } from "../../api/types";
+import { registerDashboardCharts } from "./dashboard-chart-config";
+import type { DashboardProps } from "./dashboard-types";
+import { useDashboardFetch } from "./useDashboardFetch";
+import { useDashboardFilters } from "./useDashboardFilters";
+import { useDashboardSummaries } from "./useDashboardSummaries";
+import { useDashboardCharts } from "./useDashboardCharts";
+
+registerDashboardCharts();
 
 export default function Dashboard({
   accounts: propAccounts = [],
@@ -72,23 +30,8 @@ export default function Dashboard({
   totalAssetsValue = 0,
 }: DashboardProps) {
   const { t } = useTranslation();
-  const [accounts, setAccounts] = useState<Account[]>(propAccounts);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dailyPrices, setDailyPrices] = useState<
-    Record<string, DailyPriceData>
-  >({});
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [timeRange, setTimeRange] = useState("1Y"); // 1M, 3M, 6M, YTD, 1Y, ALL, CUSTOM
-  const [customStartDate, setCustomStartDate] = useState(
-    new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
-  );
-  const [customEndDate, setCustomEndDate] = useState(new Date());
-
   const isDark = useIsDark();
   const chartColors = useChartColors();
-
   const formatNumber = useFormatNumber();
   const formatDate = useFormatDate();
   const {
@@ -98,1130 +41,76 @@ export default function Dashboard({
     locale,
   } = useNumberFormat();
 
-  const accountMap = useMemo(() => {
-    const map: Record<string | number, Account> = {};
-    accounts.forEach((acc) => {
-      map[acc.id] = acc;
-    });
-    return map;
-  }, [accounts]);
+  const {
+    accounts,
+    transactions,
+    loading,
+    error,
+    quotes,
+    dailyPrices,
+    getPrice,
+    accountMap,
+    retryFetch,
+  } = useDashboardFetch({ propAccounts, appCurrency, t });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const txs = (await rust.get_all_transactions()) as Transaction[];
-        setTransactions(txs);
-
-        // If parent passed accounts, use them; otherwise fetch from backend
-        if (propAccounts.length > 0) {
-          setAccounts(propAccounts);
-        } else {
-          const accs = await rust.get_accounts();
-          setAccounts(accs);
-        }
-      } catch (e: unknown) {
-        handleAsyncError({
-          context: "Failed to fetch dashboard data",
-          error: e,
-          setError,
-          detailFallback: t("error.failed_to_load"),
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    void fetchData();
-  }, [propAccounts, t]);
-
-  useEffect(() => {
-    const fetchQuotes = async () => {
-      if (transactions.length === 0) return;
-      const { currentHoldings } =
-        await buildHoldingsFromTransactions(transactions);
-      if (currentHoldings.length === 0) {
-        setQuotes([]);
-        return;
-      }
-      const tickers = currentHoldings.map((h) => h.ticker);
-      const uniqueTickers = [...new Set(tickers)];
-      try {
-        const qs = (await rust.get_stock_quotes({
-          tickers: uniqueTickers,
-        })) as Quote[];
-        setQuotes(qs);
-      } catch (e) {
-        logError("Failed to fetch quotes", e);
-      }
-    };
-    void fetchQuotes();
-  }, [transactions]);
-
-  useEffect(() => {
-    const fetchDailyPrices = async () => {
-      const tickers = new Set<string>();
-
-      // Include all tickers from transactions
-      transactions.forEach((t) => {
-        if (t.ticker) tickers.add(t.ticker);
-      });
-
-      // Also include currency pairs for multi-currency support
-      const accountMap: Record<string | number, Account> = {};
-      accounts.forEach((a) => (accountMap[a.id] = a));
-
-      transactions.forEach((t) => {
-        const acc = accountMap[t.account_id];
-        const accCurrency = acc?.currency || appCurrency;
-        const txCurrency = t.currency || accCurrency;
-
-        if (txCurrency !== accCurrency) {
-          tickers.add(`${txCurrency}${accCurrency}=X`);
-        }
-      });
-
-      accounts.forEach((acc) => {
-        const accCurrency = acc.currency || appCurrency;
-        if (accCurrency !== appCurrency) {
-          tickers.add(`${accCurrency}${appCurrency}=X`);
-        }
-      });
-
-      if (tickers.size === 0) return;
-
-      try {
-        // Trigger update first
-        await rust.update_daily_stock_prices({
-          tickers: Array.from(tickers),
-        });
-
-        // Then fetch
-        const pricesMap: Record<string, DailyPriceData> = {};
-        for (const ticker of tickers) {
-          const prices = (await rust.get_daily_stock_prices({
-            ticker,
-          })) as DailyPriceEntry[];
-          // Sort prices by date ascending to ensure getPrice binary search/linear scan works
-          prices.sort((a: DailyPriceEntry, b: DailyPriceEntry) =>
-            a.date > b.date ? 1 : -1,
-          );
-
-          // Convert to map for faster lookup: date -> price
-          const priceByDate: Record<string, number> = {};
-          prices.forEach((p: DailyPriceEntry) => {
-            priceByDate[p.date] = p.price;
-          });
-          pricesMap[ticker] = { list: prices, map: priceByDate };
-        }
-        setDailyPrices(pricesMap);
-      } catch (e) {
-        logError("Failed to fetch daily prices", e);
-      }
-    };
-
-    if (transactions.length > 0) {
-      void fetchDailyPrices();
-    }
-  }, [transactions, accounts, propAccounts, appCurrency]);
-
-  // Helper to get price
-  const getPrice = useCallback(
-    (ticker: string, date: string) => {
-      if (!dailyPrices[ticker]) return 0;
-      const { list, map } = dailyPrices[ticker];
-      if (map[date]) return map[date];
-      // Find last available price
-      let lastPrice = 0;
-      for (const p of list) {
-        if (p.date > date) break;
-        lastPrice = p.price;
-      }
-      return lastPrice;
-    },
-    [dailyPrices],
-  );
-
-  // Track user toggles for account visibility (dashboard-wide filter).
-  // Default: all accounts selected so the full picture is shown on load.
-  const [toggledAccounts, setToggledAccounts] = useState<
-    Record<string | number, boolean>
-  >(() => {
-    const map: Record<string | number, boolean> = {};
-    propAccounts.forEach((a) => (map[a.id] = true));
-    return map;
+  const {
+    timeRange,
+    setTimeRange,
+    customStartDate,
+    setCustomStartDate,
+    customEndDate,
+    setCustomEndDate,
+    toggledAccounts,
+    selectedAccountIds,
+    toggleAccountVisibility,
+    setAllAccountsVisibility,
+    filteredAccounts,
+    filteredTransactions,
+    filteredMarketValues,
+  } = useDashboardFilters({
+    accounts,
+    propAccounts,
+    transactions,
+    marketValues,
   });
 
-  // Auto-select newly added accounts
-  // Defer the state update so we don't call setState synchronously inside the effect
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setToggledAccounts((prev) => {
-        const next = { ...prev };
-        accounts.forEach((a) => {
-          if (!(a.id in next)) {
-            next[a.id] = true;
-          }
-        });
-        return next;
-      });
-    }, 0);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [accounts]);
-
-  const selectedAccountIds = useMemo(() => {
-    const set = new Set();
-    accounts.forEach((a) => {
-      if (toggledAccounts[a.id]) set.add(a.id);
-    });
-    return set;
-  }, [accounts, toggledAccounts]);
-
-  const toggleAccountVisibility = (accountId: string | number) => {
-    setToggledAccounts((prev) => ({ ...prev, [accountId]: !prev[accountId] }));
-  };
-
-  const setAllAccountsVisibility = (visible: boolean) => {
-    const map: Record<string | number, boolean> = {};
-    accounts.forEach((a) => (map[a.id] = visible));
-    setToggledAccounts(map);
-  };
-
-  // Filtered data based on the dashboard-wide account selection.
-  // Data fetching (FX pairs, daily prices) stays unfiltered.
-  const filteredAccounts = useMemo(
-    () => accounts.filter((a) => selectedAccountIds.has(a.id)),
-    [accounts, selectedAccountIds],
-  );
-
-  const filteredTransactions = useMemo(
-    () => transactions.filter((t) => selectedAccountIds.has(t.account_id)),
-    [transactions, selectedAccountIds],
-  );
-
-  const filteredMarketValues = useMemo(() => {
-    const mv: Record<string, number> = {};
-    for (const [id, val] of Object.entries(marketValues)) {
-      if (selectedAccountIds.has(Number(id))) mv[id] = val;
-    }
-    return mv;
-  }, [marketValues, selectedAccountIds]);
-
-  const [currentNetWorth, setCurrentNetWorth] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    computeNetWorth(filteredAccounts, filteredMarketValues, totalAssetsValue)
-      .then((value) => {
-        if (!cancelled) setCurrentNetWorth(value);
-      })
-      .catch((e: unknown) => {
-        logError("Failed to compute net worth", e);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [filteredAccounts, filteredMarketValues, totalAssetsValue]);
-
-  const chartData = useMemo(() => {
-    // Require accounts and at least one transaction to render the net worth evolution chart
-    if (filteredAccounts.length === 0 || filteredTransactions.length === 0)
-      return null;
-
-    // 1. Calculate initial balances for each account
-    // current_balance = initial_balance + sum(transactions)
-    // initial_balance = current_balance - sum(transactions)
-    const accountInitialBalances: Record<string | number, number> = {};
-    filteredAccounts.forEach((acc) => {
-      const accTxs = filteredTransactions.filter(
-        (t) => t.account_id === acc.id,
-      );
-      const totalChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
-      accountInitialBalances[acc.id] = acc.balance - totalChange;
-    });
-
-    // 2. Collect all relevant dates
-    const now = new Date();
-    let cutoffDate = new Date();
-    let endDate = new Date();
-    endDate.setHours(0, 0, 0, 0);
-
-    if (timeRange === "1M") cutoffDate.setMonth(now.getMonth() - 1);
-    else if (timeRange === "3M") cutoffDate.setMonth(now.getMonth() - 3);
-    else if (timeRange === "6M") cutoffDate.setMonth(now.getMonth() - 6);
-    else if (timeRange === "YTD")
-      cutoffDate = new Date(now.getFullYear(), 0, 1);
-    else if (timeRange === "1Y") cutoffDate.setFullYear(now.getFullYear() - 1);
-    else if (timeRange === "CUSTOM") {
-      cutoffDate = new Date(customStartDate);
-      endDate = new Date(customEndDate);
-    } else cutoffDate = new Date(0); // ALL
-
-    cutoffDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-
-    // If ALL, find the first transaction date
-    if (timeRange === "ALL" && filteredTransactions.length > 0) {
-      const firstTxDate = new Date(
-        filteredTransactions.reduce(
-          (min, t) => (t.date < min ? t.date : min),
-          filteredTransactions[0]!.date,
-        ),
-      );
-      cutoffDate = firstTxDate;
-      cutoffDate.setHours(0, 0, 0, 0);
-    } else if (timeRange === "ALL") {
-      cutoffDate.setFullYear(now.getFullYear() - 1); // Default to 1Y if no txs
-      cutoffDate.setHours(0, 0, 0, 0);
-    }
-
-    // Ensure we never show dates earlier than the first transaction — start chart at firstTxDate
-    if (filteredTransactions.length > 0) {
-      const firstTxDate = new Date(
-        filteredTransactions.reduce(
-          (min, t) => (t.date < min ? t.date : min),
-          filteredTransactions[0]!.date,
-        ),
-      );
-      // Normalize to midnight for consistent comparisons
-      firstTxDate.setHours(0, 0, 0, 0);
-      if (firstTxDate > cutoffDate && timeRange !== "CUSTOM")
-        cutoffDate = new Date(firstTxDate);
-    }
-
-    const sortedDates: string[] = [];
-    const d = new Date(cutoffDate);
-    d.setHours(0, 0, 0, 0);
-
-    while (d <= endDate) {
-      // Use local date components to avoid UTC conversion issues that can
-      // shift the date to the previous day for users in negative timezones.
-      const localDate = `${String(d.getFullYear())}-${String(
-        d.getMonth() + 1,
-      ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      sortedDates.push(localDate);
-      d.setDate(d.getDate() + 1);
-    }
-
-    // Index ticker currencies from transactions
-    const tickerCurrencies: Record<string, string> = {};
-    filteredTransactions.forEach((t) => {
-      if (t.ticker && t.currency) {
-        tickerCurrencies[t.ticker] = t.currency;
-      }
-    });
-
-    // 3. Calculate balances for each date
-    // We need a map of date -> balance for each account and total.
-
-    const datasets = [];
-
-    // Helper to get color
-    const colors =
-      chartColors.palette.length > 0
-        ? chartColors.palette
-        : [
-            "rgb(59, 130, 246)",
-            "rgb(16, 185, 129)",
-            "rgb(245, 158, 11)",
-            "rgb(239, 68, 68)",
-            "rgb(139, 92, 246)",
-            "rgb(236, 72, 153)",
-            "rgb(14, 165, 233)",
-            "rgb(249, 115, 22)",
-          ];
-
-    // Total Net Worth Dataset
-    const totalData = sortedDates.map((date) => {
-      let total = 0;
-      filteredAccounts.forEach((acc) => {
-        const accCurrency = acc.currency || appCurrency;
-        const initial = accountInitialBalances[acc.id];
-        const accTxs = filteredTransactions.filter(
-          (t) => t.account_id === acc.id && t.date <= date,
-        );
-        // Include all transactions (even stock buys/sells) to get correct cash balance
-        const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
-        const cashBalance = (initial ?? 0) + cashChange;
-
-        const holdings: Record<string, number> = {};
-        accTxs.forEach((t) => {
-          if (t.ticker && t.shares) {
-            holdings[t.ticker] = (holdings[t.ticker] || 0) + t.shares;
-          }
-        });
-
-        let stockValue = 0;
-        for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares) > 0.0001) {
-            const price = getPrice(ticker, date);
-            const tickerCurr = tickerCurrencies[ticker] || accCurrency;
-            const rateToAcc =
-              tickerCurr === accCurrency
-                ? 1.0
-                : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += shares * price * rateToAcc;
-          }
-        }
-
-        const rateToApp =
-          accCurrency === appCurrency
-            ? 1.0
-            : getPrice(`${accCurrency}${appCurrency}=X`, date) || 1.0;
-        total += (cashBalance + stockValue) * rateToApp;
-      });
-      return total;
-    });
-
-    // Ensure current (last) data point uses current market values (same as Sidebar/Investments)
-    if (totalData.length > 0) {
-      totalData[totalData.length - 1] = currentNetWorth;
-    }
-
-    datasets.push({
-      label: t("dashboard.datasets.total_net_worth"),
-      data: totalData,
-      borderColor: chartColors.line,
-      backgroundColor: (context: {
-        chart: { ctx: CanvasRenderingContext2D };
-      }) => {
-        const ctx = context.chart.ctx;
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, chartColors.line + "33"); // 20% opacity
-        gradient.addColorStop(1, chartColors.line + "00"); // 0% opacity
-        return gradient;
-      },
-      borderWidth: 3,
-      tension: 0.4,
-      fill: true,
-      pointRadius: 0,
-      pointHoverRadius: 6,
-      pointHoverBackgroundColor: chartColors.line,
-      pointHoverBorderColor: "#fff",
-      pointHoverBorderWidth: 2,
-    });
-
-    // Individual Account Datasets
-    filteredAccounts.forEach((acc, index) => {
-      const accCurrency = acc.currency || appCurrency;
-
-      // Build both the native (account currency) and converted (app currency) series
-      const accDataNative: number[] = [];
-      const accDataConverted: number[] = [];
-
-      sortedDates.forEach((date) => {
-        const initial = accountInitialBalances[acc.id];
-        const accTxs = filteredTransactions.filter(
-          (t) => t.account_id === acc.id && t.date <= date,
-        );
-        // Include all transactions (even stock buys/sells) to get correct cash balance
-        const cashChange = accTxs.reduce((sum, t) => sum + t.amount, 0);
-        const cashBalance = (initial ?? 0) + cashChange;
-
-        const holdings: Record<string, number> = {};
-        accTxs.forEach((t) => {
-          if (t.ticker && t.shares) {
-            holdings[t.ticker] = (holdings[t.ticker] || 0) + t.shares;
-          }
-        });
-
-        let stockValue = 0;
-        for (const [ticker, shares] of Object.entries(holdings)) {
-          if (Math.abs(shares) > 0.0001) {
-            const price = getPrice(ticker, date);
-            const tickerCurr = tickerCurrencies[ticker] || accCurrency;
-            const rateToAcc =
-              tickerCurr === accCurrency
-                ? 1.0
-                : getPrice(`${tickerCurr}${accCurrency}=X`, date) || 1.0;
-            stockValue += shares * price * rateToAcc;
-          }
-        }
-
-        const nativeVal = cashBalance + stockValue;
-        const rateToApp =
-          accCurrency === appCurrency
-            ? 1.0
-            : getPrice(`${accCurrency}${appCurrency}=X`, date) || 1.0;
-        const convertedVal = nativeVal * rateToApp;
-
-        accDataNative.push(nativeVal);
-        accDataConverted.push(convertedVal);
-      });
-
-      const color = colors[index % colors.length];
-
-      datasets.push({
-        label: acc.name,
-        data: accDataConverted,
-        originalData: accDataNative,
-        accountCurrency: accCurrency,
-        borderColor: color,
-        backgroundColor: "transparent",
-        borderWidth: 2,
-        tension: 0.4,
-        fill: false,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        borderDash: [5, 5], // Dashed lines for individual accounts to reduce noise
-        hidden: false, // Visibility controlled by the dashboard-wide account filter
-        accountId: acc.id,
-        _color: color, // helper for legend rendering
-      });
-    });
-
-    return {
-      labels: sortedDates.map((d) => formatDate(d)),
-      datasets: datasets,
-    };
-  }, [
+  const { currentNetWorth, doughnutData } = useDashboardSummaries({
     filteredAccounts,
     filteredTransactions,
-    timeRange,
-    customStartDate,
-    customEndDate,
-    formatDate,
-    appCurrency,
-    getPrice,
-    chartColors,
-    t,
-    currentNetWorth,
-  ]);
-
-  const [doughnutData, setDoughnutData] = useState<DoughnutChartData | null>(
-    null,
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function computeDoughnutData() {
-      if (filteredAccounts.length === 0) {
-        if (!cancelled) setDoughnutData(null);
-        return;
-      }
-
-      const data = await buildDoughnutChartData({
-        filteredAccounts,
-        filteredTransactions,
-        quotes,
-        dailyPrices,
-        isDark,
-        chartColors,
-        t,
-      });
-      if (!cancelled) setDoughnutData(data);
-    }
-
-    computeDoughnutData().catch((e: unknown) => {
-      logError("Failed to compute doughnut chart data", e);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    filteredAccounts,
-    filteredTransactions,
+    filteredMarketValues,
+    totalAssetsValue,
     quotes,
     dailyPrices,
     isDark,
     chartColors,
     t,
-  ]);
+  });
 
-  const expensesByCategoryData = useMemo(() => {
-    if (filteredTransactions.length === 0) return null;
-
-    const now = new Date();
-    let startDate = new Date(0);
-    let endDate = new Date();
-
-    if (timeRange === "1M") {
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - 30);
-    } else if (timeRange === "3M") {
-      startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 3);
-    } else if (timeRange === "6M") {
-      startDate = new Date(now);
-      startDate.setMonth(now.getMonth() - 6);
-    } else if (timeRange === "YTD") {
-      startDate = new Date(now.getFullYear(), 0, 1);
-    } else if (timeRange === "1Y") {
-      startDate = new Date(now);
-      startDate.setFullYear(now.getFullYear() - 1);
-    } else if (timeRange === "CUSTOM") {
-      startDate = new Date(customStartDate);
-      endDate = new Date(customEndDate);
-    }
-
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-
-    const startStr = startDate.toISOString().split("T")[0] ?? "";
-    const endStr = endDate.toISOString().split("T")[0] ?? "";
-
-    const expenses = filteredTransactions.filter(
-      (t) =>
-        t.amount < 0 &&
-        t.category !== "Transfer" &&
-        !t.ticker && // Exclude investment transactions
-        t.date >= startStr &&
-        t.date <= endStr,
-    );
-
-    // No expense transactions — return an explicit empty marker so the UI
-    // can show a friendly message instead of a blank chart
-    if (expenses.length === 0) return { empty: true };
-
-    const categoryTotals: Record<string, number> = {};
-
-    expenses.forEach((f) => {
-      const cat = f.category || t("general.uncategorized");
-      const acc = accountMap[f.account_id];
-      const accCurrency = acc?.currency || appCurrency;
-      const rateToApp =
-        accCurrency === appCurrency
-          ? 1.0
-          : getPrice(`${accCurrency}${appCurrency}=X`, f.date) || 1.0;
-      const convertedAmount = Math.abs(f.amount) * rateToApp;
-      categoryTotals[cat] = (categoryTotals[cat] || 0) + convertedAmount;
-    });
-
-    const sortedCategories = Object.entries(categoryTotals).sort(
-      ([, a], [, b]) => b - a,
-    );
-
-    const colors =
-      chartColors.palette.length > 0
-        ? chartColors.palette
-        : [
-            "rgb(244, 63, 94)",
-            "rgb(249, 115, 22)",
-            "rgb(245, 158, 11)",
-            "rgb(16, 185, 129)",
-            "rgb(6, 182, 212)",
-            "rgb(59, 130, 246)",
-            "rgb(139, 92, 246)",
-            "rgb(236, 72, 153)",
-          ];
-
-    return {
-      labels: sortedCategories.map(([cat]) => cat),
-      datasets: [
-        {
-          data: sortedCategories.map(([, amount]) => amount),
-          backgroundColor: sortedCategories.map(
-            (_, i) => colors[i % colors.length],
-          ),
-          borderColor: isDark ? "#474240" : "#ffffff",
-          borderWidth: 4,
-          hoverOffset: 4,
-        },
-      ],
-    };
-  }, [
+  const {
+    chartData,
+    expensesByCategoryData,
+    incomeVsExpensesData,
+    doughnutOptions,
+    expensesOptions,
+    barOptions,
+    lineOptions,
+  } = useDashboardCharts({
+    filteredAccounts,
     filteredTransactions,
-    timeRange,
-    customStartDate,
-    customEndDate,
-    isDark,
     accountMap,
-    getPrice,
-    appCurrency,
-    chartColors,
-    t,
-  ]);
-
-  const incomeVsExpensesData = useMemo(() => {
-    if (filteredTransactions.length === 0) return null;
-
-    const now = new Date();
-    const keys: string[] = []; // keys for matching (YYYY-MM-DD for days or YYYY-MM for months)
-    const labels = [];
-
-    const isDayBucket =
-      timeRange === "1M" ||
-      (timeRange === "CUSTOM" &&
-        (customEndDate.getTime() - customStartDate.getTime()) /
-          (1000 * 60 * 60 * 24) <=
-          31);
-
-    if (isDayBucket) {
-      // Last 30 days or custom range <= 31 days
-      const end =
-        timeRange === "CUSTOM" ? new Date(customEndDate) : new Date(now);
-      const start =
-        timeRange === "CUSTOM" ? new Date(customStartDate) : new Date(now);
-      if (timeRange === "1M") start.setDate(now.getDate() - 29);
-
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
-
-      const d = new Date(start);
-      while (d <= end) {
-        const key = d.toISOString().slice(0, 10);
-        keys.push(key);
-        labels.push(formatDate(key));
-        d.setDate(d.getDate() + 1);
-      }
-    } else {
-      // Use months for 3M, 6M, 1Y, ALL and CUSTOM > 31 days
-      let end = new Date(now);
-      let start = new Date(now);
-
-      if (timeRange === "3M") start.setMonth(now.getMonth() - 2);
-      else if (timeRange === "6M") start.setMonth(now.getMonth() - 5);
-      else if (timeRange === "YTD") start = new Date(now.getFullYear(), 0, 1);
-      else if (timeRange === "1Y") start.setFullYear(now.getFullYear() - 1);
-      else if (timeRange === "ALL") {
-        const txDates = filteredTransactions.map((t) => t.date).sort();
-        const firstDate = txDates[0];
-        if (firstDate) start = new Date(firstDate);
-      } else if (timeRange === "CUSTOM") {
-        start = new Date(customStartDate);
-        end = new Date(customEndDate);
-      }
-
-      start.setDate(1); // Start of month
-      const d = new Date(start);
-      while (d <= end) {
-        const key = `${String(d.getFullYear())}-${String(
-          d.getMonth() + 1,
-        ).padStart(2, "0")}`;
-        keys.push(key);
-        const opts: Intl.DateTimeFormatOptions = { month: "short" };
-        // If the range spans more than a year, show the year
-        const monthsDiff =
-          (end.getFullYear() - start.getFullYear()) * 12 +
-          (end.getMonth() - start.getMonth());
-        if (monthsDiff >= 12) opts.year = "numeric";
-        // Use the current locale from NumberFormatContext for the month display
-        labels.push(d.toLocaleDateString(locale, opts));
-        d.setMonth(d.getMonth() + 1);
-      }
-    }
-
-    const incomeData: number[] = Array.from({ length: keys.length }, () => 0);
-    const expenseData: number[] = Array.from({ length: keys.length }, () => 0);
-
-    filteredTransactions.forEach((t) => {
-      if (t.category === "Transfer" || t.ticker) return; // Exclude transfers and investments
-      const key = isDayBucket ? t.date : t.date.slice(0, 7);
-      const index = keys.indexOf(key);
-      if (index !== -1) {
-        const acc = accountMap[t.account_id];
-        const accCurrency = acc?.currency || appCurrency;
-        const fromCurrency = accCurrency;
-        const toCurrency = appCurrency;
-        const rateToApp =
-          accCurrency === appCurrency
-            ? 1.0
-            : getPrice(`${fromCurrency}${toCurrency}=X`, t.date) || 1.0;
-        const txAmount =
-          typeof t.amount === "number" ? t.amount : Number(t.amount) || 0;
-        const amount = txAmount * rateToApp;
-
-        if (amount > 0) {
-          incomeData[index] = (incomeData[index] ?? 0) + amount;
-        } else {
-          expenseData[index] = (expenseData[index] ?? 0) + Math.abs(amount);
-        }
-      }
-    });
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: t("dashboard.income"),
-          data: incomeData,
-          backgroundColor: chartColors.profit,
-          borderRadius: 6,
-          barPercentage: 0.6,
-          categoryPercentage: 0.8,
-        },
-        {
-          label: t("dashboard.expenses"),
-          data: expenseData,
-          backgroundColor: chartColors.loss,
-          borderRadius: 6,
-          barPercentage: 0.6,
-          categoryPercentage: 0.8,
-        },
-      ],
-    };
-  }, [
-    filteredTransactions,
     timeRange,
     customStartDate,
     customEndDate,
     formatDate,
+    formatNumber,
     locale,
-    accountMap,
-    getPrice,
     appCurrency,
+    getPrice,
+    isDark,
     chartColors,
+    currentNetWorth,
     t,
-  ]);
-
-  const doughnutOptions: ChartOptions<"doughnut"> = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "65%",
-      borderRadius: 4,
-      plugins: {
-        legend: {
-          position: "right" as const,
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-            padding: 20,
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
-            font: {
-              family: "Inter",
-              size: 12,
-            },
-          },
-        },
-        title: {
-          display: false,
-        },
-        tooltip: {
-          backgroundColor: chartColors.tooltipBg,
-          titleColor: chartColors.tooltipText,
-          bodyColor: chartColors.tooltipText,
-          padding: 12,
-          cornerRadius: 8,
-          titleFont: { family: "Inter", size: 13 },
-          bodyFont: { family: "Inter", size: 12 },
-          callbacks: {
-            label: createDoughnutSliceTooltipLabel(formatNumber),
-            labelColor: function (context: TooltipItem<"doughnut">) {
-              const dataset = context.dataset;
-              const index = context.dataIndex;
-              const tooltipBg = chartColors.tooltipBg;
-
-              const bgValue: unknown =
-                Array.isArray(dataset.backgroundColor) &&
-                dataset.backgroundColor[index] !== undefined
-                  ? dataset.backgroundColor[index]
-                  : dataset.backgroundColor;
-              const borderValue: unknown =
-                Array.isArray(dataset.borderColor) &&
-                dataset.borderColor[index] !== undefined
-                  ? dataset.borderColor[index]
-                  : dataset.borderColor;
-              const bg = typeof bgValue === "string" ? bgValue : "";
-              const border = typeof borderValue === "string" ? borderValue : "";
-
-              const backgroundColor =
-                bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
-                  ? tooltipBg
-                  : bg;
-
-              return {
-                borderColor: border,
-                backgroundColor,
-                borderWidth: 2,
-              };
-            },
-          },
-        },
-      },
-    }),
-    [isDark, formatNumber, chartColors],
-  );
-
-  const expensesOptions: ChartOptions<"doughnut"> = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "65%",
-      borderRadius: 4,
-      plugins: {
-        legend: {
-          position: "right" as const,
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-            padding: 20,
-            color: isDark ? "rgb(148, 163, 184)" : "rgb(100, 116, 139)",
-            font: {
-              family: "Inter",
-              size: 12,
-            },
-          },
-        },
-        title: {
-          display: false,
-        },
-        tooltip: {
-          backgroundColor: chartColors.tooltipBg,
-          titleColor: chartColors.tooltipText,
-          bodyColor: chartColors.tooltipText,
-          padding: 12,
-          cornerRadius: 8,
-          titleFont: { family: "Inter", size: 13 },
-          bodyFont: { family: "Inter", size: 12 },
-          callbacks: {
-            label: createDoughnutSliceTooltipLabel(formatNumber, (context) => {
-              const num = Number(context.raw ?? 0);
-              return Number.isFinite(num) ? num : undefined;
-            }),
-            labelColor: function (context: TooltipItem<"doughnut">) {
-              const dataset = context.dataset;
-              const index = context.dataIndex;
-              const tooltipBg = chartColors.tooltipBg;
-
-              const bgValue: unknown =
-                Array.isArray(dataset.backgroundColor) &&
-                dataset.backgroundColor[index] !== undefined
-                  ? dataset.backgroundColor[index]
-                  : dataset.backgroundColor;
-              const borderValue: unknown = dataset.borderColor;
-              const bg = typeof bgValue === "string" ? bgValue : "";
-              const border =
-                typeof borderValue === "string"
-                  ? borderValue
-                  : chartColors.grid;
-
-              const backgroundColor =
-                bg === "transparent" || bg === "rgba(0, 0, 0, 0)"
-                  ? tooltipBg
-                  : bg;
-
-              return {
-                borderColor: border,
-                backgroundColor,
-                borderWidth: 2,
-              };
-            },
-          },
-        },
-      },
-    }),
-    [isDark, formatNumber, chartColors],
-  );
-
-  const barOptions: ChartOptions<"bar"> = useMemo(() => {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "top" as const,
-          align: "end" as const,
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-            color: chartColors.text,
-            font: {
-              family: "Inter",
-              size: 12,
-            },
-          },
-        },
-        title: {
-          display: false,
-        },
-        tooltip: {
-          backgroundColor: chartColors.tooltipBg,
-          titleColor: chartColors.tooltipText,
-          bodyColor: chartColors.tooltipText,
-          padding: 12,
-          cornerRadius: 8,
-          titleFont: {
-            family: "Inter",
-            size: 13,
-          },
-          bodyFont: {
-            family: "Inter",
-            size: 12,
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          border: {
-            display: false,
-          },
-          grid: {
-            color: chartColors.grid,
-            borderDash: [4, 4],
-            drawBorder: false,
-          },
-          ticks: {
-            font: {
-              family: "Inter",
-              size: 11,
-            },
-            color: chartColors.text,
-            padding: 10,
-            callback: function (value: string | number) {
-              const num = Number(value);
-              if (Number.isNaN(num)) return value;
-              return formatNumber(num, {
-                style: "currency",
-              });
-            },
-          },
-        },
-        x: {
-          grid: {
-            display: false,
-            drawBorder: false,
-          },
-          ticks: {
-            font: {
-              family: "Inter",
-              size: 11,
-            },
-            color: chartColors.text,
-          },
-        },
-      },
-    };
-  }, [formatNumber, chartColors]);
-
-  const options: ChartOptions<"line"> = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        title: {
-          display: false,
-        },
-        tooltip: {
-          mode: "index" as const,
-          intersect: false,
-          backgroundColor: chartColors.tooltipBg,
-          titleColor: chartColors.tooltipText,
-          bodyColor: chartColors.tooltipText,
-          padding: 12,
-          cornerRadius: 8,
-          titleFont: {
-            family: "Inter",
-            size: 13,
-          },
-          bodyFont: {
-            family: "Inter",
-            size: 12,
-          },
-          displayColors: false,
-          callbacks: {
-            label: createChartTooltipLabel(formatNumber, {
-              getPrefix: (context) => {
-                let label = context.dataset.label || "";
-                if (label) label += ": ";
-                return label;
-              },
-              getValue: (context) => {
-                const ds = context.dataset as typeof context.dataset & {
-                  accountCurrency?: string;
-                  originalData?: number[];
-                };
-                if (ds.accountCurrency) {
-                  const nativeVal = ds.originalData?.[context.dataIndex];
-                  if (nativeVal !== undefined) return nativeVal;
-                }
-                return context.parsed.y;
-              },
-              getFormatOptions: (context) => {
-                const ds = context.dataset as typeof context.dataset & {
-                  accountCurrency?: string;
-                };
-                return ds.accountCurrency
-                  ? { currency: ds.accountCurrency }
-                  : {};
-              },
-            }),
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: false,
-          border: {
-            display: false,
-          },
-          grid: {
-            color: chartColors.grid,
-            borderDash: [4, 4],
-            drawBorder: false,
-          },
-          ticks: {
-            font: {
-              family: "Inter",
-              size: 11,
-            },
-            color: chartColors.text,
-            padding: 10,
-            callback: function (value: string | number) {
-              const num = Number(value);
-              if (Number.isNaN(num)) return value;
-              return formatNumber(num, {
-                style: "currency",
-              });
-            },
-          },
-        },
-        x: {
-          grid: {
-            display: false,
-            drawBorder: false,
-          },
-          ticks: {
-            font: {
-              family: "Inter",
-              size: 11,
-            },
-            color: chartColors.text,
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 8,
-          },
-        },
-      },
-    }),
-    [formatNumber, chartColors],
-  );
-
-  const retryFetch = useCallback(() => {
-    setError(null);
-    setLoading(true);
-    const doFetch = async () => {
-      try {
-        const txs = (await rust.get_all_transactions()) as Transaction[];
-        setTransactions(txs);
-        if (propAccounts.length > 0) {
-          setAccounts(propAccounts);
-        } else {
-          const accs = await rust.get_accounts();
-          setAccounts(accs);
-        }
-      } catch (e: unknown) {
-        handleAsyncError({
-          context: "Failed to fetch dashboard data",
-          error: e,
-          setError,
-          detailFallback: t("error.failed_to_load"),
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    void doFetch();
-  }, [propAccounts, t]);
+  });
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -1279,9 +168,7 @@ export default function Dashboard({
             marketValues={marketValues}
             appCurrency={appCurrency}
             {...(chartData?.datasets
-              ? {
-                  chartDatasets: chartData.datasets as AccountChartDataset[],
-                }
+              ? { chartDatasets: chartData.datasets }
               : {})}
           />
         </div>
@@ -1294,7 +181,7 @@ export default function Dashboard({
       />
 
       {filteredTransactions.length === 0 ? null : (
-        <NetWorthChart chartData={chartData} options={options} />
+        <NetWorthChart chartData={chartData} options={lineOptions} />
       )}
 
       <div className="charts-grid">
@@ -1329,7 +216,6 @@ export default function Dashboard({
               barOptions={barOptions}
             />
 
-            {/* Cash Flow Sankey */}
             <div
               className="chart-card chart-card-full"
               style={{ height: "500px" }}
@@ -1359,11 +245,7 @@ export default function Dashboard({
             />
 
             <ExpensesByCategoryChart
-              expensesByCategoryData={
-                expensesByCategoryData as
-                  | (ChartData<"doughnut"> & { empty?: boolean })
-                  | null
-              }
+              expensesByCategoryData={expensesByCategoryData}
               expensesOptions={expensesOptions}
             />
           </>
