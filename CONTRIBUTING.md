@@ -14,6 +14,21 @@ Thanks for your interest in contributing.
 
 See [README.md — Development](README.md#development) for prerequisites, system dependencies, and commands to run or build the app.
 
+All frontend commands below run from the `app/` directory (`cd app` first).
+
+## Quality checks
+
+Run these before opening a PR (CI runs the same checks on `app/` changes):
+
+| Command | Purpose |
+|---------|---------|
+| `bun test` | Run the Vitest suite (watch mode locally) |
+| `bun run coverage` | Run tests with coverage; fails below 80% line coverage |
+| `bun run lint` | ESLint with zero warnings allowed |
+| `bun run typecheck` | TypeScript check (`tsc --noEmit`) |
+
+Optional pre-commit hooks (Husky + lint-staged) run ESLint and Prettier on staged frontend files. They install automatically when you run `bun install` in `app/`. To skip a one-off commit: `git commit --no-verify`.
+
 ## Project layout (quick map)
 
 - `app/src/`: React UI entry (`main.tsx`, `App.tsx`)
@@ -103,6 +118,7 @@ Before requesting review:
 
 - The app starts in dev mode (`bun run tauri dev`).
 - Frontend builds (`bun run build`).
+- Frontend quality checks pass (`bun test`, `bun run lint`, `bun run typecheck`; use `bun run coverage` before large test changes).
 - Rust code formats (`cargo fmt`) and is clean under `cargo clippy` (when practical).
 - UI changes include screenshots.
 - Import/export changes include sample files and edge cases.
