@@ -8,6 +8,7 @@ import { useConfirm } from "../../stores/confirm";
 import { useTranslation } from "react-i18next";
 import { useToast } from "../../stores/toast";
 import { useCustomRate } from "../../hooks/useCustomRate";
+import { useTickerSearch } from "../../hooks/useTickerSearch";
 import useTagColors from "../../hooks/useTagColors";
 import "../../styles/Scheduled.css";
 import type {
@@ -16,7 +17,6 @@ import type {
   Transaction,
   TransactionEditForm,
   PendingOccurrence,
-  TickerSuggestion,
   Rule,
   AvailableAccount,
   MenuCoords,
@@ -61,10 +61,13 @@ export default function AccountDetails({
   >([]);
   const [addTargetAccount, setAddTargetAccount] =
     useState<AvailableAccount | null>(null);
-  const [tickerSuggestions, setTickerSuggestions] = useState<
-    TickerSuggestion[]
-  >([]);
-  const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
+  const {
+    suggestions: tickerSuggestions,
+    showSuggestions: showTickerSuggestions,
+    setShowSuggestions: setShowTickerSuggestions,
+    searchTicker,
+    clearSuggestions: clearTickerSuggestions,
+  } = useTickerSearch();
   const [rules, setRules] = useState<Rule[]>([]);
 
   // Editing state
@@ -366,29 +369,8 @@ export default function AccountDetails({
     };
   }, [menuOpenId]);
 
-  const tickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleTickerChange = (query: string) => {
-    if (tickerTimeoutRef.current) clearTimeout(tickerTimeoutRef.current);
-
-    if (!query || query.length < 2) {
-      setTickerSuggestions([]);
-      return;
-    }
-
-    tickerTimeoutRef.current = setTimeout(() => {
-      void (async () => {
-        try {
-          const suggestions = await rust.search_ticker({
-            query,
-          });
-          setTickerSuggestions(suggestions);
-          setShowTickerSuggestions(true);
-        } catch (error) {
-          logError("Error fetching ticker suggestions", error);
-        }
-      })();
-    }, 300);
+    searchTicker(query);
   };
 
   // Handle input changes
@@ -826,7 +808,7 @@ export default function AccountDetails({
         availableAccounts={availableAccounts}
         tickerSuggestions={tickerSuggestions}
         handleTickerChange={handleTickerChange}
-        setTickerSuggestions={setTickerSuggestions}
+        setTickerSuggestions={clearTickerSuggestions}
         appCurrency={appCurrency}
         dateFormat={dateFormat}
         firstDayOfWeek={firstDayOfWeek}

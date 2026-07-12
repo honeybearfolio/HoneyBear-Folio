@@ -1,6 +1,7 @@
 import type { ChartOptions, ChartData } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import { useTranslation } from "react-i18next";
+import ChartLoadingState from "./ChartLoadingState";
 
 interface ExpensesByCategoryChartProps {
   expensesByCategoryData: (ChartData<"doughnut"> & { empty?: boolean }) | null;
@@ -23,12 +24,7 @@ export default function ExpensesByCategoryChart({
       </div>
       <div className="chart-body">
         {expensesByCategoryData === null ? (
-          <div className="loading-container">
-            <div className="loading-content">
-              <div className="loading-spinner"></div>
-              <span className="loading-text">{t("loading.loading_data")}</span>
-            </div>
-          </div>
+          <ChartLoadingState />
         ) : expensesByCategoryData.empty ? (
           <div className="col-span-full flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-8">
             <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl mb-3">

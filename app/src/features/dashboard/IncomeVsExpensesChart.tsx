@@ -1,6 +1,7 @@
 import type { ChartOptions, ChartData } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { useTranslation } from "react-i18next";
+import ChartLoadingState from "./ChartLoadingState";
 
 interface IncomeVsExpensesChartProps {
   incomeVsExpensesData: ChartData<"bar"> | null;
@@ -25,12 +26,7 @@ export default function IncomeVsExpensesChart({
         {incomeVsExpensesData ? (
           <Bar options={barOptions} data={incomeVsExpensesData} />
         ) : (
-          <div className="loading-container">
-            <div className="loading-content">
-              <div className="loading-spinner"></div>
-              <span className="loading-text">{t("loading.loading_data")}</span>
-            </div>
-          </div>
+          <ChartLoadingState />
         )}
       </div>
     </div>

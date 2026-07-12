@@ -7,15 +7,12 @@ import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
+import { useTickerSearch } from "../../hooks/useTickerSearch";
 import "../../styles/Dashboard.css";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { createDefaultScheduledForm } from "../../constants/app";
 import { toScheduledPayload } from "./scheduled-helpers";
-import type {
-  ScheduleRecord,
-  AccountRecord,
-  TickerSuggestion,
-} from "./scheduled-types";
+import type { ScheduleRecord, AccountRecord } from "./scheduled-types";
 import ScheduledForm from "./ScheduledForm";
 import ScheduledTable from "./ScheduledTable";
 
@@ -30,10 +27,13 @@ export default function ScheduledList() {
     createDefaultScheduledForm(),
   );
   const [showForm, setShowForm] = useState(false);
-  const [tickerSuggestions, setTickerSuggestions] = useState<
-    TickerSuggestion[]
-  >([]);
-  const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
+  const {
+    suggestions: tickerSuggestions,
+    showSuggestions: showTickerSuggestions,
+    setShowSuggestions: setShowTickerSuggestions,
+    searchTicker,
+    clearSuggestions: clearTickerSuggestions,
+  } = useTickerSearch();
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(
     null,
@@ -43,7 +43,6 @@ export default function ScheduledList() {
   const { showToast } = useToast();
   const { dateFormat, firstDayOfWeek } = useNumberFormat();
   const formRef = useRef<HTMLDivElement>(null);
-  const tickerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -111,33 +110,13 @@ export default function ScheduledList() {
 
   function resetForm() {
     setFormState(createDefaultScheduledForm());
-    setTickerSuggestions([]);
-    setShowTickerSuggestions(false);
+    clearTickerSuggestions();
     setIsEditing(false);
     setShowForm(false);
   }
 
   function handleTickerChange(query: string) {
-    if (tickerTimeoutRef.current) clearTimeout(tickerTimeoutRef.current);
-
-    if (!query || query.length < 2) {
-      setTickerSuggestions([]);
-      return;
-    }
-
-    tickerTimeoutRef.current = setTimeout(() => {
-      void (async () => {
-        try {
-          const suggestions = await rust.search_ticker({
-            query,
-          });
-          setTickerSuggestions(suggestions);
-          setShowTickerSuggestions(true);
-        } catch (error: unknown) {
-          console.error("Error fetching ticker suggestions:", error);
-        }
-      })();
-    }, 300);
+    searchTicker(query);
   }
 
   function handleEdit(sched: ScheduleRecord) {

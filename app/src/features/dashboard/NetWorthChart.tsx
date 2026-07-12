@@ -1,6 +1,7 @@
 import type { ChartOptions, ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { useTranslation } from "react-i18next";
+import ChartLoadingState from "./ChartLoadingState";
 
 interface NetWorthChartProps {
   chartData: ChartData<"line"> | null;
@@ -26,14 +27,7 @@ export default function NetWorthChart({
           {chartData ? (
             <Line options={options} data={chartData} />
           ) : (
-            <div className="loading-container">
-              <div className="loading-content">
-                <div className="loading-spinner"></div>
-                <span className="loading-text">
-                  {t("loading.loading_data")}
-                </span>
-              </div>
-            </div>
+            <ChartLoadingState />
           )}
         </div>
       </div>
