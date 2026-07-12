@@ -15,6 +15,11 @@ import {
   createDefaultRuleFormState,
   DEFAULT_RULE_ACTION,
   DEFAULT_RULE_CONDITION,
+  formatAction,
+  formatCondition,
+  isRegexOperator,
+  isValidRegex,
+  isValuelessOperator,
   reorderRules,
   toRuleFormState,
   toRulePayload,
@@ -351,48 +356,9 @@ export default function RulesList() {
     return field?.type || "text";
   }
 
-  function isValuelessOperator(operator: string) {
-    return operator === "is_empty" || operator === "is_not_empty";
-  }
-
-  function isRegexOperator(operator: string) {
-    return operator === "matches_regex" || operator === "not_matches_regex";
-  }
-
-  function isValidRegex(pattern: string) {
-    if (!pattern) return true; // empty is ok (won't match anything)
-    try {
-      new RegExp(pattern);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  // Check if any regex condition has an invalid pattern
   const hasInvalidRegex = formState.conditions.some(
     (c) => isRegexOperator(c.operator) && c.value && !isValidRegex(c.value),
   );
-
-  // Format condition for display
-  function formatCondition(condition: RuleCondition) {
-    const fieldLabel = t(`rules.field.${condition.field}`) || condition.field;
-    const operatorLabel =
-      t(`rules.operator.${condition.operator}`) || condition.operator;
-    if (isValuelessOperator(condition.operator)) {
-      return `${fieldLabel} ${operatorLabel}`;
-    }
-    if (isRegexOperator(condition.operator)) {
-      return `${fieldLabel} ${operatorLabel} /${condition.value}/`;
-    }
-    return `${fieldLabel} ${operatorLabel} "${condition.value}"`;
-  }
-
-  // Format action for display
-  function formatAction(action: RuleAction) {
-    const fieldLabel = t(`rules.field.${action.field}`) || action.field;
-    return `${fieldLabel} = "${action.value}"`;
-  }
 
   if (loading) {
     return <ListSkeleton title={t("rules.title")} />;
@@ -854,7 +820,7 @@ export default function RulesList() {
                           className="inline-flex items-center gap-1"
                         >
                           <span className="px-2 py-0.5 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 rounded text-xs">
-                            {formatCondition(cond)}
+                            {formatCondition(cond, t)}
                           </span>
                           {i < conditions.length - 1 && (
                             <span className="text-xs font-semibold text-slate-500">
@@ -874,7 +840,7 @@ export default function RulesList() {
                           key={i}
                           className="px-2 py-0.5 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs"
                         >
-                          {formatAction(action)}
+                          {formatAction(action, t)}
                         </span>
                       ))}
                     </div>
