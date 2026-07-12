@@ -18,6 +18,7 @@ import {
   SkeletonChart,
 } from "../../components/ui/Skeleton";
 import { FIRE_DEFAULTS } from "../../constants/app";
+import { handleAsyncError, logError } from "../../utils/errors";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -165,7 +166,7 @@ export default function FireCalculator() {
       try {
         return parseSavedState(saved);
       } catch (e: unknown) {
-        console.error("Failed to parse saved state:", e);
+        logError("Failed to parse saved FIRE calculator state", e);
       }
     }
     return null;
@@ -330,8 +331,12 @@ export default function FireCalculator() {
 
       setLoading(false);
     } catch (e) {
-      console.error("Failed to fetch data:", e);
-      setFetchError(String(e));
+      handleAsyncError({
+        context: "Failed to fetch FIRE calculator data",
+        error: e,
+        setError: setFetchError,
+        detailFallback: t("error.failed_to_load"),
+      });
       setLoading(false);
     }
   }
@@ -484,7 +489,7 @@ export default function FireCalculator() {
     };
 
     loadDeterministicProjection().catch((e: unknown) => {
-      console.error("Failed to calculate deterministic projection:", e);
+      logError("Failed to calculate deterministic projection", e);
     });
 
     return () => {
@@ -537,7 +542,7 @@ export default function FireCalculator() {
   useEffect(() => {
     const timer = setTimeout(() => {
       runSimulation().catch((e: unknown) => {
-        console.error("Failed to run Monte Carlo simulation:", e);
+        logError("Failed to run Monte Carlo simulation", e);
       });
     }, 300);
     return () => {

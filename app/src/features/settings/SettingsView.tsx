@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
+import { handleAsyncError, logError } from "../../utils/errors";
 import useTagColors from "../../hooks/useTagColors";
 import {
   APP_DEFAULTS,
@@ -72,7 +73,7 @@ export default function SettingsView({
       );
       localStorage.setItem(STORAGE_KEYS.FONT_SIZE, String(fontSize));
     } catch (e: unknown) {
-      console.error("Failed to apply font size:", e);
+      logError("Failed to apply font size", e);
     }
   }, [fontSize]);
 
@@ -82,7 +83,7 @@ export default function SettingsView({
         const p = await rust.get_db_path_command();
         setDbPath(p);
       } catch (e: unknown) {
-        console.error("Failed to fetch DB path:", e);
+        logError("Failed to fetch DB path", e);
       }
     })();
   }, []);
@@ -111,8 +112,14 @@ export default function SettingsView({
     try {
       await open(url);
     } catch (e: unknown) {
-      console.error("Failed to open external URL:", e);
-      showToast(t("error.operation_failed"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to open external URL",
+        error: e,
+        userMessage: t("error.operation_failed"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   }
 
@@ -129,8 +136,14 @@ export default function SettingsView({
         setDbPath(p);
       }
     } catch (e: unknown) {
-      console.error("Failed to select DB file:", e);
-      showToast(t("error.operation_failed"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to select DB file",
+        error: e,
+        userMessage: t("error.operation_failed"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   }
 
@@ -169,11 +182,17 @@ export default function SettingsView({
         const p = await rust.get_db_path_command();
         setDbPath(p);
       } catch (e: unknown) {
-        console.error("Failed to reset DB path:", e);
+        logError("Failed to reset DB path", e);
       }
     } catch (e: unknown) {
-      console.error("Failed to reset defaults:", e);
-      showToast(t("error.operation_failed"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to reset defaults",
+        error: e,
+        userMessage: t("error.operation_failed"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   }
 

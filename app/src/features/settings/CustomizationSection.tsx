@@ -5,6 +5,7 @@ import CustomSelect from "../../components/ui/CustomSelect";
 import Switch from "../../components/ui/Switch";
 import { useTheme } from "../../stores/theme";
 import { rust } from "../../api/tauri-client";
+import { logError } from "../../utils/errors";
 import useTagColors from "../../hooks/useTagColors";
 import {
   TAG_COLOR_KEYS,
@@ -42,7 +43,7 @@ export default function CustomizationSection({
         const all = cats.includes("Transfer") ? cats : ["Transfer", ...cats];
         setCategories(all.sort((a: string, b: string) => a.localeCompare(b)));
       } catch (e: unknown) {
-        console.error("Failed to fetch categories:", e);
+        logError("Failed to fetch categories", e);
       }
     })();
   }, []);

@@ -5,6 +5,7 @@ import { useFormatNumber } from "../../utils/format";
 import { createDoughnutSliceTooltipLabel } from "../../utils/chartTooltip";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { ErrorState } from "../../components/ui/Skeleton";
+import { handleAsyncError } from "../../utils/errors";
 import {
   buildHoldingsFromTransactions,
   mergeHoldingsWithQuotes,
@@ -92,8 +93,12 @@ export default function InvestmentDashboard() {
       );
       setHoldings(finalHoldings);
     } catch (e: unknown) {
-      console.error("Error fetching investment data:", e);
-      setError(String(e));
+      handleAsyncError({
+        context: "Failed to fetch investment data",
+        error: e,
+        setError,
+        detailFallback: t("error.failed_to_load"),
+      });
     } finally {
       setLoading(false);
     }

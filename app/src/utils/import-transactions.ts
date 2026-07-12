@@ -1,4 +1,5 @@
 import { rust } from "../api/tauri-client";
+import { logError } from "./errors";
 import type { Account } from "../api/types";
 import type {
   FieldMapping,
@@ -237,7 +238,7 @@ export async function importTransactionsFromRows(
             localAccounts.push(created);
             match = created;
           } catch (e) {
-            console.error("Failed to create account for import:", e);
+            logError("Failed to create account for import", e);
             for (const row of groupRows) {
               const idx = rowIndices.get(row) ?? 0;
               importErrors.push({
@@ -310,7 +311,7 @@ export async function importTransactionsFromRows(
         });
         successCount++;
       } catch (e) {
-        console.error(`Row ${String(i)} import failed:`, e);
+        logError(`Row ${String(i)} import failed`, e);
         importErrors.push({ row: i, error: String(e) });
         failCount++;
       }

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { useEffect } from "react";
 import i18n from "../i18n/i18n";
 import { APP_DEFAULTS, STORAGE_KEYS } from "../constants/app";
+import { logError } from "../utils/errors";
 
 export interface NumberFormatState {
   locale: string;
@@ -85,7 +86,7 @@ export function NumberFormatEffects() {
 
   useEffect(() => {
     i18n.changeLanguage(uiLanguage).catch((e: unknown) => {
-      console.error("Failed to apply UI language:", e);
+      logError("Failed to apply UI language", e);
     });
   }, [uiLanguage]);
 

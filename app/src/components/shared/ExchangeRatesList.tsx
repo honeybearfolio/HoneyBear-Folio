@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import { useNumberFormat } from "../../stores/number-format";
+import { handleAsyncError } from "../../utils/errors";
 import "../../styles/Settings.css";
 
 interface ExchangeRate {
@@ -47,8 +48,14 @@ export default function ExchangeRatesList({
       });
       setRates(result);
     } catch (e) {
-      console.error("Failed to load exchange rates:", e);
-      showToast(t("error.failed_to_load"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to load exchange rates",
+        error: e,
+        userMessage: t("error.failed_to_load"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -81,8 +88,14 @@ export default function ExchangeRatesList({
       await loadRates();
       onRateChange?.();
     } catch (e) {
-      console.error("Failed to update rate:", e);
-      showToast(t("error.failed_to_save"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to update exchange rate",
+        error: e,
+        userMessage: t("error.failed_to_save"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   };
 
@@ -98,8 +111,14 @@ export default function ExchangeRatesList({
       await loadRates();
       onRateChange?.();
     } catch (e) {
-      console.error("Failed to delete rate:", e);
-      showToast(t("error.failed_to_delete"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to delete exchange rate",
+        error: e,
+        userMessage: t("error.failed_to_delete"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   };
 

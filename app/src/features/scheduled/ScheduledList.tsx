@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
@@ -15,6 +15,7 @@ import { toScheduledPayload } from "./scheduled-helpers";
 import type { ScheduleRecord, AccountRecord } from "./scheduled-types";
 import ScheduledForm from "./ScheduledForm";
 import ScheduledTable from "./ScheduledTable";
+import { handleAsyncError } from "../../utils/errors";
 
 export default function ScheduledList() {
   const { t } = useTranslation();
@@ -44,25 +45,51 @@ export default function ScheduledList() {
   const { dateFormat, firstDayOfWeek } = useNumberFormat();
   const formRef = useRef<HTMLDivElement>(null);
 
+  const loadData = useCallback(
+    async (mode: "page" | "refresh" = "refresh") => {
+      try {
+        if (mode === "page") {
+          const [scheds, accs] = await Promise.all([
+            rust.get_scheduled_transactions(),
+            rust.get_accounts(),
+          ]);
+          setSchedules(scheds);
+          setAccounts(accs);
+        } else {
+          const scheds = await rust.get_scheduled_transactions();
+          setSchedules(scheds);
+        }
+        setFetchError(null);
+      } catch (e: unknown) {
+        if (mode === "page") {
+          handleAsyncError({
+            context: "Failed to fetch scheduled transactions",
+            error: e,
+            setError: setFetchError,
+            detailFallback: t("error.failed_to_load"),
+          });
+        } else {
+          handleAsyncError({
+            context: "Failed to fetch scheduled transactions",
+            error: e,
+            userMessage: t("error.failed_to_load"),
+            toast: (message) => {
+              showToast(message, { type: "error" });
+            },
+          });
+        }
+      }
+    },
+    [showToast, t],
+  );
+
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      try {
-        const [scheds, accs] = await Promise.all([
-          rust.get_scheduled_transactions(),
-          rust.get_accounts(),
-        ]);
-        setSchedules(scheds);
-        setAccounts(accs);
-        setFetchError(null);
-      } catch (e: unknown) {
-        console.error("Failed to fetch scheduled transactions:", e);
-        setFetchError(String(e));
-      } finally {
-        setLoading(false);
-      }
+      await loadData("page");
+      setLoading(false);
     })();
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -97,16 +124,6 @@ export default function ScheduledList() {
       window.removeEventListener("resize", handleScrollOrResize);
     };
   }, [menuOpenId]);
-
-  async function fetchSchedules() {
-    try {
-      const r = await rust.get_scheduled_transactions();
-      setSchedules(r);
-    } catch (e) {
-      console.error("Failed to fetch scheduled transactions:", e);
-      showToast(t("error.failed_to_load"), { type: "error" });
-    }
-  }
 
   function resetForm() {
     setFormState(createDefaultScheduledForm());
@@ -162,9 +179,15 @@ export default function ScheduledList() {
         if (formState.id === id) resetForm();
         showToast(t("scheduled.deleted_success"), { type: "success" });
       } catch (e: unknown) {
-        console.error("Failed to delete scheduled transaction:", e);
-        showToast(t("scheduled.error_generic"), { type: "error" });
-        void fetchSchedules();
+        handleAsyncError({
+          context: "Failed to delete scheduled transaction",
+          error: e,
+          userMessage: t("scheduled.error_generic"),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
+        });
+        void loadData();
       }
     }
   }
@@ -198,10 +221,16 @@ export default function ScheduledList() {
           isBuy: sched.is_buy,
         },
       });
-      void fetchSchedules();
+      void loadData();
     } catch (e: unknown) {
-      console.error("Failed to toggle scheduled transaction:", e);
-      showToast(t("scheduled.error_generic"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to toggle scheduled transaction",
+        error: e,
+        userMessage: t("scheduled.error_generic"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   }
 
@@ -247,10 +276,16 @@ export default function ScheduledList() {
         showToast(t("scheduled.created_success"), { type: "success" });
       }
       resetForm();
-      void fetchSchedules();
+      void loadData();
     } catch (e: unknown) {
-      console.error("Failed to save scheduled transaction:", e);
-      showToast(t("scheduled.error_generic"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to save scheduled transaction",
+        error: e,
+        userMessage: t("scheduled.error_generic"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   }
 
@@ -287,7 +322,7 @@ export default function ScheduledList() {
           onRetry={() => {
             setFetchError(null);
             setLoading(true);
-            void fetchSchedules().finally(() => {
+            void loadData("page").finally(() => {
               setLoading(false);
             });
           }}

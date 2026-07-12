@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import "../../styles/Modal.css";
 import { useTranslation } from "react-i18next";
 import { getDevSetting } from "../../config/dev-settings";
+import { logError } from "../../utils/errors";
 
 interface UpdateEvent {
   event: "Started" | "Progress" | "Finished";
@@ -76,7 +77,7 @@ export default function UpdateNotification() {
           setUpdateInfo(update);
         }
       } catch (err) {
-        console.error("Failed to check for updates:", err);
+        logError("Failed to check for updates", err);
       }
     };
 
@@ -113,7 +114,7 @@ export default function UpdateNotification() {
       setDownloading(false);
       setDownloaded(true);
     } catch (err) {
-      console.error("Failed to install update:", err);
+      logError("Failed to install update", err);
       setError(err instanceof Error ? err.message : t("update.failed_update"));
       setDownloading(false);
     }
@@ -123,7 +124,7 @@ export default function UpdateNotification() {
     try {
       await relaunch();
     } catch (err) {
-      console.error("Failed to relaunch:", err);
+      logError("Failed to relaunch after update", err);
       setError(t("update.failed_relaunch"));
     }
   };

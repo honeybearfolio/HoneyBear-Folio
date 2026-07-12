@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useToast } from "../stores/toast";
+import { handleAsyncError, logError } from "../utils/errors";
 import { useNumberFormat } from "../stores/number-format";
 import { parseNumberWithLocale } from "../utils/format";
 import { parseFileForImport } from "../utils/import-parser";
@@ -86,12 +87,11 @@ export function useImportRunner({
             `Import completed: ${accountMsg}${String(successCount)} transactions succeeded, ${String(failCount)} failed${assetMsg}`,
             { type: "error" },
           );
-          console.error(
-            "Import errors:",
-            result.importErrors,
-            assetImportSummary.errors,
-            accountImportSummary.errors,
-          );
+          logError("Import completed with row errors", {
+            importErrors: result.importErrors,
+            assetErrors: assetImportSummary.errors,
+            accountErrors: accountImportSummary.errors,
+          });
         } else {
           showToast(
             `${accountMsg}${String(successCount)} transactions imported${assetMsg}`,
@@ -108,8 +108,14 @@ export function useImportRunner({
           setShowImportSummary(true);
         }
       } catch (err) {
-        console.error("Import failed:", err);
-        showToast(String(err), { type: "error" });
+        handleAsyncError({
+          context: "Import failed",
+          error: err,
+          userMessage: t("import.failed"),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
+        });
       } finally {
         setImporting(false);
       }

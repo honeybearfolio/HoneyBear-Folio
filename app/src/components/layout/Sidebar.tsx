@@ -37,6 +37,7 @@ import MaskedNumber from "../ui/MaskedNumber";
 import { rust } from "../../api/tauri-client";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
+import { handleAsyncError } from "../../utils/errors";
 import type { Account } from "../../api/types";
 import { STORAGE_KEYS } from "../../constants/app";
 
@@ -211,8 +212,14 @@ export default function Sidebar({
       await rust.rename_account({ id, newName });
       onUpdate();
     } catch (e) {
-      console.error("Failed to rename account:", e);
-      showToast(t("error.failed_to_rename"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to rename account",
+        error: e,
+        userMessage: t("error.failed_to_rename"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   }
 
@@ -232,8 +239,14 @@ export default function Sidebar({
       await rust.delete_account({ id });
       onUpdate();
     } catch (e) {
-      console.error("Failed to delete account:", e);
-      showToast(t("error.failed_to_delete"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to delete account",
+        error: e,
+        userMessage: t("error.failed_to_delete"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
     }
   }
 
