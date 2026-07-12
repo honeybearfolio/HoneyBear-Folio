@@ -33,9 +33,11 @@ vi.mock("../../../stores/confirm", () => ({
   useConfirm: () => mockConfirm,
 }));
 
+const mockShowToast = vi.fn();
+
 vi.mock("../../../stores/toast", () => ({
   useToast: () => ({
-    showToast: vi.fn(),
+    showToast: mockShowToast,
     toasts: [],
     removeToast: vi.fn(),
   }),
@@ -80,6 +82,7 @@ const MOCK_ASSETS = [
 describe("AssetTracker", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockShowToast.mockReset();
     mockedInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_assets") return Promise.resolve(MOCK_ASSETS);
       if (cmd === "get_valuations") return Promise.resolve([]);

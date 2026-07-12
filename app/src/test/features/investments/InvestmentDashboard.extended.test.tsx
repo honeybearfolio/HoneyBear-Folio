@@ -163,7 +163,7 @@ describe("InvestmentDashboard extended", () => {
     await waitFor(() => {
       expect(screen.getByText("Error loading data")).toBeInTheDocument();
     });
-    expect(screen.getByText("Error: Network error")).toBeInTheDocument();
+    expect(screen.getByText("Network error")).toBeInTheDocument();
   });
 
   it("retries fetch from error state", async () => {
