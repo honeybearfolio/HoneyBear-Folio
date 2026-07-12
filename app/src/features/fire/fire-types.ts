@@ -1,37 +1,12 @@
-export interface InvestmentTransaction {
-  date: string;
-  ticker?: string;
-  shares?: number;
-  price_per_share?: number;
-  fee?: number;
-  account_id: number;
-  amount?: number;
-  category?: string;
-}
+import type { StockQuote } from "../../api/types";
 
-export interface InvestmentQuote {
-  symbol: string;
-  regularMarketPrice: number;
-  regularMarketChangePercent?: number;
-  quoteType?: string | null;
-  currency?: string;
-}
+export type { ProjectionResult, MonteCarloResult } from "../../api/types";
 
-export interface ProjectionResult {
-  fireNumber: number;
-  yearsToFire: number | null;
-  projectionData: number[];
-  neverReached: boolean;
-}
-
-export interface MonteCarloResult {
-  successRate: number;
-  simulationCount: number;
-  percentiles: {
-    p10: number[];
-    p25: number[];
-    p50: number[];
-    p75: number[];
-    p90: number[];
-  };
-}
+export type InvestmentQuote = Pick<
+  StockQuote,
+  | "symbol"
+  | "regularMarketPrice"
+  | "regularMarketChangePercent"
+  | "quoteType"
+  | "currency"
+>;

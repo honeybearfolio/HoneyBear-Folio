@@ -1,7 +1,20 @@
 import type { InputHTMLAttributes } from "react";
-import type { Account, RuleAction, RuleCondition } from "../../api/types";
+import type {
+  Account,
+  PendingOccurrence,
+  RuleAction,
+  RuleCondition,
+  TickerSuggestion,
+  Transaction,
+} from "../../api/types";
 
-export type { RuleAction, RuleCondition };
+export type {
+  PendingOccurrence,
+  RuleAction,
+  RuleCondition,
+  TickerSuggestion,
+  Transaction,
+};
 
 /** Real accounts plus the synthetic "all transactions" view. */
 export type AccountDetailsAccount =
@@ -30,22 +43,6 @@ export interface AutocompleteInputProps extends Omit<
   suggestions: AutocompleteSuggestion[];
 }
 
-export interface Transaction {
-  id: string | number;
-  date: string;
-  payee: string;
-  category?: string;
-  notes?: string;
-  amount: number;
-  account_id: string | number;
-  account_name?: string;
-  ticker?: string;
-  shares?: number;
-  price_per_share?: number;
-  fee?: number;
-  currency?: string;
-}
-
 /** In-progress transaction edit state; numeric fields may be strings while typing. */
 export interface TransactionEditForm {
   id: string | number;
@@ -60,27 +57,6 @@ export interface TransactionEditForm {
   shares?: number | string;
   price_per_share?: number | string;
   fee?: number | string;
-  currency?: string;
-}
-
-export interface PendingOccurrence {
-  scheduled_tx_id: string | number;
-  date: string;
-  payee?: string;
-  category?: string;
-  notes?: string;
-  amount: number;
-  account_id?: string | number;
-  account_name?: string;
-  status?: string;
-}
-
-export interface TickerSuggestion {
-  symbol: string;
-  shortname?: string;
-  longname?: string;
-  exchange?: string;
-  typeDisp?: string;
   currency?: string;
 }
 

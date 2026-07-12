@@ -1,3 +1,5 @@
+import type { RuleAction, RuleCondition } from "../api/types";
+
 export const STORAGE_KEYS = {
   SIDEBAR_VISIBILITY: "hb_sidebar_visibility",
   SIDEBAR_WIDTH: "hb_sidebar_width",
@@ -148,18 +150,6 @@ export function createDefaultScheduledForm(): ScheduledFormState {
     fee: "",
     isBuy: true,
   };
-}
-
-export interface RuleCondition {
-  field: string;
-  operator: string;
-  value: string;
-  negated?: boolean;
-}
-
-export interface RuleAction {
-  field: string;
-  value: string;
 }
 
 export interface RuleFormState {

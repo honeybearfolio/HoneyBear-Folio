@@ -10,8 +10,8 @@ const accounts: Account[] = [
 ];
 
 const transactions: Transaction[] = [
-  { id: 1, account_id: 1, date: "2024-01-01", amount: 100 },
-  { id: 2, account_id: 2, date: "2024-01-02", amount: 200 },
+  { id: 1, account_id: 1, date: "2024-01-01", payee: "", amount: 100 },
+  { id: 2, account_id: 2, date: "2024-01-02", payee: "", amount: 200 },
 ];
 
 describe("useDashboardFilters", () => {

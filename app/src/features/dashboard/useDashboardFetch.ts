@@ -41,7 +41,7 @@ export function useDashboardFetch({
   }, [accounts]);
 
   const loadCoreData = useCallback(async () => {
-    const txs = (await rust.get_all_transactions()) as Transaction[];
+    const txs = await rust.get_all_transactions();
     setTransactions(txs);
 
     if (propAccounts.length > 0) {
@@ -56,7 +56,7 @@ export function useDashboardFetch({
   useEffect(() => {
     void (async () => {
       try {
-        const txs = (await rust.get_all_transactions()) as Transaction[];
+        const txs = await rust.get_all_transactions();
         setTransactions(txs);
 
         if (propAccounts.length > 0) {
@@ -91,9 +91,9 @@ export function useDashboardFetch({
       const tickers = currentHoldings.map((h) => h.ticker);
       const uniqueTickers = [...new Set(tickers)];
       try {
-        const qs = (await rust.get_stock_quotes({
+        const qs = await rust.get_stock_quotes({
           tickers: uniqueTickers,
-        })) as Quote[];
+        });
         setQuotes(qs);
       } catch (e) {
         logError("Failed to fetch quotes", e);
@@ -119,9 +119,9 @@ export function useDashboardFetch({
 
         const pricesMap: Record<string, DailyPriceData> = {};
         for (const ticker of tickers) {
-          const prices = (await rust.get_daily_stock_prices({
+          const prices = await rust.get_daily_stock_prices({
             ticker,
-          })) as DailyPriceEntry[];
+          });
           prices.sort((a: DailyPriceEntry, b: DailyPriceEntry) =>
             a.date > b.date ? 1 : -1,
           );
