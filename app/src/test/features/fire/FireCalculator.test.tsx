@@ -1,15 +1,8 @@
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  cleanup,
-} from "@testing-library/react";
+import { screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import FireCalculator from "../../../features/fire/FireCalculator";
 import { invoke } from "@tauri-apps/api/core";
-import { useNumberFormatStore } from "../../../stores/number-format";
+import { mockTauri, renderWithStores } from "../../helpers/render";
 
 // Mock dependencies
 vi.mock("react-chartjs-2", () => ({
@@ -122,11 +115,6 @@ vi.mock("../../../utils/fire", () => ({
   }),
 }));
 
-const renderWithContext = (ui: React.ReactElement) => {
-  useNumberFormatStore.setState({ locale: "en-US", currency: "USD" });
-  return render(ui);
-};
-
 describe("FireCalculator", () => {
   type SavedFireState = {
     annualExpenses: number;
@@ -138,8 +126,7 @@ describe("FireCalculator", () => {
     vi.clearAllMocks();
     sessionStorage.clear();
 
-    // Default invoke implementation
-    vi.mocked(invoke).mockImplementation((cmd: string) => {
+    mockTauri((cmd: string) => {
       if (cmd === "get_accounts")
         return Promise.resolve([
           {
@@ -161,7 +148,7 @@ describe("FireCalculator", () => {
   });
 
   it("renders with default values and loads data", async () => {
-    renderWithContext(<FireCalculator />);
+    renderWithStores(<FireCalculator />);
 
     // Wait for the async fetch to complete and content to render
     await waitFor(() => {
@@ -176,7 +163,7 @@ describe("FireCalculator", () => {
   });
 
   it("calculates FIRE number based on expenses", async () => {
-    renderWithContext(<FireCalculator />);
+    renderWithStores(<FireCalculator />);
 
     // Wait for the initial data fetch to complete before interacting
     const inputs = await screen.findAllByRole("textbox");
@@ -195,7 +182,7 @@ describe("FireCalculator", () => {
 
   it("updates state from portfolio data on mount if not user modified", async () => {
     // We mocked computePortfolioTotals to return 50000
-    renderWithContext(<FireCalculator />);
+    renderWithStores(<FireCalculator />);
 
     const inputs = await screen.findAllByRole("textbox");
     const netWorthInput = inputs[0]!; // Current Net Worth is 1st
@@ -206,7 +193,7 @@ describe("FireCalculator", () => {
   });
 
   it("persists state to sessionStorage", async () => {
-    const { unmount } = renderWithContext(<FireCalculator />);
+    const { unmount } = renderWithStores(<FireCalculator />);
 
     // Wait for initial load before interacting
     const inputs = await screen.findAllByRole("textbox");
@@ -231,14 +218,14 @@ describe("FireCalculator", () => {
     unmount();
 
     // Re-render: should restore from sessionStorage
-    renderWithContext(<FireCalculator />);
+    renderWithStores(<FireCalculator />);
     const inputs2 = screen.getAllByRole("textbox");
     expect((inputs2[1] as HTMLInputElement).value).toBe("60000");
   });
 
   it("respects user modifications over fetched data", async () => {
     // 1. Render and modify Net Worth manually
-    const { unmount } = renderWithContext(<FireCalculator />);
+    const { unmount } = renderWithStores(<FireCalculator />);
     const inputs = await screen.findAllByRole("textbox");
     const netWorthInput = inputs[0]!;
 
@@ -265,7 +252,7 @@ describe("FireCalculator", () => {
 
     // 2. Re-render — fetch would return 50000, but sessionStorage has 75000 with
     //    userModified.currentNetWorth=true, so the persisted value wins.
-    renderWithContext(<FireCalculator />);
+    renderWithStores(<FireCalculator />);
 
     const inputs2 = await screen.findAllByRole("textbox");
     const netWorthInput2 = inputs2[0]!;

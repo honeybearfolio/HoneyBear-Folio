@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import FireResultsPanel from "../../../features/fire/FireResultsPanel";
 import type { ChartData } from "chart.js";
 import type { MonteCarloResult } from "../../../features/fire/fire-types";
-import { useNumberFormatStore } from "../../../stores/number-format";
+import { mockNumberFormat, renderWithStores } from "../../helpers/render";
 
 vi.mock("react-chartjs-2", () => ({
   Line: () => <div data-testid="fire-projection-chart">Chart</div>,
@@ -19,12 +19,11 @@ vi.mock("../../../hooks/useChartColors", () => ({
   }),
 }));
 
-vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val: number, opts?: { style?: string }) =>
-    opts?.style === "currency"
-      ? `$${val.toLocaleString("en-US")}`
-      : String(val),
-}));
+vi.mock("../../../utils/format", async () => {
+  const { createFormatUtilsMock, currencyFormatNumber } =
+    await import("../../helpers/format-mocks");
+  return createFormatUtilsMock({ formatNumber: currencyFormatNumber });
+});
 
 const chartData: ChartData<"line", number[], string> = {
   labels: ["2024", "2025", "2026"],
@@ -59,13 +58,13 @@ function renderPanel(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 
-  return render(<FireResultsPanel {...props} />);
+  return renderWithStores(<FireResultsPanel {...props} />);
 }
 
 describe("FireResultsPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useNumberFormatStore.setState({ locale: "en-US", currency: "USD" });
+    mockNumberFormat();
   });
 
   it("renders key result labels", () => {

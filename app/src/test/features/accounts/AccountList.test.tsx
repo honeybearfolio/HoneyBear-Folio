@@ -11,9 +11,10 @@ vi.mock("lucide-react", () => ({
   Trash2: () => <span>Delete</span>,
 }));
 
-vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (v: number | string) => String(v),
-}));
+vi.mock("../../../utils/format", async () => {
+  const { createFormatUtilsMock } = await import("../../helpers/format-mocks");
+  return createFormatUtilsMock();
+});
 
 describe("AccountList", () => {
   const mockAccounts = [

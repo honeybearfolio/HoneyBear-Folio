@@ -1,13 +1,15 @@
-import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Sidebar from "../../../components/layout/Sidebar";
 import { usePrivacy } from "../../../stores/privacy";
+import { renderWithStores } from "../../helpers/render";
 
 // Mock dependencies
-vi.mock("../../../utils/format", () => ({
-  useFormatNumber: () => (val: number) => `fmt-${String(val)}`,
-}));
+vi.mock("../../../utils/format", async () => {
+  const { createFormatUtilsMock, prefixedFormatNumber } =
+    await import("../../helpers/format-mocks");
+  return createFormatUtilsMock({ formatNumber: prefixedFormatNumber });
+});
 vi.mock("../../../stores/privacy", () => ({
   usePrivacy: vi.fn(),
 }));
@@ -64,10 +66,6 @@ vi.mock("../../../features/accounts/AccountList", () => ({
   default: () => <div data-testid="AccountList" />,
 }));
 
-const renderWithContext = (ui: React.ReactElement) => {
-  return render(ui);
-};
-
 describe("Sidebar", () => {
   const mockTogglePrivacy = vi.fn();
   const mockOnSelectAccount = vi.fn();
@@ -91,7 +89,7 @@ describe("Sidebar", () => {
   });
 
   it("renders navigation links correctly", () => {
-    renderWithContext(
+    renderWithStores(
       <Sidebar
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
@@ -110,7 +108,7 @@ describe("Sidebar", () => {
   });
 
   it("displays computed net worth", () => {
-    renderWithContext(
+    renderWithStores(
       <Sidebar
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
@@ -127,7 +125,7 @@ describe("Sidebar", () => {
   });
 
   it("toggles privacy mode", () => {
-    renderWithContext(
+    renderWithStores(
       <Sidebar
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
@@ -152,7 +150,7 @@ describe("Sidebar", () => {
       togglePrivacyMode: mockTogglePrivacy,
     });
 
-    renderWithContext(
+    renderWithStores(
       <Sidebar
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
@@ -167,7 +165,7 @@ describe("Sidebar", () => {
   });
 
   it("navigates when clicking dashboard link", () => {
-    renderWithContext(
+    renderWithStores(
       <Sidebar
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
@@ -185,7 +183,7 @@ describe("Sidebar", () => {
 
   it("highlights active link", () => {
     // Need to check class names or active state style
-    renderWithContext(
+    renderWithStores(
       <Sidebar
         accounts={[]}
         onSelectAccount={mockOnSelectAccount}
