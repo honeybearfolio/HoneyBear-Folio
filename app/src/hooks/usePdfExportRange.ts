@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { rust } from "../api/tauri-client";
+import { logError } from "../utils/errors";
 
 export type PdfRangeType = "ytd" | "annual" | "month" | "custom";
 
@@ -31,7 +32,7 @@ export function usePdfExportRange() {
         setTransactionDates(dates);
       })
       .catch((e: unknown) => {
-        console.error("Failed to fetch transaction dates for export", e);
+        logError("Failed to fetch transaction dates for export", e);
       });
   }, []);
 

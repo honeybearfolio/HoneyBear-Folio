@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
 import { createDoughnutSliceTooltipLabel } from "../../utils/chartTooltip";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { ErrorState } from "../../components/ui/Skeleton";
+import { handleAsyncError } from "../../utils/errors";
 import {
   buildHoldingsFromTransactions,
   mergeHoldingsWithQuotes,
@@ -64,11 +65,7 @@ export default function InvestmentDashboard() {
 
   const formatNumber = useFormatNumber();
 
-  useEffect(() => {
-    void fetchData();
-  }, []);
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const transactions = await rust.get_all_transactions();
@@ -92,12 +89,22 @@ export default function InvestmentDashboard() {
       );
       setHoldings(finalHoldings);
     } catch (e: unknown) {
-      console.error("Error fetching investment data:", e);
-      setError(String(e));
+      handleAsyncError({
+        context: "Failed to fetch investment data",
+        error: e,
+        setError,
+        detailFallback: t("error.failed_to_load"),
+      });
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void fetchData();
+    });
+  }, [fetchData]);
 
   const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
 

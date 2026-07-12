@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { rust } from "../api/tauri-client";
 import CustomRateDialog from "../components/shared/CustomRateDialog";
+import { logError } from "../utils/errors";
 
 interface CustomRateDialogState {
   isOpen: boolean;
@@ -51,7 +52,7 @@ export function useCustomRate(): UseCustomRateReturn {
           currency,
         });
       } catch (e) {
-        console.error("Failed to check currency:", e);
+        logError("Failed to check currency availability", e);
         // Fall through to prompt
       }
 
@@ -78,7 +79,7 @@ export function useCustomRate(): UseCustomRateReturn {
       await rust.set_custom_exchange_rate({ currency, rate });
       if (resolve) resolve(true);
     } catch (e) {
-      console.error(e);
+      logError("Failed to save custom exchange rate", e);
       if (resolve) resolve(false);
     }
     setDialogState({ isOpen: false, currency: "", resolve: null });

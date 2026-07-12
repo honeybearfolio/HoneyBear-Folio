@@ -1,5 +1,6 @@
 import Papa from "papaparse";
 import { rust } from "../api/tauri-client";
+import { logError } from "./errors";
 import {
   extractAccountsFromHoneyBearJson,
   parseAccountFromRow,
@@ -147,7 +148,7 @@ export async function parseXlsxPreview(
 
     return { columns: [], previewRows: [], parseError: null };
   } catch (err: unknown) {
-    console.error("Failed to parse XLSX:", err);
+    logError("Failed to parse XLSX", err);
     return {
       columns: [],
       previewRows: [],
@@ -167,7 +168,7 @@ export function parseJsonForImport(text: string): ImportParseResult {
       accounts: extractAccountsFromHoneyBearJson(parsed),
     };
   } catch (e) {
-    console.error("Failed to parse JSON import file:", e);
+    logError("Failed to parse JSON import file", e);
     return { rows: [], assets: [], accounts: [] };
   }
 }
@@ -209,7 +210,7 @@ export async function parseXlsxForImport(
 
     return { rows, assets, accounts };
   } catch (err) {
-    console.error("Failed to parse XLSX during import:", err);
+    logError("Failed to parse XLSX during import", err);
     return { rows: [], assets: [], accounts: [] };
   }
 }

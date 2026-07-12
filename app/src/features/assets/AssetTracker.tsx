@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
 import { useFormatNumber } from "../../utils/format";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
-import { handleAsyncError } from "../../utils/errors";
+import { handleAsyncError, logError } from "../../utils/errors";
 import AssetModal from "./AssetModal";
 import ValuationModal from "./ValuationModal";
 import "../../styles/Dashboard.css";
@@ -57,29 +57,12 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
       const data = await rust.get_valuations({ assetId });
       setValuationsMap((prev) => ({ ...prev, [assetId]: data }));
     } catch (e) {
-      console.error("Failed to fetch valuations:", e);
+      logError("Failed to fetch valuations", e);
     }
   }, []);
 
-  const fetchAssets = useCallback(async () => {
-    try {
-      const data = await rust.get_assets({
-        targetCurrency: appCurrency || "USD",
-      });
-      setAssets(data);
-      setFetchError(null);
-      // Auto-expand all assets and fetch their valuations
-      setExpandedAssetIds(new Set(data.map((a) => a.id)));
-      await Promise.all(data.map((a) => fetchValuations(a.id)));
-    } catch (e) {
-      console.error("Failed to fetch assets:", e);
-      setFetchError(String(e));
-    }
-  }, [appCurrency, fetchValuations]);
-
-  useEffect(() => {
-    void (async () => {
-      setLoading(true);
+  const fetchAssets = useCallback(
+    async (mode: "page" | "refresh" = "refresh") => {
       try {
         const data = await rust.get_assets({
           targetCurrency: appCurrency || "USD",
@@ -87,19 +70,37 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
         setAssets(data);
         setFetchError(null);
         setExpandedAssetIds(new Set(data.map((a) => a.id)));
-        await Promise.all(
-          data.map(async (a) => {
-            const vals = await rust.get_valuations({ assetId: a.id });
-            setValuationsMap((prev) => ({ ...prev, [a.id]: vals }));
-          }),
-        );
+        await Promise.all(data.map((a) => fetchValuations(a.id)));
       } catch (e) {
-        setFetchError(String(e));
-      } finally {
-        setLoading(false);
+        if (mode === "page") {
+          handleAsyncError({
+            context: "Failed to fetch assets",
+            error: e,
+            setError: setFetchError,
+            detailFallback: t("error.failed_to_load"),
+          });
+        } else {
+          handleAsyncError({
+            context: "Failed to fetch assets",
+            error: e,
+            userMessage: t("error.failed_to_load"),
+            toast: (message) => {
+              showToast(message, { type: "error" });
+            },
+          });
+        }
       }
+    },
+    [appCurrency, fetchValuations, showToast, t],
+  );
+
+  useEffect(() => {
+    void (async () => {
+      setLoading(true);
+      await fetchAssets("page");
+      setLoading(false);
     })();
-  }, [appCurrency]);
+  }, [fetchAssets]);
 
   const handleExpand = useCallback(
     (assetId: number) => {
@@ -208,7 +209,7 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
         onRetry={() => {
           setFetchError(null);
           setLoading(true);
-          void fetchAssets().finally(() => {
+          void fetchAssets("page").finally(() => {
             setLoading(false);
           });
         }}

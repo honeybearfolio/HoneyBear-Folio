@@ -2,6 +2,18 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import UpdateNotification from "../../../components/shared/UpdateNotification";
 
+vi.mock("../../../utils/errors", async () => {
+  const actual = await vi.importActual<typeof import("../../../utils/errors")>(
+    "../../../utils/errors",
+  );
+  return {
+    ...actual,
+    logError: vi.fn(),
+  };
+});
+
+import { logError } from "../../../utils/errors";
+
 // Mock i18n
 vi.mock("../../../i18n/i18n", () => ({
   t: (key: string) => {
@@ -122,21 +134,18 @@ describe("UpdateNotification", () => {
   });
 
   it("handles update check failure gracefully", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     mockCheck.mockRejectedValue(new Error("Network error"));
 
     const { container } = render(<UpdateNotification />);
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Failed to check for updates:",
+      expect(logError).toHaveBeenCalledWith(
+        "Failed to check for updates",
         expect.any(Error),
       );
     });
 
     // Should not crash, render nothing
     expect(container.firstChild).toBeNull();
-
-    consoleSpy.mockRestore();
   });
 });

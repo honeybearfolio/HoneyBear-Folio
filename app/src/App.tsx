@@ -18,6 +18,7 @@ import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
 import { ToastContainer } from "./components/ui/Toast";
 import { useToast } from "./stores/toast";
+import { handleAsyncError } from "./utils/errors";
 import { ConfirmDialogContainer } from "./components/ui/ConfirmDialog";
 import ErrorBoundary from "./components/layout/ErrorBoundary";
 import { NumberFormatEffects, useNumberFormat } from "./stores/number-format";
@@ -237,8 +238,14 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       setAccounts(accs);
       return accs;
     } catch (e) {
-      console.error("Failed to fetch accounts:", e);
-      showToast(t("error.failed_to_load"), { type: "error" });
+      handleAsyncError({
+        context: "Failed to fetch accounts",
+        error: e,
+        userMessage: t("error.failed_to_load"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
       return [];
     }
   }, [showToast, t, currency]);
@@ -260,8 +267,14 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
         );
         setMarketValues(values);
       } catch (e) {
-        console.error("Failed to fetch market values:", e);
-        showToast(t("error.failed_to_load"), { type: "error" });
+        handleAsyncError({
+          context: "Failed to fetch market values",
+          error: e,
+          userMessage: t("error.failed_to_load"),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
+        });
       }
     },
     [showToast, t, currency],

@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { getMimeType } from "../components/shared/import-types";
 import { parseFilePreview } from "../utils/import-parser";
+import { handleAsyncError } from "../utils/errors";
 
 const VALID_EXTENSIONS = [".csv", ".xlsx", ".xls", ".json"];
 
@@ -42,8 +43,12 @@ export function useImportParser(onColumnsParsed: (cols: string[]) => void) {
         setParseError(result.parseError);
         onColumnsParsed(result.columns);
       } catch (err: unknown) {
-        console.error("Failed to parse import file:", err);
-        setParseError(err instanceof Error ? err.message : String(err));
+        handleAsyncError({
+          context: "Failed to parse import file",
+          error: err,
+          setError: setParseError,
+          detailFallback: t("import.failed"),
+        });
         setColumns([]);
         setPreviewRows([]);
         onColumnsParsed([]);
@@ -66,12 +71,16 @@ export function useImportParser(onColumnsParsed: (cols: string[]) => void) {
         setFile(fileObj);
         await parseFile(fileObj);
       } catch (err: unknown) {
-        console.error("Failed to read dropped file:", err);
-        setParseError(
-          t("import.error.failed_read_dropped", {
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
+        handleAsyncError({
+          context: "Failed to read dropped file",
+          error: err,
+          setError: (message) => {
+            setParseError(
+              t("import.error.failed_read_dropped", { error: message }),
+            );
+          },
+          detailFallback: t("import.failed"),
+        });
       }
     },
     [parseFile, t],

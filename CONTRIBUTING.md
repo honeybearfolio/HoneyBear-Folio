@@ -46,6 +46,47 @@ When adding a new capability, start with the Rust command, expose it in `tauri-c
   - Keep component structure consistent with existing patterns
   - Prefer small, readable functions and explicit state updates
 
+## Error handling
+
+Use `handleAsyncError` and `logError` from `app/src/utils/errors.ts` for all async
+error paths. Do not pair raw `console.error` with `showToast` — that bypasses the
+centralized conventions.
+
+| Surface | Helper | User feedback |
+|---------|--------|---------------|
+| Full-page load / retry | `handleAsyncError` with `setError` | `ErrorState` with expandable detail |
+| Mutations / actions | `handleAsyncError` with `toast` + i18n `userMessage` | Toast notification |
+| Background / optional | `logError` only | None |
+
+### Fetch modes (`"page"` vs `"refresh"`)
+
+List screens that load on mount and reload after mutations should accept a mode on
+their fetch helper:
+
+- **`"page"`** — initial load or retry: `handleAsyncError({ setError, detailFallback })`
+  (no toast).
+- **`"refresh"`** — reload after a mutation: `handleAsyncError({ toast, userMessage })`
+  (no `setError`).
+
+See `RulesList`, `ScheduledList`, and `AssetTracker` for reference implementations.
+
+### Documented exceptions
+
+These paths intentionally do not call `handleAsyncError`:
+
+- **`ErrorBoundary`** and global `window` error handlers in `App.tsx`
+- **Background enrichment** (e.g. stock quotes, daily prices on the dashboard)
+- **Import row failures** in `import-transactions.ts` — logged with `logError`, surfaced
+  in the import summary UI
+- **Import file parsing** in `import-parser.ts` — errors returned to the caller as
+  `parseError` / empty rows
+- **Update checks** in `UpdateNotification` — inline error state for install/relaunch;
+  `logError` for background check failures
+- **Session rename/remove** — silent best-effort actions; failures logged with `logError`
+
+Always pass an i18n-translated `userMessage` to toasts. Use `toUserMessage` only for
+`ErrorState` detail text via `setError` or `detailFallback`.
+
 If you introduce a new dependency, explain why in the PR description.
 
 ## Data & security considerations

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import { save, open } from "@tauri-apps/plugin-dialog";
 import {
@@ -12,6 +12,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { handleAsyncError, logError } from "../../utils/errors";
 
 interface Session {
   path: string;
@@ -56,24 +57,28 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
   const [editName, setEditName] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
 
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
     try {
       setLoading(true);
       const recent = (await rust.get_recent_sessions()) as Session[];
       setSessions(recent);
     } catch (e) {
-      console.error("Failed to load sessions:", e);
-      setError(String(e));
+      handleAsyncError({
+        context: "Failed to load sessions",
+        error: e,
+        setError,
+        detailFallback: t("error.failed_to_load"),
+      });
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
 
   useEffect(() => {
     queueMicrotask(() => {
       void loadSessions();
     });
-  }, []);
+  }, [loadSessions]);
 
   useEffect(() => {
     if (editingPath && renameInputRef.current) {
@@ -88,7 +93,12 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
       const session = await rust.open_session({ path });
       onSessionReady(session);
     } catch (e) {
-      setError(String(e));
+      handleAsyncError({
+        context: "Failed to open session",
+        error: e,
+        setError,
+        detailFallback: t("error.operation_failed"),
+      });
     }
   }
 
@@ -104,7 +114,12 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         onSessionReady(session);
       }
     } catch (e) {
-      setError(String(e));
+      handleAsyncError({
+        context: "Failed to create session",
+        error: e,
+        setError,
+        detailFallback: t("error.operation_failed"),
+      });
     }
   }
 
@@ -120,7 +135,12 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         onSessionReady(session);
       }
     } catch (e) {
-      setError(String(e));
+      handleAsyncError({
+        context: "Failed to open session file",
+        error: e,
+        setError,
+        detailFallback: t("error.operation_failed"),
+      });
     }
   }
 
@@ -130,7 +150,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
       await rust.remove_recent_session({ path });
       setSessions((prev) => prev.filter((s) => s.path !== path));
     } catch (err) {
-      console.error("Failed to remove session:", err);
+      logError("Failed to remove session", err);
     }
   }
 
@@ -151,7 +171,7 @@ export default function SessionPicker({ onSessionReady }: SessionPickerProps) {
         ),
       );
     } catch (err) {
-      console.error("Failed to rename session:", err);
+      logError("Failed to rename session", err);
     }
     setEditingPath(null);
   }

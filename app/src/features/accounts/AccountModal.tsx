@@ -13,6 +13,7 @@ import { CURRENCIES } from "../../utils/currencies";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { useToast } from "../../stores/toast";
+import { handleAsyncError, toUserMessage } from "../../utils/errors";
 import { useParseNumber } from "../../utils/format";
 import type { Account } from "../../api/types";
 
@@ -81,9 +82,7 @@ export default function AccountModal({
       onUpdate();
       onClose();
     } catch (err: unknown) {
-      console.error(err);
-      const msg =
-        err instanceof Error ? err.message : typeof err === "string" ? err : "";
+      const msg = toUserMessage(err);
       if (msg.includes("already exists")) {
         showToast(
           t("error.account_exists", { name: nameTrimmed }) ||
@@ -93,8 +92,14 @@ export default function AccountModal({
           },
         );
       } else {
-        showToast(t("error.something_went_wrong") || "Something went wrong", {
-          type: "error",
+        handleAsyncError({
+          context: "Failed to save account",
+          error: err,
+          userMessage:
+            t("error.something_went_wrong") || "Something went wrong",
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
         });
       }
     }

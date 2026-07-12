@@ -9,6 +9,16 @@
  * | Mutations / actions   | `toast` with i18n message | `logError` |
  * | Background / optional | none                      | `logError` |
  *
+ * ### Fetch modes (`"page"` vs `"refresh"`)
+ *
+ * List screens that support both an initial full-page load and later reloads should
+ * pass a mode to their fetch helper:
+ *
+ * - **`"page"`** — first load or retry: call `handleAsyncError` with `setError` only
+ *   (no toast). The screen renders `ErrorState` with expandable detail.
+ * - **`"refresh"`** — background reload after a mutation or user action: call
+ *   `handleAsyncError` with `toast` and an i18n `userMessage` only.
+ *
  * Never pass raw `String(error)` to toasts — supply an i18n `userMessage` instead.
  * `toUserMessage` is for inline ErrorState detail text only.
  */
