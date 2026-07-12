@@ -1,9 +1,4 @@
-import {
-  FileJson,
-  FileSpreadsheet,
-  FileText,
-  FileDown,
-} from "lucide-react";
+import { FileJson, FileSpreadsheet, FileText, FileDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ExportFormat } from "../../utils/spreadsheet-export";
 
@@ -18,12 +13,13 @@ export default function ExportFormatSelector({
 }: ExportFormatSelectorProps) {
   const { t } = useTranslation();
 
-  const formats: { id: ExportFormat; icon: typeof FileJson; label: string }[] = [
-    { id: "json", icon: FileJson, label: t("export.format.json") },
-    { id: "csv", icon: FileText, label: t("export.format.csv") },
-    { id: "xlsx", icon: FileSpreadsheet, label: t("export.format.xlsx") },
-    { id: "pdf", icon: FileDown, label: t("export.format.pdf") },
-  ];
+  const formats: { id: ExportFormat; icon: typeof FileJson; label: string }[] =
+    [
+      { id: "json", icon: FileJson, label: t("export.format.json") },
+      { id: "csv", icon: FileText, label: t("export.format.csv") },
+      { id: "xlsx", icon: FileSpreadsheet, label: t("export.format.xlsx") },
+      { id: "pdf", icon: FileDown, label: t("export.format.pdf") },
+    ];
 
   return (
     <>

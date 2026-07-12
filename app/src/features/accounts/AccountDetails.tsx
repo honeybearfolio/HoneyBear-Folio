@@ -63,10 +63,11 @@ export default function AccountDetails({
     useState<AvailableAccount | null>(null);
   const {
     suggestions: tickerSuggestions,
+    showSuggestions: showTickerSuggestions,
+    setShowSuggestions: setShowTickerSuggestions,
     searchTicker,
     clearSuggestions: clearTickerSuggestions,
   } = useTickerSearch();
-  const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
   const [rules, setRules] = useState<Rule[]>([]);
 
   // Editing state
@@ -368,17 +369,8 @@ export default function AccountDetails({
     };
   }, [menuOpenId]);
 
-  useEffect(() => {
-    if (tickerSuggestions.length > 0) {
-      setShowTickerSuggestions(true);
-    }
-  }, [tickerSuggestions]);
-
   const handleTickerChange = (query: string) => {
     searchTicker(query);
-    if (!query.trim() || query.trim().length < 2) {
-      setShowTickerSuggestions(false);
-    }
   };
 
   // Handle input changes

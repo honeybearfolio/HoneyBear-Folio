@@ -82,7 +82,7 @@ describe("useTickerSearch", () => {
     expect(rust.search_ticker).toHaveBeenCalledWith({ query: "second" });
   });
 
-  it("clearSuggestions resets state and cancels pending search", async () => {
+  it("clearSuggestions resets state and cancels pending search", () => {
     vi.mocked(rust.search_ticker).mockResolvedValue([
       { symbol: "MSFT", shortname: "Microsoft" },
     ]);
@@ -97,7 +97,7 @@ describe("useTickerSearch", () => {
     });
     expect(result.current.suggestions).toEqual([]);
 
-    await act(async () => {
+    act(() => {
       vi.advanceTimersByTime(300);
     });
     expect(rust.search_ticker).not.toHaveBeenCalled();

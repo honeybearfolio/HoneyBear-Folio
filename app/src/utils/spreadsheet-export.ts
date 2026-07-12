@@ -38,12 +38,12 @@ function accountToExportRow(account: Account): Record<string, unknown> {
   };
 }
 
-function coerceExportNumber(v: unknown): number | unknown | null {
+function coerceExportNumber(v: unknown): number | string | null {
   if (v === null || v === undefined || v === "") return null;
   if (typeof v === "number") return v;
   const s = formatNumberForExport(v);
   const n = Number(s);
-  return Number.isNaN(n) ? v : n;
+  return Number.isNaN(n) ? s : n;
 }
 
 function escapeCsvValue(v: unknown): string {
@@ -144,7 +144,7 @@ export async function buildAndWriteExport({
   let content: string | undefined;
   const isoDate = new Date().toISOString().split("T")[0] ?? "";
   let defaultPath = `honeybear_export_${isoDate}`;
-  let filters: { name: string; extensions: string[] }[] = [];
+  let filters: { name: string; extensions: string[] }[];
 
   if (format === "json") {
     const transactionsWithAccountNames = transactions.map((tx) => {
@@ -202,7 +202,7 @@ export async function buildAndWriteExport({
   } else if (format === "xlsx") {
     defaultPath += ".xlsx";
     filters = [{ name: labels.xlsxFormat, extensions: ["xlsx"] }];
-  } else if (format === "pdf") {
+  } else {
     defaultPath = `honeybear_report_${pdfDateRange.start}_${pdfDateRange.end}`;
     defaultPath += ".pdf";
     filters = [{ name: labels.pdfFormat, extensions: ["pdf"] }];
@@ -276,7 +276,10 @@ export async function buildAndWriteExport({
           try {
             dailyPrices = await rust.get_daily_stock_prices({ ticker: pair });
           } catch (e) {
-            logError(`Optional daily prices for ${entry.currency} PDF export`, e);
+            logError(
+              `Optional daily prices for ${entry.currency} PDF export`,
+              e,
+            );
           }
           const map: Record<string, number> = {};
           const list: DailyPrice[] = [];

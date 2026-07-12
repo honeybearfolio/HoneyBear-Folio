@@ -88,7 +88,10 @@ export default function PdfRangeSelector({
               const yr = Number(v);
               setSelectedMonthYear(yr);
               const now = new Date();
-              if (yr === now.getFullYear() && selectedMonthIndex > now.getMonth()) {
+              if (
+                yr === now.getFullYear() &&
+                selectedMonthIndex > now.getMonth()
+              ) {
                 setSelectedMonthIndex(now.getMonth());
               }
             }}

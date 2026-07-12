@@ -8,6 +8,7 @@ const MIN_QUERY_LENGTH = 2;
 
 export function useTickerSearch() {
   const [suggestions, setSuggestions] = useState<TickerSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -19,6 +20,7 @@ export function useTickerSearch() {
   const clearSuggestions = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setSuggestions([]);
+    setShowSuggestions(false);
   }, []);
 
   const searchTicker = useCallback((query: string) => {
@@ -27,6 +29,7 @@ export function useTickerSearch() {
     const trimmed = query.trim();
     if (!trimmed || trimmed.length < MIN_QUERY_LENGTH) {
       setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
@@ -35,6 +38,9 @@ export function useTickerSearch() {
         try {
           const results = await rust.search_ticker({ query: trimmed });
           setSuggestions(results);
+          if (results.length > 0) {
+            setShowSuggestions(true);
+          }
         } catch (error) {
           logError("Error fetching ticker suggestions", error);
         }
@@ -42,5 +48,11 @@ export function useTickerSearch() {
     }, DEBOUNCE_MS);
   }, []);
 
-  return { suggestions, searchTicker, clearSuggestions };
+  return {
+    suggestions,
+    showSuggestions,
+    setShowSuggestions,
+    searchTicker,
+    clearSuggestions,
+  };
 }

@@ -12,10 +12,7 @@ import "../../styles/Dashboard.css";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { createDefaultScheduledForm } from "../../constants/app";
 import { toScheduledPayload } from "./scheduled-helpers";
-import type {
-  ScheduleRecord,
-  AccountRecord,
-} from "./scheduled-types";
+import type { ScheduleRecord, AccountRecord } from "./scheduled-types";
 import ScheduledForm from "./ScheduledForm";
 import ScheduledTable from "./ScheduledTable";
 
@@ -32,10 +29,11 @@ export default function ScheduledList() {
   const [showForm, setShowForm] = useState(false);
   const {
     suggestions: tickerSuggestions,
+    showSuggestions: showTickerSuggestions,
+    setShowSuggestions: setShowTickerSuggestions,
     searchTicker,
     clearSuggestions: clearTickerSuggestions,
   } = useTickerSearch();
-  const [showTickerSuggestions, setShowTickerSuggestions] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [menuCoords, setMenuCoords] = useState<{ x: number; y: number } | null>(
     null,
@@ -113,22 +111,12 @@ export default function ScheduledList() {
   function resetForm() {
     setFormState(createDefaultScheduledForm());
     clearTickerSuggestions();
-    setShowTickerSuggestions(false);
     setIsEditing(false);
     setShowForm(false);
   }
 
-  useEffect(() => {
-    if (tickerSuggestions.length > 0) {
-      setShowTickerSuggestions(true);
-    }
-  }, [tickerSuggestions]);
-
   function handleTickerChange(query: string) {
     searchTicker(query);
-    if (!query.trim() || query.trim().length < 2) {
-      setShowTickerSuggestions(false);
-    }
   }
 
   function handleEdit(sched: ScheduleRecord) {

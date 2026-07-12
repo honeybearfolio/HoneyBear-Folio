@@ -34,7 +34,11 @@ export default function SpreadsheetWizardFooter({
   return (
     <div className="px-6 pb-6 pt-0">
       <ModalFooter className="mt-0 pt-4 border-t border-slate-100 dark:border-slate-800">
-        <button onClick={onClose} className="btn-secondary" disabled={importing}>
+        <button
+          onClick={onClose}
+          className="btn-secondary"
+          disabled={importing}
+        >
           {cancelLabel}
         </button>
 
