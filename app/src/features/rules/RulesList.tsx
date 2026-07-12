@@ -10,11 +10,13 @@ import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
 import "../../styles/Dashboard.css";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
-import type { RuleRecord } from "../../api/types";
+import type { RuleAction, RuleCondition, RuleRecord } from "../../api/types";
 import {
   createDefaultRuleFormState,
   DEFAULT_RULE_ACTION,
   DEFAULT_RULE_CONDITION,
+} from "../../constants/app";
+import {
   formatAction,
   formatCondition,
   isRegexOperator,
@@ -23,8 +25,6 @@ import {
   reorderRules,
   toRuleFormState,
   toRulePayload,
-  type RuleCondition,
-  type RuleAction,
 } from "./rules-helpers";
 import { handleAsyncError } from "../../utils/errors";
 

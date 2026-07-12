@@ -25,5 +25,3 @@ export async function computeNetWorth(
     ...(Number.isFinite(totalAssetsValue) ? { totalAssetsValue } : {}),
   });
 }
-
-export default computeNetWorth;
