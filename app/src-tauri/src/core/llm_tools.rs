@@ -45,6 +45,36 @@ pub fn tool_get_total_assets_value(db_path: &PathBuf, arguments: &Value) -> Resu
     }))
 }
 
+pub fn tool_get_liabilities(db_path: &PathBuf, arguments: &Value) -> Result<Value, String> {
+    let target = parse_target_currency(arguments);
+    let liabilities = crate::liabilities::get_liabilities_db(db_path, Some(&target))?;
+    serde_json::to_value(&liabilities).map_err(|e| e.to_string())
+}
+
+pub fn tool_get_liability_valuations(
+    db_path: &PathBuf,
+    arguments: &Value,
+) -> Result<Value, String> {
+    let liability_id = arguments
+        .get("liability_id")
+        .and_then(serde_json::Value::as_i64)
+        .ok_or_else(|| "liability_id is required".to_string())? as i32;
+    let valuations = crate::liabilities::get_liability_valuations_db(db_path, liability_id)?;
+    serde_json::to_value(&valuations).map_err(|e| e.to_string())
+}
+
+pub fn tool_get_total_liabilities_value(
+    db_path: &PathBuf,
+    arguments: &Value,
+) -> Result<Value, String> {
+    let target = parse_target_currency(arguments);
+    let total = crate::liabilities::get_total_liabilities_value_db(db_path, Some(&target))?;
+    Ok(json!({
+        "target_currency": target,
+        "total_value": total,
+    }))
+}
+
 /// Reads cached stock prices from the database (used when network quotes are unavailable).
 pub fn get_cached_quotes_db(
     db_path: &PathBuf,
@@ -135,9 +165,11 @@ pub fn compute_net_worth_snapshot_with_quotes(
     let market_values_f64 = compute_net_worth_market_values_logic(&transactions, quotes);
     let market_values_map = market_values_to_json_map(market_values_f64);
 
-    let accounts_total = compute_net_worth_logic(&accounts, &market_values_map, None);
+    let accounts_total = compute_net_worth_logic(&accounts, &market_values_map, None, None);
     let tracked_assets_total =
         crate::assets::get_total_assets_value_db(db_path, Some(target_currency))?;
+    let tracked_liabilities_total =
+        crate::liabilities::get_total_liabilities_value_db(db_path, Some(target_currency))?;
 
     let account_breakdown: Vec<Value> = accounts
         .iter()
@@ -159,13 +191,14 @@ pub fn compute_net_worth_snapshot_with_quotes(
         })
         .collect();
 
-    let total_net_worth = accounts_total + tracked_assets_total;
+    let total_net_worth = accounts_total + tracked_assets_total - tracked_liabilities_total;
 
     Ok(json!({
         "target_currency": target_currency,
         "accounts": account_breakdown,
         "accounts_and_investments_total": accounts_total,
         "tracked_assets_total": tracked_assets_total,
+        "tracked_liabilities_total": tracked_liabilities_total,
         "total_net_worth": total_net_worth,
     }))
 }
@@ -318,6 +351,9 @@ pub async fn execute_tool(
         "get_assets" => tool_get_assets(db_path, arguments),
         "get_asset_valuations" => tool_get_asset_valuations(db_path, arguments),
         "get_total_assets_value" => tool_get_total_assets_value(db_path, arguments),
+        "get_liabilities" => tool_get_liabilities(db_path, arguments),
+        "get_liability_valuations" => tool_get_liability_valuations(db_path, arguments),
+        "get_total_liabilities_value" => tool_get_total_liabilities_value(db_path, arguments),
         "get_portfolio_holdings" => tool_get_portfolio_holdings(client, db_path, arguments).await,
         "get_net_worth" => tool_get_net_worth(client, db_path, arguments).await,
         _ => Err(format!("Unknown tool: {tool_name}")),

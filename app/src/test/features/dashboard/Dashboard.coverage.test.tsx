@@ -128,7 +128,13 @@ describe("Dashboard coverage", () => {
         return Promise.resolve(sampleTransactions);
     });
 
-    render(<Dashboard accounts={sampleAccounts} totalAssetsValue={500} />);
+    render(
+      <Dashboard
+        accounts={sampleAccounts}
+        totalAssetsValue={500}
+        totalLiabilitiesValue={200}
+      />,
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Current Net Worth")).toBeInTheDocument();
@@ -140,6 +146,7 @@ describe("Dashboard coverage", () => {
         expect.objectContaining({
           accounts: sampleAccounts,
           totalAssetsValue: 500,
+          totalLiabilitiesValue: 200,
         }),
       );
     });

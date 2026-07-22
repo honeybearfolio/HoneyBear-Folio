@@ -8,6 +8,7 @@ import type {
 } from "../components/shared/import-types";
 import { importAccounts, type ExportAccount } from "./accounts-io";
 import { importAssets, type ExportAsset } from "./assets-io";
+import { importLiabilities, type ExportLiability } from "./liabilities-io";
 import { asText } from "./import-parser";
 
 export interface TransactionImportCallbacks {
@@ -26,6 +27,11 @@ export interface TransactionImportResult {
     errors: string[];
   };
   assetImportSummary: {
+    imported: number;
+    skipped: number;
+    errors: string[];
+  };
+  liabilityImportSummary: {
     imported: number;
     skipped: number;
     errors: string[];
@@ -126,6 +132,7 @@ export async function importTransactionsFromRows(
   rows: Record<string, unknown>[],
   mapping: FieldMapping,
   assetsToImport: ExportAsset[],
+  liabilitiesToImport: ExportLiability[],
   accountsToImport: ExportAccount[],
   callbacks: TransactionImportCallbacks,
 ): Promise<TransactionImportResult> {
@@ -152,6 +159,24 @@ export async function importTransactionsFromRows(
       );
     } catch (e) {
       assetImportSummary.errors.push(String(e));
+    }
+  }
+
+  let liabilityImportSummary = {
+    imported: 0,
+    skipped: 0,
+    errors: [] as string[],
+  };
+  if (liabilitiesToImport.length > 0) {
+    try {
+      const existingLiabilities = await rust.get_liabilities();
+      liabilityImportSummary = await importLiabilities(
+        rust,
+        liabilitiesToImport,
+        existingLiabilities,
+      );
+    } catch (e) {
+      liabilityImportSummary.errors.push(String(e));
     }
   }
 
@@ -331,5 +356,6 @@ export async function importTransactionsFromRows(
     importErrors,
     accountImportSummary,
     assetImportSummary,
+    liabilityImportSummary,
   };
 }

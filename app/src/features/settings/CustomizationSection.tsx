@@ -193,6 +193,10 @@ export default function CustomizationSection({
             label: t("settings.sidebar.assets"),
           },
           {
+            key: "liabilities",
+            label: t("settings.sidebar.liabilities"),
+          },
+          {
             key: "chat",
             label: t("settings.sidebar.ai_assistant"),
           },

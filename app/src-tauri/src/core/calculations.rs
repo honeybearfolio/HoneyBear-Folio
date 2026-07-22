@@ -141,12 +141,14 @@ fn to_numeric(value: &Value) -> Option<f64> {
 }
 
 /// Computes total net worth by summing each account's balance plus its market value,
-/// multiplied by the account's exchange rate, plus any tracked assets not tied to accounts.
+/// multiplied by the account's exchange rate, plus any tracked assets not tied to accounts,
+/// minus any tracked liabilities.
 #[must_use]
 pub fn compute_net_worth_logic(
     accounts: &[Account],
     market_values: &HashMap<String, Value>,
     total_assets_value: Option<f64>,
+    total_liabilities_value: Option<f64>,
 ) -> f64 {
     let accounts_total: f64 = accounts
         .iter()
@@ -160,10 +162,13 @@ pub fn compute_net_worth_logic(
         })
         .sum();
 
-    let extra = total_assets_value
+    let assets_extra = total_assets_value
         .filter(|value| value.is_finite())
         .unwrap_or(0.0);
-    accounts_total + extra
+    let liabilities_extra = total_liabilities_value
+        .filter(|value| value.is_finite())
+        .unwrap_or(0.0);
+    accounts_total + assets_extra - liabilities_extra
 }
 
 /// Extracts stock holdings from transactions, computing total shares and cost basis per ticker.
@@ -488,6 +493,7 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             .map(|(k, v)| (k.clone(), json!(v)))
             .collect(),
         None,
+        None,
     );
 
     let to_app_currency = |amount: f64, account_id: i32, date: &str| -> f64 {
@@ -798,11 +804,13 @@ pub fn compute_net_worth(
     accounts: Vec<Account>,
     market_values: HashMap<String, Value>,
     total_assets_value: Option<f64>,
+    total_liabilities_value: Option<f64>,
 ) -> Result<f64, String> {
     Ok(compute_net_worth_logic(
         &accounts,
         &market_values,
         total_assets_value,
+        total_liabilities_value,
     ))
 }
 

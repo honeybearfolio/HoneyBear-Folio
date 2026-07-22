@@ -49,6 +49,7 @@ vi.mock("lucide-react", () => ({
   Bot: () => <span>Bot</span>,
   RefreshCw: () => <span>RefreshCw</span>,
   Gem: () => <span>Gem</span>,
+  Scale: () => <span>Scale</span>,
 }));
 
 // Mock child components that might use contexts or API
@@ -78,6 +79,7 @@ describe("Sidebar", () => {
     all: true,
     chat: true,
     assets: true,
+    liabilities: true,
   };
 
   beforeEach(() => {

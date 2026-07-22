@@ -28,6 +28,7 @@ import {
   RefreshCw,
   Bot,
   Gem,
+  Scale,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../../styles/Sidebar.css";
@@ -456,6 +457,24 @@ export default function Sidebar({
                       className={`sidebar-nav-icon ${selectedId === "asset-tracker" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                     />
                     <span className="font-medium">{t("nav.assets")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.liabilities !== false && (
+                  <button
+                    onClick={() => {
+                      handleSelect("liability-tracker");
+                    }}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "liability-tracker"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <Scale
+                      className={`sidebar-nav-icon ${selectedId === "liability-tracker" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.liabilities")}</span>
                   </button>
                 )}
 

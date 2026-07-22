@@ -437,6 +437,31 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        // Liability tracking tables
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS liabilities (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'other',
+            currency TEXT,
+            notes TEXT
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS liability_valuations (
+            id INTEGER PRIMARY KEY,
+            liability_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            value REAL NOT NULL,
+            FOREIGN KEY(liability_id) REFERENCES liabilities(id) ON DELETE CASCADE
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         // Performance indexes
         conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
@@ -445,7 +470,9 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
              CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_id ON chat_messages(conversation_id);
              CREATE INDEX IF NOT EXISTS idx_scheduled_transactions_account_id ON scheduled_transactions(account_id);
              CREATE INDEX IF NOT EXISTS idx_asset_valuations_asset_id ON asset_valuations(asset_id);
-             CREATE INDEX IF NOT EXISTS idx_asset_valuations_date ON asset_valuations(date);",
+             CREATE INDEX IF NOT EXISTS idx_asset_valuations_date ON asset_valuations(date);
+             CREATE INDEX IF NOT EXISTS idx_liability_valuations_liability_id ON liability_valuations(liability_id);
+             CREATE INDEX IF NOT EXISTS idx_liability_valuations_date ON liability_valuations(date);",
         )
         .map_err(|e| e.to_string())?;
 

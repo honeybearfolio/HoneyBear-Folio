@@ -8,6 +8,7 @@ vi.mock("../../api/tauri-client", () => ({
   rust: {
     get_accounts: (): Promise<unknown> => mockInvoke("get_accounts"),
     get_assets: (): Promise<unknown> => mockInvoke("get_assets"),
+    get_liabilities: (): Promise<unknown> => mockInvoke("get_liabilities"),
     create_account: (args: unknown): Promise<unknown> =>
       mockInvoke("create_account", args),
     create_transaction: (args: unknown): Promise<unknown> =>
@@ -39,6 +40,7 @@ describe("importTransactionsFromRows", () => {
         ]);
       }
       if (cmd === "get_assets") return Promise.resolve([]);
+      if (cmd === "get_liabilities") return Promise.resolve([]);
       if (cmd === "create_transaction") return Promise.resolve({});
       return Promise.resolve([]);
     });
@@ -58,7 +60,7 @@ describe("importTransactionsFromRows", () => {
       },
     ];
 
-    await importTransactionsFromRows(rows, mapping, [], [], {
+    await importTransactionsFromRows(rows, mapping, [], [], [], {
       parseNumber,
       t: (key: string) => key,
       onProgress: vi.fn(),
@@ -86,7 +88,7 @@ describe("importTransactionsFromRows", () => {
       },
     ];
 
-    await importTransactionsFromRows(rows, mapping, [], [], {
+    await importTransactionsFromRows(rows, mapping, [], [], [], {
       parseNumber,
       t: (key: string) => key,
       onProgress: vi.fn(),

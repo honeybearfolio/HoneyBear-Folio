@@ -12,6 +12,12 @@ import {
   fetchAssetsForExport,
   toLegacyJsonAsset,
 } from "./assets-io";
+import {
+  LIABILITY_CATEGORY_LABELS,
+  LIABILITY_FIELD_LABELS,
+  fetchLiabilitiesForExport,
+  toLegacyJsonLiability,
+} from "./liabilities-io";
 import type { PdfDateRange } from "../hooks/usePdfExportRange";
 
 interface DailyPrice {
@@ -70,6 +76,7 @@ export interface ExportLabels {
   fee: string;
   currency: string;
   assetsTitle: string;
+  liabilitiesTitle: string;
   csvFormat: string;
   xlsxFormat: string;
   pdfFormat: string;
@@ -140,6 +147,7 @@ export async function buildAndWriteExport({
   const accounts = await rust.get_accounts();
   const transactions = await rust.get_all_transactions();
   const assets = await fetchAssetsForExport(rust);
+  const liabilities = await fetchLiabilitiesForExport(rust);
 
   let content: string | undefined;
   const isoDate = new Date().toISOString().split("T")[0] ?? "";
@@ -160,6 +168,7 @@ export async function buildAndWriteExport({
       accounts,
       transactions: transactionsWithAccountNames,
       assets: assets.map(toLegacyJsonAsset),
+      liabilities: liabilities.map(toLegacyJsonLiability),
       exportDate: new Date().toISOString(),
     };
     content = JSON.stringify(data, null, 2);
@@ -253,10 +262,35 @@ export async function buildAndWriteExport({
       };
     });
 
+    const liabilityData = liabilities.map((l) => {
+      const categoryLabel = Object.prototype.hasOwnProperty.call(
+        LIABILITY_CATEGORY_LABELS,
+        l.category,
+      )
+        ? LIABILITY_CATEGORY_LABELS[
+            l.category as keyof typeof LIABILITY_CATEGORY_LABELS
+          ]
+        : l.category;
+      const latest = l.valuations.length
+        ? [...l.valuations].sort((x, y) => y.date.localeCompare(x.date))[0]
+        : null;
+      return {
+        [LIABILITY_FIELD_LABELS.name]: l.name,
+        [LIABILITY_FIELD_LABELS.category]: categoryLabel,
+        [LIABILITY_FIELD_LABELS.currency]: l.currency || "",
+        [LIABILITY_FIELD_LABELS.value]: latest
+          ? coerceExportNumber(latest.value)
+          : null,
+        [LIABILITY_FIELD_LABELS.date]: latest?.date || "",
+        [LIABILITY_FIELD_LABELS.notes]: l.notes || "",
+      };
+    });
+
     const sheets: { name: string; data: Record<string, unknown>[] }[] = [
       { name: "Transactions", data: txData },
       { name: "Accounts", data: accounts.map(accountToExportRow) },
       { name: labels.assetsTitle, data: assetData },
+      { name: labels.liabilitiesTitle, data: liabilityData },
     ];
 
     await rust.write_xlsx({ filePath, sheets });

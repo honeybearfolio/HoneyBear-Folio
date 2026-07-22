@@ -84,6 +84,17 @@ async fn test_execute_tool_get_portfolio_and_assets() {
         .unwrap();
     assert_eq!(total["total_value"].as_f64().unwrap(), 0.0);
 
+    let liabilities = execute_tool(&client, &db_path, "get_liabilities", &json!({}))
+        .await
+        .unwrap();
+    assert!(liabilities.as_array().unwrap().is_empty());
+
+    let liabilities_total =
+        execute_tool(&client, &db_path, "get_total_liabilities_value", &json!({}))
+            .await
+            .unwrap();
+    assert_eq!(liabilities_total["total_value"].as_f64().unwrap(), 0.0);
+
     let holdings = execute_tool(&client, &db_path, "get_portfolio_holdings", &json!({}))
         .await
         .unwrap();

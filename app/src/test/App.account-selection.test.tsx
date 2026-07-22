@@ -19,6 +19,7 @@ vi.mock("../api/tauri-client", () => ({
       },
     ]),
     get_total_assets_value: vi.fn().mockResolvedValue(0),
+    get_total_liabilities_value: vi.fn().mockResolvedValue(0),
     compute_net_worth: vi.fn().mockResolvedValue(0),
     get_system_theme: vi.fn().mockResolvedValue("light"),
   },
@@ -88,6 +89,10 @@ vi.mock("../features/settings/SettingsView", () => ({
 
 vi.mock("../features/assets/AssetTracker", () => ({
   default: () => <div data-testid="asset-tracker" />,
+}));
+
+vi.mock("../features/liabilities/LiabilityTracker", () => ({
+  default: () => <div data-testid="liability-tracker" />,
 }));
 
 vi.mock("../components/shared/WelcomeWindow", () => ({

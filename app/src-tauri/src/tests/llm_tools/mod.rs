@@ -1,7 +1,9 @@
 use crate::core::assets::{create_asset_db, create_valuation_db};
+use crate::core::liabilities::{create_liability_db, create_liability_valuation_db};
 use crate::core::llm_tools::{
     compute_net_worth_snapshot_with_quotes, parse_target_currency, tool_get_asset_valuations,
-    tool_get_assets, tool_get_total_assets_value,
+    tool_get_assets, tool_get_liabilities, tool_get_liability_valuations,
+    tool_get_total_assets_value, tool_get_total_liabilities_value,
 };
 use crate::models::YahooQuote;
 use crate::tests::common::setup_db;
@@ -83,6 +85,84 @@ fn test_tool_get_total_assets_value() {
 }
 
 #[test]
+fn test_tool_get_liabilities_empty() {
+    let (_dir, db_path) = setup_db();
+    let result = tool_get_liabilities(&db_path, &json!({})).unwrap();
+    assert!(result.as_array().unwrap().is_empty());
+}
+
+#[test]
+fn test_tool_get_liabilities_with_valuation() {
+    let (_dir, db_path) = setup_db();
+    create_liability_db(
+        &db_path,
+        "Mortgage".to_string(),
+        "mortgage".to_string(),
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
+    let liabilities = tool_get_liabilities(&db_path, &json!({ "target_currency": "USD" })).unwrap();
+    let arr = liabilities.as_array().unwrap();
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["name"], "Mortgage");
+    assert_eq!(arr[0]["category"], "mortgage");
+}
+
+#[test]
+fn test_tool_get_liability_valuations() {
+    let (_dir, db_path) = setup_db();
+    create_liability_db(
+        &db_path,
+        "Car Loan".to_string(),
+        "auto_loan".to_string(),
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
+    let liabilities = tool_get_liabilities(&db_path, &json!({})).unwrap();
+    let liability_id = liabilities[0]["id"].as_i64().unwrap() as i32;
+
+    create_liability_valuation_db(&db_path, liability_id, "2024-01-01".to_string(), 20000.0)
+        .unwrap();
+    create_liability_valuation_db(&db_path, liability_id, "2024-06-01".to_string(), 18000.0)
+        .unwrap();
+
+    let valuations =
+        tool_get_liability_valuations(&db_path, &json!({ "liability_id": liability_id })).unwrap();
+    let arr = valuations.as_array().unwrap();
+    assert_eq!(arr.len(), 2);
+}
+
+#[test]
+fn test_tool_get_liability_valuations_requires_id() {
+    let (_dir, db_path) = setup_db();
+    let err = tool_get_liability_valuations(&db_path, &json!({})).unwrap_err();
+    assert!(err.contains("liability_id"));
+}
+
+#[test]
+fn test_tool_get_total_liabilities_value() {
+    let (_dir, db_path) = setup_db();
+    create_liability_db(
+        &db_path,
+        "Credit Card".to_string(),
+        "credit_card".to_string(),
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
+    let liabilities = tool_get_liabilities(&db_path, &json!({})).unwrap();
+    let liability_id = liabilities[0]["id"].as_i64().unwrap() as i32;
+    create_liability_valuation_db(&db_path, liability_id, "2024-01-01".to_string(), 3000.0)
+        .unwrap();
+
+    let result = tool_get_total_liabilities_value(&db_path, &json!({})).unwrap();
+    assert_eq!(result["target_currency"], "USD");
+    assert_eq!(result["total_value"].as_f64().unwrap(), 3000.0);
+}
+
+#[test]
 fn test_parse_target_currency_defaults_to_usd() {
     assert_eq!(parse_target_currency(&json!({})), "USD");
     assert_eq!(
@@ -129,6 +209,18 @@ fn test_compute_net_worth_snapshot_with_quotes() {
     let assets = tool_get_assets(&db_path, &json!({})).unwrap();
     let asset_id = assets[0]["id"].as_i64().unwrap() as i32;
     create_valuation_db(&db_path, asset_id, "2024-01-01".to_string(), 300000.0).unwrap();
+    create_liability_db(
+        &db_path,
+        "Mortgage".to_string(),
+        "mortgage".to_string(),
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
+    let liabilities = tool_get_liabilities(&db_path, &json!({})).unwrap();
+    let liability_id = liabilities[0]["id"].as_i64().unwrap() as i32;
+    create_liability_valuation_db(&db_path, liability_id, "2024-01-01".to_string(), 50000.0)
+        .unwrap();
 
     let quotes = vec![YahooQuote {
         symbol: "AAPL".to_string(),
@@ -142,10 +234,14 @@ fn test_compute_net_worth_snapshot_with_quotes() {
 
     assert_eq!(snapshot["target_currency"], "USD");
     assert_eq!(snapshot["tracked_assets_total"].as_f64().unwrap(), 300000.0);
+    assert_eq!(
+        snapshot["tracked_liabilities_total"].as_f64().unwrap(),
+        50000.0
+    );
     // Account balance 1000 + 10 shares * $200 market value = 3000
     let accounts_total = snapshot["accounts_and_investments_total"].as_f64().unwrap();
     assert!((accounts_total - 3000.0).abs() < 0.01);
-    assert!((snapshot["total_net_worth"].as_f64().unwrap() - 303000.0).abs() < 0.01);
+    assert!((snapshot["total_net_worth"].as_f64().unwrap() - 253000.0).abs() < 0.01);
 }
 
 #[test]

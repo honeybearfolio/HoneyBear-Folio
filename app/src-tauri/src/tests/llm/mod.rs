@@ -1,4 +1,5 @@
 use crate::core::assets::create_asset_db;
+use crate::core::liabilities::create_liability_db;
 use crate::core::llm::{
     create_conversation_db, delete_all_conversations_db, delete_conversation_db,
     get_conversation_messages_db, get_conversations_db, rename_conversation_db,
@@ -82,11 +83,21 @@ fn test_build_system_prompt_includes_accounts_and_assets() {
         None,
     )
     .unwrap();
+    create_liability_db(
+        &db_path,
+        "Mortgage".to_string(),
+        "mortgage".to_string(),
+        Some("USD".to_string()),
+        None,
+    )
+    .unwrap();
 
     let prompt = crate::core::llm::build_system_prompt_for_test(&db_path);
     assert!(prompt.contains("Checking"));
     assert!(prompt.contains("House"));
     assert!(prompt.contains("real_estate"));
+    assert!(prompt.contains("Mortgage"));
+    assert!(prompt.contains("mortgage"));
 }
 
 #[test]
@@ -105,6 +116,7 @@ fn test_build_tool_definitions_has_core_tools() {
     assert!(names.contains(&"get_accounts".to_string()));
     assert!(names.contains(&"get_net_worth".to_string()));
     assert!(names.contains(&"get_assets".to_string()));
+    assert!(names.contains(&"get_liabilities".to_string()));
 }
 
 #[test]

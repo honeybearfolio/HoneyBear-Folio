@@ -10,9 +10,14 @@ export async function computeNetWorth(
   accounts?: NetWorthAccount[] | null,
   marketValues: MarketValueMap = {},
   totalAssetsValue = 0,
+  totalLiabilitiesValue = 0,
 ): Promise<number> {
   if (!Array.isArray(accounts)) {
-    return Number.isFinite(totalAssetsValue) ? totalAssetsValue : 0;
+    const assets = Number.isFinite(totalAssetsValue) ? totalAssetsValue : 0;
+    const liabilities = Number.isFinite(totalLiabilitiesValue)
+      ? totalLiabilitiesValue
+      : 0;
+    return assets - liabilities;
   }
 
   const normalizedMarketValues = Object.fromEntries(
@@ -23,5 +28,8 @@ export async function computeNetWorth(
     accounts: accounts as Account[],
     marketValues: normalizedMarketValues,
     ...(Number.isFinite(totalAssetsValue) ? { totalAssetsValue } : {}),
+    ...(Number.isFinite(totalLiabilitiesValue)
+      ? { totalLiabilitiesValue }
+      : {}),
   });
 }

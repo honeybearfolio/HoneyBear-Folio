@@ -51,11 +51,13 @@ export function useImportRunner({
       setImportErrors([]);
 
       try {
-        const { rows, assets, accounts } = await parseFileForImport(file);
+        const { rows, assets, liabilities, accounts } =
+          await parseFileForImport(file);
         const result = await importTransactionsFromRows(
           rows,
           mapping,
           assets,
+          liabilities,
           accounts,
           {
             parseNumber,
@@ -67,7 +69,11 @@ export function useImportRunner({
         setImportErrors(result.importErrors);
 
         const { successCount, failCount } = result;
-        const { accountImportSummary, assetImportSummary } = result;
+        const {
+          accountImportSummary,
+          assetImportSummary,
+          liabilityImportSummary,
+        } = result;
 
         const accountMsg =
           accountImportSummary.imported > 0
@@ -77,24 +83,30 @@ export function useImportRunner({
           assetImportSummary.imported > 0
             ? `, ${String(assetImportSummary.imported)} assets imported`
             : "";
+        const liabilityMsg =
+          liabilityImportSummary.imported > 0
+            ? `, ${String(liabilityImportSummary.imported)} liabilities imported`
+            : "";
         const hasErrors =
           failCount > 0 ||
           assetImportSummary.errors.length > 0 ||
+          liabilityImportSummary.errors.length > 0 ||
           accountImportSummary.errors.length > 0;
 
         if (hasErrors) {
           showToast(
-            `Import completed: ${accountMsg}${String(successCount)} transactions succeeded, ${String(failCount)} failed${assetMsg}`,
+            `Import completed: ${accountMsg}${String(successCount)} transactions succeeded, ${String(failCount)} failed${assetMsg}${liabilityMsg}`,
             { type: "error" },
           );
           logError("Import completed with row errors", {
             importErrors: result.importErrors,
             assetErrors: assetImportSummary.errors,
+            liabilityErrors: liabilityImportSummary.errors,
             accountErrors: accountImportSummary.errors,
           });
         } else {
           showToast(
-            `${accountMsg}${String(successCount)} transactions imported${assetMsg}`,
+            `${accountMsg}${String(successCount)} transactions imported${assetMsg}${liabilityMsg}`,
             { type: "success" },
           );
         }

@@ -15,6 +15,13 @@ import {
   parseAssetFromRow,
   type ExportAsset,
 } from "./assets-io";
+import {
+  extractLiabilitiesFromHoneyBearJson,
+  isLiabilityRow,
+  isLiabilitySheetName,
+  parseLiabilityFromRow,
+  type ExportLiability,
+} from "./liabilities-io";
 import { rowsFromSheetData } from "./spreadsheet-io";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -70,6 +77,7 @@ export interface ImportParsePreview {
 export interface ImportParseResult {
   rows: Record<string, unknown>[];
   assets: ExportAsset[];
+  liabilities: ExportLiability[];
   accounts: ExportAccount[];
 }
 
@@ -165,11 +173,12 @@ export function parseJsonForImport(text: string): ImportParseResult {
     return {
       rows: getJsonRows(parsed),
       assets: extractAssetsFromHoneyBearJson(parsed),
+      liabilities: extractLiabilitiesFromHoneyBearJson(parsed),
       accounts: extractAccountsFromHoneyBearJson(parsed),
     };
   } catch (e) {
     logError("Failed to parse JSON import file", e);
-    return { rows: [], assets: [], accounts: [] };
+    return { rows: [], assets: [], liabilities: [], accounts: [] };
   }
 }
 
@@ -208,10 +217,24 @@ export async function parseXlsxForImport(
             .filter((asset): asset is ExportAsset => asset !== null)
         : [];
 
-    return { rows, assets, accounts };
+    const liabilitySheet = sheets.find(
+      (sheet) =>
+        isLiabilitySheetName(sheet.name) ||
+        isLiabilityRow(sheet.data[0]?.map((h) => asText(h)) ?? []),
+    );
+    const liabilities =
+      liabilitySheet && liabilitySheet.data.length > 0
+        ? rowsFromSheetData(liabilitySheet.data)
+            .map(parseLiabilityFromRow)
+            .filter(
+              (liability): liability is ExportLiability => liability !== null,
+            )
+        : [];
+
+    return { rows, assets, liabilities, accounts };
   } catch (err) {
     logError("Failed to parse XLSX during import", err);
-    return { rows: [], assets: [], accounts: [] };
+    return { rows: [], assets: [], liabilities: [], accounts: [] };
   }
 }
 
@@ -270,7 +293,7 @@ export async function parseFileForImport(
   if (file.name.endsWith(".csv")) {
     const text = await readFileAsText(file);
     const { rows } = parseCsvText(text);
-    return { rows, assets: [], accounts: [] };
+    return { rows, assets: [], liabilities: [], accounts: [] };
   }
 
   if (file.name.endsWith(".json")) {
@@ -283,5 +306,5 @@ export async function parseFileForImport(
     return parseXlsxForImport(buffer);
   }
 
-  return { rows: [], assets: [], accounts: [] };
+  return { rows: [], assets: [], liabilities: [], accounts: [] };
 }

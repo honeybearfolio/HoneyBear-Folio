@@ -36,6 +36,9 @@ const TOOL_DISPLAY_NAMES: Record<string, string> = {
   get_assets: "assets",
   get_asset_valuations: "asset valuations",
   get_total_assets_value: "total assets value",
+  get_liabilities: "liabilities",
+  get_liability_valuations: "liability valuations",
+  get_total_liabilities_value: "total liabilities value",
   get_portfolio_holdings: "portfolio holdings",
   get_net_worth: "net worth",
 };

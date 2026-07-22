@@ -14,6 +14,7 @@ import ChatView from "./features/chat/ChatView";
 import SettingsView from "./features/settings/SettingsView";
 import SessionPicker from "./features/session/SessionPicker";
 import AssetTracker from "./features/assets/AssetTracker";
+import LiabilityTracker from "./features/liabilities/LiabilityTracker";
 import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
 import { ToastContainer } from "./components/ui/Toast";
@@ -145,6 +146,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [marketValues, setMarketValues] = useState<Record<string, number>>({});
   const [totalAssetsValue, setTotalAssetsValue] = useState(0);
+  const [totalLiabilitiesValue, setTotalLiabilitiesValue] = useState(0);
   const [totalBalance, setTotalBalance] = useState(0);
   const lastMarketFetchRef = useRef<number>(0);
   const MARKET_FETCH_COOLDOWN_MS = 60_000;
@@ -295,21 +297,32 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       } catch {
         // Non-critical: if assets fail to load, net worth just excludes them
       }
+      try {
+        const val = await rust.get_total_liabilities_value({
+          targetCurrency: currency,
+        });
+        setTotalLiabilitiesValue(val);
+      } catch {
+        // Non-critical: if liabilities fail to load, net worth just excludes them
+      }
     };
     void loadData();
   }, [refreshTrigger, fetchAccounts, fetchMarketValues, currency]);
 
   useEffect(() => {
     let cancelled = false;
-    void computeNetWorth(accounts, marketValues, totalAssetsValue).then(
-      (value) => {
-        if (!cancelled) setTotalBalance(value);
-      },
-    );
+    void computeNetWorth(
+      accounts,
+      marketValues,
+      totalAssetsValue,
+      totalLiabilitiesValue,
+    ).then((value) => {
+      if (!cancelled) setTotalBalance(value);
+    });
     return () => {
       cancelled = true;
     };
-  }, [accounts, marketValues, totalAssetsValue]);
+  }, [accounts, marketValues, totalAssetsValue, totalLiabilitiesValue]);
 
   // Clear saved FIRE calculator state at app startup so user inputs reset after the
   // app is closed and re-opened. We keep session persistence during the running
@@ -475,6 +488,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
                 accounts={accounts}
                 marketValues={marketValues}
                 totalAssetsValue={totalAssetsValue}
+                totalLiabilitiesValue={totalLiabilitiesValue}
               />
             ) : selectedAccountId === "investment-dashboard" ? (
               <InvestmentDashboard />
@@ -488,6 +502,8 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
               <ChatView />
             ) : selectedAccountId === "asset-tracker" ? (
               <AssetTracker onUpdate={handleAccountUpdate} />
+            ) : selectedAccountId === "liability-tracker" ? (
+              <LiabilityTracker onUpdate={handleAccountUpdate} />
             ) : accountForDetails ? (
               <AccountDetails
                 key={accountForDetails.id}

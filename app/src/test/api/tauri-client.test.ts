@@ -520,6 +520,71 @@ describe("tauri-client", () => {
       expect(invoke).toHaveBeenCalledWith("get_total_assets_value", {
         targetCurrency: "USD",
       });
+
+      await rust.create_liability({
+        name: "Mortgage",
+        category: "mortgage",
+      });
+      expect(invoke).toHaveBeenCalledWith("create_liability", {
+        name: "Mortgage",
+        category: "mortgage",
+      });
+
+      await rust.get_liabilities({ targetCurrency: "USD" });
+      expect(invoke).toHaveBeenCalledWith("get_liabilities", {
+        targetCurrency: "USD",
+      });
+
+      await rust.update_liability({
+        id: 1,
+        name: "Home Loan",
+        category: "mortgage",
+      });
+      expect(invoke).toHaveBeenCalledWith("update_liability", {
+        id: 1,
+        name: "Home Loan",
+        category: "mortgage",
+      });
+
+      await rust.delete_liability({ id: 1 });
+      expect(invoke).toHaveBeenCalledWith("delete_liability", { id: 1 });
+
+      await rust.create_liability_valuation({
+        liabilityId: 1,
+        date: "2024-01-01",
+        value: 100,
+      });
+      expect(invoke).toHaveBeenCalledWith("create_liability_valuation", {
+        liabilityId: 1,
+        date: "2024-01-01",
+        value: 100,
+      });
+
+      await rust.get_liability_valuations({ liabilityId: 1 });
+      expect(invoke).toHaveBeenCalledWith("get_liability_valuations", {
+        liabilityId: 1,
+      });
+
+      await rust.update_liability_valuation({
+        id: 1,
+        date: "2024-06-01",
+        value: 120,
+      });
+      expect(invoke).toHaveBeenCalledWith("update_liability_valuation", {
+        id: 1,
+        date: "2024-06-01",
+        value: 120,
+      });
+
+      await rust.delete_liability_valuation({ id: 1 });
+      expect(invoke).toHaveBeenCalledWith("delete_liability_valuation", {
+        id: 1,
+      });
+
+      await rust.get_total_liabilities_value({ targetCurrency: "USD" });
+      expect(invoke).toHaveBeenCalledWith("get_total_liabilities_value", {
+        targetCurrency: "USD",
+      });
     });
   });
 });
