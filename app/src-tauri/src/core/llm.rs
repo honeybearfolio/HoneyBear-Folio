@@ -545,6 +545,57 @@ pub(crate) fn build_tool_definitions() -> Vec<Value> {
         json!({
             "type": "function",
             "function": {
+                "name": "get_liabilities",
+                "description": "List tracked liabilities (mortgages, loans, credit cards) with their latest balance. Categories: mortgage, auto_loan, credit_card, student_loan, personal_loan, other. Returns id, name, category, currency, notes, latest_value, latest_date.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_currency": {
+                            "type": "string",
+                            "description": "Currency for converted values (default USD)"
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
+                "name": "get_liability_valuations",
+                "description": "Get the full balance history for a tracked liability. Returns dated value records.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "liability_id": {
+                            "type": "integer",
+                            "description": "The liability ID"
+                        }
+                    },
+                    "required": ["liability_id"]
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
+                "name": "get_total_liabilities_value",
+                "description": "Get the total balance of all tracked liabilities (sum of latest valuations per liability).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_currency": {
+                            "type": "string",
+                            "description": "Currency for the total (default USD)"
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
                 "name": "get_portfolio_holdings",
                 "description": "Get investment holdings aggregated from transactions, with current prices, values, and ROI. Uses live stock quotes when available; falls back to cached prices.",
                 "parameters": {
@@ -563,7 +614,7 @@ pub(crate) fn build_tool_definitions() -> Vec<Value> {
             "type": "function",
             "function": {
                 "name": "get_net_worth",
-                "description": "Get a net worth snapshot: per-account balances and investment market values, plus tracked physical assets total. Uses live stock quotes when available; falls back to cached prices.",
+                "description": "Get a net worth snapshot: per-account balances and investment market values, plus tracked physical assets total, minus tracked liabilities. Uses live stock quotes when available; falls back to cached prices.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -593,7 +644,7 @@ pub(crate) fn build_system_prompt(db_path: &PathBuf) -> String {
         "You can only read data — you cannot modify accounts, transactions, or settings.".to_string(),
         "When presenting monetary amounts, format them nicely and include the currency.".to_string(),
         "If the user asks about something you cannot determine from the available tools, let them know.".to_string(),
-        "Use get_net_worth for total wealth; use get_assets / get_asset_valuations for physical assets; use get_portfolio_holdings for investments.".to_string(),
+        "Use get_net_worth for total wealth; use get_assets / get_asset_valuations for physical assets; use get_liabilities / get_liability_valuations for debts; use get_portfolio_holdings for investments.".to_string(),
     ];
 
     // Add account context so the LLM knows what accounts exist
@@ -640,6 +691,33 @@ pub(crate) fn build_system_prompt(db_path: &PathBuf) -> String {
             context_parts.push(format!(
                 "\nThe user has the following tracked assets:\n{}",
                 asset_list.join("\n")
+            ));
+        }
+    }
+
+    if let Ok(liabilities) = crate::liabilities::get_liabilities_db(db_path, None) {
+        if !liabilities.is_empty() {
+            let liability_list: Vec<String> = liabilities
+                .iter()
+                .map(|l| {
+                    let value_str = l
+                        .latest_value
+                        .map_or_else(|| "no valuation".to_string(), |v| format!("{v:.2}"));
+                    let date_str = l.latest_date.as_deref().unwrap_or("unknown");
+                    format!(
+                        "- {} (ID: {}, category: {}, latest balance: {} {}, as of {})",
+                        l.name,
+                        l.id,
+                        l.category,
+                        value_str,
+                        l.currency.as_deref().unwrap_or("USD"),
+                        date_str
+                    )
+                })
+                .collect();
+            context_parts.push(format!(
+                "\nThe user has the following tracked liabilities:\n{}",
+                liability_list.join("\n")
             ));
         }
     }

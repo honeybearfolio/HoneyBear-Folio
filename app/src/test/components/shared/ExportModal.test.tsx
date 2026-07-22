@@ -143,6 +143,12 @@ describe("ExportModal", () => {
           { id: 2, asset_id: 1, date: "2024-06-01", value: 350000 },
         ]);
       }
+      if (cmd === "get_liabilities") {
+        return Promise.resolve([]);
+      }
+      if (cmd === "get_liability_valuations") {
+        return Promise.resolve([]);
+      }
       if (cmd === "compute_report_data") {
         return Promise.resolve({
           date_range_start: "2024-01-01",

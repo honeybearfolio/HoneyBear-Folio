@@ -3,6 +3,7 @@ pub mod assets;
 pub mod calculations;
 pub mod db_init;
 pub mod io;
+pub mod liabilities;
 pub mod llm;
 pub mod llm_chat;
 pub mod llm_tools;

@@ -118,6 +118,8 @@ describe("ExportModal extended", () => {
         ]);
       }
       if (cmd === "get_assets") return Promise.resolve([]);
+      if (cmd === "get_liabilities") return Promise.resolve([]);
+      if (cmd === "get_liability_valuations") return Promise.resolve([]);
       if (cmd === "compute_report_data") {
         return Promise.resolve({
           date_range_start: "2024-01-01",

@@ -15,8 +15,8 @@
 
 mod core;
 pub use crate::core::{
-    accounts, assets, calculations, db_init, io, llm, llm_chat, markets, models, pdf, rules,
-    scheduled, session, transactions, utils,
+    accounts, assets, calculations, db_init, io, liabilities, llm, llm_chat, markets, models, pdf,
+    rules, scheduled, session, transactions, utils,
 };
 
 pub use crate::models::{
@@ -71,6 +71,13 @@ pub use crate::scheduled::{
 pub use crate::assets::{
     create_asset_db, create_valuation_db, delete_asset_db, delete_valuation_db, get_assets_db,
     get_total_assets_value_db, get_valuations_db, update_asset_db, update_valuation_db,
+};
+
+// Re-export liabilities helpers used by tests
+pub use crate::liabilities::{
+    create_liability_db, create_liability_valuation_db, delete_liability_db,
+    delete_liability_valuation_db, get_liabilities_db, get_liability_valuations_db,
+    get_total_liabilities_value_db, update_liability_db, update_liability_valuation_db,
 };
 
 // Re-export markets helpers used by tests
@@ -215,6 +222,15 @@ pub fn run() {
             assets::update_valuation,
             assets::delete_valuation,
             assets::get_total_assets_value,
+            liabilities::create_liability,
+            liabilities::get_liabilities,
+            liabilities::update_liability,
+            liabilities::delete_liability,
+            liabilities::create_liability_valuation,
+            liabilities::get_liability_valuations,
+            liabilities::update_liability_valuation,
+            liabilities::delete_liability_valuation,
+            liabilities::get_total_liabilities_value,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

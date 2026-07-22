@@ -41,6 +41,7 @@ export function useSpreadsheetExport({
           fee: t("import.field.fee"),
           currency: t("import.field.currency"),
           assetsTitle: t("assets.title"),
+          liabilitiesTitle: t("liabilities.title"),
           csvFormat: t("export.format.csv"),
           xlsxFormat: t("export.format.xlsx"),
           pdfFormat: t("export.format.pdf"),

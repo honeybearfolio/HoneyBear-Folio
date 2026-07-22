@@ -22,6 +22,7 @@ describe("networth utils wrapper", () => {
       accounts,
       marketValues: { 1: 50 },
       totalAssetsValue: 0,
+      totalLiabilitiesValue: 0,
     });
     expect(result).toBe(350.5);
   });
@@ -35,7 +36,27 @@ describe("networth utils wrapper", () => {
       accounts: [{ id: 1, balance: 100 }],
       marketValues: {},
       totalAssetsValue: 5000,
+      totalLiabilitiesValue: 0,
     });
+  });
+
+  it("passes totalLiabilitiesValue when finite", async () => {
+    vi.mocked(invoke).mockResolvedValue(4000);
+
+    await computeNetWorth([{ id: 1, balance: 100 }], {}, 5000, 2000);
+
+    expect(invoke).toHaveBeenCalledWith("compute_net_worth", {
+      accounts: [{ id: 1, balance: 100 }],
+      marketValues: {},
+      totalAssetsValue: 5000,
+      totalLiabilitiesValue: 2000,
+    });
+  });
+
+  it("returns totalAssetsValue minus liabilities for invalid accounts without calling Rust", async () => {
+    const result = await computeNetWorth(undefined, {}, 500, 200);
+    expect(invoke).not.toHaveBeenCalled();
+    expect(result).toBe(300);
   });
 
   it("returns totalAssetsValue for invalid accounts without calling Rust", async () => {

@@ -51,6 +51,7 @@ vi.mock("lucide-react", () => ({
   Bot: () => <span>Bot</span>,
   RefreshCw: () => <span>RefreshCw</span>,
   Gem: () => <span>Gem</span>,
+  Scale: () => <span>Scale</span>,
 }));
 
 vi.mock("../../../features/accounts/AccountModal", () => ({
@@ -133,6 +134,9 @@ describe("Sidebar coverage", () => {
 
     clickNav("Assets");
     expect(mockOnSelectAccount).toHaveBeenCalledWith("asset-tracker");
+
+    clickNav("Liabilities");
+    expect(mockOnSelectAccount).toHaveBeenCalledWith("liability-tracker");
 
     clickNav("FIRE Calculator");
     expect(mockOnSelectAccount).toHaveBeenCalledWith("fire-calculator");

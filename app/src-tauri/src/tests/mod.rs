@@ -25,6 +25,8 @@ pub mod db_init;
 
 pub mod assets;
 
+pub mod liabilities;
+
 pub mod llm_tools;
 
 pub mod io;

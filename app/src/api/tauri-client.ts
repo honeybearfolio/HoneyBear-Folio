@@ -4,6 +4,9 @@ import type {
   Asset,
   AssetValuation,
   AssetWithLatestValue,
+  Liability,
+  LiabilityValuation,
+  LiabilityWithLatestValue,
   ChatMessage,
   Conversation,
   DailyPrice,
@@ -92,6 +95,7 @@ export const rust = {
     accounts: Account[];
     marketValues: Record<string, number | string>;
     totalAssetsValue?: number;
+    totalLiabilitiesValue?: number;
   }): Promise<number> => callRust("compute_net_worth", args),
 
   build_holdings_from_transactions: (args: {
@@ -405,4 +409,55 @@ export const rust = {
   get_total_assets_value: (args?: {
     targetCurrency?: string;
   }): Promise<number> => callRust("get_total_assets_value", args),
+
+  // ---------------------------------------------------------------------------
+  // Liabilities
+  // ---------------------------------------------------------------------------
+
+  create_liability: (args: {
+    name: string;
+    category: string;
+    currency?: string;
+    notes?: string;
+  }): Promise<Liability> => callRust("create_liability", args),
+
+  get_liabilities: (args?: {
+    targetCurrency?: string;
+  }): Promise<LiabilityWithLatestValue[]> => callRust("get_liabilities", args),
+
+  update_liability: (args: {
+    id: number;
+    name: string;
+    category: string;
+    currency?: string;
+    notes?: string;
+  }): Promise<void> => callRust("update_liability", args),
+
+  delete_liability: (args: { id: number }): Promise<void> =>
+    callRust("delete_liability", args),
+
+  create_liability_valuation: (args: {
+    liabilityId: number;
+    date: string;
+    value: number;
+  }): Promise<LiabilityValuation> =>
+    callRust("create_liability_valuation", args),
+
+  get_liability_valuations: (args: {
+    liabilityId: number;
+  }): Promise<LiabilityValuation[]> =>
+    callRust("get_liability_valuations", args),
+
+  update_liability_valuation: (args: {
+    id: number;
+    date: string;
+    value: number;
+  }): Promise<void> => callRust("update_liability_valuation", args),
+
+  delete_liability_valuation: (args: { id: number }): Promise<void> =>
+    callRust("delete_liability_valuation", args),
+
+  get_total_liabilities_value: (args?: {
+    targetCurrency?: string;
+  }): Promise<number> => callRust("get_total_liabilities_value", args),
 };

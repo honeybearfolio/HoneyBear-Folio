@@ -165,6 +165,7 @@ describe("SettingsView", () => {
         all: true,
         chat: true,
         assets: true,
+        liabilities: true,
       });
       expect(invoke).toHaveBeenCalledWith("reset_db_path");
     });
@@ -198,6 +199,7 @@ describe("SettingsView", () => {
       all: true,
       chat: true,
       assets: true,
+      liabilities: true,
     };
     render(
       <SettingsView

@@ -20,6 +20,8 @@ fn test_init_db_at_path_creates_all_tables() {
         "chat_messages",
         "assets",
         "asset_valuations",
+        "liabilities",
+        "liability_valuations",
         "custom_exchange_rates",
         "stock_prices",
         "daily_stock_prices",

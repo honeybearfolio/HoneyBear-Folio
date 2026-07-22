@@ -41,7 +41,7 @@ fn compute_net_worth_applies_market_values() {
     let mut mv = HashMap::<String, Value>::new();
     mv.insert("1".into(), json!(250.0));
 
-    let result = compute_net_worth_logic(&accounts, &mv, None);
+    let result = compute_net_worth_logic(&accounts, &mv, None, None);
     assert_eq!(result, 1250.0);
 }
 
@@ -50,8 +50,17 @@ fn compute_net_worth_includes_total_assets_value() {
     let accounts = vec![base_account()];
     let mv = HashMap::<String, Value>::new();
 
-    let result = compute_net_worth_logic(&accounts, &mv, Some(5000.0));
+    let result = compute_net_worth_logic(&accounts, &mv, Some(5000.0), None);
     assert_eq!(result, 6000.0);
+}
+
+#[test]
+fn compute_net_worth_subtracts_total_liabilities_value() {
+    let accounts = vec![base_account()];
+    let mv = HashMap::<String, Value>::new();
+
+    let result = compute_net_worth_logic(&accounts, &mv, Some(5000.0), Some(2000.0));
+    assert_eq!(result, 4000.0);
 }
 
 #[test]
@@ -59,7 +68,16 @@ fn compute_net_worth_ignores_non_finite_total_assets_value() {
     let accounts = vec![base_account()];
     let mv = HashMap::<String, Value>::new();
 
-    let result = compute_net_worth_logic(&accounts, &mv, Some(f64::NAN));
+    let result = compute_net_worth_logic(&accounts, &mv, Some(f64::NAN), None);
+    assert_eq!(result, 1000.0);
+}
+
+#[test]
+fn compute_net_worth_ignores_non_finite_total_liabilities_value() {
+    let accounts = vec![base_account()];
+    let mv = HashMap::<String, Value>::new();
+
+    let result = compute_net_worth_logic(&accounts, &mv, None, Some(f64::NAN));
     assert_eq!(result, 1000.0);
 }
 

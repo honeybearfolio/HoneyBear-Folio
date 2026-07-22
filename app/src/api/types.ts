@@ -266,6 +266,36 @@ export interface AssetWithLatestValue {
 }
 
 // ---------------------------------------------------------------------------
+// Liabilities
+// ---------------------------------------------------------------------------
+
+export interface Liability {
+  id: number;
+  name: string;
+  category: string;
+  currency?: string;
+  notes?: string;
+}
+
+export interface LiabilityValuation {
+  id: number;
+  liability_id: number;
+  date: string;
+  value: number;
+}
+
+export interface LiabilityWithLatestValue {
+  id: number;
+  name: string;
+  category: string;
+  currency?: string;
+  notes?: string;
+  latest_value?: number;
+  latest_date?: string;
+  exchange_rate: number;
+}
+
+// ---------------------------------------------------------------------------
 // Rust-side compute helpers (serde camelCase)
 // ---------------------------------------------------------------------------
 

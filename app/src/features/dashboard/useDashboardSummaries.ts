@@ -15,6 +15,7 @@ interface UseDashboardSummariesArgs {
   filteredTransactions: Transaction[];
   filteredMarketValues: Record<string, number>;
   totalAssetsValue: number;
+  totalLiabilitiesValue: number;
   quotes: Quote[];
   dailyPrices: Record<string, DailyPriceData>;
   isDark: boolean;
@@ -27,6 +28,7 @@ export function useDashboardSummaries({
   filteredTransactions,
   filteredMarketValues,
   totalAssetsValue,
+  totalLiabilitiesValue,
   quotes,
   dailyPrices,
   isDark,
@@ -40,7 +42,12 @@ export function useDashboardSummaries({
 
   useEffect(() => {
     let cancelled = false;
-    computeNetWorth(filteredAccounts, filteredMarketValues, totalAssetsValue)
+    computeNetWorth(
+      filteredAccounts,
+      filteredMarketValues,
+      totalAssetsValue,
+      totalLiabilitiesValue,
+    )
       .then((value) => {
         if (!cancelled) setCurrentNetWorth(value);
       })
@@ -50,7 +57,12 @@ export function useDashboardSummaries({
     return () => {
       cancelled = true;
     };
-  }, [filteredAccounts, filteredMarketValues, totalAssetsValue]);
+  }, [
+    filteredAccounts,
+    filteredMarketValues,
+    totalAssetsValue,
+    totalLiabilitiesValue,
+  ]);
 
   useEffect(() => {
     let cancelled = false;

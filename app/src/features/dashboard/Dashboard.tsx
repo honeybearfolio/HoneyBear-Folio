@@ -28,6 +28,7 @@ export default function Dashboard({
   accounts: propAccounts = [],
   marketValues = {},
   totalAssetsValue = 0,
+  totalLiabilitiesValue = 0,
 }: DashboardProps) {
   const { t } = useTranslation();
   const isDark = useIsDark();
@@ -79,6 +80,7 @@ export default function Dashboard({
     filteredTransactions,
     filteredMarketValues,
     totalAssetsValue,
+    totalLiabilitiesValue,
     quotes,
     dailyPrices,
     isDark,
