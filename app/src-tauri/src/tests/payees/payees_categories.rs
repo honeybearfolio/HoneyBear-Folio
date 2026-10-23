@@ -77,8 +77,8 @@ fn test_get_payees_and_categories_empty() {
     let (_dir, db_path) = setup_db();
     let payees = crate::get_payees_db(&db_path).unwrap();
     let cats = crate::get_categories_db(&db_path).unwrap();
-    assert!(payees.is_empty());
-    assert!(cats.is_empty());
+    assert_eq!(payees, Vec::<String>::new());
+    assert_eq!(cats, Vec::<String>::new());
 }
 
 #[test]

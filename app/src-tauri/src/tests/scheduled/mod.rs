@@ -145,5 +145,5 @@ fn test_unknown_recurrence_type_returns_empty() {
     schedule.recurrence_type = "unsupported".to_string();
     let from = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
     let to = NaiveDate::from_ymd_opt(2023, 1, 31).unwrap();
-    assert!(compute_occurrences(&schedule, from, to).is_empty());
+    assert_eq!(compute_occurrences(&schedule, from, to), Vec::new());
 }

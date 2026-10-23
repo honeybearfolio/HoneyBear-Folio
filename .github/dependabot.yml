@@ -21,6 +21,10 @@ updates:
     labels:
       - "dependencies"
       - "automerge"
+    # TypeScript 7 has no compiler API yet, so typescript-eslint cannot lint it.
+    ignore:
+      - dependency-name: "typescript"
+        versions: ["7.x"]
     groups:
       npm-all-updates:
         patterns:

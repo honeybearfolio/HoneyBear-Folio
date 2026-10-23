@@ -118,7 +118,7 @@ fn test_get_custom_rates_map_empty_db() {
     let db_path = dir.path().join("empty.db");
     crate::init_db_at_path(&db_path).unwrap();
     let map = get_custom_rates_map(&db_path).unwrap();
-    assert!(map.is_empty());
+    assert_eq!(map, HashMap::new());
 }
 
 #[test]

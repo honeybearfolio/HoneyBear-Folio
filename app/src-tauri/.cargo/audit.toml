@@ -1,0 +1,8 @@
+[advisories]
+# zip 9.0.0 fixes these, but current dependents cap the crate below that:
+# tauri-plugin-updater requires zip ^4, and calamine / rust_xlsxwriter require zip ^8.
+ignore = [
+    "RUSTSEC-2026-0367",
+    "RUSTSEC-2026-0368",
+    "RUSTSEC-2026-0369",
+]

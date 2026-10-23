@@ -77,7 +77,10 @@ async fn test_execute_tool_get_portfolio_and_assets() {
     let assets = execute_tool(&client, &db_path, "get_assets", &json!({}))
         .await
         .unwrap();
-    assert!(assets.as_array().unwrap().is_empty());
+    assert_eq!(
+        assets.as_array().unwrap().as_slice(),
+        &[] as &[serde_json::Value]
+    );
 
     let total = execute_tool(&client, &db_path, "get_total_assets_value", &json!({}))
         .await
@@ -87,7 +90,10 @@ async fn test_execute_tool_get_portfolio_and_assets() {
     let liabilities = execute_tool(&client, &db_path, "get_liabilities", &json!({}))
         .await
         .unwrap();
-    assert!(liabilities.as_array().unwrap().is_empty());
+    assert_eq!(
+        liabilities.as_array().unwrap().as_slice(),
+        &[] as &[serde_json::Value]
+    );
 
     let liabilities_total =
         execute_tool(&client, &db_path, "get_total_liabilities_value", &json!({}))
@@ -98,5 +104,8 @@ async fn test_execute_tool_get_portfolio_and_assets() {
     let holdings = execute_tool(&client, &db_path, "get_portfolio_holdings", &json!({}))
         .await
         .unwrap();
-    assert!(holdings["holdings"].as_array().unwrap().is_empty());
+    assert_eq!(
+        holdings["holdings"].as_array().unwrap().as_slice(),
+        &[] as &[serde_json::Value]
+    );
 }
