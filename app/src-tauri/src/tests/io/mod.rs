@@ -24,7 +24,7 @@ fn test_write_and_read_xlsx_roundtrip() {
 
     assert_eq!(result.sheets.len(), 1);
     assert_eq!(result.sheets[0].name, "Accounts");
-    assert!(!result.data.is_empty());
+    assert_ne!(result.data, Vec::<Vec<serde_json::Value>>::new());
     let header: Vec<_> = result.data[0]
         .iter()
         .filter_map(|v| v.as_str().map(str::to_string))
@@ -79,7 +79,7 @@ fn test_write_xlsx_empty_sheet_data() {
     let bytes = std::fs::read(&file_path).unwrap();
     let result = read_xlsx(bytes).unwrap();
     assert_eq!(result.sheets.len(), 1);
-    assert!(result.sheets[0].data.is_empty());
+    assert_eq!(result.sheets[0].data, Vec::<Vec<serde_json::Value>>::new());
 }
 
 #[test]
@@ -101,7 +101,7 @@ fn test_write_xlsx_rejects_non_object_rows() {
 fn test_read_xlsx_rejects_empty_workbook() {
     // Minimal valid xlsx with no sheets is hard to construct; use corrupt bytes instead.
     let err = read_xlsx(vec![0, 1, 2, 3]).unwrap_err();
-    assert!(!err.is_empty());
+    assert_ne!(err, "");
 }
 
 #[test]

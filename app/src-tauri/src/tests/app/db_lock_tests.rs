@@ -42,7 +42,7 @@ fn test_with_db_lock_serializes_concurrent_access() {
             gate.wait();
             crate::db_init::with_db_lock(&db_path, || {
                 let now = active.fetch_add(1, Ordering::SeqCst) + 1;
-                let _ = peak.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |current| {
+                let _ = peak.try_update(Ordering::SeqCst, Ordering::SeqCst, |current| {
                     (now > current).then_some(now)
                 });
                 std::thread::sleep(Duration::from_millis(20));
@@ -78,7 +78,7 @@ fn test_with_db_lock_uses_separate_mutexes_per_db_path() {
             gate.wait();
             crate::db_init::with_db_lock(&db_path, || {
                 let now = active.fetch_add(1, Ordering::SeqCst) + 1;
-                let _ = peak.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |current| {
+                let _ = peak.try_update(Ordering::SeqCst, Ordering::SeqCst, |current| {
                     (now > current).then_some(now)
                 });
                 std::thread::sleep(Duration::from_millis(30));

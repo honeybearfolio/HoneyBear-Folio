@@ -103,7 +103,7 @@ fn test_build_system_prompt_includes_accounts_and_assets() {
 #[test]
 fn test_build_tool_definitions_has_core_tools() {
     let tools = crate::core::llm::build_tool_definitions_for_test();
-    assert!(!tools.is_empty());
+    assert_ne!(tools, Vec::<serde_json::Value>::new());
     let names: Vec<String> = tools
         .iter()
         .filter_map(|t| {

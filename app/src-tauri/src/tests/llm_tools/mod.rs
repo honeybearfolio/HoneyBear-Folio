@@ -14,7 +14,10 @@ use serde_json::json;
 fn test_tool_get_assets_empty() {
     let (_dir, db_path) = setup_db();
     let result = tool_get_assets(&db_path, &json!({})).unwrap();
-    assert!(result.as_array().unwrap().is_empty());
+    assert_eq!(
+        result.as_array().unwrap().as_slice(),
+        &[] as &[serde_json::Value]
+    );
 }
 
 #[test]
@@ -88,7 +91,10 @@ fn test_tool_get_total_assets_value() {
 fn test_tool_get_liabilities_empty() {
     let (_dir, db_path) = setup_db();
     let result = tool_get_liabilities(&db_path, &json!({})).unwrap();
-    assert!(result.as_array().unwrap().is_empty());
+    assert_eq!(
+        result.as_array().unwrap().as_slice(),
+        &[] as &[serde_json::Value]
+    );
 }
 
 #[test]
@@ -372,7 +378,10 @@ async fn test_execute_tool_get_rules_and_scheduled() {
     let rules = crate::core::llm_tools::execute_tool(&client, &db_path, "get_rules", &json!({}))
         .await
         .unwrap();
-    assert!(rules.as_array().unwrap().is_empty());
+    assert_eq!(
+        rules.as_array().unwrap().as_slice(),
+        &[] as &[serde_json::Value]
+    );
 
     let sched = crate::core::llm_tools::execute_tool(
         &client,
@@ -382,7 +391,10 @@ async fn test_execute_tool_get_rules_and_scheduled() {
     )
     .await
     .unwrap();
-    assert!(sched.as_array().unwrap().is_empty());
+    assert_eq!(
+        sched.as_array().unwrap().as_slice(),
+        &[] as &[serde_json::Value]
+    );
 }
 
 mod async_tools;
