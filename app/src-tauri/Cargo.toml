@@ -71,7 +71,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1"
-rusqlite = { version = "0.40.1", features = ["bundled"] }
+rusqlite = { version = "0.41.1", features = ["bundled"] }
 reqwest = { version = "0.13", default-features = false, features = ["json", "cookies", "rustls", "stream"] }
 rustls-webpki = "0.103.16"
 futures-core = "0.3"
@@ -81,7 +81,7 @@ tauri-plugin-fs = "2"
 tauri-plugin-process = "2"
 tauri-plugin-shell = "2"
 calamine = "0.37.0"
-rust_xlsxwriter = "0.101.0"
+rust_xlsxwriter = "0.102.0"
 printpdf = { version = "0.12", features = ["images", "png"] }
 image = "0.25.10"
 rand = "0.10"
