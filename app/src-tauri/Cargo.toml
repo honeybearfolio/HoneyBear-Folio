@@ -82,7 +82,7 @@ tauri-plugin-process = "2"
 tauri-plugin-shell = "2"
 calamine = "0.37.0"
 rust_xlsxwriter = "0.102.0"
-printpdf = { version = "0.12", features = ["images", "png"] }
+printpdf = { version = "0.12", default-features = false, features = ["images", "png"] }
 image = "0.25.10"
 rand = "0.10"
 log = "0.4"
@@ -94,4 +94,3 @@ proptest = "1.11"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
-
