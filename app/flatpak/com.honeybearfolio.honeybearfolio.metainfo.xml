@@ -20,15 +20,15 @@
   <screenshots>
     <screenshot type="default">
       <caption>Account overview with transaction history</caption>
-      <image type="source">https://raw.githubusercontent.com/HoneyBearFolio/HoneyBear-Folio/main/img/hbf_acount_1.JPG</image>
+      <image type="source">https://raw.githubusercontent.com/HoneyBearFolio/HoneyBear-Folio/main/img/transactions.png</image>
     </screenshot>
     <screenshot>
       <caption>Dashboard with financial charts and summary</caption>
-      <image type="source">https://raw.githubusercontent.com/HoneyBearFolio/HoneyBear-Folio/main/img/hbf_dashboard_1.JPG</image>
+      <image type="source">https://raw.githubusercontent.com/HoneyBearFolio/HoneyBear-Folio/main/img/dashboard.png</image>
     </screenshot>
     <screenshot>
       <caption>Investment portfolio tracking</caption>
-      <image type="source">https://raw.githubusercontent.com/HoneyBearFolio/HoneyBear-Folio/main/img/hbf_investments_1.JPG</image>
+      <image type="source">https://raw.githubusercontent.com/HoneyBearFolio/HoneyBear-Folio/main/img/investments.png</image>
     </screenshot>
   </screenshots>
   <releases>

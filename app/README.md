@@ -1,7 +1,3 @@
-# Tauri + React
+# HoneyBear Folio
 
-This template should help get you started developing with Tauri and React in Vite.
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+The desktop app lives in this directory. See the [project README](../README.md) for what it does and how to run or build it.
