@@ -26,7 +26,6 @@ import { NumberFormatEffects, useNumberFormat } from "./stores/number-format";
 import { ThemeEffects } from "./stores/theme";
 import ChartNumberFormatSync from "./components/shared/ChartNumberFormatSync";
 import UpdateNotification from "./components/shared/UpdateNotification";
-import WelcomeWindow from "./components/shared/WelcomeWindow";
 import DevTools from "./components/shared/DevTools";
 import { useTranslation } from "react-i18next";
 import {
@@ -558,7 +557,6 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
           </div>
         </div>
       )}
-      <WelcomeWindow />
       <DevTools />
       <ToastContainer />
       <ConfirmDialogContainer />

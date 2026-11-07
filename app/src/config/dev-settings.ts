@@ -5,7 +5,6 @@ import { IS_RELEASE } from "../utils/version";
  * These settings are ONLY applied when IS_RELEASE is false.
  */
 interface DevSettingsMap {
-  FORCE_WELCOME_SCREEN: boolean;
   FORCE_HIDE_UPDATE_POPUP: boolean;
   FORCE_SHOW_UPDATE_POPUP: boolean;
   FORCE_SUCCESS_TOAST: boolean;
@@ -14,7 +13,6 @@ interface DevSettingsMap {
 
 const DEV_SETTINGS: DevSettingsMap = {
   // UI Flow Overrides
-  FORCE_WELCOME_SCREEN: false, // If true, always show welcome screen (ignores localStorage)
   FORCE_HIDE_UPDATE_POPUP: true, // If true, never check for updates
   FORCE_SHOW_UPDATE_POPUP: false, // If true, mocks an available update (useful for UI testing)
 

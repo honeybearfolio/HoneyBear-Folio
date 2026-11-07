@@ -95,10 +95,6 @@ vi.mock("../features/liabilities/LiabilityTracker", () => ({
   default: () => <div data-testid="liability-tracker" />,
 }));
 
-vi.mock("../components/shared/WelcomeWindow", () => ({
-  default: () => null,
-}));
-
 vi.mock("../components/shared/DevTools", () => ({
   default: () => null,
 }));
@@ -113,7 +109,6 @@ vi.mock("../components/shared/ChartNumberFormatSync", () => ({
 
 describe("App account selection", () => {
   beforeEach(() => {
-    localStorage.setItem("hb_first_run_completed", "true");
     localStorage.setItem(
       "hb_sidebar_visibility",
       JSON.stringify({
