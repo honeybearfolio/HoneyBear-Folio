@@ -3,6 +3,9 @@ import { initReactI18next } from "react-i18next";
 import en from "./en.json";
 import es from "./es.json";
 import { APP_DEFAULTS, STORAGE_KEYS } from "../constants/app";
+import { applySystemPreferencesIfNeeded } from "../utils/system-preferences";
+
+applySystemPreferencesIfNeeded();
 
 interface LanguageOption {
   code: string;

@@ -15,7 +15,7 @@ describe("getDevSetting", () => {
     }));
 
     const { getDevSetting } = await import("../../config/dev-settings");
-    expect(getDevSetting("FORCE_WELCOME_SCREEN")).toBeUndefined();
+    expect(getDevSetting("FORCE_HIDE_UPDATE_POPUP")).toBeUndefined();
   });
 
   it("returns configured values in development builds", async () => {
@@ -25,6 +25,6 @@ describe("getDevSetting", () => {
 
     const { getDevSetting } = await import("../../config/dev-settings");
     expect(getDevSetting("FORCE_HIDE_UPDATE_POPUP")).toBe(true);
-    expect(getDevSetting("FORCE_WELCOME_SCREEN")).toBe(false);
+    expect(getDevSetting("FORCE_SHOW_UPDATE_POPUP")).toBe(false);
   });
 });
