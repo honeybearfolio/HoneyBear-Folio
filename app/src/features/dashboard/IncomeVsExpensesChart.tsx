@@ -15,7 +15,7 @@ export default function IncomeVsExpensesChart({
   const { t } = useTranslation();
 
   return (
-    <div className="chart-card chart-card-full">
+    <div className="chart-card">
       <div className="chart-header">
         <h3 className="chart-title">{t("dashboard.income_vs_expenses")}</h3>
         <p className="chart-subtitle">

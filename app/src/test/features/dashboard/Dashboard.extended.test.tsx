@@ -1,9 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Dashboard from "../../../features/dashboard/Dashboard";
 import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
+import { useConfirmStore } from "../../../stores/confirm";
+import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
@@ -116,6 +118,9 @@ describe("Dashboard extended", () => {
       currency: "USD",
       locale: "en-US",
     });
+    localStorage.clear();
+    useDashboardPreferencesStore.getState().resetAll();
+    useConfirmStore.setState({ isOpen: false, resolve: null });
   });
 
   it("shows empty state when there are no transactions", async () => {
@@ -127,12 +132,14 @@ describe("Dashboard extended", () => {
     render(<Dashboard accounts={sampleAccounts} />);
 
     await waitFor(() => {
-      expect(screen.getByText("No transactions found")).toBeInTheDocument();
       expect(
-        screen.getByText(
+        screen.getAllByText("No transactions found").length,
+      ).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(
           "Add transactions to start tracking your finances and populate charts.",
-        ),
-      ).toBeInTheDocument();
+        ).length,
+      ).toBeGreaterThan(0);
     });
 
     expect(screen.queryByTestId("line-chart")).not.toBeInTheDocument();
@@ -232,6 +239,113 @@ describe("Dashboard extended", () => {
 
     await waitFor(() => {
       expect(screen.getByText("1/2")).toBeInTheDocument();
+    });
+  });
+
+  it("removes a card until the layout is reset and keeps the time range", async () => {
+    const user = userEvent.setup();
+    mockDashboardInvoke((cmd) => {
+      if (cmd === "get_all_transactions")
+        return Promise.resolve(sampleTransactions);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => screen.getByText("Current Net Worth"));
+
+    await user.click(screen.getByRole("button", { name: "3M" }));
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    expect(
+      document.querySelectorAll(".dashboard-grid-dot").length,
+    ).toBeGreaterThan(0);
+    await user.click(
+      screen.getByRole("button", { name: "Remove card Current Net Worth" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(screen.queryByText("Current Net Worth")).not.toBeInTheDocument();
+    expect(
+      document.querySelector(".dashboard-grid-dot"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "3M" }).className).toContain(
+      "time-range-button-active",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    await user.click(screen.getByRole("button", { name: "Reset layout" }));
+
+    await waitFor(() => {
+      expect(useConfirmStore.getState().isOpen).toBe(true);
+    });
+    act(() => {
+      useConfirmStore.getState().handleClose(true);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Current Net Worth")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "3M" }).className).toContain(
+      "time-range-button-active",
+    );
+  });
+
+  it("adds a card, moves it on the grid, and filters it", async () => {
+    const user = userEvent.setup();
+    mockDashboardInvoke((cmd) => {
+      if (cmd === "get_all_transactions")
+        return Promise.resolve(sampleTransactions);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => screen.getByText("Current Net Worth"));
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    await user.click(screen.getByRole("button", { name: "Add card" }));
+    await user.click(
+      screen.getByRole("menuitem", { name: "Current Net Worth" }),
+    );
+
+    expect(screen.getAllByText("Current Net Worth")).toHaveLength(2);
+
+    const handles = screen.getAllByRole("button", {
+      name: "Drag to reorder Current Net Worth",
+    });
+    const handle = handles[handles.length - 1]!;
+    handle.focus();
+    await user.keyboard("{ArrowRight}");
+
+    const moved = handle.closest(".dashboard-board-item");
+    expect(moved).toHaveStyle({ gridColumn: "2 / span 4" });
+
+    await user.click(
+      screen.getAllByRole("button", { name: "Filters Current Net Worth" })[0]!,
+    );
+    await user.click(screen.getByRole("button", { name: "Add filter" }));
+    expect(screen.getByLabelText("Filter field")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Date range Current Net Worth"),
+    ).toHaveTextContent("Follow dashboard");
+  });
+
+  it("resizes a card from the keyboard", async () => {
+    const user = userEvent.setup();
+    mockDashboardInvoke((cmd) => {
+      if (cmd === "get_all_transactions")
+        return Promise.resolve(sampleTransactions);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => screen.getByText("Asset Allocation"));
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    const handle = screen.getByRole("button", {
+      name: "Resize card Asset Allocation",
+    });
+    handle.focus();
+    await user.keyboard("{ArrowDown}");
+
+    expect(handle.closest(".dashboard-board-item")).toHaveStyle({
+      gridRow: "30 / span 9",
     });
   });
 });

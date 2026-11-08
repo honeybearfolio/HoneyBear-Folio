@@ -16,6 +16,8 @@ export const STORAGE_KEYS = {
   ACCOUNT_SORT_CONFIG: "hb_account_sort_config",
   ACCOUNT_ORDER: "hb_account_order",
   TAG_COLORS: "hb_tag_colors",
+  DASHBOARD_LAYOUT: "hb_dashboard_layout",
+  DASHBOARD_VIEW: "hb_dashboard_view",
 } as const;
 
 export const FIRE_DEFAULTS = {
@@ -79,6 +81,8 @@ export const RESETTABLE_STORAGE_KEYS: string[] = [
   STORAGE_KEYS.FIRST_DAY_OF_WEEK,
   STORAGE_KEYS.UI_LANGUAGE,
   STORAGE_KEYS.SIDEBAR_VISIBILITY,
+  STORAGE_KEYS.DASHBOARD_LAYOUT,
+  STORAGE_KEYS.DASHBOARD_VIEW,
 ];
 
 export const EXTERNAL_URLS: Record<string, string> = {

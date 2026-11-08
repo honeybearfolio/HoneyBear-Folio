@@ -2,6 +2,8 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import SettingsView from "../../../features/settings/SettingsView";
+import { STORAGE_KEYS } from "../../../constants/app";
+import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
 
 // Mock i18n (provide AVAILABLE_LANGUAGES used by the component)
 vi.mock("../../../i18n/i18n", () => ({
@@ -92,6 +94,7 @@ describe("SettingsView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    useDashboardPreferencesStore.getState().resetAll();
   });
 
   it("shows language selector in General section", () => {
@@ -136,6 +139,9 @@ describe("SettingsView", () => {
     const mockConfirmLocal = mockConfirm;
     mockConfirmLocal.mockResolvedValueOnce(true);
 
+    useDashboardPreferencesStore.getState().setTimeRange("ALL");
+    useDashboardPreferencesStore.getState().addWidget("netWorth");
+
     const mockOnChangeSidebarVisibility = vi.fn();
     render(
       <SettingsView
@@ -168,6 +174,10 @@ describe("SettingsView", () => {
         liabilities: true,
       });
       expect(invoke).toHaveBeenCalledWith("reset_db_path");
+      expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeNull();
+      expect(useDashboardPreferencesStore.getState().view.timeRange).toBe("1Y");
+      expect(useDashboardPreferencesStore.getState().layout).toHaveLength(8);
     });
   });
 
@@ -177,6 +187,7 @@ describe("SettingsView", () => {
 
     const { useNumberFormat } = await import("../../../stores/number-format");
     const setters = useNumberFormat();
+    useDashboardPreferencesStore.getState().setTimeRange("ALL");
 
     render(<SettingsView activeSection="general" />);
 
@@ -187,6 +198,7 @@ describe("SettingsView", () => {
     expect(mockSetLocale).not.toHaveBeenCalled();
     expect(mockSetUiLanguage).not.toHaveBeenCalled();
     expect(setters.setUiLanguage).not.toHaveBeenCalled();
+    expect(useDashboardPreferencesStore.getState().view.timeRange).toBe("ALL");
   });
 
   it("shows theme selector and font size in Customization section", () => {

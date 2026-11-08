@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import { useCustomRate } from "../../hooks/useCustomRate";
 import { useConfirm } from "../../stores/confirm";
+import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
 import { useToast } from "../../stores/toast";
 import { handleAsyncError, logError } from "../../utils/errors";
 import useTagColors from "../../hooks/useTagColors";
@@ -176,6 +177,7 @@ export default function SettingsView({
       setUiLanguage(APP_DEFAULTS.UI_LANGUAGE);
       resetTagColors();
       onChangeSidebarVisibility?.({ ...DEFAULT_SIDEBAR_VISIBILITY });
+      useDashboardPreferencesStore.getState().resetAll();
 
       try {
         await rust.reset_db_path();
