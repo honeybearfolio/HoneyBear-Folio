@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   computeGoalProgress,
+  formatIsoDate,
   holdingOverlapsAccountLink,
+  parseIsoDate,
+  progressLinkFromInput,
   tickersForAccount,
   type ProgressAccount,
   type ProgressLink,
@@ -210,5 +213,132 @@ describe("computeGoalProgress", () => {
   it("lists tickers for one account and across accounts", () => {
     expect(tickersForAccount(holdings, "2")).toEqual(["AAPL", "VTI"]);
     expect(tickersForAccount(holdings, null)).toEqual(["AAPL", "VTI"]);
+    expect(tickersForAccount(holdings, "9")).toEqual([]);
+  });
+
+  it("treats a missing account, an empty holding, and a zero target as unfunded", () => {
+    const missing = progress([
+      { sourceType: "account", accountId: null, allocationPercent: 100 },
+      { sourceType: "account", accountId: 9, allocationPercent: 100 },
+      { sourceType: "holding", ticker: "   ", allocationPercent: 100 },
+      {
+        sourceType: "holding",
+        accountId: 9,
+        ticker: "AAPL",
+        allocationPercent: 100,
+      },
+      {
+        sourceType: "holding",
+        accountId: 1,
+        ticker: "QQQ",
+        allocationPercent: 50,
+      },
+    ]);
+    expect(missing.current).toBe(0);
+    expect(missing.contributions.every((item) => item.missing)).toBe(true);
+
+    const untargeted = progress([], { targetAmount: 0, exchangeRate: 0 });
+    expect(untargeted.percent).toBe(0);
+    expect(untargeted.status).toBe("unscheduled");
+  });
+
+  it("is behind once the target date has passed", () => {
+    const result = progress(
+      [
+        {
+          sourceType: "account",
+          accountId: 1,
+          allocationPercent: 100,
+        },
+      ],
+      { targetDate: "2025-06-01", createdAt: "not-a-date" },
+    );
+    expect(result.status).toBe("behind");
+    expect(result.requiredMonthly).toBeNull();
+  });
+
+  it("stays on track when the monthly contribution finishes by the target date", () => {
+    const result = progress(
+      [
+        {
+          sourceType: "account",
+          accountId: 1,
+          allocationPercent: 100,
+        },
+      ],
+      {
+        targetDate: "2027-01-01",
+        monthlyContribution: 10000,
+        exchangeRate: 2,
+      },
+    );
+    expect(result.target).toBe(20000);
+    expect(result.status).toBe("on_track");
+    expect(result.projectedDate).not.toBeNull();
+  });
+
+  it("ignores a non-positive contribution and an invalid target date", () => {
+    const result = progress(
+      [
+        {
+          sourceType: "account",
+          accountId: 1,
+          allocationPercent: 100,
+        },
+      ],
+      { monthlyContribution: 0, targetDate: "2026-02-31" },
+    );
+    expect(result.status).toBe("unscheduled");
+    expect(result.projectedDate).toBeNull();
+  });
+
+  it("detects a ticker that is already inside some linked account", () => {
+    const links: ProgressLink[] = [
+      { sourceType: "account", accountId: 1, allocationPercent: 100 },
+      { sourceType: "holding", ticker: "AAPL", allocationPercent: 100 },
+    ];
+    const accountLink = links[0];
+    const holdingLink = links[1];
+    expect(accountLink).toBeDefined();
+    expect(holdingLink).toBeDefined();
+    if (!accountLink || !holdingLink) return;
+    expect(holdingOverlapsAccountLink(holdingLink, links, holdings)).toBe(true);
+    expect(
+      holdingOverlapsAccountLink(
+        { sourceType: "holding", ticker: "VTI", allocationPercent: 100 },
+        links,
+        holdings,
+      ),
+    ).toBe(false);
+    expect(holdingOverlapsAccountLink(accountLink, links, holdings)).toBe(
+      false,
+    );
+    expect(
+      holdingOverlapsAccountLink(
+        { sourceType: "holding", ticker: "", allocationPercent: 100 },
+        links,
+        holdings,
+      ),
+    ).toBe(false);
+  });
+
+  it("parses dates and normalizes link inputs", () => {
+    expect(parseIsoDate("2026-01-01")?.toISOString()).toBe(
+      "2026-01-01T00:00:00.000Z",
+    );
+    expect(parseIsoDate("2026-02-31")).toBeNull();
+    expect(parseIsoDate("yesterday")).toBeNull();
+    expect(formatIsoDate(new Date(Date.UTC(2026, 0, 5)))).toBe("2026-01-05");
+    expect(
+      progressLinkFromInput({
+        sourceType: "holding",
+        allocationPercent: 25,
+      }),
+    ).toEqual({
+      sourceType: "holding",
+      accountId: null,
+      ticker: null,
+      allocationPercent: 25,
+    });
   });
 });

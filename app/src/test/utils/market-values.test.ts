@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { fetchMarketValuesForAccounts } from "../../utils/market-values";
+import {
+  fetchHoldingValuesForAccounts,
+  fetchMarketValuesForAccounts,
+} from "../../utils/market-values";
 
 describe("fetchMarketValuesForAccounts", () => {
   beforeEach(() => {
@@ -150,5 +153,42 @@ describe("fetchMarketValuesForAccounts", () => {
     );
     // 10*100 + 2*200 = 1400
     expect(result["1"]).toBeCloseTo(1400);
+  });
+});
+
+describe("fetchHoldingValuesForAccounts", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns an empty map when nothing is held", async () => {
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "get_all_transactions") return Promise.resolve([]);
+      return Promise.resolve([]);
+    });
+
+    await expect(fetchHoldingValuesForAccounts()).resolves.toEqual({});
+  });
+
+  it("returns each ticker value instead of an account total", async () => {
+    vi.mocked(invoke).mockImplementation((cmd: string, args?: unknown) => {
+      if (cmd === "get_all_transactions")
+        return Promise.resolve([{ account_id: 1, ticker: "AAPL", shares: 10 }]);
+      if (cmd === "get_stock_quotes") {
+        const quoted = args as { tickers: string[] };
+        if (quoted.tickers.some((ticker) => ticker.endsWith("=X")))
+          return Promise.resolve([]);
+        return Promise.resolve([
+          { symbol: "AAPL", regularMarketPrice: 150, currency: "USD" },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+
+    const result = await fetchHoldingValuesForAccounts(
+      [{ id: 1, currency: "USD" }],
+      "USD",
+    );
+    expect(result["1"]?.AAPL).toBeCloseTo(1500);
   });
 });
