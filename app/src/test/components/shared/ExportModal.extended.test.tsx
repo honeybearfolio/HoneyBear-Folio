@@ -51,6 +51,7 @@ vi.mock("../../../utils/format", () => ({
     const day = String(date.getDate()).padStart(2, "0");
     return `${String(date.getFullYear())}-${month}-${day}`;
   },
+  todayCalendarDate: () => "2026-11-08",
 }));
 
 vi.mock("react-datepicker", () => ({
