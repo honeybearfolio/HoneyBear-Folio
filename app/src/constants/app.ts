@@ -58,6 +58,7 @@ export interface SidebarVisibility {
   chat: boolean;
   assets: boolean;
   liabilities: boolean;
+  goals: boolean;
 }
 
 export const DEFAULT_SIDEBAR_VISIBILITY: SidebarVisibility = {
@@ -70,6 +71,7 @@ export const DEFAULT_SIDEBAR_VISIBILITY: SidebarVisibility = {
   chat: true,
   assets: true,
   liabilities: true,
+  goals: true,
 };
 
 export const RESETTABLE_STORAGE_KEYS: string[] = [

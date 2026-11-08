@@ -15,6 +15,7 @@ import SettingsView from "./features/settings/SettingsView";
 import SessionPicker from "./features/session/SessionPicker";
 import AssetTracker from "./features/assets/AssetTracker";
 import LiabilityTracker from "./features/liabilities/LiabilityTracker";
+import GoalsView from "./features/goals/GoalsView";
 import { Wallet, PanelLeftOpen } from "lucide-react";
 import "./styles/App.css";
 import { ToastContainer } from "./components/ui/Toast";
@@ -503,6 +504,8 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
               <AssetTracker onUpdate={handleAccountUpdate} />
             ) : selectedAccountId === "liability-tracker" ? (
               <LiabilityTracker onUpdate={handleAccountUpdate} />
+            ) : selectedAccountId === "goals" ? (
+              <GoalsView />
             ) : accountForDetails ? (
               <AccountDetails
                 key={accountForDetails.id}

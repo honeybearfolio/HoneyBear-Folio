@@ -545,6 +545,23 @@ pub(crate) fn build_tool_definitions() -> Vec<Value> {
         json!({
             "type": "function",
             "function": {
+                "name": "get_goals",
+                "description": "List savings goals with their target amount, optional target date, monthly contribution, and linked accounts or investments. Returns stored fields only. Live progress is not included.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target_currency": {
+                            "type": "string",
+                            "description": "Currency for the exchange rate on each goal (default USD)"
+                        }
+                    },
+                    "required": []
+                }
+            }
+        }),
+        json!({
+            "type": "function",
+            "function": {
                 "name": "get_liabilities",
                 "description": "List tracked liabilities (mortgages, loans, credit cards) with their latest balance. Categories: mortgage, auto_loan, credit_card, student_loan, personal_loan, other. Returns id, name, category, currency, notes, latest_value, latest_date.",
                 "parameters": {
@@ -644,7 +661,7 @@ pub(crate) fn build_system_prompt(db_path: &PathBuf) -> String {
         "You can only read data — you cannot modify accounts, transactions, or settings.".to_string(),
         "When presenting monetary amounts, format them nicely and include the currency.".to_string(),
         "If the user asks about something you cannot determine from the available tools, let them know.".to_string(),
-        "Use get_net_worth for total wealth; use get_assets / get_asset_valuations for physical assets; use get_liabilities / get_liability_valuations for debts; use get_portfolio_holdings for investments.".to_string(),
+        "Use get_net_worth for total wealth; use get_assets / get_asset_valuations for physical assets; use get_liabilities / get_liability_valuations for debts; use get_portfolio_holdings for investments. Use get_goals for savings goals and the accounts or investments linked to them. get_goals returns stored targets and links, not live progress.".to_string(),
     ];
 
     // Add account context so the LLM knows what accounts exist

@@ -587,4 +587,42 @@ describe("tauri-client", () => {
       });
     });
   });
+
+  describe("goals", () => {
+    it("forwards goal commands", async () => {
+      await rust.get_goals({ targetCurrency: "USD" });
+      expect(invoke).toHaveBeenCalledWith("get_goals", {
+        targetCurrency: "USD",
+      });
+
+      await rust.create_goal({
+        name: "House",
+        targetAmount: 1000,
+        links: [],
+      });
+      expect(invoke).toHaveBeenCalledWith("create_goal", {
+        args: { name: "House", targetAmount: 1000, links: [] },
+      });
+
+      await rust.update_goal({
+        id: 1,
+        archived: false,
+        name: "House",
+        targetAmount: 1000,
+        links: [],
+      });
+      expect(invoke).toHaveBeenCalledWith("update_goal", {
+        args: {
+          id: 1,
+          archived: false,
+          name: "House",
+          targetAmount: 1000,
+          links: [],
+        },
+      });
+
+      await rust.delete_goal({ id: 1 });
+      expect(invoke).toHaveBeenCalledWith("delete_goal", { id: 1 });
+    });
+  });
 });

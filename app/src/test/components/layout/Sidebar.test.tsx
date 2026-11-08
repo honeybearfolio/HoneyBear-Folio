@@ -50,6 +50,7 @@ vi.mock("lucide-react", () => ({
   RefreshCw: () => <span>RefreshCw</span>,
   Gem: () => <span>Gem</span>,
   Scale: () => <span>Scale</span>,
+  Target: () => <span>Target</span>,
 }));
 
 // Mock child components that might use contexts or API
@@ -80,6 +81,7 @@ describe("Sidebar", () => {
     chat: true,
     assets: true,
     liabilities: true,
+    goals: true,
   };
 
   beforeEach(() => {
@@ -106,6 +108,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Investments")).toBeInTheDocument();
     expect(screen.getByText("FIRE Calculator")).toBeInTheDocument();
+    expect(screen.getByText("Goals")).toBeInTheDocument();
     expect(screen.getAllByText("Rules").length).toBeGreaterThanOrEqual(1);
   });
 

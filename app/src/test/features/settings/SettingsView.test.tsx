@@ -172,6 +172,7 @@ describe("SettingsView", () => {
         chat: true,
         assets: true,
         liabilities: true,
+        goals: true,
       });
       expect(invoke).toHaveBeenCalledWith("reset_db_path");
       expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
@@ -212,6 +213,7 @@ describe("SettingsView", () => {
       chat: true,
       assets: true,
       liabilities: true,
+      goals: true,
     };
     render(
       <SettingsView

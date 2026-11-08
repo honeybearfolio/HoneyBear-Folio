@@ -29,6 +29,7 @@ import {
   Bot,
   Gem,
   Scale,
+  Target,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../../styles/Sidebar.css";
@@ -475,6 +476,24 @@ export default function Sidebar({
                       className={`sidebar-nav-icon ${selectedId === "liability-tracker" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                     />
                     <span className="font-medium">{t("nav.liabilities")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.goals !== false && (
+                  <button
+                    onClick={() => {
+                      handleSelect("goals");
+                    }}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "goals"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <Target
+                      className={`sidebar-nav-icon ${selectedId === "goals" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.goals")}</span>
                   </button>
                 )}
 

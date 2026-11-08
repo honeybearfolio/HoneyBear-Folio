@@ -2,6 +2,7 @@ pub mod accounts;
 pub mod assets;
 pub mod calculations;
 pub mod db_init;
+pub mod goals;
 pub mod io;
 pub mod liabilities;
 pub mod llm;
