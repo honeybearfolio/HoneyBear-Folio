@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import { rust } from "../../api/tauri-client";
-import { useParseNumber } from "../../utils/format";
+import { formatCalendarDate, useParseNumber } from "../../utils/format";
 import { useNumberFormat } from "../../stores/number-format";
 import { useConfirm } from "../../stores/confirm";
 import { useTranslation } from "react-i18next";
@@ -101,9 +101,7 @@ export default function AccountDetails({
   }, [accountMenuOpen]);
 
   // Form state
-  const [date, setDate] = useState(
-    () => new Date().toISOString().split("T")[0] ?? "",
-  );
+  const [date, setDate] = useState(() => formatCalendarDate(new Date()));
   const [payee, setPayee] = useState("");
   const [category, setCategory] = useState("");
   const [notes, setNotes] = useState("");
@@ -289,8 +287,7 @@ export default function AccountDetails({
     useToday: boolean,
   ) {
     try {
-      const applyDate =
-        (useToday ? new Date().toISOString().split("T")[0] : occ.date) ?? "";
+      const applyDate = useToday ? formatCalendarDate(new Date()) : occ.date;
       await rust.apply_scheduled_occurrence({
         scheduledTxId: occ.scheduled_tx_id,
         applyDate,

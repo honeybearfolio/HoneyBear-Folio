@@ -11,7 +11,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { useToast } from "../../stores/toast";
 import { handleAsyncError } from "../../utils/errors";
-import { useParseNumber, getDatePickerFormat } from "../../utils/format";
+import {
+  formatCalendarDate,
+  getDatePickerFormat,
+  parseCalendarDate,
+  useParseNumber,
+} from "../../utils/format";
 import { useNumberFormat } from "../../stores/number-format";
 import type { LiabilityValuation } from "../../api/types";
 import "../../styles/Modal.css";
@@ -37,7 +42,7 @@ export default function LiabilityValuationModal({
   const isEditing = !!valuation;
 
   const [date, setDate] = useState(
-    valuation?.date || new Date().toISOString().split("T")[0],
+    valuation?.date || formatCalendarDate(new Date()),
   );
   const [valueStr, setValueStr] = useState(
     valuation ? String(valuation.value) : "",
@@ -99,9 +104,11 @@ export default function LiabilityValuationModal({
                 {t("liabilities.field.date")}
               </label>
               <DatePicker
-                selected={date ? new Date(date) : null}
+                selected={
+                  date ? (parseCalendarDate(date) ?? new Date(date)) : null
+                }
                 onChange={(d: Date | null) => {
-                  setDate(d ? d.toISOString().split("T")[0] : "");
+                  setDate(d ? formatCalendarDate(d) : "");
                 }}
                 dateFormat={getDatePickerFormat(dateFormat)}
                 calendarStartDay={firstDayOfWeek as Day}

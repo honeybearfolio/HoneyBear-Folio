@@ -213,14 +213,49 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+/** A `YYYY-MM-DD` value as a local calendar day, not a UTC instant. */
+export function parseCalendarDate(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+/** Local calendar day as `YYYY-MM-DD`. */
+export function formatCalendarDate(date: Date): string {
+  return `${String(date.getFullYear())}-${pad2(date.getMonth() + 1)}-${pad2(
+    date.getDate(),
+  )}`;
+}
+
+function toUiDate(value: string | Date): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  const calendar = parseCalendarDate(value);
+  if (calendar) return calendar;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export function formatDateForUI(
   value: string | Date | null | undefined,
   formatKey: string,
   _locale?: string,
 ): string {
   if (!value) return "";
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+  const date = toUiDate(value);
+  if (!date) return "";
 
   switch (formatKey) {
     case "YYYY-MM-DD":
@@ -269,7 +304,7 @@ export function formatDateForUI(
         year: "numeric",
       });
     default:
-      return date.toISOString().split("T")[0] ?? "";
+      return formatCalendarDate(date);
   }
 }
 

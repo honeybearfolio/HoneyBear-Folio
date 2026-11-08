@@ -19,6 +19,7 @@ import {
 } from "../../components/ui/Skeleton";
 import { FIRE_DEFAULTS } from "../../constants/app";
 import { handleAsyncError, logError } from "../../utils/errors";
+import { formatCalendarDate } from "../../utils/format";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -302,8 +303,9 @@ export default function FireCalculator() {
       const oneYearAgo = new Date();
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
+      const oneYearAgoDate = formatCalendarDate(oneYearAgo);
       const lastYearTransactions = transactions.filter(
-        (tx) => new Date(tx.date) >= oneYearAgo,
+        (tx) => tx.date >= oneYearAgoDate,
       );
 
       let expenses = 0;

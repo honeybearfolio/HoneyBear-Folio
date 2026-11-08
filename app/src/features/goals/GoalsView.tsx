@@ -473,6 +473,11 @@ export default function GoalsView() {
                     </span>
                   </div>
 
+                  {goal.notes ? (
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                      {goal.notes}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     {progress.status === "reached"
                       ? t("goals.reached_detail")

@@ -132,6 +132,13 @@ export interface ScheduledFormState {
   isBuy: boolean;
 }
 
+function localToday(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${String(now.getFullYear())}-${month}-${day}`;
+}
+
 export function createDefaultScheduledForm(): ScheduledFormState {
   return {
     id: null,
@@ -148,7 +155,7 @@ export function createDefaultScheduledForm(): ScheduledFormState {
     daysOfWeek: [],
     ordinal: 1,
     weekday: 1,
-    startDate: new Date().toISOString().split("T")[0] ?? "",
+    startDate: localToday(),
     endDate: "",
     maxOccurrences: "",
     enabled: true,

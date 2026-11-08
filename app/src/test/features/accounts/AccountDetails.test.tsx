@@ -13,6 +13,11 @@ vi.mock("../../../utils/format", () => ({
   useParseNumber: vi.fn(),
   useFormatDate: vi.fn(),
   getDatePickerFormat: vi.fn(() => "yyyy-MM-dd"),
+  formatCalendarDate: (date: Date) => {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${String(date.getFullYear())}-${month}-${day}`;
+  },
 }));
 
 vi.mock("../../../stores/confirm", () => ({

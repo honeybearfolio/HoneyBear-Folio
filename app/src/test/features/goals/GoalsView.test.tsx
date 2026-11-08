@@ -69,7 +69,7 @@ const GOALS = [
     currency: "USD",
     target_date: "2030-01-01",
     monthly_contribution: null,
-    notes: null,
+    notes: "Down payment",
     color: "emerald",
     created_at: "2026-01-01",
     archived: false,
@@ -116,6 +116,7 @@ describe("GoalsView", () => {
       expect(screen.getByText("House")).toBeInTheDocument();
     });
     expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("Down payment")).toBeInTheDocument();
     expect(screen.getByText(/10000/)).toBeInTheDocument();
     expect(screen.getAllByText("5000").length).toBeGreaterThan(0);
 
@@ -354,7 +355,7 @@ describe("GoalsView", () => {
           currency: "USD",
           targetDate: "2030-01-01",
           monthlyContribution: null,
-          notes: null,
+          notes: "Down payment",
           color: "emerald",
           links: [
             {
