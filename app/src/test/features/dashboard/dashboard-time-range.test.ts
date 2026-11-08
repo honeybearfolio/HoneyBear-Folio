@@ -78,5 +78,11 @@ describe("dashboard-time-range", () => {
     expect(isDayBucket).toBe(true);
     expect(keys.length).toBeGreaterThan(0);
     expect(labels.length).toBe(keys.length);
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    expect(keys[keys.length - 1]).toBe(
+      `${String(today.getFullYear())}-${month}-${day}`,
+    );
   });
 });

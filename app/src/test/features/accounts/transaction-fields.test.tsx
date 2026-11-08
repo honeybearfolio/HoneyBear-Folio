@@ -95,9 +95,18 @@ vi.mock("react-datepicker", () => ({
       data-testid="datepicker"
       className={className}
       required={required}
-      value={selected ? selected.toISOString().split("T")[0] : ""}
+      value={
+        selected
+          ? `${String(selected.getFullYear())}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`
+          : ""
+      }
       onChange={(e) => {
-        onChange(e.target.value ? new Date(e.target.value) : null);
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.target.value);
+        onChange(
+          match
+            ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+            : null,
+        );
       }}
     />
   ),
@@ -136,6 +145,16 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
 vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (val: number) => `fmt-${String(val)}`,
   getDatePickerFormat: (key: string) => key,
+  parseCalendarDate: (value: string) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return null;
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  },
+  formatCalendarDate: (date: Date) => {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${String(date.getFullYear())}-${month}-${day}`;
+  },
 }));
 
 const accounts = [

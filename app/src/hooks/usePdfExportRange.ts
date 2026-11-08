@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { rust } from "../api/tauri-client";
 import { logError } from "../utils/errors";
+import { formatCalendarDate } from "../utils/format";
 
 export type PdfRangeType = "ytd" | "annual" | "month" | "custom";
 
@@ -59,7 +60,7 @@ export function usePdfExportRange() {
       end = customEndDate;
     }
 
-    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    const fmt = (d: Date) => formatCalendarDate(d);
     return { start: fmt(start), end: fmt(end) };
   }, [
     rangeType,

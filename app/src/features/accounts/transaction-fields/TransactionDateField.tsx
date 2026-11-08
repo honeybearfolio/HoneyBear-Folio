@@ -1,7 +1,11 @@
 import DatePicker from "react-datepicker";
 import type { Day } from "date-fns";
 import { useTranslation } from "react-i18next";
-import { getDatePickerFormat } from "../../../utils/format";
+import {
+  formatCalendarDate,
+  getDatePickerFormat,
+  parseCalendarDate,
+} from "../../../utils/format";
 import {
   getInputClassName,
   getLabelClassName,
@@ -32,9 +36,9 @@ export default function TransactionDateField({
 
   const picker = (
     <DatePicker
-      selected={value ? new Date(value) : null}
+      selected={value ? (parseCalendarDate(value) ?? new Date(value)) : null}
       onChange={(date: Date | null) => {
-        onChange(date ? (date.toISOString().split("T")[0] ?? "") : "");
+        onChange(date ? formatCalendarDate(date) : "");
       }}
       dateFormat={getDatePickerFormat(dateFormat)}
       calendarStartDay={firstDayOfWeek as Day}

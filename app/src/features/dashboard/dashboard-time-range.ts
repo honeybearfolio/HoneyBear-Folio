@@ -1,5 +1,10 @@
 import type { DashboardTimeRange } from "./dashboard-constants";
+import { formatIsoDate, parseIsoDate } from "./dashboard-layout";
 import type { Transaction } from "./dashboard-types";
+
+function dateFromCalendar(value: string): Date {
+  return parseIsoDate(value) ?? new Date(value);
+}
 
 export interface NetWorthDateRange {
   cutoffDate: Date;
@@ -48,7 +53,7 @@ export function computeNetWorthDateRange(
   endDate.setHours(0, 0, 0, 0);
 
   if (timeRange === "ALL" && filteredTransactions.length > 0) {
-    const firstTxDate = new Date(
+    const firstTxDate = dateFromCalendar(
       filteredTransactions.reduce(
         (min, t) => (t.date < min ? t.date : min),
         filteredTransactions[0]!.date,
@@ -62,7 +67,7 @@ export function computeNetWorthDateRange(
   }
 
   if (filteredTransactions.length > 0) {
-    const firstTxDate = new Date(
+    const firstTxDate = dateFromCalendar(
       filteredTransactions.reduce(
         (min, t) => (t.date < min ? t.date : min),
         filteredTransactions[0]!.date,
@@ -117,8 +122,8 @@ export function computeExpenseDateRange(
   endDate.setHours(23, 59, 59, 999);
 
   return {
-    startStr: startDate.toISOString().split("T")[0] ?? "",
-    endStr: endDate.toISOString().split("T")[0] ?? "",
+    startStr: formatIsoDate(startDate),
+    endStr: formatIsoDate(endDate),
   };
 }
 
@@ -172,7 +177,7 @@ export function computeIncomeExpenseBuckets(
 
     const d = new Date(start);
     while (d <= end) {
-      const key = d.toISOString().slice(0, 10);
+      const key = formatIsoDate(d);
       keys.push(key);
       labels.push(formatDate(key));
       d.setDate(d.getDate() + 1);
@@ -188,7 +193,7 @@ export function computeIncomeExpenseBuckets(
     else if (timeRange === "ALL") {
       const txDates = filteredTransactions.map((t) => t.date).sort();
       const firstDate = txDates[0];
-      if (firstDate) start = new Date(firstDate);
+      if (firstDate) start = dateFromCalendar(firstDate);
     } else if (timeRange === "CUSTOM") {
       start = new Date(customStartDate);
       end = new Date(customEndDate);

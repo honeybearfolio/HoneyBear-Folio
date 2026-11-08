@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import {
+  formatCalendarDate,
   formatDateForUI,
   getDatePickerFormat,
+  parseCalendarDate,
   formatNumberForExport,
   useFormatNumber,
   useFormatDate,
@@ -45,6 +47,18 @@ describe("formatDateForUI", () => {
 
   it("falls back to ISO for unknown format key", () => {
     expect(formatDateForUI(sampleDate, "UNKNOWN")).toBe("2024-03-15");
+  });
+
+  it("keeps a date-only string on that calendar day", () => {
+    expect(formatDateForUI("2024-03-15", "YYYY-MM-DD")).toBe("2024-03-15");
+    expect(formatDateForUI("2024-03-15", "MM/DD/YYYY")).toBe("03/15/2024");
+    expect(formatDateForUI("2024-03-15", "DD/MM/YYYY")).toBe("15/03/2024");
+    const parsed = parseCalendarDate("2024-03-15");
+    expect(parsed?.getFullYear()).toBe(2024);
+    expect(parsed?.getMonth()).toBe(2);
+    expect(parsed?.getDate()).toBe(15);
+    expect(formatCalendarDate(new Date(2024, 2, 15))).toBe("2024-03-15");
+    expect(parseCalendarDate("2024-02-31")).toBeNull();
   });
 });
 
