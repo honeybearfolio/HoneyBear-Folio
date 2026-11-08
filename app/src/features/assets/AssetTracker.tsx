@@ -6,7 +6,7 @@ import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
-import { useFormatNumber } from "../../utils/format";
+import { useFormatDate, useFormatNumber } from "../../utils/format";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { handleAsyncError, logError } from "../../utils/errors";
 import AssetModal from "./AssetModal";
@@ -30,6 +30,7 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
   const { t } = useTranslation();
   const { currency: appCurrency } = useNumberFormat();
   const formatNumber = useFormatNumber();
+  const formatDate = useFormatDate();
   const confirm = useConfirm();
   const { showToast } = useToast();
 
@@ -276,6 +277,11 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                     {t(`assets.category.${asset.category}`)}
                     {asset.currency && ` · ${asset.currency}`}
                   </p>
+                  {asset.notes ? (
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                      {asset.notes}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-slate-800 dark:text-slate-100">
@@ -288,36 +294,50 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                   </p>
                   {asset.latest_date && (
                     <p className="text-xs text-slate-400">
-                      {asset.latest_date}
+                      {formatDate(asset.latest_date)}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
                     onClick={() => {
                       setEditingAsset(asset);
                       setShowAssetModal(true);
                     }}
                     className="p-1.5 text-slate-400 hover:text-brand-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={t("assets.edit")}
+                    aria-label={t("assets.edit")}
                   >
                     <Edit size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       void handleDeleteAsset(asset);
                     }}
                     className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={t("assets.delete")}
+                    aria-label={t("assets.delete")}
                   >
                     <Trash2 size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       handleExpand(asset.id);
                     }}
                     className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                    title={t("assets.show_valuations")}
+                    title={
+                      expandedAssetIds.has(asset.id)
+                        ? t("assets.hide_valuations")
+                        : t("assets.show_valuations")
+                    }
+                    aria-label={
+                      expandedAssetIds.has(asset.id)
+                        ? t("assets.hide_valuations")
+                        : t("assets.show_valuations")
+                    }
                   >
                     {expandedAssetIds.has(asset.id) ? (
                       <ChevronUp size={15} />
@@ -358,8 +378,8 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                           key={v.id}
                           className="flex items-center gap-3 text-sm py-1.5 px-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50"
                         >
-                          <span className="text-slate-500 dark:text-slate-400 w-28 shrink-0">
-                            {v.date}
+                          <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                            {formatDate(v.date)}
                           </span>
                           <span className="font-medium text-slate-700 dark:text-slate-200 flex-1">
                             {formatNumber(v.value, {
@@ -368,6 +388,7 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                             })}
                           </span>
                           <button
+                            type="button"
                             onClick={() => {
                               setValuationAssetId(asset.id);
                               setEditingValuation(v);
@@ -375,15 +396,18 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                             }}
                             className="p-1 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
                             title={t("assets.edit")}
+                            aria-label={t("assets.edit")}
                           >
                             <Edit size={13} />
                           </button>
                           <button
+                            type="button"
                             onClick={() => {
                               void handleDeleteValuation(v);
                             }}
                             className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
                             title={t("assets.delete")}
+                            aria-label={t("assets.delete")}
                           >
                             <Trash2 size={13} />
                           </button>

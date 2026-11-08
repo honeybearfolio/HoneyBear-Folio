@@ -238,6 +238,55 @@ export function formatCalendarDate(date: Date): string {
   )}`;
 }
 
+export function todayCalendarDate(): string {
+  return formatCalendarDate(new Date());
+}
+
+/**
+ * Store a date as `YYYY-MM-DD` on the same calendar day the rest of the app uses.
+ * Date-only strings stay as written. Timestamps with a timezone keep their UTC day.
+ * Local datetimes and slash dates use the local calendar day.
+ */
+export function normalizeStoredDate(raw: unknown): string | null {
+  if (raw == null || raw === "") return null;
+  if (raw instanceof Date) {
+    return Number.isNaN(raw.getTime()) ? null : formatCalendarDate(raw);
+  }
+  if (
+    typeof raw !== "string" &&
+    typeof raw !== "number" &&
+    typeof raw !== "boolean"
+  ) {
+    return null;
+  }
+  const text = String(raw).trim();
+  if (!text) return null;
+  if (parseCalendarDate(text)) return text;
+
+  if (/(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(text)) {
+    const instant = new Date(text);
+    if (!Number.isNaN(instant.getTime())) {
+      return instant.toISOString().slice(0, 10);
+    }
+  }
+
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) {
+    return formatCalendarDate(parsed);
+  }
+
+  const normalized = text.replace(/\./g, "/").replace(/-/g, "/");
+  const parts = normalized.split("/");
+  if (parts.length !== 3) return null;
+  const [p0, p1, p2] = parts;
+  if (!p0 || !p1 || !p2) return null;
+  const year = p0.length === 4 ? p0 : p2;
+  const month = p1;
+  const day = p0.length === 4 ? p2 : p0;
+  const iso = `${year.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  return parseCalendarDate(iso) ? iso : null;
+}
+
 function toUiDate(value: string | Date): Date | null {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? null : value;

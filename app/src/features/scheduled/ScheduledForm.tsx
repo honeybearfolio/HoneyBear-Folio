@@ -12,7 +12,11 @@ import {
 import { useTranslation } from "react-i18next";
 import CustomSelect from "../../components/ui/CustomSelect";
 import NumberInput from "../../components/ui/NumberInput";
-import { getDatePickerFormat } from "../../utils/format";
+import {
+  formatCalendarDate,
+  getDatePickerFormat,
+  parseCalendarDate,
+} from "../../utils/format";
 import { WEEKDAY_KEYS, type ScheduledFormState } from "../../constants/app";
 import { currencyOptions } from "./scheduled-types";
 import type { TickerSuggestion } from "./scheduled-types";
@@ -564,18 +568,15 @@ export default function ScheduledForm({
             <DatePicker
               selected={
                 formState.startDate
-                  ? new Date(formState.startDate + "T00:00:00")
+                  ? parseCalendarDate(formState.startDate)
                   : null
               }
               onChange={(date: Date | null) => {
                 setFormState((prev) => {
                   if (!date) return { ...prev, startDate: prev.startDate };
-                  const year = date.getFullYear();
-                  const month = String(date.getMonth() + 1).padStart(2, "0");
-                  const day = String(date.getDate()).padStart(2, "0");
                   return {
                     ...prev,
-                    startDate: `${String(year)}-${month}-${day}`,
+                    startDate: formatCalendarDate(date),
                   };
                 });
               }}
@@ -591,19 +592,14 @@ export default function ScheduledForm({
             </label>
             <DatePicker
               selected={
-                formState.endDate
-                  ? new Date(formState.endDate + "T00:00:00")
-                  : null
+                formState.endDate ? parseCalendarDate(formState.endDate) : null
               }
               onChange={(date: Date | null) => {
                 setFormState((prev) => {
                   if (!date) return { ...prev, endDate: "" };
-                  const year = date.getFullYear();
-                  const month = String(date.getMonth() + 1).padStart(2, "0");
-                  const day = String(date.getDate()).padStart(2, "0");
                   return {
                     ...prev,
-                    endDate: `${String(year)}-${month}-${day}`,
+                    endDate: formatCalendarDate(date),
                   };
                 });
               }}

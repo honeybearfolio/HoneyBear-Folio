@@ -10,6 +10,7 @@ import { importAccounts, type ExportAccount } from "./accounts-io";
 import { importAssets, type ExportAsset } from "./assets-io";
 import { importLiabilities, type ExportLiability } from "./liabilities-io";
 import { asText } from "./import-parser";
+import { normalizeStoredDate, todayCalendarDate } from "./format";
 
 export interface TransactionImportCallbacks {
   parseNumber: (value: unknown) => number;
@@ -39,32 +40,12 @@ export interface TransactionImportResult {
 }
 
 function parseImportDate(dateStr: unknown): string {
-  if (dateStr === undefined || dateStr === null || dateStr === "") {
-    return new Date().toISOString().split("T")[0]!;
+  const stored = normalizeStoredDate(dateStr);
+  if (stored) return stored;
+  if (dateStr !== undefined && dateStr !== null && dateStr !== "") {
+    console.warn(`Invalid date:`, dateStr);
   }
-
-  const parsedDate = new Date(asText(dateStr));
-  if (!isNaN(parsedDate.getTime())) {
-    return parsedDate.toISOString().split("T")[0]!;
-  }
-
-  const normalized = asText(dateStr).replace(/\./g, "/").replace(/-/g, "/");
-  const parts = normalized.split("/");
-  if (parts.length === 3) {
-    const [p0, p1, p2] = parts;
-    if (p0 && p1 && p2) {
-      const altDate =
-        p0.length === 4
-          ? new Date(`${p0}-${p1}-${p2}`)
-          : new Date(`${p2}-${p1}-${p0}`);
-      if (!isNaN(altDate.getTime())) {
-        return altDate.toISOString().split("T")[0]!;
-      }
-    }
-  }
-
-  console.warn(`Invalid date:`, dateStr);
-  return new Date().toISOString().split("T")[0]!;
+  return todayCalendarDate();
 }
 
 function rowLooksLikeBrokerage(

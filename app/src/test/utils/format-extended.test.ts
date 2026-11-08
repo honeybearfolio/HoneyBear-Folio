@@ -3,6 +3,7 @@ import { renderHook } from "@testing-library/react";
 import {
   formatCalendarDate,
   formatDateForUI,
+  normalizeStoredDate,
   getDatePickerFormat,
   parseCalendarDate,
   formatNumberForExport,
@@ -59,6 +60,22 @@ describe("formatDateForUI", () => {
     expect(parsed?.getDate()).toBe(15);
     expect(formatCalendarDate(new Date(2024, 2, 15))).toBe("2024-03-15");
     expect(parseCalendarDate("2024-02-31")).toBeNull();
+  });
+});
+
+describe("normalizeStoredDate", () => {
+  it("keeps date-only strings and UTC timestamps on that day", () => {
+    expect(normalizeStoredDate("2024-06-01")).toBe("2024-06-01");
+    expect(normalizeStoredDate("2024-06-01T00:00:00.000Z")).toBe("2024-06-01");
+    expect(normalizeStoredDate("15/03/2024")).toBe("2024-03-15");
+    expect(normalizeStoredDate("")).toBeNull();
+    expect(normalizeStoredDate("not-a-date")).toBeNull();
+  });
+
+  it("uses the local calendar day for a local datetime", () => {
+    expect(normalizeStoredDate(new Date(2024, 5, 1, 23, 30))).toBe(
+      "2024-06-01",
+    );
   });
 });
 

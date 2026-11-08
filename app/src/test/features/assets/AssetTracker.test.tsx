@@ -20,6 +20,8 @@ vi.mock("../../../utils/format", () => ({
     const day = String(date.getDate()).padStart(2, "0");
     return `${String(date.getFullYear())}-${month}-${day}`;
   },
+  useFormatDate: () => (value: unknown) =>
+    typeof value === "string" ? `shown:${value}` : "",
 }));
 
 vi.mock("../../../stores/number-format", () => ({
@@ -105,6 +107,8 @@ describe("AssetTracker", () => {
     await waitFor(() => {
       expect(screen.getByText("House")).toBeInTheDocument();
       expect(screen.getByText("Car")).toBeInTheDocument();
+      expect(screen.getByText("Primary residence")).toBeInTheDocument();
+      expect(screen.getByText("shown:2024-06-01")).toBeInTheDocument();
     });
   });
 
@@ -139,13 +143,14 @@ describe("AssetTracker", () => {
     render(<AssetTracker />);
     await waitFor(() => {
       expect(screen.getByText("House")).toBeInTheDocument();
+      expect(screen.getAllByText("Value History").length).toBeGreaterThan(0);
+      expect(screen.getAllByTitle("Hide valuations").length).toBeGreaterThan(0);
     });
 
-    const expandButtons = screen.getAllByTitle("Show valuations");
-    fireEvent.click(expandButtons[0]!);
+    fireEvent.click(screen.getAllByTitle("Hide valuations")[0]!);
 
     await waitFor(() => {
-      expect(screen.getByText("Value History")).toBeInTheDocument();
+      expect(screen.getAllByTitle("Show valuations").length).toBeGreaterThan(0);
     });
   });
 

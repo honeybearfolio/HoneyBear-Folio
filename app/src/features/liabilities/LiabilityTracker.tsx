@@ -9,7 +9,7 @@ import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
 import { useNumberFormat } from "../../stores/number-format";
-import { useFormatNumber } from "../../utils/format";
+import { useFormatDate, useFormatNumber } from "../../utils/format";
 import { ListSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { handleAsyncError, logError } from "../../utils/errors";
 import LiabilityModal from "./LiabilityModal";
@@ -35,6 +35,7 @@ export default function LiabilityTracker({
   const { t } = useTranslation();
   const { currency: appCurrency } = useNumberFormat();
   const formatNumber = useFormatNumber();
+  const formatDate = useFormatDate();
   const confirm = useConfirm();
   const { showToast } = useToast();
 
@@ -284,6 +285,11 @@ export default function LiabilityTracker({
                     {t(`liabilities.category.${liability.category}`)}
                     {liability.currency && ` · ${liability.currency}`}
                   </p>
+                  {liability.notes ? (
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                      {liability.notes}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-slate-800 dark:text-slate-100">
@@ -299,36 +305,50 @@ export default function LiabilityTracker({
                   </p>
                   {liability.latest_date && (
                     <p className="text-xs text-slate-400">
-                      {liability.latest_date}
+                      {formatDate(liability.latest_date)}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
                     onClick={() => {
                       setEditingLiability(liability);
                       setShowLiabilityModal(true);
                     }}
                     className="p-1.5 text-slate-400 hover:text-brand-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={t("liabilities.edit")}
+                    aria-label={t("liabilities.edit")}
                   >
                     <Edit size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       void handleDeleteLiability(liability);
                     }}
                     className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     title={t("liabilities.delete")}
+                    aria-label={t("liabilities.delete")}
                   >
                     <Trash2 size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
                       handleExpand(liability.id);
                     }}
                     className="p-1.5 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                    title={t("liabilities.show_valuations")}
+                    title={
+                      expandedLiabilityIds.has(liability.id)
+                        ? t("liabilities.hide_valuations")
+                        : t("liabilities.show_valuations")
+                    }
+                    aria-label={
+                      expandedLiabilityIds.has(liability.id)
+                        ? t("liabilities.hide_valuations")
+                        : t("liabilities.show_valuations")
+                    }
                   >
                     {expandedLiabilityIds.has(liability.id) ? (
                       <ChevronUp size={15} />
@@ -368,8 +388,8 @@ export default function LiabilityTracker({
                           key={v.id}
                           className="flex items-center gap-3 text-sm py-1.5 px-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50"
                         >
-                          <span className="text-slate-500 dark:text-slate-400 w-28 shrink-0">
-                            {v.date}
+                          <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                            {formatDate(v.date)}
                           </span>
                           <span className="font-medium text-slate-700 dark:text-slate-200 flex-1">
                             {formatNumber(v.value, {
@@ -378,6 +398,7 @@ export default function LiabilityTracker({
                             })}
                           </span>
                           <button
+                            type="button"
                             onClick={() => {
                               setValuationLiabilityId(liability.id);
                               setEditingValuation(v);
@@ -385,15 +406,18 @@ export default function LiabilityTracker({
                             }}
                             className="p-1 text-slate-400 hover:text-brand-600 rounded cursor-pointer"
                             title={t("liabilities.edit")}
+                            aria-label={t("liabilities.edit")}
                           >
                             <Edit size={13} />
                           </button>
                           <button
+                            type="button"
                             onClick={() => {
                               void handleDeleteValuation(v);
                             }}
                             className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
                             title={t("liabilities.delete")}
+                            aria-label={t("liabilities.delete")}
                           >
                             <Trash2 size={13} />
                           </button>

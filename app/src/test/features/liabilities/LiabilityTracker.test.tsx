@@ -20,6 +20,8 @@ vi.mock("../../../utils/format", () => ({
     const day = String(date.getDate()).padStart(2, "0");
     return `${String(date.getFullYear())}-${month}-${day}`;
   },
+  useFormatDate: () => (value: unknown) =>
+    typeof value === "string" ? `shown:${value}` : "",
 }));
 
 vi.mock("../../../stores/number-format", () => ({
@@ -105,6 +107,8 @@ describe("LiabilityTracker", () => {
     await waitFor(() => {
       expect(screen.getByText("Mortgage")).toBeInTheDocument();
       expect(screen.getByText("Credit Card")).toBeInTheDocument();
+      expect(screen.getByText("Home loan")).toBeInTheDocument();
+      expect(screen.getByText("shown:2024-06-01")).toBeInTheDocument();
     });
   });
 
@@ -140,13 +144,18 @@ describe("LiabilityTracker", () => {
     render(<LiabilityTracker />);
     await waitFor(() => {
       expect(screen.getByText("Mortgage")).toBeInTheDocument();
+      expect(screen.getAllByText("Balance History").length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByTitle("Hide balance history").length,
+      ).toBeGreaterThan(0);
     });
 
-    const expandButtons = screen.getAllByTitle("Show balance history");
-    fireEvent.click(expandButtons[0]!);
+    fireEvent.click(screen.getAllByTitle("Hide balance history")[0]!);
 
     await waitFor(() => {
-      expect(screen.getByText("Balance History")).toBeInTheDocument();
+      expect(
+        screen.getAllByTitle("Show balance history").length,
+      ).toBeGreaterThan(0);
     });
   });
 
