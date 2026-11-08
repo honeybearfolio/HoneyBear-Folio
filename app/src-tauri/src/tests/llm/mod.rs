@@ -116,6 +116,7 @@ fn test_build_tool_definitions_has_core_tools() {
     assert!(names.contains(&"get_accounts".to_string()));
     assert!(names.contains(&"get_net_worth".to_string()));
     assert!(names.contains(&"get_assets".to_string()));
+    assert!(names.contains(&"get_goals".to_string()));
     assert!(names.contains(&"get_liabilities".to_string()));
 }
 

@@ -52,6 +52,7 @@ vi.mock("lucide-react", () => ({
   RefreshCw: () => <span>RefreshCw</span>,
   Gem: () => <span>Gem</span>,
   Scale: () => <span>Scale</span>,
+  Target: () => <span>Target</span>,
 }));
 
 vi.mock("../../../features/accounts/AccountModal", () => ({
@@ -92,6 +93,7 @@ describe("Sidebar coverage", () => {
     all: true,
     chat: true,
     assets: true,
+    goals: true,
   };
 
   const defaultProps = {

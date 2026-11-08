@@ -462,6 +462,38 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS goals (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            target_amount REAL NOT NULL,
+            currency TEXT,
+            target_date TEXT,
+            monthly_contribution REAL,
+            notes TEXT,
+            color TEXT NOT NULL DEFAULT 'brand',
+            created_at TEXT NOT NULL,
+            archived INTEGER NOT NULL DEFAULT 0
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS goal_links (
+            id INTEGER PRIMARY KEY,
+            goal_id INTEGER NOT NULL,
+            source_type TEXT NOT NULL,
+            account_id INTEGER,
+            ticker TEXT,
+            allocation_percent REAL NOT NULL DEFAULT 100,
+            FOREIGN KEY(goal_id) REFERENCES goals(id) ON DELETE CASCADE,
+            FOREIGN KEY(account_id) REFERENCES accounts(id) ON DELETE CASCADE
+        )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         // Performance indexes
         conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
@@ -472,7 +504,9 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
              CREATE INDEX IF NOT EXISTS idx_asset_valuations_asset_id ON asset_valuations(asset_id);
              CREATE INDEX IF NOT EXISTS idx_asset_valuations_date ON asset_valuations(date);
              CREATE INDEX IF NOT EXISTS idx_liability_valuations_liability_id ON liability_valuations(liability_id);
-             CREATE INDEX IF NOT EXISTS idx_liability_valuations_date ON liability_valuations(date);",
+             CREATE INDEX IF NOT EXISTS idx_liability_valuations_date ON liability_valuations(date);
+             CREATE INDEX IF NOT EXISTS idx_goal_links_goal_id ON goal_links(goal_id);
+             CREATE INDEX IF NOT EXISTS idx_goal_links_account_id ON goal_links(account_id);",
         )
         .map_err(|e| e.to_string())?;
 

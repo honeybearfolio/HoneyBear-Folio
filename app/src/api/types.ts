@@ -296,6 +296,57 @@ export interface LiabilityWithLatestValue {
 }
 
 // ---------------------------------------------------------------------------
+// Goals
+// ---------------------------------------------------------------------------
+
+export interface GoalLink {
+  id: number;
+  goal_id: number;
+  source_type: "account" | "holding";
+  account_id?: number | null;
+  ticker?: string | null;
+  allocation_percent: number;
+}
+
+export interface Goal {
+  id: number;
+  name: string;
+  target_amount: number;
+  currency?: string | null;
+  target_date?: string | null;
+  monthly_contribution?: number | null;
+  notes?: string | null;
+  color: string;
+  created_at: string;
+  archived: boolean;
+  exchange_rate: number;
+  links: GoalLink[];
+}
+
+export interface GoalLinkInput {
+  sourceType: "account" | "holding";
+  accountId?: number | null;
+  ticker?: string | null;
+  allocationPercent: number;
+}
+
+export interface GoalWrite {
+  name: string;
+  targetAmount: number;
+  currency?: string | null;
+  targetDate?: string | null;
+  monthlyContribution?: number | null;
+  notes?: string | null;
+  color?: string | null;
+  links: GoalLinkInput[];
+}
+
+export interface GoalUpdate extends GoalWrite {
+  id: number;
+  archived: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Rust-side compute helpers (serde camelCase)
 // ---------------------------------------------------------------------------
 

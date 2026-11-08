@@ -12,6 +12,9 @@ type RateMap = Record<string, number>;
 type CurrencyMap = Record<number, string>;
 type MarketValueMap = Record<string, number>;
 
+/** Per-account ticker values in the account currency. `null` means the quote is missing. */
+export type HoldingValueMap = Record<string, Record<string, number | null>>;
+
 function buildQuoteMap(quotes: StockQuote[]): QuoteMap {
   const quoteMap: QuoteMap = {};
   quotes.forEach((quote) => {
@@ -69,50 +72,69 @@ interface ComputeMarketValuesParams {
   exchangeRates: RateMap;
 }
 
-function computeMarketValues({
+function computeHoldingValues({
   accountHoldings,
   accountCcyMap,
   appCurrency,
   quoteMap,
   exchangeRates,
-}: ComputeMarketValuesParams): MarketValueMap {
-  const newMarketValues: MarketValueMap = {};
+}: ComputeMarketValuesParams): HoldingValueMap {
+  const holdingValues: HoldingValueMap = {};
 
   for (const [accountId, holdings] of Object.entries(accountHoldings)) {
-    let totalValue = 0;
+    const byTicker: Record<string, number | null> = {};
     const targetCcy = accountCcyMap[Number(accountId)] || appCurrency;
 
     for (const [ticker, shares] of Object.entries(holdings)) {
-      if (shares > 0.0001) {
-        const quoteName = Object.keys(quoteMap).find(
-          (name) => name.toLowerCase() === ticker.toLowerCase(),
-        );
-        const quote = quoteName ? quoteMap[quoteName] : undefined;
-        if (!quote) continue;
-
-        let price = quote.regularMarketPrice || 0;
-        if (quote.currency && quote.currency !== targetCcy) {
-          const pair = `${quote.currency}${targetCcy}=X`;
-          if (exchangeRates[pair]) price = price * exchangeRates[pair];
-        }
-        totalValue += shares * price;
+      if (shares <= 0.0001) continue;
+      const quoteName = Object.keys(quoteMap).find(
+        (name) => name.toLowerCase() === ticker.toLowerCase(),
+      );
+      const quote = quoteName ? quoteMap[quoteName] : undefined;
+      if (!quote) {
+        byTicker[ticker] = null;
+        continue;
       }
+
+      let price = quote.regularMarketPrice || 0;
+      if (quote.currency && quote.currency !== targetCcy) {
+        const pair = `${quote.currency}${targetCcy}=X`;
+        if (exchangeRates[pair]) price = price * exchangeRates[pair];
+      }
+      byTicker[ticker] = shares * price;
     }
 
+    holdingValues[accountId] = byTicker;
+  }
+
+  return holdingValues;
+}
+
+function computeMarketValues(
+  params: ComputeMarketValuesParams,
+): MarketValueMap {
+  const holdingValues = computeHoldingValues(params);
+  const newMarketValues: MarketValueMap = {};
+
+  for (const [accountId, tickers] of Object.entries(holdingValues)) {
+    let totalValue = 0;
+    for (const value of Object.values(tickers)) {
+      if (value != null) totalValue += value;
+    }
     newMarketValues[accountId] = totalValue;
   }
 
   return newMarketValues;
 }
 
-export async function fetchMarketValuesForAccounts(
-  currentAccounts: MarketValueAccount[] = [],
-  appCurrency: string = "USD",
-): Promise<MarketValueMap> {
+async function loadQuoteContext(
+  currentAccounts: MarketValueAccount[],
+  appCurrency: string,
+): Promise<ComputeMarketValuesParams | null> {
   const transactions = await rust.get_all_transactions();
   const { accountHoldings, allTickers } =
     buildAccountHoldingsFromTransactions(transactions);
-  if (allTickers.size === 0) return {};
+  if (allTickers.size === 0) return null;
 
   const accountCcyMap: CurrencyMap = {};
   currentAccounts.forEach((acc) => {
@@ -130,11 +152,29 @@ export async function fetchMarketValuesForAccounts(
     quoteMap,
   });
 
-  return computeMarketValues({
+  return {
     accountHoldings,
     accountCcyMap,
     appCurrency,
     quoteMap,
     exchangeRates,
-  });
+  };
+}
+
+export async function fetchHoldingValuesForAccounts(
+  currentAccounts: MarketValueAccount[] = [],
+  appCurrency: string = "USD",
+): Promise<HoldingValueMap> {
+  const context = await loadQuoteContext(currentAccounts, appCurrency);
+  if (!context) return {};
+  return computeHoldingValues(context);
+}
+
+export async function fetchMarketValuesForAccounts(
+  currentAccounts: MarketValueAccount[] = [],
+  appCurrency: string = "USD",
+): Promise<MarketValueMap> {
+  const context = await loadQuoteContext(currentAccounts, appCurrency);
+  if (!context) return {};
+  return computeMarketValues(context);
 }

@@ -45,6 +45,12 @@ pub fn tool_get_total_assets_value(db_path: &PathBuf, arguments: &Value) -> Resu
     }))
 }
 
+pub fn tool_get_goals(db_path: &PathBuf, arguments: &Value) -> Result<Value, String> {
+    let target = parse_target_currency(arguments);
+    let goals = crate::goals::get_goals_db(db_path, Some(&target))?;
+    serde_json::to_value(&goals).map_err(|e| e.to_string())
+}
+
 pub fn tool_get_liabilities(db_path: &PathBuf, arguments: &Value) -> Result<Value, String> {
     let target = parse_target_currency(arguments);
     let liabilities = crate::liabilities::get_liabilities_db(db_path, Some(&target))?;
@@ -351,6 +357,7 @@ pub async fn execute_tool(
         "get_assets" => tool_get_assets(db_path, arguments),
         "get_asset_valuations" => tool_get_asset_valuations(db_path, arguments),
         "get_total_assets_value" => tool_get_total_assets_value(db_path, arguments),
+        "get_goals" => tool_get_goals(db_path, arguments),
         "get_liabilities" => tool_get_liabilities(db_path, arguments),
         "get_liability_valuations" => tool_get_liability_valuations(db_path, arguments),
         "get_total_liabilities_value" => tool_get_total_liabilities_value(db_path, arguments),

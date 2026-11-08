@@ -62,6 +62,7 @@ describe("CustomizationSection", () => {
     chat: true,
     assets: true,
     liabilities: true,
+    goals: true,
   };
 
   const defaultProps = {

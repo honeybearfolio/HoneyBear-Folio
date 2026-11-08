@@ -283,6 +283,35 @@ pub struct LiabilityWithLatestValue {
     pub exchange_rate: f64,
 }
 
+// ── Financial goals ─────────────────────────────────────────────────
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct GoalLink {
+    pub id: i32,
+    pub goal_id: i32,
+    pub source_type: String,
+    pub account_id: Option<i32>,
+    pub ticker: Option<String>,
+    pub allocation_percent: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Goal {
+    pub id: i32,
+    pub name: String,
+    pub target_amount: f64,
+    pub currency: Option<String>,
+    pub target_date: Option<String>,
+    pub monthly_contribution: Option<f64>,
+    pub notes: Option<String>,
+    pub color: String,
+    pub created_at: String,
+    pub archived: bool,
+    #[serde(default = "default_exchange_rate")]
+    pub exchange_rate: f64,
+    pub links: Vec<GoalLink>,
+}
+
 // ── PDF Report data structures ──────────────────────────────────────
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

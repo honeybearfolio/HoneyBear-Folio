@@ -15,8 +15,8 @@
 
 mod core;
 pub use crate::core::{
-    accounts, assets, calculations, db_init, io, liabilities, llm, llm_chat, markets, models, pdf,
-    rules, scheduled, session, transactions, utils,
+    accounts, assets, calculations, db_init, goals, io, liabilities, llm, llm_chat, markets,
+    models, pdf, rules, scheduled, session, transactions, utils,
 };
 
 pub use crate::models::{
@@ -222,6 +222,10 @@ pub fn run() {
             assets::update_valuation,
             assets::delete_valuation,
             assets::get_total_assets_value,
+            goals::get_goals,
+            goals::create_goal,
+            goals::update_goal,
+            goals::delete_goal,
             liabilities::create_liability,
             liabilities::get_liabilities,
             liabilities::update_liability,

@@ -218,6 +218,10 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        // Drop goal funding links that pointed at this account.
+        tx.execute("DELETE FROM goal_links WHERE account_id = ?1", params![id])
+            .map_err(|e| e.to_string())?;
+
         // Delete the account
         tx.execute("DELETE FROM accounts WHERE id = ?1", params![id])
             .map_err(|e| e.to_string())?;

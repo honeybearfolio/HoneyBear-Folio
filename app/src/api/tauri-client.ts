@@ -4,6 +4,9 @@ import type {
   Asset,
   AssetValuation,
   AssetWithLatestValue,
+  Goal,
+  GoalUpdate,
+  GoalWrite,
   Liability,
   LiabilityValuation,
   LiabilityWithLatestValue,
@@ -409,6 +412,22 @@ export const rust = {
   get_total_assets_value: (args?: {
     targetCurrency?: string;
   }): Promise<number> => callRust("get_total_assets_value", args),
+
+  // ---------------------------------------------------------------------------
+  // Goals
+  // ---------------------------------------------------------------------------
+
+  get_goals: (args?: { targetCurrency?: string }): Promise<Goal[]> =>
+    callRust("get_goals", args),
+
+  create_goal: (args: GoalWrite): Promise<number> =>
+    callRust("create_goal", { args }),
+
+  update_goal: (args: GoalUpdate): Promise<void> =>
+    callRust("update_goal", { args }),
+
+  delete_goal: (args: { id: number }): Promise<void> =>
+    callRust("delete_goal", args),
 
   // ---------------------------------------------------------------------------
   // Liabilities
