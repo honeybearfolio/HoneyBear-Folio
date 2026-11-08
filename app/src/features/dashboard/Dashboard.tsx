@@ -1,20 +1,18 @@
+import { useState } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import "../../styles/Dashboard.css";
 import { useFormatNumber, useFormatDate } from "../../utils/format";
 import { useNumberFormat } from "../../stores/number-format";
+import { useConfirm } from "../../stores/confirm";
+import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
 import { DashboardSkeleton, ErrorState } from "../../components/ui/Skeleton";
 import { useTranslation } from "react-i18next";
 import useIsDark from "../../hooks/useIsDark";
 import useChartColors from "../../hooks/useChartColors";
-import SankeyDiagram from "./SankeyDiagram";
 import TimeRangeSelector from "./TimeRangeSelector";
 import AccountFilterPopover from "./AccountFilterPopover";
-import SummaryCards from "./SummaryCards";
-import NetWorthChart from "./NetWorthChart";
-import AssetAllocationChart from "./AssetAllocationChart";
-import ExpensesByCategoryChart from "./ExpensesByCategoryChart";
-import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
+import DashboardGrid from "./DashboardGrid";
 import { registerDashboardCharts } from "./dashboard-chart-config";
 import type { DashboardProps } from "./dashboard-types";
 import { useDashboardFetch } from "./useDashboardFetch";
@@ -35,6 +33,11 @@ export default function Dashboard({
   const chartColors = useChartColors();
   const formatNumber = useFormatNumber();
   const formatDate = useFormatDate();
+  const confirm = useConfirm();
+  const resetLayout = useDashboardPreferencesStore(
+    (state) => state.resetLayout,
+  );
+  const [editing, setEditing] = useState(false);
   const {
     dateFormat,
     firstDayOfWeek,
@@ -70,7 +73,6 @@ export default function Dashboard({
     filteredMarketValues,
   } = useDashboardFilters({
     accounts,
-    propAccounts,
     transactions,
     marketValues,
   });
@@ -113,6 +115,14 @@ export default function Dashboard({
     currentNetWorth,
     t,
   });
+
+  async function handleResetLayout() {
+    const confirmed = await confirm(t("dashboard.reset_layout_confirm"), {
+      kind: "warning",
+    });
+    if (!confirmed) return;
+    resetLayout();
+  }
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -173,86 +183,58 @@ export default function Dashboard({
               ? { chartDatasets: chartData.datasets }
               : {})}
           />
+
+          {editing && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                void handleResetLayout();
+              }}
+            >
+              {t("dashboard.reset_layout")}
+            </button>
+          )}
+          <button
+            type="button"
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg border shadow-sm ${
+              editing
+                ? "bg-slate-900 dark:bg-brand-600 text-white border-transparent"
+                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+            }`}
+            aria-pressed={editing}
+            onClick={() => {
+              setEditing((current) => !current);
+            }}
+          >
+            {editing ? t("dashboard.done") : t("dashboard.customize")}
+          </button>
         </div>
       </div>
 
-      <SummaryCards
+      <DashboardGrid
+        editing={editing}
+        hasTransactions={filteredTransactions.length > 0}
+        onEnterEdit={() => {
+          setEditing(true);
+        }}
         netWorth={currentNetWorth}
         totalAccounts={filteredAccounts.length}
         totalTransactions={filteredTransactions.length}
+        netWorthChart={{ chartData, options: lineOptions }}
+        incomeChart={{ incomeVsExpensesData, barOptions }}
+        allocationChart={{ doughnutData, doughnutOptions }}
+        expensesChart={{ expensesByCategoryData, expensesOptions }}
+        sankey={{
+          transactions: filteredTransactions,
+          timeRange,
+          customStartDate,
+          customEndDate,
+          accountMap,
+          getPrice,
+          appCurrency,
+        }}
       />
-
-      {filteredTransactions.length === 0 ? null : (
-        <NetWorthChart chartData={chartData} options={lineOptions} />
-      )}
-
-      <div className="charts-grid">
-        {filteredTransactions.length === 0 ? (
-          <div className="col-span-full flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-16">
-            <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-2xl mb-4">
-              <svg
-                className="w-16 h-16 text-slate-300 dark:text-slate-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            </div>
-            <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
-              {t("account.no_transactions_found")}
-            </p>
-            <p className="text-sm text-slate-400 dark:text-slate-500">
-              {t("dashboard.no_transactions_body")}
-            </p>
-          </div>
-        ) : (
-          <>
-            <IncomeVsExpensesChart
-              incomeVsExpensesData={incomeVsExpensesData}
-              barOptions={barOptions}
-            />
-
-            <div
-              className="chart-card chart-card-full"
-              style={{ height: "500px" }}
-            >
-              <div className="chart-header">
-                <h3 className="chart-title">{t("dashboard.cash_flow")}</h3>
-                <p className="chart-subtitle">
-                  {t("dashboard.subtitle.income_and_expense_flow")}
-                </p>
-              </div>
-              <div className="chart-body">
-                <SankeyDiagram
-                  transactions={filteredTransactions}
-                  timeRange={timeRange}
-                  customStartDate={customStartDate}
-                  customEndDate={customEndDate}
-                  accountMap={accountMap}
-                  getPrice={getPrice}
-                  appCurrency={appCurrency}
-                />
-              </div>
-            </div>
-
-            <AssetAllocationChart
-              doughnutData={doughnutData}
-              doughnutOptions={doughnutOptions}
-            />
-
-            <ExpensesByCategoryChart
-              expensesByCategoryData={expensesByCategoryData}
-              expensesOptions={expensesOptions}
-            />
-          </>
-        )}
-      </div>
     </div>
   );
 }

@@ -1,5 +1,20 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import MaskedNumber from "../../components/ui/MaskedNumber";
+
+interface SummaryCardProps {
+  title: string;
+  children: ReactNode;
+}
+
+export function SummaryCard({ title, children }: SummaryCardProps) {
+  return (
+    <div className="summary-card">
+      <h3 className="summary-card-title">{title}</h3>
+      <p className="summary-card-value">{children}</p>
+    </div>
+  );
+}
 
 interface SummaryCardsProps {
   netWorth: number;
@@ -15,25 +30,16 @@ export default function SummaryCards({
   const { t } = useTranslation();
 
   return (
-    <div className="summary-cards-grid">
-      <div className="summary-card">
-        <h3 className="summary-card-title">
-          {t("dashboard.current_net_worth")}
-        </h3>
-        <p className="summary-card-value">
-          <MaskedNumber value={netWorth} options={{ style: "currency" }} />
-        </p>
-      </div>
-      <div className="summary-card">
-        <h3 className="summary-card-title">{t("dashboard.total_accounts")}</h3>
-        <p className="summary-card-value">{totalAccounts}</p>
-      </div>
-      <div className="summary-card">
-        <h3 className="summary-card-title">
-          {t("dashboard.total_transactions")}
-        </h3>
-        <p className="summary-card-value">{totalTransactions}</p>
-      </div>
-    </div>
+    <>
+      <SummaryCard title={t("dashboard.current_net_worth")}>
+        <MaskedNumber value={netWorth} options={{ style: "currency" }} />
+      </SummaryCard>
+      <SummaryCard title={t("dashboard.total_accounts")}>
+        {totalAccounts}
+      </SummaryCard>
+      <SummaryCard title={t("dashboard.total_transactions")}>
+        {totalTransactions}
+      </SummaryCard>
+    </>
   );
 }

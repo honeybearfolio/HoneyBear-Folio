@@ -1,86 +1,131 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import type { Account } from "../../api/types";
+import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
 import type { DashboardTimeRange } from "./dashboard-constants";
+import { formatIsoDate, parseIsoDate } from "./dashboard-layout";
+import type { Transaction } from "./dashboard-types";
 
 interface UseDashboardFiltersArgs {
   accounts: Account[];
-  propAccounts: Account[];
-  transactions: import("./dashboard-types").Transaction[];
+  transactions: Transaction[];
   marketValues: Record<string, number>;
 }
 
 export function useDashboardFilters({
   accounts,
-  propAccounts,
   transactions,
   marketValues,
 }: UseDashboardFiltersArgs) {
-  const [timeRange, setTimeRange] = useState<DashboardTimeRange>("1Y");
-  const [customStartDate, setCustomStartDate] = useState(
-    new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
+  const timeRange = useDashboardPreferencesStore(
+    (state) => state.view.timeRange,
   );
-  const [customEndDate, setCustomEndDate] = useState(new Date());
+  const customStartDateIso = useDashboardPreferencesStore(
+    (state) => state.view.customStartDate,
+  );
+  const customEndDateIso = useDashboardPreferencesStore(
+    (state) => state.view.customEndDate,
+  );
+  const hiddenAccountIds = useDashboardPreferencesStore(
+    (state) => state.view.hiddenAccountIds,
+  );
+  const setStoredTimeRange = useDashboardPreferencesStore(
+    (state) => state.setTimeRange,
+  );
+  const setCustomRange = useDashboardPreferencesStore(
+    (state) => state.setCustomRange,
+  );
+  const setHiddenAccountIds = useDashboardPreferencesStore(
+    (state) => state.setHiddenAccountIds,
+  );
 
-  const [toggledAccounts, setToggledAccounts] = useState<
-    Record<string | number, boolean>
-  >(() => {
-    const map: Record<string | number, boolean> = {};
-    propAccounts.forEach((a) => (map[a.id] = true));
-    return map;
-  });
+  const customStartDate = useMemo(
+    () => parseIsoDate(customStartDateIso) ?? new Date(),
+    [customStartDateIso],
+  );
+  const customEndDate = useMemo(
+    () => parseIsoDate(customEndDateIso) ?? new Date(),
+    [customEndDateIso],
+  );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setToggledAccounts((prev) => {
-        const next = { ...prev };
-        accounts.forEach((a) => {
-          if (!(a.id in next)) {
-            next[a.id] = true;
-          }
-        });
-        return next;
-      });
-    }, 0);
+  const hiddenIds = useMemo(
+    () => new Set(hiddenAccountIds),
+    [hiddenAccountIds],
+  );
 
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [accounts]);
+  const setTimeRange = (range: DashboardTimeRange) => {
+    setStoredTimeRange(range);
+  };
 
-  const selectedAccountIds = useMemo(() => {
-    const set = new Set<string | number>();
-    accounts.forEach((a) => {
-      if (toggledAccounts[a.id]) set.add(a.id);
-    });
-    return set;
-  }, [accounts, toggledAccounts]);
+  const setCustomStartDate = (date: Date) => {
+    const endIso = useDashboardPreferencesStore.getState().view.customEndDate;
+    const end = parseIsoDate(endIso);
+    const startIso = formatIsoDate(date);
+    const nextEnd = end && date > end ? startIso : endIso;
+    setCustomRange(startIso, nextEnd);
+  };
+
+  const setCustomEndDate = (date: Date) => {
+    const startIso =
+      useDashboardPreferencesStore.getState().view.customStartDate;
+    const start = parseIsoDate(startIso);
+    const endIso = formatIsoDate(date);
+    const nextStart = start && date < start ? endIso : startIso;
+    setCustomRange(nextStart, endIso);
+  };
 
   const toggleAccountVisibility = (accountId: string | number) => {
-    setToggledAccounts((prev) => ({ ...prev, [accountId]: !prev[accountId] }));
+    const key = String(accountId);
+    const current =
+      useDashboardPreferencesStore.getState().view.hiddenAccountIds;
+    const next = new Set(current);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setHiddenAccountIds([...next]);
   };
 
   const setAllAccountsVisibility = (visible: boolean) => {
-    const map: Record<string | number, boolean> = {};
-    accounts.forEach((a) => (map[a.id] = visible));
-    setToggledAccounts(map);
+    if (visible) {
+      setHiddenAccountIds([]);
+      return;
+    }
+    setHiddenAccountIds(accounts.map((account) => String(account.id)));
   };
 
+  const selectedAccountIds = useMemo(() => {
+    const set = new Set<string | number>();
+    accounts.forEach((account) => {
+      if (!hiddenIds.has(String(account.id))) set.add(account.id);
+    });
+    return set;
+  }, [accounts, hiddenIds]);
+
+  const toggledAccounts = useMemo(() => {
+    const map: Record<string | number, boolean> = {};
+    accounts.forEach((account) => {
+      map[account.id] = !hiddenIds.has(String(account.id));
+    });
+    return map;
+  }, [accounts, hiddenIds]);
+
   const filteredAccounts = useMemo(
-    () => accounts.filter((a) => selectedAccountIds.has(a.id)),
+    () => accounts.filter((account) => selectedAccountIds.has(account.id)),
     [accounts, selectedAccountIds],
   );
 
   const filteredTransactions = useMemo(
-    () => transactions.filter((t) => selectedAccountIds.has(t.account_id)),
+    () =>
+      transactions.filter((transaction) =>
+        selectedAccountIds.has(transaction.account_id),
+      ),
     [transactions, selectedAccountIds],
   );
 
   const filteredMarketValues = useMemo(() => {
-    const mv: Record<string, number> = {};
-    for (const [id, val] of Object.entries(marketValues)) {
-      if (selectedAccountIds.has(Number(id))) mv[id] = val;
+    const values: Record<string, number> = {};
+    for (const [id, value] of Object.entries(marketValues)) {
+      if (selectedAccountIds.has(Number(id))) values[id] = value;
     }
-    return mv;
+    return values;
   }, [marketValues, selectedAccountIds]);
 
   return {

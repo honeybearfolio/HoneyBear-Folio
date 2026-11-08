@@ -111,6 +111,46 @@
     @apply grid grid-cols-1 lg:grid-cols-2 gap-6;
   }
 
+  .dashboard-grid {
+    @apply grid grid-cols-1 lg:grid-cols-6 gap-6;
+  }
+
+  .dashboard-grid > * {
+    min-width: 0;
+  }
+
+  .dashboard-span-card {
+    @apply lg:col-span-2;
+  }
+
+  .dashboard-span-half {
+    @apply lg:col-span-3;
+  }
+
+  .dashboard-span-full {
+    @apply lg:col-span-6;
+  }
+
+  .dashboard-widget-toolbar {
+    @apply flex flex-wrap items-center gap-1 mb-2;
+  }
+
+  .dashboard-widget-handle {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-grab active:cursor-grabbing;
+  }
+
+  .dashboard-widget-icon-button {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .dashboard-widget-hidden {
+    @apply opacity-50;
+  }
+
+  .dashboard-widget-editing .chart-body {
+    pointer-events: none;
+  }
+
   .chart-card {
     @apply bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 h-[400px] hover:shadow-lg transition-shadow duration-300 flex flex-col overflow-hidden;
   }

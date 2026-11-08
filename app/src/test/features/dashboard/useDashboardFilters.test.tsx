@@ -1,8 +1,9 @@
 import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { useDashboardFilters } from "../../../features/dashboard/useDashboardFilters";
 import type { Account } from "../../../api/types";
 import type { Transaction } from "../../../features/dashboard/dashboard-types";
+import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
 
 const accounts: Account[] = [
   { id: 1, name: "Checking", balance: 1000, currency: "USD" },
@@ -15,11 +16,15 @@ const transactions: Transaction[] = [
 ];
 
 describe("useDashboardFilters", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useDashboardPreferencesStore.getState().resetAll();
+  });
+
   it("defaults all prop accounts to selected", () => {
     const { result } = renderHook(() =>
       useDashboardFilters({
         accounts,
-        propAccounts: accounts,
         transactions,
         marketValues: { 1: 1000, 2: 5000 },
       }),
@@ -34,7 +39,6 @@ describe("useDashboardFilters", () => {
     const { result } = renderHook(() =>
       useDashboardFilters({
         accounts,
-        propAccounts: accounts,
         transactions,
         marketValues: { 1: 1000, 2: 5000 },
       }),
@@ -54,7 +58,6 @@ describe("useDashboardFilters", () => {
     const { result } = renderHook(() =>
       useDashboardFilters({
         accounts,
-        propAccounts: accounts,
         transactions,
         marketValues: {},
       }),
@@ -76,7 +79,6 @@ describe("useDashboardFilters", () => {
       ({ currentAccounts }) =>
         useDashboardFilters({
           accounts: currentAccounts,
-          propAccounts: [accounts[0]!],
           transactions,
           marketValues: {},
         }),
@@ -92,5 +94,77 @@ describe("useDashboardFilters", () => {
     });
 
     expect(result.current.selectedAccountIds.has(2)).toBe(true);
+  });
+
+  it("keeps a hidden account hidden after the hook remounts", () => {
+    const { result, unmount } = renderHook(() =>
+      useDashboardFilters({
+        accounts,
+        transactions,
+        marketValues: {},
+      }),
+    );
+
+    act(() => {
+      result.current.toggleAccountVisibility(1);
+    });
+    unmount();
+
+    const next = renderHook(() =>
+      useDashboardFilters({
+        accounts,
+        transactions,
+        marketValues: {},
+      }),
+    );
+
+    expect(next.result.current.selectedAccountIds.has(1)).toBe(false);
+    expect(next.result.current.selectedAccountIds.has(2)).toBe(true);
+    expect(next.result.current.filteredTransactions).toHaveLength(1);
+  });
+
+  it("shows a newly added account when another account is hidden", () => {
+    const { result, rerender } = renderHook(
+      ({ currentAccounts }) =>
+        useDashboardFilters({
+          accounts: currentAccounts,
+          transactions,
+          marketValues: {},
+        }),
+      { initialProps: { currentAccounts: [accounts[0]!] } },
+    );
+
+    act(() => {
+      result.current.toggleAccountVisibility(1);
+    });
+    rerender({ currentAccounts: accounts });
+
+    expect(result.current.selectedAccountIds.has(1)).toBe(false);
+    expect(result.current.selectedAccountIds.has(2)).toBe(true);
+  });
+
+  it("keeps the time range after the hook remounts", () => {
+    const { result, unmount } = renderHook(() =>
+      useDashboardFilters({
+        accounts,
+        transactions,
+        marketValues: {},
+      }),
+    );
+
+    act(() => {
+      result.current.setTimeRange("3M");
+    });
+    unmount();
+
+    const next = renderHook(() =>
+      useDashboardFilters({
+        accounts,
+        transactions,
+        marketValues: {},
+      }),
+    );
+
+    expect(next.result.current.timeRange).toBe("3M");
   });
 });

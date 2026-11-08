@@ -1,9 +1,17 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Dashboard from "../../../features/dashboard/Dashboard";
 import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
+import { useConfirmStore } from "../../../stores/confirm";
+import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
@@ -116,6 +124,9 @@ describe("Dashboard extended", () => {
       currency: "USD",
       locale: "en-US",
     });
+    localStorage.clear();
+    useDashboardPreferencesStore.getState().resetAll();
+    useConfirmStore.setState({ isOpen: false, resolve: null });
   });
 
   it("shows empty state when there are no transactions", async () => {
@@ -233,5 +244,111 @@ describe("Dashboard extended", () => {
     await waitFor(() => {
       expect(screen.getByText("1/2")).toBeInTheDocument();
     });
+  });
+
+  it("hides a widget until the layout is reset and keeps the time range", async () => {
+    const user = userEvent.setup();
+    mockDashboardInvoke((cmd) => {
+      if (cmd === "get_all_transactions")
+        return Promise.resolve(sampleTransactions);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => screen.getByText("Current Net Worth"));
+
+    await user.click(screen.getByRole("button", { name: "3M" }));
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    await user.click(
+      screen.getByRole("button", { name: "Hide widget Current Net Worth" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(screen.queryByText("Current Net Worth")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "3M" }).className).toContain(
+      "time-range-button-active",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    await user.click(screen.getByRole("button", { name: "Reset layout" }));
+
+    await waitFor(() => {
+      expect(useConfirmStore.getState().isOpen).toBe(true);
+    });
+    act(() => {
+      useConfirmStore.getState().handleClose(true);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Current Net Worth")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "3M" }).className).toContain(
+      "time-range-button-active",
+    );
+  });
+
+  it("reorders widgets with the keyboard and by dragging", async () => {
+    const user = userEvent.setup();
+    mockDashboardInvoke((cmd) => {
+      if (cmd === "get_all_transactions")
+        return Promise.resolve(sampleTransactions);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => screen.getByText("Current Net Worth"));
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+
+    await user.click(
+      screen.getByRole("button", { name: "Move down Current Net Worth" }),
+    );
+
+    expect(
+      screen
+        .getByText("Total Accounts")
+        .compareDocumentPosition(screen.getByText("Current Net Worth")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const handle = screen.getByRole("button", {
+      name: "Drag to reorder Total Accounts",
+    });
+    fireEvent.dragStart(handle, {
+      dataTransfer: { setData: vi.fn(), effectAllowed: "move" },
+    });
+    const netWorthCell = screen
+      .getByText("Current Net Worth")
+      .closest(".dashboard-span-card");
+    fireEvent.dragEnter(netWorthCell!, {
+      dataTransfer: { dropEffect: "move" },
+      timeStamp: 100,
+    });
+
+    expect(
+      screen
+        .getByText("Current Net Worth")
+        .compareDocumentPosition(screen.getByText("Total Accounts")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("makes a half-width chart full width", async () => {
+    const user = userEvent.setup();
+    mockDashboardInvoke((cmd) => {
+      if (cmd === "get_all_transactions")
+        return Promise.resolve(sampleTransactions);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => screen.getByText("Asset Allocation"));
+    await user.click(screen.getByRole("button", { name: "Customize" }));
+    await user.click(
+      screen.getByRole("button", { name: "Full width Asset Allocation" }),
+    );
+
+    expect(
+      screen.getByText("Asset Allocation").closest(".dashboard-span-full"),
+    ).toBeTruthy();
   });
 });

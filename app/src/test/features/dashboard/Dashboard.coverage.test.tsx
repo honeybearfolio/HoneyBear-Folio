@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import Dashboard from "../../../features/dashboard/Dashboard";
 import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
+import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
@@ -111,6 +112,8 @@ describe("Dashboard coverage", () => {
       currency: "USD",
       locale: "en-US",
     });
+    localStorage.clear();
+    useDashboardPreferencesStore.getState().resetAll();
   });
 
   it("shows loading skeleton while data is fetching", () => {
