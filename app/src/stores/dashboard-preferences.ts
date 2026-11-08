@@ -2,25 +2,35 @@ import { create } from "zustand";
 import { STORAGE_KEYS } from "../constants/app";
 import {
   cloneDefaultDashboardLayout,
+  createWidgetInstance,
   defaultDashboardView,
-  isSummaryWidget,
   moveDashboardWidget,
   normalizeDashboardLayout,
   normalizeDashboardView,
   parseIsoDate,
-  type ChartSpan,
+  resizeDashboardWidget,
   type DashboardViewState,
-  type DashboardWidgetConfig,
-  type DashboardWidgetId,
+  type DashboardWidgetInstance,
+  type DashboardWidgetType,
+  type WidgetFilter,
 } from "../features/dashboard/dashboard-layout";
+import type { DashboardTimeRange } from "../features/dashboard/dashboard-constants";
 
 export interface DashboardPreferencesState {
-  layout: DashboardWidgetConfig[];
+  layout: DashboardWidgetInstance[];
   view: DashboardViewState;
-  setLayout: (layout: DashboardWidgetConfig[]) => void;
-  moveWidget: (id: DashboardWidgetId, toIndex: number) => void;
-  setWidgetVisible: (id: DashboardWidgetId, visible: boolean) => void;
-  setWidgetSpan: (id: DashboardWidgetId, span: ChartSpan) => void;
+  setLayout: (layout: DashboardWidgetInstance[]) => void;
+  moveWidget: (instanceId: string, x: number, y: number) => void;
+  resizeWidget: (instanceId: string, w: number, h: number) => void;
+  addWidget: (type: DashboardWidgetType) => void;
+  removeWidget: (instanceId: string) => void;
+  setWidgetFilters: (instanceId: string, filters: WidgetFilter[]) => void;
+  setWidgetTimeRange: (
+    instanceId: string,
+    timeRange: DashboardTimeRange | null,
+    customStartDate?: string | null,
+    customEndDate?: string | null,
+  ) => void;
   resetLayout: () => void;
   setTimeRange: (timeRange: DashboardViewState["timeRange"]) => void;
   setCustomRange: (customStartDate: string, customEndDate: string) => void;
@@ -29,7 +39,7 @@ export interface DashboardPreferencesState {
   resetAll: () => void;
 }
 
-export function readDashboardLayout(): DashboardWidgetConfig[] {
+export function readDashboardLayout(): DashboardWidgetInstance[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT);
     if (!raw) return cloneDefaultDashboardLayout();
@@ -49,7 +59,7 @@ export function readDashboardView(): DashboardViewState {
   }
 }
 
-function writeLayout(layout: DashboardWidgetConfig[]) {
+function writeLayout(layout: DashboardWidgetInstance[]) {
   localStorage.setItem(STORAGE_KEYS.DASHBOARD_LAYOUT, JSON.stringify(layout));
 }
 
@@ -65,6 +75,20 @@ function removeKey(key: string) {
   }
 }
 
+function replaceWidget(
+  layout: DashboardWidgetInstance[],
+  instanceId: string,
+  update: (widget: DashboardWidgetInstance) => DashboardWidgetInstance,
+): DashboardWidgetInstance[] | null {
+  const current = layout.find((widget) => widget.instanceId === instanceId);
+  if (!current) return null;
+  const nextWidget = update(current);
+  if (nextWidget === current) return null;
+  return layout.map((widget) =>
+    widget.instanceId === instanceId ? nextWidget : widget,
+  );
+}
+
 export const useDashboardPreferencesStore = create<DashboardPreferencesState>(
   (set, get) => ({
     layout: readDashboardLayout(),
@@ -74,28 +98,60 @@ export const useDashboardPreferencesStore = create<DashboardPreferencesState>(
       writeLayout(next);
       set({ layout: next });
     },
-    moveWidget: (id, toIndex) => {
-      const next = moveDashboardWidget(get().layout, id, toIndex);
+    moveWidget: (instanceId, x, y) => {
+      const next = moveDashboardWidget(get().layout, instanceId, x, y);
       if (next === get().layout) return;
       writeLayout(next);
       set({ layout: next });
     },
-    setWidgetVisible: (id, visible) => {
-      const current = get().layout.find((widget) => widget.id === id);
-      if (!current || current.visible === visible) return;
-      const layout = get().layout.map((widget) =>
-        widget.id === id ? { ...widget, visible } : widget,
-      );
+    resizeWidget: (instanceId, w, h) => {
+      const next = resizeDashboardWidget(get().layout, instanceId, w, h);
+      if (next === get().layout) return;
+      writeLayout(next);
+      set({ layout: next });
+    },
+    addWidget: (type) => {
+      const layout = [
+        ...get().layout,
+        createWidgetInstance(type, get().layout),
+      ];
       writeLayout(layout);
       set({ layout });
     },
-    setWidgetSpan: (id, span) => {
-      if (isSummaryWidget(id)) return;
-      const current = get().layout.find((widget) => widget.id === id);
-      if (!current || current.span === span) return;
-      const layout = get().layout.map((widget) =>
-        widget.id === id ? { ...widget, span } : widget,
+    removeWidget: (instanceId) => {
+      const layout = get().layout.filter(
+        (widget) => widget.instanceId !== instanceId,
       );
+      if (layout.length === get().layout.length) return;
+      writeLayout(layout);
+      set({ layout });
+    },
+    setWidgetFilters: (instanceId, filters) => {
+      const layout = replaceWidget(get().layout, instanceId, (widget) => ({
+        ...widget,
+        filters,
+      }));
+      if (!layout) return;
+      writeLayout(layout);
+      set({ layout });
+    },
+    setWidgetTimeRange: (
+      instanceId,
+      timeRange,
+      customStartDate,
+      customEndDate,
+    ) => {
+      const layout = replaceWidget(get().layout, instanceId, (widget) => ({
+        ...widget,
+        timeRange,
+        customStartDate:
+          customStartDate === undefined
+            ? widget.customStartDate
+            : customStartDate,
+        customEndDate:
+          customEndDate === undefined ? widget.customEndDate : customEndDate,
+      }));
+      if (!layout) return;
       writeLayout(layout);
       set({ layout });
     },

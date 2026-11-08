@@ -132,7 +132,11 @@
   }
 
   .dashboard-widget-toolbar {
-    @apply flex flex-wrap items-center gap-1 mb-2;
+    @apply flex items-center gap-0.5 px-1.5 py-1 border-b border-slate-100 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-900/40;
+  }
+
+  .dashboard-toolbar {
+    @apply flex flex-wrap items-center justify-end gap-2 max-w-full;
   }
 
   .dashboard-widget-handle {
@@ -149,6 +153,100 @@
 
   .dashboard-widget-editing .chart-body {
     pointer-events: none;
+  }
+
+  .dashboard-board {
+    @apply relative grid;
+  }
+
+  .dashboard-board-item {
+    @apply min-w-0 min-h-0 relative z-[1] p-1.5 flex;
+  }
+
+  .dashboard-widget-fill {
+    @apply flex flex-col flex-1 min-h-0 min-w-0 h-full;
+  }
+
+  .dashboard-widget-frame {
+    @apply relative flex flex-col flex-1 min-h-0 min-w-0 h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md dark:border-slate-700 dark:bg-slate-800;
+  }
+
+  .dashboard-widget-fill > .chart-card,
+  .dashboard-widget-fill > .chart-container,
+  .dashboard-widget-fill > .summary-card,
+  .dashboard-widget-frame .chart-card,
+  .dashboard-widget-frame .chart-container,
+  .dashboard-widget-frame .summary-card {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .dashboard-widget-frame .summary-card,
+  .dashboard-widget-frame .chart-card,
+  .dashboard-widget-frame .chart-container {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .dashboard-widget-frame .summary-card {
+    padding: 0.75rem 1rem 1.75rem !important;
+  }
+
+  .dashboard-widget-frame .chart-card,
+  .dashboard-widget-frame .chart-container {
+    padding: 0.75rem 1rem 1.5rem !important;
+  }
+
+  .dashboard-grid-dots {
+    @apply absolute inset-0 pointer-events-none z-0;
+  }
+
+  .dashboard-grid-dot {
+    @apply absolute w-1 h-1 rounded-full bg-slate-400/80 dark:bg-slate-500 -translate-x-1/2 -translate-y-1/2;
+  }
+
+  .dashboard-resize-handle {
+    @apply absolute right-2 bottom-2 z-[6] inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 shadow-sm hover:border-slate-300 hover:text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white cursor-nwse-resize;
+  }
+
+  .dashboard-filter-panel {
+    @apply flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-3;
+  }
+
+  .dashboard-filter-field {
+    @apply flex flex-col gap-1;
+  }
+
+  .dashboard-filter-dates {
+    @apply grid grid-cols-1 gap-2 sm:grid-cols-2;
+  }
+
+  .dashboard-filter-rule {
+    @apply flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-2 dark:bg-slate-900/50;
+  }
+
+  .dashboard-filter-rule .dashboard-filter-value {
+    width: auto;
+    min-width: 9rem;
+    flex: 1 1 9rem;
+  }
+
+  .dashboard-add-filter {
+    @apply self-start text-sm font-medium text-brand-600 hover:text-brand-500;
+  }
+
+  .dashboard-add-button {
+    @apply inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
+  }
+
+  .dashboard-add-menu {
+    @apply absolute z-20 mt-1 min-w-56 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1;
+  }
+
+  .dashboard-add-menu-item {
+    @apply block w-full text-left px-3 py-2 text-sm rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700;
   }
 
   .chart-card {

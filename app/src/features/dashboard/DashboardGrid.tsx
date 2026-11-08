@@ -1,171 +1,47 @@
-import {
-  useRef,
-  type ComponentProps,
-  type DragEvent,
-  type ReactNode,
-} from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import MaskedNumber from "../../components/ui/MaskedNumber";
 import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
-import AssetAllocationChart from "./AssetAllocationChart";
+import DashboardWidgetContent from "./DashboardWidgetContent";
 import DashboardWidgetFrame from "./DashboardWidgetFrame";
-import ExpensesByCategoryChart from "./ExpensesByCategoryChart";
-import IncomeVsExpensesChart from "./IncomeVsExpensesChart";
-import NetWorthChart from "./NetWorthChart";
-import SankeyDiagram from "./SankeyDiagram";
-import { SummaryCard } from "./SummaryCards";
 import {
-  dashboardSpanClass,
-  isSummaryWidget,
-  type ChartSpan,
-  type DashboardWidgetConfig,
-  type DashboardWidgetId,
+  DASHBOARD_COLUMNS,
+  DASHBOARD_ROW_HEIGHT,
+  DASHBOARD_WIDGET_IDS,
+  WIDGET_TITLE_KEYS,
+  boardRows,
 } from "./dashboard-layout";
+import { useDashboardData } from "./dashboard-widget-data";
 
 interface DashboardGridProps {
   editing: boolean;
-  hasTransactions: boolean;
   onEnterEdit: () => void;
-  netWorth: number;
-  totalAccounts: number;
-  totalTransactions: number;
-  netWorthChart: ComponentProps<typeof NetWorthChart>;
-  incomeChart: ComponentProps<typeof IncomeVsExpensesChart>;
-  allocationChart: ComponentProps<typeof AssetAllocationChart>;
-  expensesChart: ComponentProps<typeof ExpensesByCategoryChart>;
-  sankey: ComponentProps<typeof SankeyDiagram>;
 }
 
-function widgetLabel(
-  id: DashboardWidgetId,
-  t: (key: string) => string,
-): string {
-  switch (id) {
-    case "summaryNetWorth":
-      return t("dashboard.current_net_worth");
-    case "summaryAccounts":
-      return t("dashboard.total_accounts");
-    case "summaryTransactions":
-      return t("dashboard.total_transactions");
-    case "netWorth":
-      return t("dashboard.networth_evolution");
-    case "incomeVsExpenses":
-      return t("dashboard.income_vs_expenses");
-    case "cashFlow":
-      return t("dashboard.cash_flow");
-    case "assetAllocation":
-      return t("dashboard.asset_allocation");
-    case "expensesByCategory":
-      return t("dashboard.expenses_by_category");
+function DotGrid({ rows }: { rows: number }) {
+  const dots = [];
+  for (let y = 0; y <= rows; y += 1) {
+    for (let x = 0; x <= DASHBOARD_COLUMNS; x += 1) {
+      dots.push(
+        <span
+          key={`${String(x)}-${String(y)}`}
+          className="dashboard-grid-dot"
+          style={{
+            left: `${String((x / DASHBOARD_COLUMNS) * 100)}%`,
+            top: y * DASHBOARD_ROW_HEIGHT,
+          }}
+        />,
+      );
+    }
   }
-}
-
-function widgetSubtitle(
-  id: DashboardWidgetId,
-  t: (key: string) => string,
-): string {
-  switch (id) {
-    case "netWorth":
-      return t("dashboard.subtitle.networth_growth");
-    case "incomeVsExpenses":
-      return t("dashboard.subtitle.monthly_income_vs_expenses");
-    case "cashFlow":
-      return t("dashboard.subtitle.income_and_expense_flow");
-    case "assetAllocation":
-      return t("dashboard.subtitle.distribution_of_assets");
-    case "expensesByCategory":
-      return t("dashboard.subtitle.where_your_money_goes");
-    default:
-      return "";
-  }
-}
-
-function EmptyTransactions() {
-  const { t } = useTranslation();
-
   return (
-    <div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-16">
-      <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-2xl mb-4">
-        <svg
-          className="w-16 h-16 text-slate-300 dark:text-slate-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-      </div>
-      <p className="text-lg font-semibold text-slate-600 dark:text-slate-400 mb-2">
-        {t("account.no_transactions_found")}
-      </p>
-      <p className="text-sm text-slate-400 dark:text-slate-500">
-        {t("dashboard.no_transactions_body")}
-      </p>
+    <div className="dashboard-grid-dots" aria-hidden="true">
+      {dots}
     </div>
   );
 }
 
-function ChartPlaceholder({
-  title,
-  subtitle,
-  tall,
-}: {
-  title: string;
-  subtitle: string;
-  tall: boolean;
-}) {
+function EmptyDashboard({ onCustomize }: { onCustomize: () => void }) {
   const { t } = useTranslation();
-
-  return (
-    <div className="chart-card" style={tall ? { height: "500px" } : undefined}>
-      <div className="chart-header">
-        <h3 className="chart-title">{title}</h3>
-        {subtitle ? <p className="chart-subtitle">{subtitle}</p> : null}
-      </div>
-      <div className="chart-body flex items-center justify-center">
-        <p className="text-sm text-slate-400 dark:text-slate-500 text-center px-4">
-          {t("dashboard.no_transactions_body")}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function CashFlowChart({
-  span,
-  sankey,
-}: {
-  span: ChartSpan;
-  sankey: ComponentProps<typeof SankeyDiagram>;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div
-      className="chart-card"
-      style={span === "full" ? { height: "500px" } : undefined}
-    >
-      <div className="chart-header">
-        <h3 className="chart-title">{t("dashboard.cash_flow")}</h3>
-        <p className="chart-subtitle">
-          {t("dashboard.subtitle.income_and_expense_flow")}
-        </p>
-      </div>
-      <div className="chart-body">
-        <SankeyDiagram {...sankey} />
-      </div>
-    </div>
-  );
-}
-
-function AllWidgetsHidden({ onCustomize }: { onCustomize: () => void }) {
-  const { t } = useTranslation();
-
   return (
     <div className="flex flex-col items-center justify-center text-center py-16">
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
@@ -180,160 +56,115 @@ function AllWidgetsHidden({ onCustomize }: { onCustomize: () => void }) {
 
 export default function DashboardGrid({
   editing,
-  hasTransactions,
   onEnterEdit,
-  netWorth,
-  totalAccounts,
-  totalTransactions,
-  netWorthChart,
-  incomeChart,
-  allocationChart,
-  expensesChart,
-  sankey,
 }: DashboardGridProps) {
   const { t } = useTranslation();
+  const shared = useDashboardData();
   const layout = useDashboardPreferencesStore((state) => state.layout);
   const moveWidget = useDashboardPreferencesStore((state) => state.moveWidget);
-  const setWidgetVisible = useDashboardPreferencesStore(
-    (state) => state.setWidgetVisible,
+  const resizeWidget = useDashboardPreferencesStore(
+    (state) => state.resizeWidget,
   );
-  const setWidgetSpan = useDashboardPreferencesStore(
-    (state) => state.setWidgetSpan,
+  const addWidget = useDashboardPreferencesStore((state) => state.addWidget);
+  const removeWidget = useDashboardPreferencesStore(
+    (state) => state.removeWidget,
   );
-  const draggingIdRef = useRef<DashboardWidgetId | null>(null);
-  const lastReorder = useRef(0);
+  const setWidgetFilters = useDashboardPreferencesStore(
+    (state) => state.setWidgetFilters,
+  );
+  const setWidgetTimeRange = useDashboardPreferencesStore(
+    (state) => state.setWidgetTimeRange,
+  );
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const anyVisible = layout.some((widget) => widget.visible);
-  if (!editing && !anyVisible) {
-    return <AllWidgetsHidden onCustomize={onEnterEdit} />;
+  if (!editing && layout.length === 0) {
+    return <EmptyDashboard onCustomize={onEnterEdit} />;
   }
 
-  const shown = layout.filter((widget) => editing || widget.visible);
-  const showEmptyCharts =
-    !editing &&
-    !hasTransactions &&
-    layout.some((widget) => widget.visible && !isSummaryWidget(widget.id));
-  const firstChartIndex = showEmptyCharts
-    ? shown.findIndex((widget) => !isSummaryWidget(widget.id))
-    : -1;
-
-  const renderWidget = (widget: DashboardWidgetConfig): ReactNode => {
-    if (!hasTransactions && !isSummaryWidget(widget.id)) {
-      return (
-        <ChartPlaceholder
-          title={widgetLabel(widget.id, t)}
-          subtitle={widgetSubtitle(widget.id, t)}
-          tall={widget.id === "cashFlow" && widget.span === "full"}
-        />
-      );
-    }
-
-    switch (widget.id) {
-      case "summaryNetWorth":
-        return (
-          <SummaryCard title={t("dashboard.current_net_worth")}>
-            <MaskedNumber value={netWorth} options={{ style: "currency" }} />
-          </SummaryCard>
-        );
-      case "summaryAccounts":
-        return (
-          <SummaryCard title={t("dashboard.total_accounts")}>
-            {totalAccounts}
-          </SummaryCard>
-        );
-      case "summaryTransactions":
-        return (
-          <SummaryCard title={t("dashboard.total_transactions")}>
-            {totalTransactions}
-          </SummaryCard>
-        );
-      case "netWorth":
-        return <NetWorthChart {...netWorthChart} />;
-      case "incomeVsExpenses":
-        return <IncomeVsExpensesChart {...incomeChart} />;
-      case "cashFlow":
-        return <CashFlowChart span={widget.span} sankey={sankey} />;
-      case "assetAllocation":
-        return <AssetAllocationChart {...allocationChart} />;
-      case "expensesByCategory":
-        return <ExpensesByCategoryChart {...expensesChart} />;
-    }
-  };
+  const rows = boardRows(layout) + (editing ? 6 : 0);
 
   return (
-    <div className="dashboard-grid">
-      {shown.map((widget, index) => {
-        if (showEmptyCharts && !isSummaryWidget(widget.id)) {
-          if (index !== firstChartIndex) return null;
-          return (
-            <div key="dashboard-empty" className="dashboard-span-full">
-              <EmptyTransactions />
+    <div className="space-y-3">
+      {editing && (
+        <div className="relative">
+          <button
+            type="button"
+            className="dashboard-add-button"
+            aria-expanded={menuOpen}
+            onClick={() => {
+              setMenuOpen((open) => !open);
+            }}
+          >
+            {t("dashboard.add_card")}
+          </button>
+          {menuOpen && (
+            <div className="dashboard-add-menu" role="menu">
+              {DASHBOARD_WIDGET_IDS.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  role="menuitem"
+                  className="dashboard-add-menu-item"
+                  onClick={() => {
+                    addWidget(type);
+                    setMenuOpen(false);
+                  }}
+                >
+                  {t(WIDGET_TITLE_KEYS[type])}
+                </button>
+              ))}
             </div>
-          );
-        }
-
-        const title = widgetLabel(widget.id, t);
-        const content = (
+          )}
+        </div>
+      )}
+      <div
+        className={`dashboard-board${editing ? " dashboard-board-editing" : ""}`}
+        style={{
+          gridTemplateColumns: `repeat(${String(DASHBOARD_COLUMNS)}, minmax(0, 1fr))`,
+          gridAutoRows: `${String(DASHBOARD_ROW_HEIGHT)}px`,
+          minHeight: rows * DASHBOARD_ROW_HEIGHT,
+        }}
+      >
+        {layout.map((widget) => (
           <div
-            key={`${widget.id}-${widget.span}`}
-            className={editing ? "dashboard-widget-editing" : undefined}
+            key={widget.instanceId}
+            className="dashboard-board-item"
+            style={{
+              gridColumn: `${String(widget.x + 1)} / span ${String(widget.w)}`,
+              gridRow: `${String(widget.y + 1)} / span ${String(widget.h)}`,
+            }}
           >
-            {renderWidget(widget)}
+            {editing ? (
+              <DashboardWidgetFrame
+                widget={widget}
+                accounts={shared.accounts}
+                onMove={(x, y) => {
+                  moveWidget(widget.instanceId, x, y);
+                }}
+                onResize={(w, h) => {
+                  resizeWidget(widget.instanceId, w, h);
+                }}
+                onRemove={() => {
+                  removeWidget(widget.instanceId);
+                }}
+                onChangeFilters={(filters) => {
+                  setWidgetFilters(widget.instanceId, filters);
+                }}
+                onChangeRange={(timeRange, start, end) => {
+                  setWidgetTimeRange(widget.instanceId, timeRange, start, end);
+                }}
+              >
+                <DashboardWidgetContent widget={widget} />
+              </DashboardWidgetFrame>
+            ) : (
+              <div className="dashboard-widget-fill">
+                <DashboardWidgetContent widget={widget} />
+              </div>
+            )}
           </div>
-        );
-
-        if (!editing) {
-          return (
-            <div key={widget.id} className={dashboardSpanClass(widget)}>
-              {content}
-            </div>
-          );
-        }
-
-        return (
-          <DashboardWidgetFrame
-            key={widget.id}
-            title={title}
-            index={index}
-            count={shown.length}
-            visible={widget.visible}
-            span={widget.span}
-            isChart={!isSummaryWidget(widget.id)}
-            className={dashboardSpanClass(widget)}
-            onMove={(toIndex) => {
-              moveWidget(widget.id, toIndex);
-            }}
-            onToggleVisible={() => {
-              setWidgetVisible(widget.id, !widget.visible);
-            }}
-            onSetSpan={(span) => {
-              setWidgetSpan(widget.id, span);
-            }}
-            onDragStart={(event: DragEvent<HTMLElement>) => {
-              draggingIdRef.current = widget.id;
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", widget.id);
-            }}
-            onDragEnd={() => {
-              draggingIdRef.current = null;
-            }}
-            onDragOver={(event) => {
-              event.preventDefault();
-              event.dataTransfer.dropEffect = "move";
-            }}
-            onDragEnter={(event) => {
-              event.preventDefault();
-              const currentId = draggingIdRef.current;
-              if (!currentId) return;
-              if (event.timeStamp - lastReorder.current < 50) return;
-              lastReorder.current = event.timeStamp;
-              moveWidget(currentId, index);
-            }}
-          >
-            {content}
-          </DashboardWidgetFrame>
-        );
-      })}
+        ))}
+        {editing && <DotGrid rows={rows} />}
+      </div>
     </div>
   );
 }

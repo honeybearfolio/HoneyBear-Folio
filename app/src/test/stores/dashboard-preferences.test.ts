@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEYS } from "../../constants/app";
-import { DASHBOARD_WIDGET_IDS } from "../../features/dashboard/dashboard-layout";
+import {
+  DASHBOARD_WIDGET_IDS,
+  type WidgetFilter,
+} from "../../features/dashboard/dashboard-layout";
 import {
   readDashboardLayout,
   readDashboardView,
@@ -15,8 +18,20 @@ describe("useDashboardPreferencesStore", () => {
 
   it("round-trips layout and view through localStorage", () => {
     const store = useDashboardPreferencesStore.getState();
-    store.setWidgetSpan("assetAllocation", "full");
-    store.setWidgetVisible("summaryAccounts", false);
+    const card = store.layout.find(
+      (widget) => widget.type === "assetAllocation",
+    );
+    expect(card).toBeDefined();
+    store.resizeWidget(card!.instanceId, 6, 10);
+    store.removeWidget(
+      store.layout.find((widget) => widget.type === "summaryAccounts")!
+        .instanceId,
+    );
+    const filters: WidgetFilter[] = [
+      { id: "f1", field: "payee", operator: "contains", value: "Rent" },
+    ];
+    store.setWidgetFilters(card!.instanceId, filters);
+    store.setWidgetTimeRange(card!.instanceId, "ALL");
     store.setTimeRange("ALL");
     store.setHiddenAccountIds(["4"]);
     store.setCustomRange("2024-02-01", "2024-03-01");
@@ -27,11 +42,12 @@ describe("useDashboardPreferencesStore", () => {
     });
 
     const next = useDashboardPreferencesStore.getState();
+    const saved = next.layout.find(
+      (widget) => widget.instanceId === card!.instanceId,
+    );
+    expect(saved).toMatchObject({ w: 6, h: 10, timeRange: "ALL", filters });
     expect(
-      next.layout.find((widget) => widget.id === "assetAllocation")?.span,
-    ).toBe("full");
-    expect(
-      next.layout.find((widget) => widget.id === "summaryAccounts")?.visible,
+      next.layout.some((widget) => widget.type === "summaryAccounts"),
     ).toBe(false);
     expect(next.view.timeRange).toBe("ALL");
     expect(next.view.hiddenAccountIds).toEqual(["4"]);
@@ -43,7 +59,7 @@ describe("useDashboardPreferencesStore", () => {
     localStorage.setItem(STORAGE_KEYS.DASHBOARD_LAYOUT, "{");
     localStorage.setItem(STORAGE_KEYS.DASHBOARD_VIEW, "nope");
 
-    expect(readDashboardLayout().map((widget) => widget.id)).toEqual([
+    expect(readDashboardLayout().map((widget) => widget.type)).toEqual([
       ...DASHBOARD_WIDGET_IDS,
     ]);
     expect(readDashboardView().timeRange).toBe("1Y");
@@ -53,7 +69,7 @@ describe("useDashboardPreferencesStore", () => {
   it("resetAll restores defaults and clears storage", () => {
     const store = useDashboardPreferencesStore.getState();
     store.setTimeRange("6M");
-    store.moveWidget("cashFlow", 0);
+    store.addWidget("netWorth");
 
     expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeTruthy();
     expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeTruthy();
@@ -63,10 +79,9 @@ describe("useDashboardPreferencesStore", () => {
     const next = useDashboardPreferencesStore.getState();
     expect(next.view.timeRange).toBe("1Y");
     expect(next.view.hiddenAccountIds).toEqual([]);
-    expect(next.layout.map((widget) => widget.id)).toEqual([
+    expect(next.layout.map((widget) => widget.type)).toEqual([
       ...DASHBOARD_WIDGET_IDS,
     ]);
-    expect(next.layout.every((widget) => widget.visible)).toBe(true);
     expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeNull();
   });
@@ -74,30 +89,22 @@ describe("useDashboardPreferencesStore", () => {
   it("resetLayout keeps the saved view", () => {
     const store = useDashboardPreferencesStore.getState();
     store.setTimeRange("YTD");
-    store.setWidgetVisible("netWorth", false);
+    store.removeWidget(
+      store.layout.find((widget) => widget.type === "netWorth")!.instanceId,
+    );
 
     store.resetLayout();
 
     const next = useDashboardPreferencesStore.getState();
     expect(next.view.timeRange).toBe("YTD");
-    expect(
-      next.layout.find((widget) => widget.id === "netWorth")?.visible,
-    ).toBe(true);
+    expect(next.layout.some((widget) => widget.type === "netWorth")).toBe(true);
     expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeTruthy();
   });
 
-  it("ignores span changes on summary cards and invalid dates", () => {
-    const store = useDashboardPreferencesStore.getState();
-    store.setWidgetSpan("summaryNetWorth", "full");
-    expect(
-      useDashboardPreferencesStore
-        .getState()
-        .layout.find((widget) => widget.id === "summaryNetWorth")?.span,
-    ).toBe("half");
-
+  it("rejects an invalid custom date", () => {
     const start = useDashboardPreferencesStore.getState().view.customStartDate;
-    store.setCustomRange("bad", "2024-01-01");
+    useDashboardPreferencesStore.getState().setCustomRange("bad", "2024-01-01");
     expect(useDashboardPreferencesStore.getState().view.customStartDate).toBe(
       start,
     );

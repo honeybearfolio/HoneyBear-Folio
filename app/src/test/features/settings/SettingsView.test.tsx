@@ -140,9 +140,7 @@ describe("SettingsView", () => {
     mockConfirmLocal.mockResolvedValueOnce(true);
 
     useDashboardPreferencesStore.getState().setTimeRange("ALL");
-    useDashboardPreferencesStore
-      .getState()
-      .setWidgetVisible("summaryNetWorth", false);
+    useDashboardPreferencesStore.getState().addWidget("netWorth");
 
     const mockOnChangeSidebarVisibility = vi.fn();
     render(
@@ -179,11 +177,7 @@ describe("SettingsView", () => {
       expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
       expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeNull();
       expect(useDashboardPreferencesStore.getState().view.timeRange).toBe("1Y");
-      expect(
-        useDashboardPreferencesStore
-          .getState()
-          .layout.find((widget) => widget.id === "summaryNetWorth")?.visible,
-      ).toBe(true);
+      expect(useDashboardPreferencesStore.getState().layout).toHaveLength(8);
     });
   });
 

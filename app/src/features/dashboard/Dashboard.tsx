@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import "../../styles/Dashboard.css";
@@ -13,6 +13,7 @@ import useChartColors from "../../hooks/useChartColors";
 import TimeRangeSelector from "./TimeRangeSelector";
 import AccountFilterPopover from "./AccountFilterPopover";
 import DashboardGrid from "./DashboardGrid";
+import { DashboardDataProvider } from "./dashboard-widget-data";
 import { registerDashboardCharts } from "./dashboard-chart-config";
 import type { DashboardProps } from "./dashboard-types";
 import { useDashboardFetch } from "./useDashboardFetch";
@@ -77,7 +78,7 @@ export default function Dashboard({
     marketValues,
   });
 
-  const { currentNetWorth, doughnutData } = useDashboardSummaries({
+  const { currentNetWorth } = useDashboardSummaries({
     filteredAccounts,
     filteredTransactions,
     filteredMarketValues,
@@ -92,8 +93,6 @@ export default function Dashboard({
 
   const {
     chartData,
-    expensesByCategoryData,
-    incomeVsExpensesData,
     doughnutOptions,
     expensesOptions,
     barOptions,
@@ -115,6 +114,51 @@ export default function Dashboard({
     currentNetWorth,
     t,
   });
+
+  const sharedData = useMemo(
+    () => ({
+      accounts,
+      transactions,
+      marketValues,
+      totalAssetsValue,
+      totalLiabilitiesValue,
+      quotes,
+      dailyPrices,
+      getPrice,
+      accountMap,
+      formatDate,
+      formatNumber,
+      locale,
+      appCurrency,
+      isDark,
+      chartColors,
+      lineOptions,
+      barOptions,
+      doughnutOptions,
+      expensesOptions,
+    }),
+    [
+      accounts,
+      transactions,
+      marketValues,
+      totalAssetsValue,
+      totalLiabilitiesValue,
+      quotes,
+      dailyPrices,
+      getPrice,
+      accountMap,
+      formatDate,
+      formatNumber,
+      locale,
+      appCurrency,
+      isDark,
+      chartColors,
+      lineOptions,
+      barOptions,
+      doughnutOptions,
+      expensesOptions,
+    ],
+  );
 
   async function handleResetLayout() {
     const confirmed = await confirm(t("dashboard.reset_layout_confirm"), {
@@ -159,7 +203,7 @@ export default function Dashboard({
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 min-w-0 flex-shrink">
+        <div className="dashboard-toolbar">
           <TimeRangeSelector
             timeRange={timeRange}
             setTimeRange={setTimeRange}
@@ -184,57 +228,44 @@ export default function Dashboard({
               : {})}
           />
 
-          {editing && (
+          <div className="flex items-center gap-2">
+            {editing && (
+              <button
+                type="button"
+                className="dashboard-add-button whitespace-nowrap"
+                onClick={() => {
+                  void handleResetLayout();
+                }}
+              >
+                {t("dashboard.reset_layout")}
+              </button>
+            )}
             <button
               type="button"
-              className="btn-secondary"
+              className={`px-3 py-2 text-xs font-bold rounded-xl border shadow-sm whitespace-nowrap ${
+                editing
+                  ? "bg-slate-900 dark:bg-brand-600 text-white border-transparent"
+                  : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+              }`}
+              aria-pressed={editing}
               onClick={() => {
-                void handleResetLayout();
+                setEditing((current) => !current);
               }}
             >
-              {t("dashboard.reset_layout")}
+              {editing ? t("dashboard.done") : t("dashboard.customize")}
             </button>
-          )}
-          <button
-            type="button"
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg border shadow-sm ${
-              editing
-                ? "bg-slate-900 dark:bg-brand-600 text-white border-transparent"
-                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-            }`}
-            aria-pressed={editing}
-            onClick={() => {
-              setEditing((current) => !current);
-            }}
-          >
-            {editing ? t("dashboard.done") : t("dashboard.customize")}
-          </button>
+          </div>
         </div>
       </div>
 
-      <DashboardGrid
-        editing={editing}
-        hasTransactions={filteredTransactions.length > 0}
-        onEnterEdit={() => {
-          setEditing(true);
-        }}
-        netWorth={currentNetWorth}
-        totalAccounts={filteredAccounts.length}
-        totalTransactions={filteredTransactions.length}
-        netWorthChart={{ chartData, options: lineOptions }}
-        incomeChart={{ incomeVsExpensesData, barOptions }}
-        allocationChart={{ doughnutData, doughnutOptions }}
-        expensesChart={{ expensesByCategoryData, expensesOptions }}
-        sankey={{
-          transactions: filteredTransactions,
-          timeRange,
-          customStartDate,
-          customEndDate,
-          accountMap,
-          getPrice,
-          appCurrency,
-        }}
-      />
+      <DashboardDataProvider value={sharedData}>
+        <DashboardGrid
+          editing={editing}
+          onEnterEdit={() => {
+            setEditing(true);
+          }}
+        />
+      </DashboardDataProvider>
     </div>
   );
 }
