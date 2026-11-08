@@ -1,7 +1,15 @@
+import DatePicker from "react-datepicker";
+import type { Day } from "date-fns";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Account } from "../../api/types";
 import CustomSelect from "../../components/ui/CustomSelect";
+import { useNumberFormat } from "../../stores/number-format";
+import {
+  formatCalendarDate,
+  getDatePickerFormat,
+  parseCalendarDate,
+} from "../../utils/format";
 import { isValuelessOperator } from "../rules/rules-helpers";
 import type { DashboardTimeRange } from "./dashboard-constants";
 import {
@@ -49,6 +57,7 @@ export default function DashboardWidgetFilters({
   onChangeRange,
 }: DashboardWidgetFiltersProps) {
   const { t } = useTranslation();
+  const { dateFormat, firstDayOfWeek } = useNumberFormat();
 
   const updateFilter = (id: string, patch: Partial<WidgetFilter>) => {
     onChangeFilters(
@@ -90,31 +99,51 @@ export default function DashboardWidgetFilters({
       </div>
       {widget.timeRange === "CUSTOM" && (
         <div className="dashboard-filter-dates">
-          <input
-            type="date"
-            className="form-input"
-            aria-label={t("dashboard.custom_start")}
-            value={widget.customStartDate ?? ""}
-            onChange={(event) => {
+          <DatePicker
+            selected={
+              widget.customStartDate
+                ? parseCalendarDate(widget.customStartDate)
+                : null
+            }
+            onChange={(date: Date | null) => {
               onChangeRange(
                 "CUSTOM",
-                event.target.value || null,
+                date ? formatCalendarDate(date) : null,
                 widget.customEndDate,
               );
             }}
-          />
-          <input
-            type="date"
+            aria-label={t("dashboard.custom_start")}
+            isClearable
+            showPopperArrow={false}
+            portalId="datepicker-portal"
+            popperPlacement="bottom-start"
+            dateFormat={getDatePickerFormat(dateFormat)}
+            calendarStartDay={firstDayOfWeek as Day}
             className="form-input"
-            aria-label={t("dashboard.custom_end")}
-            value={widget.customEndDate ?? ""}
-            onChange={(event) => {
+            wrapperClassName="w-full"
+          />
+          <DatePicker
+            selected={
+              widget.customEndDate
+                ? parseCalendarDate(widget.customEndDate)
+                : null
+            }
+            onChange={(date: Date | null) => {
               onChangeRange(
                 "CUSTOM",
                 widget.customStartDate,
-                event.target.value || null,
+                date ? formatCalendarDate(date) : null,
               );
             }}
+            aria-label={t("dashboard.custom_end")}
+            isClearable
+            showPopperArrow={false}
+            portalId="datepicker-portal"
+            popperPlacement="bottom-start"
+            dateFormat={getDatePickerFormat(dateFormat)}
+            calendarStartDay={firstDayOfWeek as Day}
+            className="form-input"
+            wrapperClassName="w-full"
           />
         </div>
       )}

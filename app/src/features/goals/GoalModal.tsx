@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import DatePicker from "react-datepicker";
+import type { Day } from "date-fns";
 import { rust } from "../../api/tauri-client";
 import type { Account, Goal, GoalLinkInput } from "../../api/types";
 import {
@@ -20,6 +22,14 @@ import {
 } from "../../utils/goal-progress";
 import { GOAL_COLORS, goalColorClasses } from "./goal-colors";
 import { Trash2 } from "lucide-react";
+import { useNumberFormat } from "../../stores/number-format";
+import {
+  formatCalendarDate,
+  getDatePickerFormat,
+  parseCalendarDate,
+} from "../../utils/format";
+import "react-datepicker/dist/react-datepicker.css";
+import "../../styles/datepicker.css";
 import "../../styles/Modal.css";
 
 interface DraftLink {
@@ -64,6 +74,7 @@ export default function GoalModal({
 }: GoalModalProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { dateFormat, firstDayOfWeek } = useNumberFormat();
   const isEditing = !!goal;
 
   const [name, setName] = useState(goal?.name ?? "");
@@ -317,14 +328,24 @@ export default function GoalModal({
                 >
                   {t("goals.field.target_date")}
                 </label>
-                <input
+                <DatePicker
                   id="goal-date"
-                  type="date"
-                  value={targetDate}
-                  onChange={(event) => {
-                    setTargetDate(event.target.value);
+                  selected={
+                    targetDate
+                      ? (parseCalendarDate(targetDate) ?? new Date(targetDate))
+                      : null
+                  }
+                  onChange={(date: Date | null) => {
+                    setTargetDate(date ? formatCalendarDate(date) : "");
                   }}
+                  isClearable
+                  showPopperArrow={false}
+                  portalId="datepicker-portal"
+                  popperPlacement="bottom-start"
+                  dateFormat={getDatePickerFormat(dateFormat)}
+                  calendarStartDay={firstDayOfWeek as Day}
                   className={fieldClass}
+                  wrapperClassName="w-full"
                 />
               </div>
               <div>

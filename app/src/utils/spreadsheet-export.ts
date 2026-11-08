@@ -2,7 +2,7 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { rust } from "../api/tauri-client";
 import type { Account, StockQuote } from "../api/types";
-import { formatNumberForExport } from "./format";
+import { formatNumberForExport, todayCalendarDate } from "./format";
 import { computeReportData } from "./report";
 import { logError } from "./errors";
 import { buildHoldingsFromTransactions } from "./investments";
@@ -150,7 +150,7 @@ export async function buildAndWriteExport({
   const liabilities = await fetchLiabilitiesForExport(rust);
 
   let content: string | undefined;
-  const isoDate = new Date().toISOString().split("T")[0] ?? "";
+  const isoDate = todayCalendarDate();
   let defaultPath = `honeybear_export_${isoDate}`;
   let filters: { name: string; extensions: string[] }[];
 
@@ -324,7 +324,7 @@ export async function buildAndWriteExport({
             });
           }
           if (entry.rate > 0) {
-            const today = new Date().toISOString().slice(0, 10);
+            const today = todayCalendarDate();
             map[today] = entry.rate;
             list.push({ date: today, price: entry.rate });
             if (!list.some((p: DailyPrice) => p.date <= pdfDateRange.start)) {

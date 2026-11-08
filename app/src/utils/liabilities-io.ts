@@ -2,6 +2,7 @@ import type {
   LiabilityValuation,
   LiabilityWithLatestValue,
 } from "../api/types";
+import { normalizeStoredDate, todayCalendarDate } from "./format";
 import {
   getField,
   headerMatchesAlias,
@@ -159,24 +160,7 @@ export function isLiabilityRow(headers: string[]): boolean {
 }
 
 function parseDateValue(raw: unknown): string | null {
-  if (raw === null || raw === undefined || raw === "") return null;
-  const rawText = asText(raw);
-  const parsed = new Date(rawText);
-  if (!isNaN(parsed.getTime())) {
-    return parsed.toISOString().slice(0, 10);
-  }
-  const normalized = rawText.replace(/\./g, "/").replace(/-/g, "/");
-  const parts = normalized.split("/");
-  if (parts.length === 3) {
-    const [p0, p1, p2] = parts;
-    if (!p0 || !p1 || !p2) return null;
-    const alt =
-      p0.length === 4
-        ? new Date(`${p0}-${p1}-${p2}`)
-        : new Date(`${p2}-${p1}-${p0}`);
-    if (!isNaN(alt.getTime())) return alt.toISOString().slice(0, 10);
-  }
-  return null;
+  return normalizeStoredDate(raw);
 }
 
 function getLiabilityField(
@@ -203,8 +187,7 @@ export function parseLiabilityFromRow(
   const notesRaw = getLiabilityField(row, "notes");
   const value = parseNumericValue(getLiabilityField(row, "value"));
   const date =
-    parseDateValue(getLiabilityField(row, "date")) ??
-    new Date().toISOString().slice(0, 10);
+    parseDateValue(getLiabilityField(row, "date")) ?? todayCalendarDate();
 
   const valuations: ExportLiabilityValuation[] = [];
   if (value !== null) {
@@ -237,8 +220,7 @@ function parseValuationsFromJson(
   if (valuations.length === 0) {
     const value = parseNumericValue(record.latest_value ?? record.value);
     const date =
-      parseDateValue(record.latest_date ?? record.date) ??
-      new Date().toISOString().slice(0, 10);
+      parseDateValue(record.latest_date ?? record.date) ?? todayCalendarDate();
     if (value !== null) valuations.push({ date, value });
   }
 
@@ -312,7 +294,7 @@ export async function fetchLiabilitiesForExport(
 
     if (valuationEntries.length === 0 && liability.latest_value != null) {
       valuationEntries.push({
-        date: liability.latest_date || new Date().toISOString().slice(0, 10),
+        date: liability.latest_date || todayCalendarDate(),
         value: liability.latest_value,
       });
     }

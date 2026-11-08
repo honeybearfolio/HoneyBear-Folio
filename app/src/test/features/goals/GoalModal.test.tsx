@@ -35,6 +35,38 @@ vi.mock("../../../components/ui/CustomSelect", () => ({
   ),
 }));
 
+vi.mock("react-datepicker", () => ({
+  default: ({
+    id,
+    selected,
+    onChange,
+    className,
+  }: {
+    id?: string;
+    selected?: Date | null;
+    onChange: (date: Date | null) => void;
+    className?: string;
+  }) => (
+    <input
+      id={id}
+      className={className}
+      value={
+        selected
+          ? `${String(selected.getFullYear())}-${String(selected.getMonth() + 1).padStart(2, "0")}-${String(selected.getDate()).padStart(2, "0")}`
+          : ""
+      }
+      onChange={(event) => {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(event.target.value);
+        onChange(
+          match
+            ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+            : null,
+        );
+      }}
+    />
+  ),
+}));
+
 vi.mock("lucide-react", () => ({
   Trash2: () => <span>Delete</span>,
   X: () => <span>X</span>,
