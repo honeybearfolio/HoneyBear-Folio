@@ -82,7 +82,6 @@ vi.mock("../../../utils/investments", () => ({
     }),
   mergeHoldingsWithQuotes: () => Promise.resolve([]),
   computePortfolioTotals: () => Promise.resolve({ totalValue: 50000 }),
-  computeNetWorthMarketValues: () => Promise.resolve({}),
 }));
 
 vi.mock("../../../utils/fire", () => ({
@@ -139,6 +138,10 @@ describe("FireCalculator", () => {
         ]);
       if (cmd === "get_stock_quotes") return Promise.resolve([]);
       if (cmd === "get_all_transactions") return Promise.resolve([]);
+      if (cmd === "get_total_assets_value") return Promise.resolve(20000);
+      if (cmd === "get_total_liabilities_value") return Promise.resolve(5000);
+      if (cmd === "compute_net_worth")
+        return Promise.resolve(50000 + 20000 - 5000);
       return Promise.resolve(null);
     });
   });
@@ -159,7 +162,7 @@ describe("FireCalculator", () => {
     expect(screen.getByTestId("fire-chart")).toBeInTheDocument();
 
     // Verify the data fetch was called
-    expect(invoke).toHaveBeenCalledWith("get_accounts");
+    expect(invoke).toHaveBeenCalledWith("get_accounts", expect.anything());
   });
 
   it("calculates FIRE number based on expenses", async () => {
@@ -188,7 +191,7 @@ describe("FireCalculator", () => {
     const netWorthInput = inputs[0]!; // Current Net Worth is 1st
 
     await waitFor(() => {
-      expect((netWorthInput as HTMLInputElement).value).toBe("50000");
+      expect((netWorthInput as HTMLInputElement).value).toBe("65000");
     });
   });
 
@@ -229,9 +232,9 @@ describe("FireCalculator", () => {
     const inputs = await screen.findAllByRole("textbox");
     const netWorthInput = inputs[0]!;
 
-    // Wait for initial fetch (50000 from mock)
+    // Wait for initial fetch (65000 from mock)
     await waitFor(() => {
-      expect((netWorthInput as HTMLInputElement).value).toBe("50000");
+      expect((netWorthInput as HTMLInputElement).value).toBe("65000");
     });
 
     // User changes it to 75000 — NumberInput commits on blur
@@ -250,7 +253,7 @@ describe("FireCalculator", () => {
 
     unmount();
 
-    // 2. Re-render — fetch would return 50000, but sessionStorage has 75000 with
+    // 2. Re-render — fetch would return 65000, but sessionStorage has 75000 with
     //    userModified.currentNetWorth=true, so the persisted value wins.
     renderWithStores(<FireCalculator />);
 

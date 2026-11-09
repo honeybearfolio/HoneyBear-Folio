@@ -58,9 +58,8 @@ export async function computePortfolioTotals(
 /**
  * Computes per-account brokerage market values (shares × quote price).
  *
- * Intentionally skips FX conversion: the FIRE calculator uses this alongside
- * account cash balances that are already in each account's currency. For
- * FX-aware totals in the main app shell, use `fetchMarketValuesForAccounts`.
+ * Intentionally skips FX conversion. For FX-aware totals (as used by the app
+ * shell and FIRE calculator), use `fetchMarketValuesForAccounts`.
  */
 export function computeNetWorthMarketValues(
   transactions: InvestmentTransaction[],
