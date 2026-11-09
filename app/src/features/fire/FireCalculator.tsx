@@ -10,8 +10,10 @@ import {
   buildHoldingsFromTransactions,
   mergeHoldingsWithQuotes,
   computePortfolioTotals,
-  computeNetWorthMarketValues,
 } from "../../utils/investments";
+import { fetchMarketValuesForAccounts } from "../../utils/market-values";
+import { computeNetWorth } from "../../utils/networth";
+import { useNumberFormat } from "../../stores/number-format";
 import {
   ErrorState,
   SkeletonCard,
@@ -160,6 +162,7 @@ ChartJS.register(
 
 export default function FireCalculator() {
   const { t } = useTranslation();
+  const { currency } = useNumberFormat();
   // Initialize state from sessionStorage if available (persists for the lifetime of the browser/tab session, including reloads, and is cleared when the tab or window is closed)
   const savedState = useMemo<FireCalculatorState | null>(() => {
     const saved = sessionStorage.getItem("fireCalculatorState");
@@ -228,7 +231,7 @@ export default function FireCalculator() {
   async function fetchData() {
     setLoading(true);
     try {
-      const accounts = await rust.get_accounts();
+      const accounts = await rust.get_accounts({ targetCurrency: currency });
       const transactions = await rust.get_all_transactions();
 
       // Build holdings and first trade date
@@ -254,23 +257,23 @@ export default function FireCalculator() {
         totalCostBasis: totalPortfolioCostBasis,
       } = await computePortfolioTotals(finalHoldings);
 
-      // Compute market values per account used for net worth (re-uses quotes fetched earlier)
-      const netWorthMarketValues = await computeNetWorthMarketValues(
-        transactions,
-        quotes,
+      // Same aggregation as the app shell: cash + holdings (FX-aware) + tracked assets - liabilities
+      const [marketValues, totalAssetsValue, totalLiabilitiesValue] =
+        await Promise.all([
+          fetchMarketValuesForAccounts(accounts, currency),
+          rust
+            .get_total_assets_value({ targetCurrency: currency })
+            .catch(() => 0),
+          rust
+            .get_total_liabilities_value({ targetCurrency: currency })
+            .catch(() => 0),
+        ]);
+      const totalBalance = await computeNetWorth(
+        accounts,
+        marketValues,
+        totalAssetsValue,
+        totalLiabilitiesValue,
       );
-
-      const totalBalance = accounts.reduce((sum, acc) => {
-        if (acc.kind === "brokerage") {
-          return (
-            sum +
-            (netWorthMarketValues[acc.id] !== undefined
-              ? netWorthMarketValues[acc.id]!
-              : acc.balance)
-          );
-        }
-        return sum + acc.balance;
-      }, 0);
 
       if (!userModified.current.currentNetWorth) {
         setCurrentNetWorth(Math.round(totalBalance));
