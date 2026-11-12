@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -45,6 +45,12 @@ export default function CustomSelect({
   const optionLabelText = (label: React.ReactNode, value: string | number) => {
     if (typeof label === "string") return label;
     if (typeof label === "number") return String(label);
+    if (
+      React.isValidElement<{ children?: React.ReactNode }>(label) &&
+      typeof label.props.children === "string"
+    ) {
+      return label.props.children;
+    }
     return String(value);
   };
   const [open, setOpen] = useState(false);
@@ -62,6 +68,67 @@ export default function CustomSelect({
     return label.toLowerCase().includes(search.toLowerCase());
   });
 
+  const openMenu = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.top,
+        left: rect.left,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+      });
+
+      // compute initial highlighted index from the current filtered options
+      const currentFiltered = options.filter((opt) => {
+        const label = optionLabelText(opt.label, opt.value);
+        return label.toLowerCase().includes(search.toLowerCase());
+      });
+      const idx = currentFiltered.findIndex(
+        (o) => String(o.value) === String(value),
+      );
+      setHighlighted(idx >= 0 ? idx : currentFiltered.length > 0 ? 0 : -1);
+
+      setOpen(true);
+    }
+  };
+
+  const closeMenu = (focusTrigger = false) => {
+    if (focusTrigger) {
+      containerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    }
+    setOpen(false);
+    setMenuCoords(null);
+    setHighlighted(-1);
+    setSearch("");
+  };
+
+  const moveFocusFromTrigger = (shiftKey: boolean) => {
+    const trigger =
+      containerRef.current?.querySelector<HTMLButtonElement>("button");
+    if (!trigger) return;
+    const allFocusable = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter(
+      (el) =>
+        !el.hasAttribute("disabled") &&
+        el.getAttribute("aria-hidden") !== "true" &&
+        !el.closest(".custom-select-portal"),
+    );
+    const index = allFocusable.indexOf(trigger);
+    if (index !== -1) {
+      const nextIndex = shiftKey ? index - 1 : index + 1;
+      if (nextIndex >= 0 && nextIndex < allFocusable.length) {
+        allFocusable[nextIndex]!.focus();
+        return;
+      }
+    }
+    trigger.focus();
+  };
+
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
       const tgt = e.target;
@@ -70,16 +137,15 @@ export default function CustomSelect({
         tgt instanceof Node &&
         containerRef.current.contains(tgt);
       const clickedInsidePortal =
-        tgt instanceof Element && tgt.closest(".custom-select-portal");
+        !!listRef.current &&
+        tgt instanceof Node &&
+        listRef.current.contains(tgt);
       if (
         containerRef.current &&
         !clickedInsideTrigger &&
         !clickedInsidePortal
       ) {
-        setOpen(false);
-        setMenuCoords(null);
-        setHighlighted(-1);
-        setSearch("");
+        closeMenu(false);
       }
     };
     document.addEventListener("mousedown", onClickOutside);
@@ -122,10 +188,7 @@ export default function CustomSelect({
         // be defensive; fall through and close
       }
 
-      setOpen(false);
-      setMenuCoords(null);
-      setHighlighted(-1);
-      setSearch("");
+      closeMenu(false);
     }
 
     window.addEventListener("scroll", handleScrollOrResize, true);
@@ -150,33 +213,10 @@ export default function CustomSelect({
   }, [open]);
 
   const toggle = () => {
-    if (!open && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setMenuCoords({
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-        right: rect.right + window.scrollX,
-        bottom: rect.bottom + window.scrollY,
-        width: rect.width,
-        height: rect.height,
-      });
-
-      // compute initial highlighted index from the current filtered options
-      const currentFiltered = options.filter((opt) => {
-        const label = optionLabelText(opt.label, opt.value);
-        return label.toLowerCase().includes(search.toLowerCase());
-      });
-      const idx = currentFiltered.findIndex(
-        (o) => String(o.value) === String(value),
-      );
-      setHighlighted(idx >= 0 ? idx : currentFiltered.length > 0 ? 0 : -1);
-
-      setOpen(true);
+    if (!open) {
+      openMenu();
     } else {
-      setOpen(false);
-      setMenuCoords(null);
-      setHighlighted(-1);
-      setSearch("");
+      closeMenu(true);
     }
   };
 
@@ -184,13 +224,16 @@ export default function CustomSelect({
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (!open) {
-        setOpen(true);
-        setHighlighted(0);
+        openMenu();
         return;
       }
       setHighlighted((h) => Math.min(h + 1, filteredOptions.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
+      if (!open) {
+        openMenu();
+        return;
+      }
       setHighlighted((h) => Math.max(h - 1, 0));
     } else if (e.key === "Home") {
       e.preventDefault();
@@ -204,29 +247,23 @@ export default function CustomSelect({
       if (open && highlighted >= 0 && filteredOptions[highlighted]) {
         const opt = filteredOptions[highlighted];
         onChange(opt.value);
-        setOpen(false);
-        setMenuCoords(null);
-        setHighlighted(-1);
-        setSearch("");
-      } else {
-        if (containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect();
-          setMenuCoords({
-            top: rect.top + window.scrollY,
-            left: rect.left + window.scrollX,
-            right: rect.right + window.scrollX,
-            bottom: rect.bottom + window.scrollY,
-            width: rect.width,
-            height: rect.height,
-          });
-        }
-        setOpen(true);
+        closeMenu(true);
+      } else if (!open) {
+        openMenu();
       }
     } else if (e.key === "Escape") {
-      setOpen(false);
-      setMenuCoords(null);
-      setHighlighted(-1);
-      setSearch("");
+      if (open) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenu(true);
+      }
+    } else if (e.key === "Tab") {
+      if (open) {
+        e.preventDefault();
+        e.stopPropagation();
+        moveFocusFromTrigger(e.shiftKey);
+        closeMenu(false);
+      }
     }
   };
 
@@ -315,10 +352,7 @@ export default function CustomSelect({
                   }}
                   onClick={() => {
                     onChange(opt.value);
-                    setOpen(false);
-                    setMenuCoords(null);
-                    setHighlighted(-1);
-                    setSearch("");
+                    closeMenu(true);
                   }}
                 >
                   <span className="truncate">{opt.label}</span>

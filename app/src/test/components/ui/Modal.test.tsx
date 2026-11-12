@@ -136,4 +136,70 @@ describe("Modal Component", () => {
       document.body.removeChild(outsideButton);
     }
   });
+
+  it("does not redirect focus when focus moves to a custom-select-portal", () => {
+    const portalDiv = document.createElement("div");
+    portalDiv.className = "custom-select-portal";
+    const portalInput = document.createElement("input");
+    portalDiv.appendChild(portalInput);
+    document.body.appendChild(portalDiv);
+    try {
+      render(
+        <Modal onClose={vi.fn()}>
+          <button data-testid="inside-btn">Inside</button>
+        </Modal>,
+      );
+
+      portalInput.focus();
+      portalInput.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+
+      expect(document.activeElement).toBe(portalInput);
+    } finally {
+      document.body.removeChild(portalDiv);
+    }
+  });
+
+  it("does not redirect focus when focus moves to datepicker-portal", () => {
+    const portalDiv = document.createElement("div");
+    portalDiv.id = "datepicker-portal";
+    const portalButton = document.createElement("button");
+    portalDiv.appendChild(portalButton);
+    document.body.appendChild(portalDiv);
+    try {
+      render(
+        <Modal onClose={vi.fn()}>
+          <button data-testid="inside-btn">Inside</button>
+        </Modal>,
+      );
+
+      portalButton.focus();
+      portalButton.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+
+      expect(document.activeElement).toBe(portalButton);
+    } finally {
+      document.body.removeChild(portalDiv);
+    }
+  });
+
+  it("does not redirect focus when focus moves to a nested modal", () => {
+    const nestedModal = document.createElement("div");
+    nestedModal.className = "modal-container";
+    const nestedButton = document.createElement("button");
+    nestedModal.appendChild(nestedButton);
+    document.body.appendChild(nestedModal);
+    try {
+      render(
+        <Modal onClose={vi.fn()}>
+          <button data-testid="inside-btn">Inside</button>
+        </Modal>,
+      );
+
+      nestedButton.focus();
+      nestedButton.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+
+      expect(document.activeElement).toBe(nestedButton);
+    } finally {
+      document.body.removeChild(nestedModal);
+    }
+  });
 });

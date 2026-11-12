@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CustomSelect from "../../../components/ui/CustomSelect";
+import { Modal } from "../../../components/ui/Modal";
 
 describe("CustomSelect", () => {
   const options = [
@@ -156,5 +157,125 @@ describe("CustomSelect", () => {
     // Press Enter to select the last option
     fireEvent.keyDown(searchInput, { key: "Enter" });
     expect(handleChange).toHaveBeenCalledWith("opt3");
+  });
+
+  it("allows searching when CustomSelect is inside a Modal without focus being stolen", async () => {
+    const user = userEvent.setup();
+    const handleClose = vi.fn();
+    render(
+      <Modal onClose={handleClose}>
+        <input data-testid="modal-first-input" defaultValue="Initial" />
+        <CustomSelect
+          value=""
+          onChange={() => {}}
+          options={options}
+          placeholder="Select an account"
+        />
+      </Modal>,
+    );
+
+    const trigger = screen.getByText("Select an account");
+    await user.click(trigger);
+
+    const searchInput = screen.getByRole("textbox", { name: "Search..." });
+
+    // Verify search input is focused automatically
+    await waitFor(() => {
+      expect(document.activeElement).toBe(searchInput);
+    });
+
+    // Type in search bar
+    await user.type(searchInput, "Two");
+
+    expect(searchInput).toHaveValue("Two");
+    expect(screen.getByText("Option Two")).toBeInTheDocument();
+    expect(screen.queryByText("Option One")).not.toBeInTheDocument();
+  });
+
+  it("closes dropdown and restores focus to trigger on Escape inside a Modal without closing the Modal", async () => {
+    const user = userEvent.setup();
+    const handleClose = vi.fn();
+    render(
+      <Modal onClose={handleClose}>
+        <input data-testid="modal-first-input" />
+        <CustomSelect
+          value=""
+          onChange={() => {}}
+          options={options}
+          placeholder="Select an account"
+        />
+      </Modal>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Select an account" });
+    await user.click(trigger);
+
+    const searchInput = screen.getByRole("textbox", { name: "Search..." });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(searchInput);
+    });
+
+    // Press Escape
+    fireEvent.keyDown(searchInput, { key: "Escape" });
+
+    // The modal should NOT have closed
+    expect(handleClose).not.toHaveBeenCalled();
+    // Dropdown options should be closed
+    expect(
+      screen.queryByRole("textbox", { name: "Search..." }),
+    ).not.toBeInTheDocument();
+    // Focus should be restored to trigger button
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("advances focus to next focusable element on Tab inside a Modal", async () => {
+    const user = userEvent.setup();
+    render(
+      <Modal onClose={vi.fn()}>
+        <input data-testid="before-input" />
+        <CustomSelect
+          value=""
+          onChange={() => {}}
+          options={options}
+          placeholder="Select an account"
+        />
+        <input data-testid="after-input" />
+      </Modal>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Select an account" });
+    await user.click(trigger);
+
+    const searchInput = screen.getByRole("textbox", { name: "Search..." });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(searchInput);
+    });
+
+    // Press Tab
+    fireEvent.keyDown(searchInput, { key: "Tab" });
+
+    // Dropdown closes and focus moves to next focusable element
+    expect(
+      screen.queryByRole("textbox", { name: "Search..." }),
+    ).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(screen.getByTestId("after-input"));
+  });
+
+  it("opens menu via ArrowDown key on trigger button", () => {
+    render(
+      <CustomSelect
+        value=""
+        onChange={() => {}}
+        options={options}
+        placeholder="Select something"
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Select something" });
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+
+    expect(
+      screen.getByRole("textbox", { name: "Search..." }),
+    ).toBeInTheDocument();
   });
 });
