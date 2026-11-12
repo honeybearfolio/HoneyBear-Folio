@@ -57,7 +57,7 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         manualChunks: (id: string) => {
           if (
