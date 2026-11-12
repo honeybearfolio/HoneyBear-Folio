@@ -32,8 +32,7 @@ function deleteTooltipLabel(): void {
 
 function deleteLinearTickCallback(): void {
   const ticks = ChartJS.defaults.scales.linear.ticks as unknown as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
   if (ticks) {
     delete ticks.callback;
   }
