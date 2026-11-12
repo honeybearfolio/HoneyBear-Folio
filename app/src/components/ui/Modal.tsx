@@ -103,13 +103,25 @@ export function Modal({
 
     // Redirect focus back into the modal if it escapes through non-Tab means
     const handleFocusIn = (e: FocusEvent) => {
-      if (!container.contains(e.target as Node)) {
-        const focusable = getFocusable();
-        if (focusable.length > 0) {
-          focusable[0]!.focus();
-        } else {
-          container.focus();
-        }
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (container.contains(target)) return;
+
+      // Allow focus inside dropdown portals, datepicker portals, and nested modals
+      if (
+        target instanceof Element &&
+        (target.closest('[class*="-portal"]') ||
+          target.closest("#datepicker-portal") ||
+          target.closest(".modal-container"))
+      ) {
+        return;
+      }
+
+      const focusable = getFocusable();
+      if (focusable.length > 0) {
+        focusable[0]!.focus();
+      } else {
+        container.focus();
       }
     };
 
