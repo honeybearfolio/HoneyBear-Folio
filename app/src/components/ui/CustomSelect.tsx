@@ -60,6 +60,7 @@ export default function CustomSelect({
   const searchRef = useRef<HTMLInputElement>(null);
   const [menuCoords, setMenuCoords] = useState<MenuCoords | null>(null);
   const [search, setSearch] = useState("");
+  const [opensUpward, setOpensUpward] = useState(false);
 
   const selected = options.find((o) => String(o.value) === String(value));
 
@@ -79,6 +80,9 @@ export default function CustomSelect({
         width: rect.width,
         height: rect.height,
       });
+      // Open upward if there's not enough space below (menu max-height is 224px + 8px gap)
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpensUpward(openUpward || spaceBelow < 240);
 
       // compute initial highlighted index from the current filtered options
       const currentFiltered = options.filter((opt) => {
@@ -294,7 +298,7 @@ export default function CustomSelect({
             tabIndex={-1}
             className="custom-select-portal fixed bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-56 overflow-auto p-2 animate-fade-in"
             style={{
-              ...(openUpward
+              ...(opensUpward
                 ? {
                     bottom: `${String(window.innerHeight - menuCoords.top + 8)}px`,
                   }
