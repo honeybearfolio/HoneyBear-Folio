@@ -112,6 +112,8 @@ export default function Dashboard({
     isDark,
     chartColors,
     currentNetWorth,
+    totalAssetsValue,
+    totalLiabilitiesValue,
     t,
   });
 

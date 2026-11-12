@@ -32,6 +32,8 @@ interface UseDashboardChartsArgs {
   isDark: boolean;
   chartColors: ChartColors;
   currentNetWorth: number;
+  totalAssetsValue: number;
+  totalLiabilitiesValue: number;
   t: TFunction;
 }
 
@@ -50,6 +52,8 @@ export function useDashboardCharts({
   isDark,
   chartColors,
   currentNetWorth,
+  totalAssetsValue,
+  totalLiabilitiesValue,
   t,
 }: UseDashboardChartsArgs) {
   const chartData = useMemo(
@@ -65,6 +69,8 @@ export function useDashboardCharts({
         getPrice,
         chartColors,
         currentNetWorth,
+        totalAssetsValue,
+        totalLiabilitiesValue,
         t,
       }),
     [
@@ -78,6 +84,8 @@ export function useDashboardCharts({
       getPrice,
       chartColors,
       currentNetWorth,
+      totalAssetsValue,
+      totalLiabilitiesValue,
       t,
     ],
   );
@@ -156,8 +164,13 @@ export function useDashboardCharts({
   );
 
   const lineOptions = useMemo<ChartOptions<"line">>(
-    () => createLineChartOptions(formatNumber, chartColors),
-    [formatNumber, chartColors],
+    () =>
+      createLineChartOptions(
+        formatNumber,
+        chartColors,
+        t("dashboard.datasets.assets_liabilities_net"),
+      ),
+    [formatNumber, chartColors, t],
   );
 
   return {

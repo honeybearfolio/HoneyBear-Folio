@@ -60,6 +60,8 @@ describe("dashboard chart data builders", () => {
         getPrice,
         chartColors,
         currentNetWorth: 1000,
+        totalAssetsValue: 0,
+        totalLiabilitiesValue: 0,
         t,
       }),
     ).toBeNull();
@@ -77,6 +79,8 @@ describe("dashboard chart data builders", () => {
       getPrice,
       chartColors,
       currentNetWorth: 1060,
+      totalAssetsValue: 0,
+      totalLiabilitiesValue: 0,
       t,
     });
 
