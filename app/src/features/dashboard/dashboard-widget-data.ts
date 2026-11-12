@@ -164,6 +164,8 @@ export function useWidgetData(widget: DashboardWidgetInstance) {
             getPrice: data.getPrice,
             chartColors: data.chartColors,
             currentNetWorth: netWorth,
+            totalAssetsValue: assets,
+            totalLiabilitiesValue: liabilities,
             t,
           })
         : null,
@@ -179,6 +181,8 @@ export function useWidgetData(widget: DashboardWidgetInstance) {
       data.getPrice,
       data.chartColors,
       netWorth,
+      assets,
+      liabilities,
       t,
     ],
   );

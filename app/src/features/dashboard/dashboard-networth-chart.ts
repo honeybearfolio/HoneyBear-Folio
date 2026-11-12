@@ -14,6 +14,7 @@ export interface NetWorthChartDataset {
   data: number[];
   originalData?: number[];
   accountCurrency?: string;
+  assetsLiabilitiesOffset?: number;
   borderColor:
     | string
     | ((context: { chart: { ctx: CanvasRenderingContext2D } }) => string);
@@ -52,6 +53,8 @@ interface BuildNetWorthChartDataArgs {
   getPrice: GetPriceFn;
   chartColors: ChartColors;
   currentNetWorth: number;
+  totalAssetsValue: number;
+  totalLiabilitiesValue: number;
   t: TFunction;
 }
 
@@ -66,6 +69,8 @@ export function buildNetWorthChartData({
   getPrice,
   chartColors,
   currentNetWorth,
+  totalAssetsValue,
+  totalLiabilitiesValue,
   t,
 }: BuildNetWorthChartDataArgs): NetWorthChartData | null {
   if (filteredAccounts.length === 0 || filteredTransactions.length === 0)
@@ -138,6 +143,7 @@ export function buildNetWorthChartData({
           : getPrice(`${accCurrency}${appCurrency}=X`, date) || 1.0;
       total += (cashBalance + stockValue) * rateToApp;
     });
+    total += totalAssetsValue - totalLiabilitiesValue;
     return total;
   });
 
@@ -148,6 +154,7 @@ export function buildNetWorthChartData({
   datasets.push({
     label: t("dashboard.datasets.total_net_worth"),
     data: totalData,
+    assetsLiabilitiesOffset: totalAssetsValue - totalLiabilitiesValue,
     borderColor: chartColors.line,
     backgroundColor: (context: {
       chart: { ctx: CanvasRenderingContext2D };

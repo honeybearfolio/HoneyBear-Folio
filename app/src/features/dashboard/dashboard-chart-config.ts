@@ -233,6 +233,7 @@ export function createBarChartOptions(
 export function createLineChartOptions(
   formatNumber: ChartFormatNumber,
   chartColors: ChartColors,
+  assetsLiabilitiesLabel?: string,
 ): ChartOptions<"line"> {
   return {
     responsive: true,
@@ -274,6 +275,20 @@ export function createLineChartOptions(
               return ds.accountCurrency ? { currency: ds.accountCurrency } : {};
             },
           }),
+          afterBody: assetsLiabilitiesLabel
+            ? (items: TooltipItem<"line">[]) => {
+                const firstItem = items[0];
+                if (!firstItem) return [];
+                const ds = firstItem.dataset as typeof firstItem.dataset & {
+                  assetsLiabilitiesOffset?: number;
+                };
+                const offset = ds.assetsLiabilitiesOffset;
+                if (offset === undefined || offset === 0) return [];
+                return [
+                  `${assetsLiabilitiesLabel}: ${formatNumber(offset, { style: "currency" })}`,
+                ];
+              }
+            : undefined,
         },
       },
     },
