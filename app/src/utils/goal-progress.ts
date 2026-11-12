@@ -5,11 +5,7 @@ const MONTH_MS = 1000 * 60 * 60 * 24 * 30.4375;
 const ON_TRACK_TOLERANCE = 0.98;
 
 export type GoalStatus =
-  | "reached"
-  | "on_track"
-  | "behind"
-  | "projected"
-  | "unscheduled";
+  "reached" | "on_track" | "behind" | "projected" | "unscheduled";
 
 export interface ProgressAccount {
   id: string | number;

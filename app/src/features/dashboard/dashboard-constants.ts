@@ -21,10 +21,4 @@ export const DEFAULT_EXPENSE_CHART_PALETTE = [
 ];
 
 export type DashboardTimeRange =
-  | "1M"
-  | "3M"
-  | "6M"
-  | "YTD"
-  | "1Y"
-  | "ALL"
-  | "CUSTOM";
+  "1M" | "3M" | "6M" | "YTD" | "1Y" | "ALL" | "CUSTOM";
