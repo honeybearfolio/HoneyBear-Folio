@@ -35,9 +35,19 @@ pub fn create_asset_db(
     })
 }
 
+/// Returns active (non-archived) assets with their latest valuation.
 pub fn get_assets_db(
     db_path: &PathBuf,
     target_currency: Option<&str>,
+) -> Result<Vec<AssetWithLatestValue>, String> {
+    get_assets_with_archived_db(db_path, target_currency, false)
+}
+
+/// Returns assets with their latest valuation, optionally including archived ones.
+pub fn get_assets_with_archived_db(
+    db_path: &PathBuf,
+    target_currency: Option<&str>,
+    include_archived: bool,
 ) -> Result<Vec<AssetWithLatestValue>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -66,16 +76,17 @@ pub fn get_assets_db(
         let mut stmt = conn
             .prepare(
                 "SELECT a.id, a.name, a.category, a.currency, a.notes,
-                        v.value, v.date
+                        v.value, v.date, a.archived
                  FROM assets a
                  LEFT JOIN asset_valuations v ON v.asset_id = a.id
                     AND v.date = (SELECT MAX(v2.date) FROM asset_valuations v2 WHERE v2.asset_id = a.id)
+                 WHERE a.archived = 0 OR ?1
                  ORDER BY a.name",
             )
             .map_err(|e| e.to_string())?;
 
         let assets = stmt
-            .query_map([], |row| {
+            .query_map(params![include_archived], |row| {
                 let currency: Option<String> = row.get(3)?;
                 Ok(AssetWithLatestValue {
                     id: row.get(0)?,
@@ -85,6 +96,7 @@ pub fn get_assets_db(
                     notes: row.get(4)?,
                     latest_value: row.get(5)?,
                     latest_date: row.get(6)?,
+                    archived: row.get::<_, i32>(7)? != 0,
                     exchange_rate: {
                         if let Some(ref cur) = currency {
                             if let Some(target) = target_currency {
@@ -129,6 +141,23 @@ pub fn update_asset_db(
             .execute(
                 "UPDATE assets SET name = ?1, category = ?2, currency = ?3, notes = ?4 WHERE id = ?5",
                 params![name_trimmed, category, currency, notes, id],
+            )
+            .map_err(|e| e.to_string())?;
+        if rows == 0 {
+            return Err("Asset not found".to_string());
+        }
+        Ok(())
+    })
+}
+
+/// Archives or unarchives an asset. Its valuation history is kept untouched.
+pub fn set_asset_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let rows = conn
+            .execute(
+                "UPDATE assets SET archived = ?1 WHERE id = ?2",
+                params![archived, id],
             )
             .map_err(|e| e.to_string())?;
         if rows == 0 {
@@ -271,9 +300,20 @@ pub fn create_asset(
 pub fn get_assets(
     app_handle: AppHandle,
     target_currency: Option<String>,
+    include_archived: Option<bool>,
 ) -> Result<Vec<AssetWithLatestValue>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    get_assets_db(&db_path, target_currency.as_deref())
+    get_assets_with_archived_db(
+        &db_path,
+        target_currency.as_deref(),
+        include_archived.unwrap_or(false),
+    )
+}
+
+#[tauri::command]
+pub fn set_asset_archived(app_handle: AppHandle, id: i32, archived: bool) -> Result<(), String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    set_asset_archived_db(&db_path, id, archived)
 }
 
 #[tauri::command]

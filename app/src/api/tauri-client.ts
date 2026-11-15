@@ -164,8 +164,15 @@ export const rust = {
     };
   }): Promise<Account> => callRust("create_account", args),
 
-  get_accounts: (args?: { targetCurrency?: string }): Promise<Account[]> =>
-    callRust("get_accounts", args),
+  get_accounts: (args?: {
+    targetCurrency?: string;
+    includeArchived?: boolean;
+  }): Promise<Account[]> => callRust("get_accounts", args),
+
+  set_account_archived: (args: {
+    id: string | number;
+    archived: boolean;
+  }): Promise<void> => callRust("set_account_archived", args),
 
   rename_account: (args: {
     id: string | number;
@@ -378,7 +385,13 @@ export const rust = {
 
   get_assets: (args?: {
     targetCurrency?: string;
+    includeArchived?: boolean;
   }): Promise<AssetWithLatestValue[]> => callRust("get_assets", args),
+
+  set_asset_archived: (args: {
+    id: number;
+    archived: boolean;
+  }): Promise<void> => callRust("set_asset_archived", args),
 
   update_asset: (args: {
     id: number;
@@ -442,7 +455,13 @@ export const rust = {
 
   get_liabilities: (args?: {
     targetCurrency?: string;
+    includeArchived?: boolean;
   }): Promise<LiabilityWithLatestValue[]> => callRust("get_liabilities", args),
+
+  set_liability_archived: (args: {
+    id: number;
+    archived: boolean;
+  }): Promise<void> => callRust("set_liability_archived", args),
 
   update_liability: (args: {
     id: number;

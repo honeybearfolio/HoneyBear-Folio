@@ -9,6 +9,8 @@ vi.mock("lucide-react", () => ({
   Banknote: () => <span data-testid="banknote-icon">$</span>,
   Edit: () => <span>Edit</span>,
   Trash2: () => <span>Delete</span>,
+  Archive: () => <span />,
+  ArchiveRestore: () => <span />,
 }));
 
 vi.mock("../../../utils/format", async () => {
@@ -236,6 +238,46 @@ describe("AccountList", () => {
     fireEvent.click(deleteBtn!);
 
     expect(onDeleteAccount).toHaveBeenCalledWith("1");
+  });
+
+  it("context menu archives and unarchives accounts", async () => {
+    const onArchiveAccount = vi.fn();
+    const onUnarchiveAccount = vi.fn();
+    const { unmount } = render(
+      <AccountList
+        accounts={mockAccounts}
+        onSelectAccount={vi.fn()}
+        Icon={() => <span>Icon</span>}
+        onArchiveAccount={onArchiveAccount}
+      />,
+    );
+
+    fireEvent.contextMenu(
+      screen.getByText("Account A").closest(".account-list-menu-container")!,
+    );
+    const menu = await waitFor(() => {
+      const el = document.querySelector(".account-list-menu-portal");
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    expect(menu.textContent).not.toContain("Unarchive");
+    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+    expect(onArchiveAccount).toHaveBeenCalledWith("1");
+    unmount();
+
+    render(
+      <AccountList
+        accounts={mockAccounts}
+        onSelectAccount={vi.fn()}
+        Icon={() => <span>Icon</span>}
+        onUnarchiveAccount={onUnarchiveAccount}
+      />,
+    );
+    fireEvent.contextMenu(
+      screen.getByText("Account B").closest(".account-list-menu-container")!,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Unarchive" }));
+    expect(onUnarchiveAccount).toHaveBeenCalledWith("2");
   });
 
   it("context menu closes when clicking outside", async () => {

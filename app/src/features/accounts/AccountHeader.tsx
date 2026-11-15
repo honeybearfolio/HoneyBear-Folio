@@ -7,6 +7,8 @@ import {
   X,
   Edit,
   Trash2,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import MaskedNumber from "../../components/ui/MaskedNumber";
 import { useTranslation } from "react-i18next";
@@ -30,6 +32,7 @@ interface AccountHeaderProps {
   accountMenuOpen: boolean;
   setAccountMenuOpen: (v: boolean) => void;
   handleDeleteAccount: () => void;
+  handleToggleArchiveAccount: () => void;
   availableAccounts: AvailableAccount[];
 }
 
@@ -48,6 +51,7 @@ export default function AccountHeader({
   accountMenuOpen,
   setAccountMenuOpen,
   handleDeleteAccount,
+  handleToggleArchiveAccount,
   availableAccounts,
 }: AccountHeaderProps) {
   const { t } = useTranslation();
@@ -239,6 +243,22 @@ export default function AccountHeader({
                 >
                   <Edit className="w-4 h-4 text-slate-400" />
                   {t("account.action.rename")}
+                </button>
+
+                <button
+                  onClick={handleToggleArchiveAccount}
+                  className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
+                >
+                  {account.archived ? (
+                    <ArchiveRestore className="w-4 h-4 text-slate-400" />
+                  ) : (
+                    <Archive className="w-4 h-4 text-slate-400" />
+                  )}
+                  {t(
+                    account.archived
+                      ? "account.action.unarchive"
+                      : "account.action.archive",
+                  )}
                 </button>
 
                 <div className="h-px bg-slate-100 dark:bg-slate-700 my-1" />

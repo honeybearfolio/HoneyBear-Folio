@@ -144,6 +144,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [archivedAccounts, setArchivedAccounts] = useState<Account[]>([]);
   const [marketValues, setMarketValues] = useState<Record<string, number>>({});
   const [totalAssetsValue, setTotalAssetsValue] = useState(0);
   const [totalLiabilitiesValue, setTotalLiabilitiesValue] = useState(0);
@@ -233,11 +234,14 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
 
   const fetchAccounts = useCallback(async (): Promise<Account[]> => {
     try {
-      const accs = await rust.get_accounts({
+      const all = await rust.get_accounts({
         targetCurrency: currency,
+        includeArchived: true,
       });
+      const accs = all.filter((a) => !a.archived);
       accs.sort((a, b) => b.balance - a.balance);
       setAccounts(accs);
+      setArchivedAccounts(all.filter((a) => a.archived));
       return accs;
     } catch (e) {
       handleAsyncError({
@@ -368,7 +372,9 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
       totalValue: totalBalance,
     };
   } else {
-    const acc = accounts.find((a) => sameId(a.id, selectedAccountId));
+    const acc = [...accounts, ...archivedAccounts].find((a) =>
+      sameId(a.id, selectedAccountId),
+    );
     if (acc) {
       const marketValue = marketValues[acc.id];
       accountForDetails = {
@@ -433,6 +439,7 @@ function MainApp({ activeSession, onSwitchSession }: MainAppProps) {
             <div className="flex-1 w-full h-full overflow-hidden">
               <Sidebar
                 accounts={accounts}
+                archivedAccounts={archivedAccounts}
                 marketValues={marketValues}
                 totalBalance={totalBalance}
                 selectedId={selectedAccountId}

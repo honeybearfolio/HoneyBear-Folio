@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { rust } from "../../api/tauri-client";
 import type { AssetWithLatestValue, AssetValuation } from "../../api/types";
-import { Plus, Trash2, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit,
+  ChevronDown,
+  ChevronUp,
+  Archive,
+  ArchiveRestore,
+} from "lucide-react";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
@@ -37,7 +45,7 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
   const [assets, setAssets] = useState<AssetWithLatestValue[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
+  const [showArchived, setShowArchived] = useState(false);
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [editingAsset, setEditingAsset] = useState<AssetWithLatestValue | null>(
     null,
@@ -67,11 +75,13 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
       try {
         const data = await rust.get_assets({
           targetCurrency: appCurrency || "USD",
+          includeArchived: true,
         });
         setAssets(data);
         setFetchError(null);
-        setExpandedAssetIds(new Set(data.map((a) => a.id)));
-        await Promise.all(data.map((a) => fetchValuations(a.id)));
+        const activeData = data.filter((a) => !a.archived);
+        setExpandedAssetIds(new Set(activeData.map((a) => a.id)));
+        await Promise.all(activeData.map((a) => fetchValuations(a.id)));
       } catch (e) {
         if (mode === "page") {
           handleAsyncError({
@@ -150,6 +160,30 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
     [confirm, t, showToast, fetchAssets, onUpdate],
   );
 
+  const handleToggleArchive = useCallback(
+    async (asset: AssetWithLatestValue) => {
+      const archived = !asset.archived;
+      try {
+        await rust.set_asset_archived({ id: asset.id, archived });
+        showToast(t(archived ? "assets.archived" : "assets.unarchived"), {
+          type: "success",
+        });
+        await fetchAssets();
+        onUpdate?.();
+      } catch (e) {
+        handleAsyncError({
+          context: "Failed to update asset archive status",
+          error: e,
+          userMessage: t("error.failed_to_archive"),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
+        });
+      }
+    },
+    [t, showToast, fetchAssets, onUpdate],
+  );
+
   const handleDeleteValuation = useCallback(
     async (valuation: AssetValuation) => {
       const confirmed = await confirm(t("assets.confirm_delete_valuation"), {
@@ -194,7 +228,11 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
     onUpdate?.();
   }, [fetchAssets, fetchValuations, onUpdate, valuationAssetId]);
 
-  const totalValue = assets.reduce(
+  const activeAssets = assets.filter((a) => !a.archived);
+  const hasArchived = activeAssets.length !== assets.length;
+  const visibleAssets = showArchived ? assets : activeAssets;
+
+  const totalValue = activeAssets.reduce(
     (sum, a) =>
       sum +
       (a.latest_value !== undefined ? a.latest_value : 0) * a.exchange_rate,
@@ -235,30 +273,45 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
             </span>
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingAsset(null);
-            setShowAssetModal(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors font-medium text-sm cursor-pointer"
-        >
-          <Plus size={16} />
-          {t("assets.add_asset")}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasArchived && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowArchived((value) => !value);
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+            >
+              {showArchived
+                ? t("assets.hide_archived")
+                : t("assets.show_archived")}
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setEditingAsset(null);
+              setShowAssetModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors font-medium text-sm cursor-pointer"
+          >
+            <Plus size={16} />
+            {t("assets.add_asset")}
+          </button>
+        </div>
       </div>
 
       {/* Asset List */}
-      {assets.length === 0 ? (
+      {visibleAssets.length === 0 ? (
         <div className="text-center py-16 text-slate-400 dark:text-slate-500">
           <p className="text-lg">{t("assets.empty")}</p>
           <p className="text-sm mt-1">{t("assets.empty_hint")}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {assets.map((asset) => (
+          {visibleAssets.map((asset) => (
             <div
               key={asset.id}
-              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+              className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden ${asset.archived ? "opacity-60" : ""}`}
             >
               {/* Asset row */}
               <div className="flex items-center gap-4 px-5 py-4">
@@ -270,9 +323,16 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                   {CATEGORY_ICONS[asset.category] || CATEGORY_ICONS.other}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                    {asset.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                      {asset.name}
+                    </h3>
+                    {asset.archived && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        {t("assets.archived_badge")}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-400 dark:text-slate-500">
                     {t(`assets.category.${asset.category}`)}
                     {asset.currency && ` · ${asset.currency}`}
@@ -310,6 +370,25 @@ export default function AssetTracker({ onUpdate }: AssetTrackerProps = {}) {
                     aria-label={t("assets.edit")}
                   >
                     <Edit size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleToggleArchive(asset);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    title={t(
+                      asset.archived ? "assets.unarchive" : "assets.archive",
+                    )}
+                    aria-label={t(
+                      asset.archived ? "assets.unarchive" : "assets.archive",
+                    )}
+                  >
+                    {asset.archived ? (
+                      <ArchiveRestore size={15} />
+                    ) : (
+                      <Archive size={15} />
+                    )}
                   </button>
                   <button
                     type="button"

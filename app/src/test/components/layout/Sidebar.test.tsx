@@ -51,6 +51,7 @@ vi.mock("lucide-react", () => ({
   Gem: () => <span>Gem</span>,
   Scale: () => <span>Scale</span>,
   Target: () => <span>Target</span>,
+  Archive: () => <span>Archive</span>,
 }));
 
 // Mock child components that might use contexts or API
@@ -127,6 +128,25 @@ describe("Sidebar", () => {
     );
 
     expect(screen.getByText("fmt-12345.67")).toBeInTheDocument();
+  });
+
+  it("shows archived accounts in a collapsible section", () => {
+    renderWithStores(
+      <Sidebar
+        accounts={[{ id: 1, name: "Active", balance: 10 }]}
+        archivedAccounts={[{ id: 2, name: "Old", balance: 0, archived: true }]}
+        onSelectAccount={mockOnSelectAccount}
+        sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        selectedId=""
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByTestId("AccountList")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: /Archived \(1\)/ }));
+    expect(screen.getAllByTestId("AccountList")).toHaveLength(2);
   });
 
   it("toggles privacy mode", () => {

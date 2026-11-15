@@ -171,12 +171,12 @@ pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Tra
     })
 }
 
-/// Retrieves all transactions across all accounts, ordered by date descending.
+/// Returns transactions of all active accounts, ordered by date descending; transactions of archived accounts are skipped.
 pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
-        let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
+        let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions WHERE account_id NOT IN (SELECT id FROM accounts WHERE archived = 1) ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
         let transaction_iter = stmt
             .query_map([], |row| {
                 Ok(Transaction {

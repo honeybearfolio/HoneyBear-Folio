@@ -77,6 +77,8 @@ pub struct Account {
     pub currency: Option<String>,
     #[serde(default = "default_exchange_rate")]
     pub exchange_rate: f64,
+    #[serde(default)]
+    pub archived: bool,
 }
 
 /// Returns the default exchange rate value of `1.0`.
@@ -249,6 +251,8 @@ pub struct AssetWithLatestValue {
     pub latest_date: Option<String>,
     #[serde(default = "default_exchange_rate")]
     pub exchange_rate: f64,
+    #[serde(default)]
+    pub archived: bool,
 }
 
 // ── Liability tracking data structures ───────────────────────────────
@@ -281,6 +285,8 @@ pub struct LiabilityWithLatestValue {
     pub latest_date: Option<String>,
     #[serde(default = "default_exchange_rate")]
     pub exchange_rate: f64,
+    #[serde(default)]
+    pub archived: bool,
 }
 
 // ── Financial goals ─────────────────────────────────────────────────

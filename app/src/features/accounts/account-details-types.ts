@@ -19,7 +19,10 @@ export type {
 /** Real accounts plus the synthetic "all transactions" view. */
 export type AccountDetailsAccount =
   | Account
-  | (Pick<Account, "name" | "balance" | "totalValue" | "currency"> & {
+  | (Pick<
+      Account,
+      "name" | "balance" | "totalValue" | "currency" | "archived"
+    > & {
       id: "all";
     });
 

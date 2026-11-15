@@ -4,7 +4,15 @@ import type {
   LiabilityWithLatestValue,
   LiabilityValuation,
 } from "../../api/types";
-import { Plus, Trash2, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit,
+  ChevronDown,
+  ChevronUp,
+  Archive,
+  ArchiveRestore,
+} from "lucide-react";
 import { useConfirm } from "../../stores/confirm";
 import { useToast } from "../../stores/toast";
 import { useTranslation } from "react-i18next";
@@ -44,6 +52,7 @@ export default function LiabilityTracker({
   );
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [showLiabilityModal, setShowLiabilityModal] = useState(false);
   const [editingLiability, setEditingLiability] =
@@ -75,11 +84,13 @@ export default function LiabilityTracker({
       try {
         const data = await rust.get_liabilities({
           targetCurrency: appCurrency || "USD",
+          includeArchived: true,
         });
         setLiabilities(data);
         setFetchError(null);
-        setExpandedLiabilityIds(new Set(data.map((l) => l.id)));
-        await Promise.all(data.map((l) => fetchValuations(l.id)));
+        const activeData = data.filter((l) => !l.archived);
+        setExpandedLiabilityIds(new Set(activeData.map((l) => l.id)));
+        await Promise.all(activeData.map((l) => fetchValuations(l.id)));
       } catch (e) {
         if (mode === "page") {
           handleAsyncError({
@@ -158,6 +169,31 @@ export default function LiabilityTracker({
     [confirm, t, showToast, fetchLiabilities, onUpdate],
   );
 
+  const handleToggleArchive = useCallback(
+    async (liability: LiabilityWithLatestValue) => {
+      const archived = !liability.archived;
+      try {
+        await rust.set_liability_archived({ id: liability.id, archived });
+        showToast(
+          t(archived ? "liabilities.archived" : "liabilities.unarchived"),
+          { type: "success" },
+        );
+        await fetchLiabilities();
+        onUpdate?.();
+      } catch (e) {
+        handleAsyncError({
+          context: "Failed to update liability archive status",
+          error: e,
+          userMessage: t("error.failed_to_archive"),
+          toast: (message) => {
+            showToast(message, { type: "error" });
+          },
+        });
+      }
+    },
+    [t, showToast, fetchLiabilities, onUpdate],
+  );
+
   const handleDeleteValuation = useCallback(
     async (valuation: LiabilityValuation) => {
       const confirmed = await confirm(
@@ -205,7 +241,11 @@ export default function LiabilityTracker({
     onUpdate?.();
   }, [fetchLiabilities, fetchValuations, onUpdate, valuationLiabilityId]);
 
-  const totalValue = liabilities.reduce(
+  const activeLiabilities = liabilities.filter((l) => !l.archived);
+  const hasArchived = activeLiabilities.length !== liabilities.length;
+  const visibleLiabilities = showArchived ? liabilities : activeLiabilities;
+
+  const totalValue = activeLiabilities.reduce(
     (sum, l) =>
       sum +
       (l.latest_value !== undefined ? l.latest_value : 0) * l.exchange_rate,
@@ -245,29 +285,44 @@ export default function LiabilityTracker({
             </span>
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingLiability(null);
-            setShowLiabilityModal(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors font-medium text-sm cursor-pointer"
-        >
-          <Plus size={16} />
-          {t("liabilities.add_liability")}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasArchived && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowArchived((value) => !value);
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+            >
+              {showArchived
+                ? t("liabilities.hide_archived")
+                : t("liabilities.show_archived")}
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setEditingLiability(null);
+              setShowLiabilityModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors font-medium text-sm cursor-pointer"
+          >
+            <Plus size={16} />
+            {t("liabilities.add_liability")}
+          </button>
+        </div>
       </div>
 
-      {liabilities.length === 0 ? (
+      {visibleLiabilities.length === 0 ? (
         <div className="text-center py-16 text-slate-400 dark:text-slate-500">
           <p className="text-lg">{t("liabilities.empty")}</p>
           <p className="text-sm mt-1">{t("liabilities.empty_hint")}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {liabilities.map((liability) => (
+          {visibleLiabilities.map((liability) => (
             <div
               key={liability.id}
-              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden"
+              className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden ${liability.archived ? "opacity-60" : ""}`}
             >
               <div className="flex items-center gap-4 px-5 py-4">
                 <span
@@ -278,9 +333,16 @@ export default function LiabilityTracker({
                   {CATEGORY_ICONS[liability.category] || CATEGORY_ICONS.other}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                    {liability.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                      {liability.name}
+                    </h3>
+                    {liability.archived && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        {t("liabilities.archived_badge")}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-400 dark:text-slate-500">
                     {t(`liabilities.category.${liability.category}`)}
                     {liability.currency && ` · ${liability.currency}`}
@@ -321,6 +383,29 @@ export default function LiabilityTracker({
                     aria-label={t("liabilities.edit")}
                   >
                     <Edit size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleToggleArchive(liability);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                    title={t(
+                      liability.archived
+                        ? "liabilities.unarchive"
+                        : "liabilities.archive",
+                    )}
+                    aria-label={t(
+                      liability.archived
+                        ? "liabilities.unarchive"
+                        : "liabilities.archive",
+                    )}
+                  >
+                    {liability.archived ? (
+                      <ArchiveRestore size={15} />
+                    ) : (
+                      <Archive size={15} />
+                    )}
                   </button>
                   <button
                     type="button"

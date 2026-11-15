@@ -15,6 +15,7 @@ fn base_account() -> Account {
         balance: 1000.0,
         currency: Some("USD".into()),
         exchange_rate: 1.0,
+        archived: false,
     }
 }
 
