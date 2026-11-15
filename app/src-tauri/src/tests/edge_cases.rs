@@ -23,6 +23,10 @@ fn date(y: i32, m: u32, d: u32) -> NaiveDate {
     NaiveDate::from_ymd_opt(y, m, d).unwrap()
 }
 
+fn assert_no_occurrences(s: &ScheduledTransaction, from: NaiveDate, to: NaiveDate) {
+    assert_eq!(compute_occurrences(s, from, to), Vec::new());
+}
+
 fn schedule(kind: &str) -> ScheduledTransaction {
     ScheduledTransaction {
         id: 1,
@@ -93,13 +97,13 @@ fn test_every_n_units_and_end_date() {
     assert_eq!(yearly.len(), 3);
 
     s.start_date = "not-a-date".into();
-    assert!(compute_occurrences(&s, date(2024, 1, 1), date(2024, 12, 31)).is_empty());
+    assert_no_occurrences(&s, date(2024, 1, 1), date(2024, 12, 31));
 }
 
 #[test]
 fn test_day_of_week_edge_cases() {
     let mut s = schedule("day_of_week");
-    assert!(compute_occurrences(&s, date(2024, 1, 1), date(2024, 1, 31)).is_empty());
+    assert_no_occurrences(&s, date(2024, 1, 1), date(2024, 1, 31));
 
     s.days_of_week = Some(vec![1, 3, 9]);
     s.end_date = Some("2024-01-15".into());
@@ -112,23 +116,23 @@ fn test_day_of_week_edge_cases() {
     assert_eq!(capped.len(), 2);
 
     s.start_date = "bad".into();
-    assert!(compute_occurrences(&s, date(2024, 1, 1), date(2024, 1, 31)).is_empty());
+    assert_no_occurrences(&s, date(2024, 1, 1), date(2024, 1, 31));
 }
 
 #[test]
 fn test_ordinal_weekday_edge_cases() {
     let mut s = schedule("ordinal_weekday");
-    assert!(compute_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30)).is_empty());
+    assert_no_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30));
 
     s.ordinal = Some(1);
-    assert!(compute_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30)).is_empty());
+    assert_no_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30));
 
     s.weekday = Some(9);
-    assert!(compute_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30)).is_empty());
+    assert_no_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30));
 
     s.weekday = Some(1);
     s.start_date = "bad".into();
-    assert!(compute_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30)).is_empty());
+    assert_no_occurrences(&s, date(2024, 1, 1), date(2024, 6, 30));
 
     s.start_date = "2024-01-01".into();
     s.end_date = Some("2024-03-15".into());
@@ -503,7 +507,7 @@ async fn test_execute_tool_transaction_filters() {
     )
     .await
     .unwrap();
-    assert!(none.as_array().unwrap().is_empty());
+    assert_eq!(*none.as_array().unwrap(), Vec::<Value>::new());
 
     let outside = execute_tool(
         &client,
@@ -513,7 +517,7 @@ async fn test_execute_tool_transaction_filters() {
     )
     .await
     .unwrap();
-    assert!(outside.as_array().unwrap().is_empty());
+    assert_eq!(*outside.as_array().unwrap(), Vec::<Value>::new());
 
     for tool in ["get_accounts", "get_categories", "get_payees"] {
         assert!(execute_tool(&client, &db_path, tool, &json!({}))
