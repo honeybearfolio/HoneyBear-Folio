@@ -15,6 +15,7 @@ fn base_account() -> Account {
         balance: 1000.0,
         currency: Some("USD".into()),
         exchange_rate: 1.0,
+        archived: false,
     }
 }
 
@@ -252,6 +253,79 @@ fn net_worth_market_values_groups_by_account_and_symbol() {
     let result = compute_net_worth_market_values_logic(&transactions, &quotes);
     assert_eq!(result.get("1").copied().unwrap_or(0.0), 1600.0);
     assert_eq!(result.get("2").copied().unwrap_or(0.0), 660.0);
+}
+
+#[test]
+fn tauri_command_wrappers_delegate_to_logic() {
+    use crate::core::calculations as c;
+
+    let acc = base_account();
+    let nw =
+        c::compute_net_worth(vec![acc.clone()], HashMap::new(), Some(10.0), Some(5.0)).unwrap();
+    assert_eq!(nw, 1005.0);
+
+    let mut buy = tx(-1000.0, "2025-01-10");
+    buy.ticker = Some("AAPL".into());
+    buy.shares = Some(10.0);
+    buy.price_per_share = Some(100.0);
+    let holdings = c::build_holdings_from_transactions(vec![buy.clone()]).unwrap();
+    assert_eq!(holdings.current_holdings.len(), 1);
+
+    let quote = || YahooQuote {
+        symbol: "AAPL".into(),
+        price: 150.0,
+        change_percent: 0.0,
+        currency: Some("USD".into()),
+        quote_type: Some("EQUITY".into()),
+    };
+    let merged = c::merge_holdings_with_quotes(holdings.current_holdings, vec![quote()]).unwrap();
+    assert_eq!(merged[0].current_value, 1500.0);
+
+    let totals = c::compute_portfolio_totals(merged).unwrap();
+    assert_eq!(totals.total_value, 1500.0);
+
+    let values = c::compute_net_worth_market_values(vec![buy.clone()], vec![quote()]).unwrap();
+    assert_eq!(values.len(), 1);
+
+    let projection = c::calculate_deterministic_projection(DeterministicProjectionInput {
+        current_net_worth: 100000.0,
+        annual_savings: 20000.0,
+        annual_expenses: 40000.0,
+        expected_return: 7.0,
+        inflation: 2.0,
+        withdrawal_rate: 4.0,
+        max_years: 10,
+    })
+    .unwrap();
+    assert_eq!(projection.projection_data.len(), 11);
+
+    let simulation = c::run_monte_carlo_simulation(MonteCarloInput {
+        current_net_worth: 500000.0,
+        annual_savings: 20000.0,
+        annual_expenses: 40000.0,
+        expected_return: 7.0,
+        inflation: 2.0,
+        volatility: 15.0,
+        current_age: 40,
+        retirement_age: 65,
+        retirement_duration: 30,
+        simulation_count: 10,
+    })
+    .unwrap();
+    assert_eq!(simulation.years_to_retirement, 25);
+
+    let report = c::compute_report_data(ReportComputeInput {
+        accounts: vec![acc],
+        transactions: vec![tx(1000.0, "2025-01-10")],
+        start_date: "2025-01-01".into(),
+        end_date: "2025-01-31".into(),
+        app_currency: "USD".into(),
+        exchange_rates: HashMap::new(),
+        quotes: vec![quote()],
+        labels: json!({"title":"Report"}),
+    })
+    .unwrap();
+    assert_eq!(report["summary"]["total_income"], json!(1000.0));
 }
 
 #[test]

@@ -35,6 +35,7 @@ function renderHeader(overrides: Record<string, unknown> = {}) {
     accountMenuOpen: false,
     setAccountMenuOpen: vi.fn(),
     handleDeleteAccount: vi.fn(),
+    handleToggleArchiveAccount: vi.fn(),
     availableAccounts: [
       { id: 2, name: "Savings", kind: "savings", currency: "USD" },
     ],
@@ -117,6 +118,25 @@ describe("AccountHeader", () => {
     await user.click(screen.getByRole("button", { name: "Delete" }));
 
     expect(props.handleDeleteAccount).toHaveBeenCalled();
+  });
+
+  it("menu offers Archive for active accounts and Unarchive for archived ones", async () => {
+    const user = userEvent.setup();
+    const active = renderHeader({ accountMenuOpen: true });
+
+    await user.click(screen.getByRole("button", { name: "Archive" }));
+    expect(active.props.handleToggleArchiveAccount).toHaveBeenCalled();
+    active.unmount();
+
+    const archived = renderHeader({
+      accountMenuOpen: true,
+      account: { ...account, archived: true },
+    });
+    expect(
+      screen.queryByRole("button", { name: "Archive" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Unarchive" }));
+    expect(archived.props.handleToggleArchiveAccount).toHaveBeenCalled();
   });
 
   it("escape cancels rename and restores account name", () => {

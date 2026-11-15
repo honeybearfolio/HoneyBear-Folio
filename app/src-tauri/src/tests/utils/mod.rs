@@ -31,6 +31,7 @@ fn test_same_currency_rate_is_one() {
         balance: 0.0,
         currency: Some("USD".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
     let raw_data = vec![(1, "USD".to_string(), 500.0)];
     let updated =
@@ -47,6 +48,7 @@ fn test_account_without_currency_uses_target() {
         balance: 0.0,
         currency: None,
         exchange_rate: 1.0,
+        archived: false,
     }];
     let raw_data = vec![(1, "EUR".to_string(), 100.0)];
     let mut rates = HashMap::new();
@@ -64,6 +66,7 @@ fn test_zero_dst_rate_fallback() {
         balance: 0.0,
         currency: Some("GBP".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
     let raw_data = vec![(1, "EUR".to_string(), 100.0)];
     let mut custom_rates = HashMap::new();
@@ -142,6 +145,7 @@ fn test_direct_rate_pair_conversion() {
         balance: 0.0,
         currency: Some("EUR".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
     let raw_data = vec![(1, "GBP".to_string(), 100.0)];
     let mut rates = HashMap::new();
@@ -158,6 +162,7 @@ fn test_custom_rate_usd_pivot_conversion() {
         balance: 0.0,
         currency: Some("EUR".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
     let raw_data = vec![(1, "JPY".to_string(), 1000.0)];
     let mut custom_rates = HashMap::new();

@@ -347,3 +347,42 @@ fn test_get_total_assets_value_applies_exchange_rate() {
     let total = get_total_assets_value_db(&db_path, Some("USD")).unwrap();
     assert!((total - 250000.0).abs() < 0.01);
 }
+
+#[test]
+fn test_archive_asset_excludes_from_totals_and_restores() {
+    let (_dir, db_path) = setup_db();
+    create_asset_db(
+        &db_path,
+        "Boat".to_string(),
+        "other".to_string(),
+        None,
+        None,
+    )
+    .unwrap();
+    let id = get_assets_db(&db_path, None).unwrap()[0].id;
+    create_valuation_db(&db_path, id, "2024-01-01".to_string(), 500.0).unwrap();
+
+    crate::set_asset_archived_db(&db_path, id, true).unwrap();
+
+    assert!(get_assets_db(&db_path, None).unwrap().is_empty());
+    assert_eq!(get_total_assets_value_db(&db_path, None).unwrap(), 0.0);
+    let all = crate::get_assets_with_archived_db(&db_path, None, true).unwrap();
+    assert_eq!(all.len(), 1);
+    assert!(all[0].archived);
+    assert_eq!(all[0].latest_value, Some(500.0));
+    assert_eq!(get_valuations_db(&db_path, id).unwrap().len(), 1);
+
+    crate::set_asset_archived_db(&db_path, id, false).unwrap();
+
+    let restored = get_assets_db(&db_path, None).unwrap();
+    assert_eq!(restored.len(), 1);
+    assert!(!restored[0].archived);
+    assert_eq!(get_total_assets_value_db(&db_path, None).unwrap(), 500.0);
+}
+
+#[test]
+fn test_archive_missing_asset_errors() {
+    let (_dir, db_path) = setup_db();
+    let err = crate::set_asset_archived_db(&db_path, 9999, true).unwrap_err();
+    assert!(err.contains("not found"));
+}

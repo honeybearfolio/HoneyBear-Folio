@@ -61,6 +61,8 @@ vi.mock("lucide-react", () => ({
   Edit: () => <span>Edit</span>,
   ChevronDown: () => <span>▼</span>,
   ChevronUp: () => <span>▲</span>,
+  Archive: () => <span>Archive</span>,
+  ArchiveRestore: () => <span>Restore</span>,
   X: () => <span>X</span>,
 }));
 
@@ -125,6 +127,77 @@ describe("AssetTracker", () => {
     await waitFor(() => {
       expect(mockedInvoke).toHaveBeenCalledWith("get_assets", {
         targetCurrency: "USD",
+        includeArchived: true,
+      });
+    });
+  });
+
+  it("hides archived assets from list and total until shown", async () => {
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_assets")
+        return Promise.resolve([
+          ...MOCK_ASSETS,
+          {
+            id: 3,
+            name: "Old Boat",
+            category: "other",
+            currency: "USD",
+            latest_value: 1000,
+            latest_date: "2023-01-01",
+            exchange_rate: 1.0,
+            archived: true,
+          },
+        ]);
+      return Promise.resolve([]);
+    });
+
+    render(<AssetTracker />);
+    await waitFor(() => {
+      expect(screen.getByText("House")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Old Boat")).not.toBeInTheDocument();
+    // 350000 + 25000 * 1.1; the archived asset is not counted
+    expect(screen.getByText("377500")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Show archived"));
+    expect(screen.getByText("Old Boat")).toBeInTheDocument();
+    expect(screen.getByText("Archived")).toBeInTheDocument();
+    expect(screen.getByTitle("Unarchive")).toBeInTheDocument();
+  });
+
+  it("archives and unarchives an asset", async () => {
+    const onUpdate = vi.fn();
+    render(<AssetTracker onUpdate={onUpdate} />);
+    await waitFor(() => {
+      expect(screen.getByText("House")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByTitle("Archive")[0]!);
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith("set_asset_archived", {
+        id: 1,
+        archived: true,
+      });
+      expect(onUpdate).toHaveBeenCalled();
+    });
+  });
+
+  it("restores an archived asset", async () => {
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_assets")
+        return Promise.resolve([{ ...MOCK_ASSETS[0], archived: true }]);
+      return Promise.resolve([]);
+    });
+    render(<AssetTracker />);
+    await waitFor(() => {
+      expect(screen.getByText("Show archived")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("Show archived"));
+    fireEvent.click(screen.getByTitle("Unarchive"));
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith("set_asset_archived", {
+        id: 1,
+        archived: false,
       });
     });
   });

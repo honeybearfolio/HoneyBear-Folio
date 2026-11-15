@@ -2,7 +2,13 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useFormatNumber } from "../../utils/format";
 import MaskedNumber from "../../components/ui/MaskedNumber";
-import { GripVertical, Edit, Trash2 } from "lucide-react";
+import {
+  GripVertical,
+  Edit,
+  Trash2,
+  Archive,
+  ArchiveRestore,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { sameId } from "../../utils/ids";
 import type { Account } from "../../api/types";
@@ -17,6 +23,8 @@ interface AccountListProps {
   isDraggable?: boolean;
   onRenameAccount?: (id: string | number, newName: string) => void;
   onDeleteAccount?: (id: string | number) => void;
+  onArchiveAccount?: (id: string | number) => void;
+  onUnarchiveAccount?: (id: string | number) => void;
 }
 
 export default function AccountList({
@@ -29,6 +37,8 @@ export default function AccountList({
   isDraggable,
   onRenameAccount,
   onDeleteAccount,
+  onArchiveAccount,
+  onUnarchiveAccount,
 }: AccountListProps) {
   const { t } = useTranslation();
   const formatNumber = useFormatNumber();
@@ -199,7 +209,10 @@ export default function AccountList({
             onDrop={handleDrop}
             onDragEnd={handleDragEnd}
             onContextMenu={
-              onRenameAccount || onDeleteAccount
+              onRenameAccount ||
+              onDeleteAccount ||
+              onArchiveAccount ||
+              onUnarchiveAccount
                 ? (e) => {
                     e.preventDefault();
                     setMenuCoords({ x: e.clientX, y: e.clientY });
@@ -336,6 +349,32 @@ export default function AccountList({
                     >
                       <Edit className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                       {t("account.action.rename")}
+                    </button>
+                  )}
+                  {onArchiveAccount && (
+                    <button
+                      onClick={() => {
+                        onArchiveAccount(account.id);
+                        setMenuOpenId(null);
+                        setMenuCoords(null);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
+                    >
+                      <Archive className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                      {t("account.action.archive")}
+                    </button>
+                  )}
+                  {onUnarchiveAccount && (
+                    <button
+                      onClick={() => {
+                        onUnarchiveAccount(account.id);
+                        setMenuOpenId(null);
+                        setMenuCoords(null);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 font-medium transition-colors"
+                    >
+                      <ArchiveRestore className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                      {t("account.action.unarchive")}
                     </button>
                   )}
                   {onDeleteAccount && (

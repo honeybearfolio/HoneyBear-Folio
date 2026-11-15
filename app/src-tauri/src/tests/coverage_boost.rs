@@ -104,6 +104,7 @@ fn test_calculate_account_balances_uses_yahoo_rate_for_non_custom_currency() {
         balance: 0.0,
         currency: Some("EUR".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
     let raw_data = vec![(1, "USD".to_string(), 100.0)];
     let mut rates = HashMap::new();
@@ -122,6 +123,7 @@ fn test_calculate_account_balances_skips_zero_direct_rate() {
         balance: 0.0,
         currency: Some("EUR".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
     let raw_data = vec![(1, "GBP".to_string(), 100.0)];
     let mut rates = HashMap::new();

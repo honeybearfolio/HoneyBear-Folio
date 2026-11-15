@@ -35,9 +35,19 @@ pub fn create_liability_db(
     })
 }
 
+/// Returns active (non-archived) liabilities with their latest valuation.
 pub fn get_liabilities_db(
     db_path: &PathBuf,
     target_currency: Option<&str>,
+) -> Result<Vec<LiabilityWithLatestValue>, String> {
+    get_liabilities_with_archived_db(db_path, target_currency, false)
+}
+
+/// Returns liabilities with their latest valuation, optionally including archived ones.
+pub fn get_liabilities_with_archived_db(
+    db_path: &PathBuf,
+    target_currency: Option<&str>,
+    include_archived: bool,
 ) -> Result<Vec<LiabilityWithLatestValue>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
@@ -64,16 +74,17 @@ pub fn get_liabilities_db(
         let mut stmt = conn
             .prepare(
                 "SELECT l.id, l.name, l.category, l.currency, l.notes,
-                        v.value, v.date
+                        v.value, v.date, l.archived
                  FROM liabilities l
                  LEFT JOIN liability_valuations v ON v.liability_id = l.id
                     AND v.date = (SELECT MAX(v2.date) FROM liability_valuations v2 WHERE v2.liability_id = l.id)
+                 WHERE l.archived = 0 OR ?1
                  ORDER BY l.name",
             )
             .map_err(|e| e.to_string())?;
 
         let liabilities = stmt
-            .query_map([], |row| {
+            .query_map(params![include_archived], |row| {
                 let currency: Option<String> = row.get(3)?;
                 Ok(LiabilityWithLatestValue {
                     id: row.get(0)?,
@@ -83,6 +94,7 @@ pub fn get_liabilities_db(
                     notes: row.get(4)?,
                     latest_value: row.get(5)?,
                     latest_date: row.get(6)?,
+                    archived: row.get::<_, i32>(7)? != 0,
                     exchange_rate: {
                         if let Some(ref cur) = currency {
                             if let Some(target) = target_currency {
@@ -126,6 +138,23 @@ pub fn update_liability_db(
             .execute(
                 "UPDATE liabilities SET name = ?1, category = ?2, currency = ?3, notes = ?4 WHERE id = ?5",
                 params![name_trimmed, category, currency, notes, id],
+            )
+            .map_err(|e| e.to_string())?;
+        if rows == 0 {
+            return Err("Liability not found".to_string());
+        }
+        Ok(())
+    })
+}
+
+/// Archives or unarchives a liability. Its valuation history is kept untouched.
+pub fn set_liability_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let rows = conn
+            .execute(
+                "UPDATE liabilities SET archived = ?1 WHERE id = ?2",
+                params![archived, id],
             )
             .map_err(|e| e.to_string())?;
         if rows == 0 {
@@ -273,9 +302,24 @@ pub fn create_liability(
 pub fn get_liabilities(
     app_handle: AppHandle,
     target_currency: Option<String>,
+    include_archived: Option<bool>,
 ) -> Result<Vec<LiabilityWithLatestValue>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    get_liabilities_db(&db_path, target_currency.as_deref())
+    get_liabilities_with_archived_db(
+        &db_path,
+        target_currency.as_deref(),
+        include_archived.unwrap_or(false),
+    )
+}
+
+#[tauri::command]
+pub fn set_liability_archived(
+    app_handle: AppHandle,
+    id: i32,
+    archived: bool,
+) -> Result<(), String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    set_liability_archived_db(&db_path, id, archived)
 }
 
 #[tauri::command]

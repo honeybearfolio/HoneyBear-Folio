@@ -14,6 +14,7 @@ export interface Account {
   currency?: string;
   kind?: string;
   exchange_rate?: number;
+  archived?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -263,6 +264,7 @@ export interface AssetWithLatestValue {
   latest_value?: number;
   latest_date?: string;
   exchange_rate: number;
+  archived?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -293,6 +295,7 @@ export interface LiabilityWithLatestValue {
   latest_value?: number;
   latest_date?: string;
   exchange_rate: number;
+  archived?: boolean;
 }
 
 // ---------------------------------------------------------------------------

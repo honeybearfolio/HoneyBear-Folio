@@ -370,3 +370,42 @@ fn test_get_total_liabilities_value_applies_exchange_rate() {
     let total = get_total_liabilities_value_db(&db_path, Some("USD")).unwrap();
     assert!((total - 125000.0).abs() < 0.01);
 }
+
+#[test]
+fn test_archive_liability_excludes_from_totals_and_restores() {
+    let (_dir, db_path) = setup_db();
+    create_liability_db(
+        &db_path,
+        "Loan".to_string(),
+        "other".to_string(),
+        None,
+        None,
+    )
+    .unwrap();
+    let id = get_liabilities_db(&db_path, None).unwrap()[0].id;
+    create_liability_valuation_db(&db_path, id, "2024-01-01".to_string(), 300.0).unwrap();
+
+    crate::set_liability_archived_db(&db_path, id, true).unwrap();
+
+    assert!(get_liabilities_db(&db_path, None).unwrap().is_empty());
+    assert_eq!(get_total_liabilities_value_db(&db_path, None).unwrap(), 0.0);
+    let all = crate::get_liabilities_with_archived_db(&db_path, None, true).unwrap();
+    assert_eq!(all.len(), 1);
+    assert!(all[0].archived);
+    assert_eq!(get_liability_valuations_db(&db_path, id).unwrap().len(), 1);
+
+    crate::set_liability_archived_db(&db_path, id, false).unwrap();
+
+    assert_eq!(get_liabilities_db(&db_path, None).unwrap().len(), 1);
+    assert_eq!(
+        get_total_liabilities_value_db(&db_path, None).unwrap(),
+        300.0
+    );
+}
+
+#[test]
+fn test_archive_missing_liability_errors() {
+    let (_dir, db_path) = setup_db();
+    let err = crate::set_liability_archived_db(&db_path, 9999, true).unwrap_err();
+    assert!(err.contains("not found"));
+}

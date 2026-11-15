@@ -122,6 +122,34 @@ fn test_db_locks_are_per_path() {
 }
 
 #[test]
+fn test_init_db_at_path_migrates_legacy_db_to_add_archived_column() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("legacy.db");
+    {
+        let conn = Connection::open(&db_path).unwrap();
+        conn.execute_batch(
+            "CREATE TABLE accounts (id INTEGER PRIMARY KEY, name TEXT NOT NULL, balance REAL NOT NULL, kind TEXT DEFAULT 'cash', currency TEXT);
+             CREATE TABLE assets (id INTEGER PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL DEFAULT 'other', currency TEXT, notes TEXT);
+             CREATE TABLE liabilities (id INTEGER PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL DEFAULT 'other', currency TEXT, notes TEXT);
+             INSERT INTO accounts (name, balance) VALUES ('Old', 5.0);
+             INSERT INTO assets (name) VALUES ('Old asset');
+             INSERT INTO liabilities (name) VALUES ('Old liability');",
+        )
+        .unwrap();
+    }
+
+    init_db_at_path(&db_path).unwrap();
+    init_db_at_path(&db_path).unwrap();
+
+    assert_eq!(crate::get_accounts_db(&db_path).unwrap().len(), 1);
+    assert_eq!(crate::get_assets_db(&db_path, None).unwrap().len(), 1);
+    assert_eq!(crate::get_liabilities_db(&db_path, None).unwrap().len(), 1);
+
+    crate::set_account_archived_db(&db_path, 1, true).unwrap();
+    assert!(crate::get_accounts_db(&db_path).unwrap().is_empty());
+}
+
+#[test]
 fn test_init_db_at_path_is_idempotent() {
     let dir = tempdir().unwrap();
     let db_path = dir.path().join("idempotent.db");

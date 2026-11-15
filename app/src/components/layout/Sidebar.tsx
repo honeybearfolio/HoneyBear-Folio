@@ -30,6 +30,7 @@ import {
   Gem,
   Scale,
   Target,
+  Archive,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "../../styles/Sidebar.css";
@@ -42,6 +43,7 @@ import { useToast } from "../../stores/toast";
 import { handleAsyncError } from "../../utils/errors";
 import type { Account } from "../../api/types";
 import { STORAGE_KEYS } from "../../constants/app";
+import { sameId } from "../../utils/ids";
 
 interface SidebarVisibility {
   dashboard?: boolean;
@@ -68,6 +70,7 @@ interface SortConfig {
 
 interface SidebarProps {
   accounts: Account[];
+  archivedAccounts?: Account[];
   marketValues: Record<string | number, number>;
   totalBalance?: number;
   selectedId: string | number;
@@ -83,6 +86,7 @@ interface SidebarProps {
 
 export default function Sidebar({
   accounts,
+  archivedAccounts = [],
   marketValues,
   totalBalance = 0,
   selectedId,
@@ -98,6 +102,7 @@ export default function Sidebar({
   const { t } = useTranslation();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showArchivedAccounts, setShowArchivedAccounts] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
   const formatNumber = useFormatNumber();
@@ -225,8 +230,33 @@ export default function Sidebar({
     }
   }
 
+  async function handleSetAccountArchived(
+    id: string | number,
+    archived: boolean,
+  ) {
+    try {
+      await rust.set_account_archived({ id, archived });
+      showToast(t(archived ? "account.archived" : "account.unarchived"), {
+        type: "success",
+      });
+      if (archived && sameId(selectedId, id)) {
+        onSelectAccount("dashboard");
+      }
+      onUpdate();
+    } catch (e) {
+      handleAsyncError({
+        context: "Failed to update account archive status",
+        error: e,
+        userMessage: t("error.failed_to_archive"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
+    }
+  }
+
   async function handleDeleteAccount(id: string | number) {
-    const account = accounts.find((a) => a.id === id);
+    const account = [...accounts, ...archivedAccounts].find((a) => a.id === id);
     const confirmed = await confirm(
       t("confirm.delete_account", { name: account?.name ?? id }),
       {
@@ -705,7 +735,47 @@ export default function Sidebar({
                 onDeleteAccount={(id) => {
                   void handleDeleteAccount(id);
                 }}
+                onArchiveAccount={(id) => {
+                  void handleSetAccountArchived(id, true);
+                }}
               />
+
+              {archivedAccounts.length > 0 && (
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowArchivedAccounts((value) => !value);
+                    }}
+                    aria-expanded={showArchivedAccounts}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    {t("account.archived_section", {
+                      count: archivedAccounts.length,
+                    })}
+                  </button>
+                  {showArchivedAccounts && (
+                    <div className="mt-1 opacity-70">
+                      <AccountList
+                        accounts={archivedAccounts}
+                        selectedId={selectedId}
+                        onSelectAccount={onSelectAccount}
+                        Icon={CreditCard}
+                        onRenameAccount={(id, newName) => {
+                          void handleRenameAccount(id, newName);
+                        }}
+                        onDeleteAccount={(id) => {
+                          void handleDeleteAccount(id);
+                        }}
+                        onUnarchiveAccount={(id) => {
+                          void handleSetAccountArchived(id, false);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}

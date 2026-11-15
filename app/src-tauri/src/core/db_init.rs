@@ -462,6 +462,10 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        for table in ["accounts", "assets", "liabilities"] {
+            ensure_archived_column(&conn, table)?;
+        }
+
         conn.execute(
             "CREATE TABLE IF NOT EXISTS goals (
             id INTEGER PRIMARY KEY,
@@ -512,6 +516,26 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
 
         Ok(())
     })
+}
+
+/// Adds the `archived` flag to `table` if it is missing (`table` must be a trusted literal).
+fn ensure_archived_column(conn: &Connection, table: &str) -> Result<(), String> {
+    let mut stmt = conn
+        .prepare(&format!("PRAGMA table_info({table})"))
+        .map_err(|e| e.to_string())?;
+    let has_column = stmt
+        .query_map([], |row| row.get::<_, String>(1))
+        .map_err(|e| e.to_string())?
+        .flatten()
+        .any(|c| c == "archived");
+    if !has_column {
+        conn.execute(
+            &format!("ALTER TABLE {table} ADD COLUMN archived INTEGER NOT NULL DEFAULT 0"),
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Creates all database tables and indexes, and runs migrations for new columns.

@@ -75,7 +75,7 @@ pub fn read_xlsx(data: Vec<u8>) -> Result<ReadXlsxResult, String> {
         });
     }
 
-    let data = sheets.first().map(|s| s.data.clone()).unwrap_or_default();
+    let data = sheets.first().map_or_else(Vec::new, |s| s.data.clone());
 
     Ok(ReadXlsxResult { data, sheets })
 }

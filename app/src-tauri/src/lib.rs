@@ -51,7 +51,8 @@ pub use crate::transactions::{
 // Re-export accounts helpers used by tests
 pub use crate::accounts::{
     create_account_db, delete_account_db, get_accounts_db, get_accounts_summary_db,
-    rename_account_db, update_account_db,
+    get_accounts_summary_with_archived_db, get_accounts_with_archived_db, rename_account_db,
+    set_account_archived_db, update_account_db,
 };
 
 // Re-export rules helpers used by tests
@@ -70,14 +71,16 @@ pub use crate::scheduled::{
 // Re-export assets helpers used by tests
 pub use crate::assets::{
     create_asset_db, create_valuation_db, delete_asset_db, delete_valuation_db, get_assets_db,
-    get_total_assets_value_db, get_valuations_db, update_asset_db, update_valuation_db,
+    get_assets_with_archived_db, get_total_assets_value_db, get_valuations_db,
+    set_asset_archived_db, update_asset_db, update_valuation_db,
 };
 
 // Re-export liabilities helpers used by tests
 pub use crate::liabilities::{
     create_liability_db, create_liability_valuation_db, delete_liability_db,
-    delete_liability_valuation_db, get_liabilities_db, get_liability_valuations_db,
-    get_total_liabilities_value_db, update_liability_db, update_liability_valuation_db,
+    delete_liability_valuation_db, get_liabilities_db, get_liabilities_with_archived_db,
+    get_liability_valuations_db, get_total_liabilities_value_db, set_liability_archived_db,
+    update_liability_db, update_liability_valuation_db,
 };
 
 // Re-export markets helpers used by tests
@@ -149,6 +152,7 @@ pub fn run() {
             accounts::rename_account,
             accounts::update_account,
             accounts::delete_account,
+            accounts::set_account_archived,
             accounts::get_accounts,
             transactions::create_transaction,
             transactions::get_transactions,
@@ -217,6 +221,7 @@ pub fn run() {
             assets::get_assets,
             assets::update_asset,
             assets::delete_asset,
+            assets::set_asset_archived,
             assets::create_valuation,
             assets::get_valuations,
             assets::update_valuation,
@@ -230,6 +235,7 @@ pub fn run() {
             liabilities::get_liabilities,
             liabilities::update_liability,
             liabilities::delete_liability,
+            liabilities::set_liability_archived,
             liabilities::create_liability_valuation,
             liabilities::get_liability_valuations,
             liabilities::update_liability_valuation,

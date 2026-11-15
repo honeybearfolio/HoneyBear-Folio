@@ -427,6 +427,28 @@ export default function AccountDetails({
     }
   }
 
+  async function handleToggleArchiveAccount() {
+    if (account.id === "all") return;
+    const archived = !account.archived;
+    try {
+      await rust.set_account_archived({ id: account.id, archived });
+      showToast(t(archived ? "account.archived" : "account.unarchived"), {
+        type: "success",
+      });
+      setAccountMenuOpen(false);
+      onUpdate();
+    } catch (e) {
+      handleAsyncError({
+        context: "Failed to update account archive status",
+        error: e,
+        userMessage: t("error.failed_to_archive"),
+        toast: (message) => {
+          showToast(message, { type: "error" });
+        },
+      });
+    }
+  }
+
   async function handleAddTransaction(e: React.SyntheticEvent) {
     e.preventDefault();
     try {
@@ -728,6 +750,9 @@ export default function AccountDetails({
         setAccountMenuOpen={setAccountMenuOpen}
         handleDeleteAccount={() => {
           void handleDeleteAccount();
+        }}
+        handleToggleArchiveAccount={() => {
+          void handleToggleArchiveAccount();
         }}
         availableAccounts={availableAccounts}
       />

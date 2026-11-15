@@ -91,6 +91,7 @@ pub fn create_account_db(
             balance: balance_to_set,
             currency,
             exchange_rate: 1.0,
+            archived: false,
         })
     })
 }
@@ -128,7 +129,7 @@ pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result
         .map_err(|e| e.to_string())?;
 
         let mut stmt = conn
-            .prepare("SELECT id, name, balance, currency FROM accounts WHERE id = ?1")
+            .prepare("SELECT id, name, balance, currency, archived FROM accounts WHERE id = ?1")
             .map_err(|e| e.to_string())?;
 
         let account = stmt
@@ -139,6 +140,7 @@ pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result
                     balance: row.get(2)?,
                     currency: row.get(3)?,
                     exchange_rate: 1.0,
+                    archived: row.get::<_, i32>(4)? != 0,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -185,7 +187,7 @@ pub fn update_account_db(
         .map_err(|e| e.to_string())?;
 
         let mut stmt = conn
-            .prepare("SELECT id, name, balance, currency FROM accounts WHERE id = ?1")
+            .prepare("SELECT id, name, balance, currency, archived FROM accounts WHERE id = ?1")
             .map_err(|e| e.to_string())?;
 
         let account = stmt
@@ -196,6 +198,7 @@ pub fn update_account_db(
                     balance: row.get(2)?,
                     currency: row.get(3)?,
                     exchange_rate: 1.0,
+                    archived: row.get::<_, i32>(4)? != 0,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -232,22 +235,31 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     })
 }
 
-/// Retrieves all accounts from the database.
+/// Retrieves all active (non-archived) accounts from the database.
 pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
+    get_accounts_with_archived_db(db_path, false)
+}
+
+/// Retrieves accounts, optionally including archived ones.
+pub fn get_accounts_with_archived_db(
+    db_path: &PathBuf,
+    include_archived: bool,
+) -> Result<Vec<Account>, String> {
     crate::db_locked!(db_path, {
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         let mut stmt = conn
-            .prepare("SELECT id, name, balance, currency FROM accounts")
+            .prepare("SELECT id, name, balance, currency, archived FROM accounts WHERE archived = 0 OR ?1")
             .map_err(|e| e.to_string())?;
         let account_iter = stmt
-            .query_map([], |row| {
+            .query_map(params![include_archived], |row| {
                 Ok(Account {
                     id: row.get(0)?,
                     name: row.get(1)?,
                     balance: row.get(2)?,
                     currency: row.get(3)?,
                     exchange_rate: 1.0,
+                    archived: row.get::<_, i32>(4)? != 0,
                 })
             })
             .map_err(|e| e.to_string())?;
@@ -261,19 +273,45 @@ pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
     })
 }
 
-/// Fetches all accounts together with transaction amounts grouped by account and currency.
-pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<AccountsSummary, String> {
+/// Archives or unarchives an account. Its transactions are kept untouched.
+pub fn set_account_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Result<(), String> {
     crate::db_locked!(db_path, {
-        let accounts = get_accounts_db(db_path)?;
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let rows = conn
+            .execute(
+                "UPDATE accounts SET archived = ?1 WHERE id = ?2",
+                params![archived, id],
+            )
+            .map_err(|e| e.to_string())?;
+        if rows == 0 {
+            return Err("Account not found".to_string());
+        }
+        Ok(())
+    })
+}
+
+/// Fetches active accounts together with transaction amounts grouped by account and currency.
+pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<AccountsSummary, String> {
+    get_accounts_summary_with_archived_db(db_path, target, false)
+}
+
+/// Like [`get_accounts_summary_db`], optionally including archived accounts.
+pub fn get_accounts_summary_with_archived_db(
+    db_path: &PathBuf,
+    target: &str,
+    include_archived: bool,
+) -> Result<AccountsSummary, String> {
+    crate::db_locked!(db_path, {
+        let accounts = get_accounts_with_archived_db(db_path, include_archived)?;
         let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
         // Group transaction amounts by account and currency
         let mut stmt = conn
-        .prepare("SELECT account_id, currency, SUM(amount) FROM transactions GROUP BY account_id, currency")
+        .prepare("SELECT account_id, currency, SUM(amount) FROM transactions WHERE ?1 OR account_id NOT IN (SELECT id FROM accounts WHERE archived = 1) GROUP BY account_id, currency")
         .map_err(|e| e.to_string())?;
 
         let rows = stmt
-            .query_map([], |row| {
+            .query_map(params![include_archived], |row| {
                 Ok((
                     row.get::<_, i32>(0)?,
                     row.get::<_, Option<String>>(1)?,
@@ -334,19 +372,28 @@ pub fn delete_account(app_handle: AppHandle, id: i32) -> Result<(), String> {
     delete_account_db(&db_path, id)
 }
 
-/// Tauri command: fetches all accounts with balances converted using exchange rates and market data.
+/// Tauri command: archives or unarchives an account.
+#[tauri::command]
+pub fn set_account_archived(app_handle: AppHandle, id: i32, archived: bool) -> Result<(), String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    set_account_archived_db(&db_path, id, archived)
+}
+
+/// Tauri command: fetches accounts (active only unless `include_archived`) with balances converted using exchange rates and market data.
 #[tauri::command]
 pub async fn get_accounts(
     app_handle: AppHandle,
     target_currency: Option<String>,
+    include_archived: Option<bool>,
 ) -> Result<Vec<Account>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     let target = target_currency.unwrap_or_else(|| "USD".to_string());
+    let include_archived = include_archived.unwrap_or(false);
 
     // Move db_path and target into spawn_blocking, return them with the result
     // to avoid cloning (PathBuf and String can be large).
     let (summary, db_path, target) = tauri::async_runtime::spawn_blocking(move || {
-        let result = get_accounts_summary_db(&db_path, &target);
+        let result = get_accounts_summary_with_archived_db(&db_path, &target, include_archived);
         result.map(|s| (s, db_path, target))
     })
     .await

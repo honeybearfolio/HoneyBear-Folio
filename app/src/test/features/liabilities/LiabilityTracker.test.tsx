@@ -61,6 +61,8 @@ vi.mock("lucide-react", () => ({
   Edit: () => <span>Edit</span>,
   ChevronDown: () => <span>▼</span>,
   ChevronUp: () => <span>▲</span>,
+  Archive: () => <span>Archive</span>,
+  ArchiveRestore: () => <span>Restore</span>,
   X: () => <span>X</span>,
 }));
 
@@ -125,6 +127,49 @@ describe("LiabilityTracker", () => {
     await waitFor(() => {
       expect(mockedInvoke).toHaveBeenCalledWith("get_liabilities", {
         targetCurrency: "USD",
+        includeArchived: true,
+      });
+    });
+  });
+
+  it("hides archived liabilities until shown and restores them", async () => {
+    mockedInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_liabilities")
+        return Promise.resolve([
+          MOCK_LIABILITIES[0],
+          { ...MOCK_LIABILITIES[1], archived: true },
+        ]);
+      return Promise.resolve([]);
+    });
+
+    render(<LiabilityTracker />);
+    await waitFor(() => {
+      expect(screen.getByText("Mortgage")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Credit Card")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Show archived"));
+    expect(screen.getByText("Credit Card")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTitle("Unarchive"));
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith("set_liability_archived", {
+        id: 2,
+        archived: false,
+      });
+    });
+  });
+
+  it("archives a liability", async () => {
+    render(<LiabilityTracker />);
+    await waitFor(() => {
+      expect(screen.getByText("Mortgage")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getAllByTitle("Archive")[0]!);
+    await waitFor(() => {
+      expect(mockedInvoke).toHaveBeenCalledWith("set_liability_archived", {
+        id: 1,
+        archived: true,
       });
     });
   });

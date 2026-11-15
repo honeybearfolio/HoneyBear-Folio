@@ -11,6 +11,7 @@ fn test_custom_rate_application() {
         balance: 0.0,
         currency: Some("EUR".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
 
     // Transaction: 100 EUR. Account: EUR. Target: USD.
@@ -50,6 +51,7 @@ fn test_cross_rate_conversion() {
         balance: 0.0,
         currency: Some("GBP".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
 
     let raw_data = vec![(1, "EUR".to_string(), 100.0)];
@@ -91,6 +93,7 @@ fn test_direct_rate_priority() {
         balance: 0.0,
         currency: Some("GBP".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
 
     let raw_data = vec![(1, "EUR".to_string(), 100.0)];
@@ -128,6 +131,7 @@ fn test_fallback_when_direct_rate_missing() {
         balance: 0.0,
         currency: Some("GBP".to_string()),
         exchange_rate: 1.0,
+        archived: false,
     }];
 
     let raw_data = vec![(1, "EUR".to_string(), 100.0)];
