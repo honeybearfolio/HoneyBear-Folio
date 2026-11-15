@@ -38,4 +38,5 @@ pub mod llm;
 pub mod utils;
 
 pub mod coverage_boost;
+pub mod edge_cases;
 pub mod models;
