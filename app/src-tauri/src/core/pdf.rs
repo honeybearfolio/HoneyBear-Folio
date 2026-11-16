@@ -2177,17 +2177,29 @@ pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
     generate_report_for_type(data, PdfReportType::Overview)
 }
 
+struct ReportTable<'a> {
+    title: &'a str,
+    summary: Option<&'a str>,
+    columns: &'a [TableColumn],
+    rows: &'a [Vec<String>],
+    total_row: Option<&'a [String]>,
+    page_num: usize,
+}
+
 fn draw_report_table(
     doc: &mut PdfDocument,
     fonts: &PdfFonts,
     data: &ReportData,
-    title: &str,
-    summary: Option<&str>,
-    columns: &[TableColumn],
-    rows: &[Vec<String>],
-    total_row: Option<&[String]>,
-    page_num: usize,
+    table: ReportTable<'_>,
 ) -> usize {
+    let ReportTable {
+        title,
+        summary,
+        columns,
+        rows,
+        total_row,
+        page_num,
+    } = table;
     let mut page_num = page_num;
     let mut ops = start_page(fonts, page_num, data);
     let mut top = MARGIN_TOP + HEADER_HEIGHT;
@@ -2299,12 +2311,14 @@ fn draw_accounts_report_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Rep
         doc,
         fonts,
         data,
-        &labels.accounts,
-        None,
-        &columns,
-        &rows,
-        Some(&total_row),
-        1,
+        ReportTable {
+            title: &labels.accounts,
+            summary: None,
+            columns: &columns,
+            rows: &rows,
+            total_row: Some(&total_row),
+            page_num: 1,
+        },
     );
 }
 
@@ -2380,10 +2394,9 @@ fn draw_net_worth_statement_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: 
             asset.category.clone(),
             asset.currency.clone(),
             asset.valuation_date.clone(),
-            asset
-                .value
-                .map(|value| format_currency(value, &data.currency_symbol))
-                .unwrap_or_default(),
+            asset.value.map_or_else(String::new, |value| {
+                format_currency(value, &data.currency_symbol)
+            }),
         ]
     }));
     rows.extend(data.liabilities.iter().map(|liability| {
@@ -2392,10 +2405,9 @@ fn draw_net_worth_statement_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: 
             liability.category.clone(),
             liability.currency.clone(),
             liability.valuation_date.clone(),
-            liability
-                .value
-                .map(|value| format_currency(-value, &data.currency_symbol))
-                .unwrap_or_default(),
+            liability.value.map_or_else(String::new, |value| {
+                format_currency(-value, &data.currency_symbol)
+            }),
         ]
     }));
 
@@ -2410,12 +2422,14 @@ fn draw_net_worth_statement_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: 
         doc,
         fonts,
         data,
-        &labels.net_worth,
-        Some(&summary),
-        &columns,
-        &rows,
-        Some(&total_row),
-        1,
+        ReportTable {
+            title: &labels.net_worth,
+            summary: Some(&summary),
+            columns: &columns,
+            rows: &rows,
+            total_row: Some(&total_row),
+            page_num: 1,
+        },
     );
 }
 
@@ -2462,10 +2476,9 @@ fn draw_liabilities_report_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &
                 liability.category.clone(),
                 liability.currency.clone(),
                 liability.valuation_date.clone(),
-                liability
-                    .value
-                    .map(|value| format_currency(value, &data.currency_symbol))
-                    .unwrap_or_default(),
+                liability.value.map_or_else(String::new, |value| {
+                    format_currency(value, &data.currency_symbol)
+                }),
             ]
         })
         .collect::<Vec<_>>();
@@ -2480,12 +2493,14 @@ fn draw_liabilities_report_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &
         doc,
         fonts,
         data,
-        &labels.liabilities,
-        None,
-        &columns,
-        &rows,
-        Some(&total_row),
-        1,
+        ReportTable {
+            title: &labels.liabilities,
+            summary: None,
+            columns: &columns,
+            rows: &rows,
+            total_row: Some(&total_row),
+            page_num: 1,
+        },
     );
 }
 
@@ -2547,12 +2562,14 @@ fn draw_goals_report_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &Report
         doc,
         fonts,
         data,
-        &labels.goals,
-        None,
-        &columns,
-        &rows,
-        None,
-        1,
+        ReportTable {
+            title: &labels.goals,
+            summary: None,
+            columns: &columns,
+            rows: &rows,
+            total_row: None,
+            page_num: 1,
+        },
     );
 }
 
@@ -2635,12 +2652,14 @@ pub fn generate_report_for_type(
                     &mut doc,
                     &fonts,
                     data,
-                    &data.labels.investment_holdings,
-                    None,
-                    &[],
-                    &[],
-                    None,
-                    1,
+                    ReportTable {
+                        title: &data.labels.investment_holdings,
+                        summary: None,
+                        columns: &[],
+                        rows: &[],
+                        total_row: None,
+                        page_num: 1,
+                    },
                 );
             }
         }
@@ -2652,12 +2671,14 @@ pub fn generate_report_for_type(
                     &mut doc,
                     &fonts,
                     data,
-                    &data.labels.transactions_title,
-                    None,
-                    &[],
-                    &[],
-                    None,
-                    1,
+                    ReportTable {
+                        title: &data.labels.transactions_title,
+                        summary: None,
+                        columns: &[],
+                        rows: &[],
+                        total_row: None,
+                        page_num: 1,
+                    },
                 );
             } else {
                 draw_transactions_pages(&mut doc, &fonts, data, 1);
