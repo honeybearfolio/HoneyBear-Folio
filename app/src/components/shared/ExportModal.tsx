@@ -8,7 +8,20 @@ import ExportFormatSelector from "./ExportFormatSelector";
 import PdfRangeSelector from "./PdfRangeSelector";
 import { usePdfExportRange } from "../../hooks/usePdfExportRange";
 import { useSpreadsheetExport } from "../../hooks/useSpreadsheetExport";
-import type { ExportFormat } from "../../utils/spreadsheet-export";
+import {
+  PDF_REPORT_TYPES,
+  type ExportFormat,
+  type PdfReportType,
+} from "../../utils/spreadsheet-export";
+import CustomSelect from "../ui/CustomSelect";
+
+const SNAPSHOT_REPORT_TYPES = [
+  "net_worth",
+  "accounts",
+  "investments",
+  "liabilities",
+  "goals",
+];
 
 interface ExportModalProps {
   onClose: () => void;
@@ -17,10 +30,12 @@ interface ExportModalProps {
 export default function ExportModal({ onClose }: ExportModalProps) {
   const { t } = useTranslation();
   const [format, setFormat] = useState<ExportFormat>("json");
+  const [pdfReportType, setPdfReportType] = useState<PdfReportType>("overview");
   const pdfRange = usePdfExportRange();
   const { exporting, exportSpreadsheet } = useSpreadsheetExport({
     onClose,
     pdfDateRange: pdfRange.pdfDateRange,
+    pdfReportType,
   });
 
   if (typeof document === "undefined") return null;
@@ -31,7 +46,24 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       <ModalBody>
         <ExportFormatSelector format={format} onFormatChange={setFormat} />
 
-        {format === "pdf" && <PdfRangeSelector {...pdfRange} />}
+        {format === "pdf" && (
+          <>
+            <label className="modal-label">{t("export.pdf.report_type")}</label>
+            <CustomSelect
+              value={pdfReportType}
+              onChange={(value) => {
+                setPdfReportType(String(value) as PdfReportType);
+              }}
+              options={PDF_REPORT_TYPES.map((type) => ({
+                value: type,
+                label: t(`export.pdf.type.${type}`),
+              }))}
+            />
+            {!SNAPSHOT_REPORT_TYPES.includes(pdfReportType) && (
+              <PdfRangeSelector {...pdfRange} />
+            )}
+          </>
+        )}
       </ModalBody>
       <ModalFooter>
         <button

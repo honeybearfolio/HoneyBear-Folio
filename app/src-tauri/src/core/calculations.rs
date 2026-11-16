@@ -571,6 +571,7 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
                 .clone()
                 .unwrap_or_else(|| input.app_currency.clone());
             json!({
+                "account_id": acc.id,
                 "name": acc.name,
                 "currency": acc_currency,
                 "currency_symbol": acc_currency,

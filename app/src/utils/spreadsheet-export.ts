@@ -1,11 +1,19 @@
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { rust } from "../api/tauri-client";
-import type { Account, StockQuote } from "../api/types";
+import type {
+  Account,
+  PdfReportType,
+  ReportBalanceItem,
+  ReportGoalProgress,
+  StockQuote,
+} from "../api/types";
 import { formatNumberForExport, todayCalendarDate } from "./format";
 import { computeReportData } from "./report";
 import { logError } from "./errors";
 import { buildHoldingsFromTransactions } from "./investments";
+import { fetchHoldingValuesForAccounts } from "./market-values";
+import { computeGoalProgress } from "./goal-progress";
 import {
   ASSET_CATEGORY_LABELS,
   ASSET_FIELD_LABELS,
@@ -31,6 +39,19 @@ interface ExchangeRateEntry {
 }
 
 export type ExportFormat = "json" | "csv" | "xlsx" | "pdf";
+export type { PdfReportType } from "../api/types";
+
+export const PDF_REPORT_TYPES: PdfReportType[] = [
+  "overview",
+  "net_worth",
+  "accounts",
+  "income_expenses",
+  "cash_flow",
+  "investments",
+  "liabilities",
+  "goals",
+  "transactions",
+];
 
 function accountToExportRow(account: Account): Record<string, unknown> {
   return {
@@ -125,8 +146,24 @@ export interface ReportLabels {
   fee: string;
   page: string;
   no_transactions: string;
+  no_data: string;
   portfolio_total: string;
   overall_roi: string;
+  assets: string;
+  liabilities: string;
+  goals: string;
+  valuation_date: string;
+  current: string;
+  target: string;
+  progress: string;
+  target_date: string;
+  monthly_contribution: string;
+  status: string;
+  goal_status_reached: string;
+  goal_status_on_track: string;
+  goal_status_behind: string;
+  goal_status_projected: string;
+  goal_status_unscheduled: string;
 }
 
 interface BuildExportPayloadOptions {
@@ -134,6 +171,8 @@ interface BuildExportPayloadOptions {
   labels: ExportLabels;
   reportLabels: ReportLabels;
   pdfDateRange: PdfDateRange;
+  pdfReportType: PdfReportType;
+  pdfTitle: string;
   appCurrency: string;
 }
 
@@ -142,6 +181,8 @@ export async function buildAndWriteExport({
   labels,
   reportLabels,
   pdfDateRange,
+  pdfReportType,
+  pdfTitle,
   appCurrency,
 }: BuildExportPayloadOptions): Promise<string | null> {
   const accounts = await rust.get_accounts();
@@ -212,7 +253,7 @@ export async function buildAndWriteExport({
     defaultPath += ".xlsx";
     filters = [{ name: labels.xlsxFormat, extensions: ["xlsx"] }];
   } else {
-    defaultPath = `honeybear_report_${pdfDateRange.start}_${pdfDateRange.end}`;
+    defaultPath = `honeybear_${pdfReportType}_${pdfDateRange.start}_${pdfDateRange.end}`;
     defaultPath += ".pdf";
     filters = [{ name: labels.pdfFormat, extensions: ["pdf"] }];
   }
@@ -295,6 +336,9 @@ export async function buildAndWriteExport({
 
     await rust.write_xlsx({ filePath, sheets });
   } else if (format === "pdf") {
+    const reportAccounts = await rust.get_accounts({
+      targetCurrency: appCurrency,
+    });
     const exchangeRates: Record<
       string,
       { map: Record<string, number>; list: DailyPrice[] }
@@ -354,7 +398,7 @@ export async function buildAndWriteExport({
     }
 
     const reportData = await computeReportData({
-      accounts,
+      accounts: reportAccounts,
       transactions,
       startDate: pdfDateRange.start,
       endDate: pdfDateRange.end,
@@ -364,7 +408,98 @@ export async function buildAndWriteExport({
       labels: reportLabels,
     });
 
-    await rust.generate_pdf_report({ filePath, data: reportData });
+    reportData.labels.title = pdfTitle;
+    reportData.snapshot_report = [
+      "net_worth",
+      "accounts",
+      "investments",
+      "liabilities",
+      "goals",
+    ].includes(pdfReportType);
+    reportData.assets = [];
+    reportData.liabilities = [];
+    reportData.goals = [];
+
+    if (pdfReportType === "net_worth" || pdfReportType === "liabilities") {
+      const [assetRows, liabilityRows] = await Promise.all([
+        rust.get_assets({ targetCurrency: appCurrency }),
+        rust.get_liabilities({ targetCurrency: appCurrency }),
+      ]);
+      const toReportBalanceItem = (item: {
+        name: string;
+        category: string;
+        currency?: string;
+        latest_value?: number;
+        latest_date?: string;
+        exchange_rate: number;
+      }): ReportBalanceItem => ({
+        name: item.name,
+        category: item.category,
+        currency: item.currency || appCurrency,
+        value:
+          item.latest_value == null
+            ? null
+            : item.latest_value * item.exchange_rate,
+        valuation_date: item.latest_date || "",
+      });
+      reportData.assets = assetRows.map(toReportBalanceItem);
+      reportData.liabilities = liabilityRows.map(toReportBalanceItem);
+    }
+
+    if (pdfReportType === "goals") {
+      const goals = await rust.get_goals({ targetCurrency: appCurrency });
+      const holdingValues = await fetchHoldingValuesForAccounts(
+        reportAccounts,
+        appCurrency,
+      );
+      const goalStatusLabels = {
+        reached: reportLabels.goal_status_reached,
+        on_track: reportLabels.goal_status_on_track,
+        behind: reportLabels.goal_status_behind,
+        projected: reportLabels.goal_status_projected,
+        unscheduled: reportLabels.goal_status_unscheduled,
+      };
+      reportData.goals = goals
+        .filter((goal) => !goal.archived)
+        .map((goal): ReportGoalProgress => {
+          const progress = computeGoalProgress({
+            targetAmount: goal.target_amount,
+            exchangeRate: goal.exchange_rate,
+            createdAt: goal.created_at,
+            targetDate: goal.target_date ?? null,
+            monthlyContribution: goal.monthly_contribution ?? null,
+            links: goal.links.map((link) => ({
+              sourceType: link.source_type,
+              accountId: link.account_id ?? null,
+              ticker: link.ticker ?? null,
+              allocationPercent: link.allocation_percent,
+            })),
+            accounts: reportAccounts.map((account) => ({
+              id: account.id,
+              name: account.name,
+              balance: account.balance,
+              exchangeRate: account.exchange_rate || 1,
+            })),
+            holdingValues,
+          });
+          return {
+            name: goal.name,
+            target_amount: progress.target,
+            current_amount: progress.current,
+            percent: progress.percent,
+            target_date: goal.target_date ?? "",
+            monthly_contribution:
+              (goal.monthly_contribution ?? 0) * (goal.exchange_rate || 1),
+            status: goalStatusLabels[progress.status],
+          };
+        });
+    }
+
+    await rust.generate_pdf_report({
+      filePath,
+      data: reportData,
+      reportType: pdfReportType,
+    });
   } else {
     await writeTextFile(filePath, content!);
   }
