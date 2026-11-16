@@ -180,10 +180,15 @@ describe("tauri-client", () => {
         date_range_start: "2024-01-01",
         date_range_end: "2024-12-31",
       } as unknown as ReportData;
-      await rust.generate_pdf_report({ filePath: "/tmp/report.pdf", data });
+      await rust.generate_pdf_report({
+        filePath: "/tmp/report.pdf",
+        data,
+        reportType: "overview",
+      });
       expect(invoke).toHaveBeenCalledWith("generate_pdf_report", {
         filePath: "/tmp/report.pdf",
         data,
+        reportType: "overview",
       });
     });
   });

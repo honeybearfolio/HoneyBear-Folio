@@ -130,6 +130,7 @@ describe("ExportModal extended", () => {
         return Promise.resolve({
           date_range_start: "2024-01-01",
           date_range_end: "2024-12-31",
+          labels: { title: "Financial Report" },
           summary: {},
         });
       }

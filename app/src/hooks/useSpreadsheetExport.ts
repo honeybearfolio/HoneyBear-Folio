@@ -6,17 +6,20 @@ import { handleAsyncError } from "../utils/errors";
 import {
   buildAndWriteExport,
   type ExportFormat,
+  type PdfReportType,
 } from "../utils/spreadsheet-export";
 import type { PdfDateRange } from "./usePdfExportRange";
 
 interface UseSpreadsheetExportOptions {
   onClose: () => void;
   pdfDateRange: PdfDateRange;
+  pdfReportType: PdfReportType;
 }
 
 export function useSpreadsheetExport({
   onClose,
   pdfDateRange,
+  pdfReportType,
 }: UseSpreadsheetExportOptions) {
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -90,8 +93,24 @@ export function useSpreadsheetExport({
           fee: t("report.fee"),
           page: t("report.page"),
           no_transactions: t("report.no_transactions"),
+          no_data: t("report.no_data"),
           portfolio_total: t("report.portfolio_total"),
           overall_roi: t("report.overall_roi"),
+          assets: t("report.assets"),
+          liabilities: t("report.liabilities"),
+          goals: t("report.goals"),
+          valuation_date: t("report.valuation_date"),
+          current: t("report.current"),
+          target: t("report.target"),
+          progress: t("report.progress"),
+          target_date: t("report.target_date"),
+          monthly_contribution: t("report.monthly_contribution"),
+          status: t("report.status"),
+          goal_status_reached: t("goals.status.reached"),
+          goal_status_on_track: t("goals.status.on_track"),
+          goal_status_behind: t("goals.status.behind"),
+          goal_status_projected: t("goals.status.projected"),
+          goal_status_unscheduled: t("goals.status.unscheduled"),
         };
 
         const filePath = await buildAndWriteExport({
@@ -99,6 +118,8 @@ export function useSpreadsheetExport({
           labels,
           reportLabels,
           pdfDateRange,
+          pdfReportType,
+          pdfTitle: t(`export.pdf.type.${pdfReportType}`),
           appCurrency,
         });
 
@@ -121,7 +142,7 @@ export function useSpreadsheetExport({
         setExporting(false);
       }
     },
-    [appCurrency, onClose, pdfDateRange, showToast, t],
+    [appCurrency, onClose, pdfDateRange, pdfReportType, showToast, t],
   );
 
   return { exporting, exportSpreadsheet };

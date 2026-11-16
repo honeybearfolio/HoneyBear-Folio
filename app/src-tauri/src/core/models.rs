@@ -332,6 +332,7 @@ pub struct ReportSummary {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ReportAccountBalance {
+    pub account_id: i32,
     pub name: String,
     pub currency: String,
     pub currency_symbol: String,
@@ -340,6 +341,26 @@ pub struct ReportAccountBalance {
     pub total: f64,
     #[serde(default = "default_exchange_rate")]
     pub exchange_rate: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportBalanceItem {
+    pub name: String,
+    pub category: String,
+    pub currency: String,
+    pub value: Option<f64>,
+    pub valuation_date: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportGoalProgress {
+    pub name: String,
+    pub target_amount: f64,
+    pub current_amount: f64,
+    pub percent: f64,
+    pub target_date: String,
+    pub monthly_contribution: f64,
+    pub status: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -430,6 +451,9 @@ pub struct ReportLabels {
     pub net_savings: String,
     pub savings_rate: String,
     pub accounts: String,
+    pub assets: String,
+    pub liabilities: String,
+    pub goals: String,
     pub account: String,
     pub currency: String,
     pub cash_balance: String,
@@ -457,8 +481,16 @@ pub struct ReportLabels {
     pub fee: String,
     pub page: String,
     pub no_transactions: String,
+    pub no_data: String,
     pub portfolio_total: String,
     pub overall_roi: String,
+    pub valuation_date: String,
+    pub current: String,
+    pub target: String,
+    pub progress: String,
+    pub target_date: String,
+    pub monthly_contribution: String,
+    pub status: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -467,9 +499,17 @@ pub struct ReportData {
     pub date_range_end: String,
     pub currency_symbol: String,
     pub generation_date: String,
+    #[serde(default)]
+    pub snapshot_report: bool,
     pub labels: ReportLabels,
     pub summary: ReportSummary,
     pub account_balances: Vec<ReportAccountBalance>,
+    #[serde(default)]
+    pub assets: Vec<ReportBalanceItem>,
+    #[serde(default)]
+    pub liabilities: Vec<ReportBalanceItem>,
+    #[serde(default)]
+    pub goals: Vec<ReportGoalProgress>,
     pub net_worth_points: Vec<ReportDataPoint>,
     pub monthly_income_expenses: Vec<ReportMonthlyData>,
     pub expense_categories: Vec<ReportCategoryAmount>,

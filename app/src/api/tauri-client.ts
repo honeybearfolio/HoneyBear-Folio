@@ -23,6 +23,7 @@ import type {
   OllamaModel,
   PendingOccurrence,
   PortfolioTotals,
+  PdfReportType,
   ProjectionResult,
   ReportComputeInput,
   ReportData,
@@ -146,6 +147,7 @@ export const rust = {
   generate_pdf_report: (args: {
     filePath: string;
     data: ReportData;
+    reportType: PdfReportType;
   }): Promise<void> => callRust("generate_pdf_report", args),
 
   // ---------------------------------------------------------------------------

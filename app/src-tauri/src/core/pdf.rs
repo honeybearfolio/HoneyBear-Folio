@@ -1,4 +1,4 @@
-use crate::models::ReportData;
+use crate::models::{ReportData, ReportGoalProgress};
 use printpdf::{
     Color, FontId, Line, LinePoint, Mm, Op, PaintMode, PdfDocument, PdfFontHandle, PdfPage,
     PdfSaveOptions, PdfWarnMsg, Point, Polygon, PolygonRing, Pt, RawImage, RawImageData,
@@ -24,6 +24,38 @@ const CONTENT_W: f32 = PAGE_W - MARGIN_LEFT - MARGIN_RIGHT;
 const HEADER_HEIGHT: f32 = 14.0;
 const FOOTER_HEIGHT: f32 = 10.0;
 const ACCENT_STRIPE_H: f32 = 2.0;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PdfReportType {
+    Overview,
+    NetWorth,
+    Accounts,
+    IncomeExpenses,
+    CashFlow,
+    Investments,
+    Liabilities,
+    Goals,
+    Transactions,
+}
+
+impl TryFrom<&str> for PdfReportType {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "overview" => Ok(Self::Overview),
+            "net_worth" => Ok(Self::NetWorth),
+            "accounts" => Ok(Self::Accounts),
+            "income_expenses" => Ok(Self::IncomeExpenses),
+            "cash_flow" => Ok(Self::CashFlow),
+            "investments" => Ok(Self::Investments),
+            "liabilities" => Ok(Self::Liabilities),
+            "goals" => Ok(Self::Goals),
+            "transactions" => Ok(Self::Transactions),
+            _ => Err(format!("Unknown PDF report type: {value}")),
+        }
+    }
+}
 
 // ── Colour palette ──────────────────────────────────────────────────
 
@@ -397,10 +429,14 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
     );
 
     // Date range on the right
-    let right_text = format!(
-        "{} — {} · {}",
-        data.date_range_start, data.date_range_end, data.currency_symbol
-    );
+    let right_text = if data.snapshot_report {
+        format!("{} · {}", data.generation_date, data.currency_symbol)
+    } else {
+        format!(
+            "{} — {} · {}",
+            data.date_range_start, data.date_range_end, data.currency_symbol
+        )
+    };
     write_text_right_weight(
         ops,
         fonts,
@@ -1080,8 +1116,13 @@ fn draw_net_worth_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportDat
 
 // ── Income vs Expenses chart ────────────────────────────────────────
 
-fn draw_income_expenses_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData) {
-    let mut ops = start_page(fonts, 3, data);
+fn draw_income_expenses_page(
+    doc: &mut PdfDocument,
+    fonts: &PdfFonts,
+    data: &ReportData,
+    page_num: usize,
+) {
+    let mut ops = start_page(fonts, page_num, data);
     let labels = &data.labels;
     let sym = &data.currency_symbol;
 
@@ -2133,6 +2174,392 @@ fn draw_transactions_pages(
 /// Generates a multi-page PDF report containing summary, net worth, income/expenses,
 /// holdings, and transaction sections. Returns the raw PDF bytes.
 pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
+    generate_report_for_type(data, PdfReportType::Overview)
+}
+
+fn draw_report_table(
+    doc: &mut PdfDocument,
+    fonts: &PdfFonts,
+    data: &ReportData,
+    title: &str,
+    summary: Option<&str>,
+    columns: &[TableColumn],
+    rows: &[Vec<String>],
+    total_row: Option<&[String]>,
+    page_num: usize,
+) -> usize {
+    let mut page_num = page_num;
+    let mut ops = start_page(fonts, page_num, data);
+    let mut top = MARGIN_TOP + HEADER_HEIGHT;
+    top = draw_section_title(&mut ops, fonts, title, top);
+    if let Some(summary) = summary {
+        write_text(&mut ops, fonts, summary, MARGIN_LEFT, top + 2.0, 7.0, false);
+        top += 8.0;
+    }
+
+    if rows.is_empty() {
+        write_text_color(
+            &mut ops,
+            fonts,
+            &data.labels.no_data,
+            MARGIN_LEFT,
+            top + 10.0,
+            10.0,
+            false,
+            text_secondary(),
+        );
+        finish_page(doc, ops);
+        return page_num;
+    }
+
+    top = draw_table_header(&mut ops, fonts, columns, top);
+    for (index, row) in rows.iter().enumerate() {
+        if needs_new_page(top) {
+            finish_page(doc, ops);
+            page_num += 1;
+            ops = start_page(fonts, page_num, data);
+            top = MARGIN_TOP + HEADER_HEIGHT;
+            top = draw_section_title(&mut ops, fonts, title, top);
+            top = draw_table_header(&mut ops, fonts, columns, top);
+        }
+        top = draw_table_row(&mut ops, fonts, columns, row, top, index % 2 == 1);
+    }
+
+    if let Some(total_row) = total_row {
+        if needs_new_page(top) {
+            finish_page(doc, ops);
+            page_num += 1;
+            ops = start_page(fonts, page_num, data);
+            top = MARGIN_TOP + HEADER_HEIGHT;
+            top = draw_section_title(&mut ops, fonts, title, top);
+            top = draw_table_header(&mut ops, fonts, columns, top);
+        }
+        draw_table_totals_row(&mut ops, fonts, columns, total_row, top);
+    }
+    finish_page(doc, ops);
+    page_num
+}
+
+fn draw_accounts_report_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData) {
+    let labels = &data.labels;
+    let columns = vec![
+        TableColumn {
+            header: labels.account.clone(),
+            width: 42.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.currency.clone(),
+            width: 20.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.cash_balance.clone(),
+            width: 34.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.market_value.clone(),
+            width: 34.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.total.clone(),
+            width: 34.0,
+            align_right: true,
+        },
+    ];
+    let mut cash_total = 0.0;
+    let mut market_total = 0.0;
+    let mut total = 0.0;
+    let rows = data
+        .account_balances
+        .iter()
+        .map(|account| {
+            cash_total += account.cash_balance * account.exchange_rate;
+            market_total += account.market_value * account.exchange_rate;
+            total += account.total * account.exchange_rate;
+            vec![
+                account.name.clone(),
+                account.currency.clone(),
+                format_currency(account.cash_balance, &account.currency_symbol),
+                format_currency(account.market_value, &account.currency_symbol),
+                format_currency(account.total, &account.currency_symbol),
+            ]
+        })
+        .collect::<Vec<_>>();
+    let total_row = vec![
+        labels.total.clone(),
+        data.currency_symbol.clone(),
+        format_currency(cash_total, &data.currency_symbol),
+        format_currency(market_total, &data.currency_symbol),
+        format_currency(total, &data.currency_symbol),
+    ];
+    draw_report_table(
+        doc,
+        fonts,
+        data,
+        &labels.accounts,
+        None,
+        &columns,
+        &rows,
+        Some(&total_row),
+        1,
+    );
+}
+
+fn draw_net_worth_statement_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData) {
+    let labels = &data.labels;
+    let columns = vec![
+        TableColumn {
+            header: labels.account.clone(),
+            width: 48.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.category.clone(),
+            width: 30.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.currency.clone(),
+            width: 18.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.valuation_date.clone(),
+            width: 28.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.amount.clone(),
+            width: 42.0,
+            align_right: true,
+        },
+    ];
+
+    let accounts_total: f64 = data
+        .account_balances
+        .iter()
+        .map(|account| account.total * account.exchange_rate)
+        .sum();
+    let assets_total: f64 = data.assets.iter().filter_map(|asset| asset.value).sum();
+    let liabilities_total: f64 = data
+        .liabilities
+        .iter()
+        .filter_map(|liability| liability.value)
+        .sum();
+    let total_assets = accounts_total + assets_total;
+    let net_worth = total_assets - liabilities_total;
+    let summary = format!(
+        "{}: {}    {}: {}    {}: {}",
+        labels.assets,
+        format_currency(total_assets, &data.currency_symbol),
+        labels.liabilities,
+        format_currency(liabilities_total, &data.currency_symbol),
+        labels.net_worth,
+        format_currency(net_worth, &data.currency_symbol),
+    );
+
+    let mut rows = data
+        .account_balances
+        .iter()
+        .map(|account| {
+            vec![
+                account.name.clone(),
+                labels.accounts.clone(),
+                account.currency.clone(),
+                String::new(),
+                format_currency(account.total * account.exchange_rate, &data.currency_symbol),
+            ]
+        })
+        .collect::<Vec<_>>();
+    rows.extend(data.assets.iter().map(|asset| {
+        vec![
+            asset.name.clone(),
+            asset.category.clone(),
+            asset.currency.clone(),
+            asset.valuation_date.clone(),
+            asset
+                .value
+                .map(|value| format_currency(value, &data.currency_symbol))
+                .unwrap_or_default(),
+        ]
+    }));
+    rows.extend(data.liabilities.iter().map(|liability| {
+        vec![
+            liability.name.clone(),
+            liability.category.clone(),
+            liability.currency.clone(),
+            liability.valuation_date.clone(),
+            liability
+                .value
+                .map(|value| format_currency(-value, &data.currency_symbol))
+                .unwrap_or_default(),
+        ]
+    }));
+
+    let total_row = vec![
+        labels.net_worth.clone(),
+        String::new(),
+        data.currency_symbol.clone(),
+        String::new(),
+        format_currency(net_worth, &data.currency_symbol),
+    ];
+    draw_report_table(
+        doc,
+        fonts,
+        data,
+        &labels.net_worth,
+        Some(&summary),
+        &columns,
+        &rows,
+        Some(&total_row),
+        1,
+    );
+}
+
+fn draw_liabilities_report_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData) {
+    let labels = &data.labels;
+    let columns = vec![
+        TableColumn {
+            header: labels.account.clone(),
+            width: 48.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.category.clone(),
+            width: 34.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.currency.clone(),
+            width: 20.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.valuation_date.clone(),
+            width: 30.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.amount.clone(),
+            width: 34.0,
+            align_right: true,
+        },
+    ];
+    let total: f64 = data
+        .liabilities
+        .iter()
+        .filter_map(|liability| liability.value)
+        .sum();
+    let rows = data
+        .liabilities
+        .iter()
+        .map(|liability| {
+            vec![
+                liability.name.clone(),
+                liability.category.clone(),
+                liability.currency.clone(),
+                liability.valuation_date.clone(),
+                liability
+                    .value
+                    .map(|value| format_currency(value, &data.currency_symbol))
+                    .unwrap_or_default(),
+            ]
+        })
+        .collect::<Vec<_>>();
+    let total_row = vec![
+        labels.total.clone(),
+        String::new(),
+        data.currency_symbol.clone(),
+        String::new(),
+        format_currency(total, &data.currency_symbol),
+    ];
+    draw_report_table(
+        doc,
+        fonts,
+        data,
+        &labels.liabilities,
+        None,
+        &columns,
+        &rows,
+        Some(&total_row),
+        1,
+    );
+}
+
+fn draw_goals_report_page(doc: &mut PdfDocument, fonts: &PdfFonts, data: &ReportData) {
+    let labels = &data.labels;
+    let columns = vec![
+        TableColumn {
+            header: labels.goals.clone(),
+            width: 35.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.current.clone(),
+            width: 23.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.target.clone(),
+            width: 23.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.progress.clone(),
+            width: 17.0,
+            align_right: true,
+        },
+        TableColumn {
+            header: labels.status.clone(),
+            width: 22.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: labels.target_date.clone(),
+            width: 25.0,
+            align_right: false,
+        },
+        TableColumn {
+            header: truncate(&labels.monthly_contribution, 10),
+            width: 21.0,
+            align_right: true,
+        },
+    ];
+    let rows = data
+        .goals
+        .iter()
+        .map(|goal: &ReportGoalProgress| {
+            vec![
+                goal.name.clone(),
+                format_currency(goal.current_amount, &data.currency_symbol),
+                format_currency(goal.target_amount, &data.currency_symbol),
+                format_percent(goal.percent),
+                goal.status.clone(),
+                goal.target_date.clone(),
+                format_currency(goal.monthly_contribution, &data.currency_symbol),
+            ]
+        })
+        .collect::<Vec<_>>();
+    draw_report_table(
+        doc,
+        fonts,
+        data,
+        &labels.goals,
+        None,
+        &columns,
+        &rows,
+        None,
+        1,
+    );
+}
+
+pub fn generate_report_for_type(
+    data: &ReportData,
+    report_type: PdfReportType,
+) -> Result<Vec<u8>, String> {
     let mut doc = PdfDocument::new("HoneyBear Folio Report");
 
     // Load fonts — Open Sans Regular, Semibold, Bold
@@ -2173,23 +2600,70 @@ pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
         icon: icon_info,
     };
 
-    draw_summary_page(&mut doc, &fonts, data);
-    draw_net_worth_page(&mut doc, &fonts, data);
-    draw_income_expenses_page(&mut doc, &fonts, data);
+    match report_type {
+        PdfReportType::Overview => {
+            draw_summary_page(&mut doc, &fonts, data);
+            draw_net_worth_page(&mut doc, &fonts, data);
+            draw_income_expenses_page(&mut doc, &fonts, data, 3);
 
-    let mut next_page: usize = 4;
-    draw_expense_breakdown_page(&mut doc, &fonts, data, next_page);
-    next_page += 1;
-    draw_income_breakdown_page(&mut doc, &fonts, data, next_page);
-    next_page += 1;
-    draw_cash_flow_page(&mut doc, &fonts, data, next_page);
-    next_page += 1;
+            let mut next_page = doc.pages.len() + 1;
+            draw_expense_breakdown_page(&mut doc, &fonts, data, next_page);
+            next_page = doc.pages.len() + 1;
+            draw_income_breakdown_page(&mut doc, &fonts, data, next_page);
+            next_page = doc.pages.len() + 1;
+            draw_cash_flow_page(&mut doc, &fonts, data, next_page);
+            next_page = doc.pages.len() + 1;
 
-    if draw_holdings_page(&mut doc, &fonts, data, next_page) {
-        next_page += 1;
+            if draw_holdings_page(&mut doc, &fonts, data, next_page) {
+                next_page = doc.pages.len() + 1;
+            }
+            draw_transactions_pages(&mut doc, &fonts, data, next_page);
+        }
+        PdfReportType::NetWorth => draw_net_worth_statement_page(&mut doc, &fonts, data),
+        PdfReportType::Accounts => draw_accounts_report_page(&mut doc, &fonts, data),
+        PdfReportType::IncomeExpenses => {
+            draw_income_expenses_page(&mut doc, &fonts, data, 1);
+            let mut next_page = doc.pages.len() + 1;
+            draw_expense_breakdown_page(&mut doc, &fonts, data, next_page);
+            next_page = doc.pages.len() + 1;
+            draw_income_breakdown_page(&mut doc, &fonts, data, next_page);
+        }
+        PdfReportType::CashFlow => draw_cash_flow_page(&mut doc, &fonts, data, 1),
+        PdfReportType::Investments => {
+            if !draw_holdings_page(&mut doc, &fonts, data, 1) {
+                draw_report_table(
+                    &mut doc,
+                    &fonts,
+                    data,
+                    &data.labels.investment_holdings,
+                    None,
+                    &[],
+                    &[],
+                    None,
+                    1,
+                );
+            }
+        }
+        PdfReportType::Liabilities => draw_liabilities_report_page(&mut doc, &fonts, data),
+        PdfReportType::Goals => draw_goals_report_page(&mut doc, &fonts, data),
+        PdfReportType::Transactions => {
+            if data.accounts_transactions.is_empty() {
+                draw_report_table(
+                    &mut doc,
+                    &fonts,
+                    data,
+                    &data.labels.transactions_title,
+                    None,
+                    &[],
+                    &[],
+                    None,
+                    1,
+                );
+            } else {
+                draw_transactions_pages(&mut doc, &fonts, data, 1);
+            }
+        }
     }
-
-    draw_transactions_pages(&mut doc, &fonts, data, next_page);
 
     let mut warnings = Vec::<PdfWarnMsg>::new();
     let buf = doc.save(&PdfSaveOptions::default(), &mut warnings);
@@ -2199,8 +2673,17 @@ pub fn generate_report(data: &ReportData) -> Result<Vec<u8>, String> {
 
 /// Tauri command: generates a PDF report and writes it to the specified file path.
 #[tauri::command]
-pub fn generate_pdf_report(file_path: String, data: ReportData) -> Result<(), String> {
-    let pdf_bytes = generate_report(&data)?;
+pub fn generate_pdf_report(
+    file_path: String,
+    data: ReportData,
+    report_type: Option<String>,
+) -> Result<(), String> {
+    let report_type = report_type
+        .as_deref()
+        .map(PdfReportType::try_from)
+        .transpose()?
+        .unwrap_or(PdfReportType::Overview);
+    let pdf_bytes = generate_report_for_type(&data, report_type)?;
     let file = File::create(&file_path).map_err(|e| format!("Failed to create file: {e}"))?;
     let mut writer = BufWriter::new(file);
     std::io::Write::write_all(&mut writer, &pdf_bytes)

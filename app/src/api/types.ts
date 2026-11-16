@@ -384,6 +384,17 @@ export type NetWorthMarketValues = Record<string, number>;
 // PDF report (serde snake_case — matches Rust ReportData structs)
 // ---------------------------------------------------------------------------
 
+export type PdfReportType =
+  | "overview"
+  | "net_worth"
+  | "accounts"
+  | "income_expenses"
+  | "cash_flow"
+  | "investments"
+  | "liabilities"
+  | "goals"
+  | "transactions";
+
 export interface ReportSummary {
   net_worth: number;
   total_income: number;
@@ -394,6 +405,7 @@ export interface ReportSummary {
 }
 
 export interface ReportAccountBalance {
+  account_id: number;
   name: string;
   currency: string;
   currency_symbol: string;
@@ -401,6 +413,24 @@ export interface ReportAccountBalance {
   market_value: number;
   total: number;
   exchange_rate: number;
+}
+
+export interface ReportBalanceItem {
+  name: string;
+  category: string;
+  currency: string;
+  value: number | null;
+  valuation_date: string;
+}
+
+export interface ReportGoalProgress {
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  percent: number;
+  target_date: string;
+  monthly_contribution: number;
+  status: string;
 }
 
 export interface ReportDataPoint {
@@ -481,6 +511,9 @@ export interface ReportLabels {
   net_savings: string;
   savings_rate: string;
   accounts: string;
+  assets: string;
+  liabilities: string;
+  goals: string;
   account: string;
   currency: string;
   cash_balance: string;
@@ -508,8 +541,21 @@ export interface ReportLabels {
   fee: string;
   page: string;
   no_transactions: string;
+  no_data: string;
   portfolio_total: string;
   overall_roi: string;
+  valuation_date: string;
+  current: string;
+  target: string;
+  progress: string;
+  target_date: string;
+  monthly_contribution: string;
+  status: string;
+  goal_status_reached: string;
+  goal_status_on_track: string;
+  goal_status_behind: string;
+  goal_status_projected: string;
+  goal_status_unscheduled: string;
 }
 
 export interface ReportData {
@@ -517,9 +563,13 @@ export interface ReportData {
   date_range_end: string;
   currency_symbol: string;
   generation_date: string;
+  snapshot_report: boolean;
   labels: ReportLabels;
   summary: ReportSummary;
   account_balances: ReportAccountBalance[];
+  assets: ReportBalanceItem[];
+  liabilities: ReportBalanceItem[];
+  goals: ReportGoalProgress[];
   net_worth_points: ReportDataPoint[];
   monthly_income_expenses: ReportMonthlyData[];
   expense_categories: ReportCategoryAmount[];

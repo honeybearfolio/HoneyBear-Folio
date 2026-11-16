@@ -3,7 +3,9 @@ use crate::core::models::{
     ReportData, ReportDataPoint, ReportHolding, ReportLabels, ReportMonthlyData, ReportPortfolio,
     ReportSummary, ReportTransaction,
 };
-use crate::core::pdf::{generate_pdf_report, generate_report};
+use crate::core::pdf::{
+    generate_pdf_report, generate_report, generate_report_for_type, PdfReportType,
+};
 use std::fs;
 
 // Helper builder for minimal report data in tests
@@ -13,6 +15,7 @@ fn make_empty_report() -> ReportData {
         date_range_end: "2023-12-31".into(),
         currency_symbol: "$".into(),
         generation_date: "2023-01-01".into(),
+        snapshot_report: false,
         labels: ReportLabels {
             title: String::new(),
             financial_summary: String::new(),
@@ -29,6 +32,9 @@ fn make_empty_report() -> ReportData {
             net_savings: String::new(),
             savings_rate: String::new(),
             accounts: String::new(),
+            assets: String::new(),
+            liabilities: String::new(),
+            goals: String::new(),
             account: String::new(),
             currency: String::new(),
             cash_balance: String::new(),
@@ -56,8 +62,16 @@ fn make_empty_report() -> ReportData {
             fee: String::new(),
             page: String::new(),
             no_transactions: String::new(),
+            no_data: String::new(),
             portfolio_total: String::new(),
             overall_roi: String::new(),
+            valuation_date: String::new(),
+            current: String::new(),
+            target: String::new(),
+            progress: String::new(),
+            target_date: String::new(),
+            monthly_contribution: String::new(),
+            status: String::new(),
         },
         summary: ReportSummary {
             net_worth: 0.0,
@@ -68,6 +82,9 @@ fn make_empty_report() -> ReportData {
             account_count: 0,
         },
         account_balances: Vec::new(),
+        assets: Vec::new(),
+        liabilities: Vec::new(),
+        goals: Vec::new(),
         net_worth_points: Vec::new(),
         monthly_income_expenses: Vec::new(),
         expense_categories: Vec::new(),
@@ -103,7 +120,7 @@ fn test_generate_pdf_report_writes_file() {
     // ensure previous file removed
     let _ = fs::remove_file(&tmp);
 
-    generate_pdf_report(path_str.clone(), data.clone()).expect("pdf command failed");
+    generate_pdf_report(path_str.clone(), data.clone(), None).expect("pdf command failed");
 
     assert!(tmp.exists(), "output PDF file should exist");
     let contents = fs::read(&tmp).expect("failed to read generated file");
@@ -127,6 +144,7 @@ fn test_generate_report_with_full_data() {
         account_count: 2,
     };
     data.account_balances = vec![ReportAccountBalance {
+        account_id: 1,
         name: "Brokerage".into(),
         currency: "USD".into(),
         currency_symbol: "$".into(),
@@ -206,4 +224,29 @@ fn test_generate_report_with_full_data() {
     let bytes = generate_report(&data).expect("full report generation failed");
     assert!(bytes.starts_with(b"%PDF"));
     assert!(bytes.len() > 5000);
+}
+
+#[test]
+fn each_report_type_generates_a_pdf() {
+    let data = make_empty_report();
+    let report_types = [
+        PdfReportType::Overview,
+        PdfReportType::NetWorth,
+        PdfReportType::Accounts,
+        PdfReportType::IncomeExpenses,
+        PdfReportType::CashFlow,
+        PdfReportType::Investments,
+        PdfReportType::Liabilities,
+        PdfReportType::Goals,
+        PdfReportType::Transactions,
+    ];
+
+    for report_type in report_types {
+        let bytes = generate_report_for_type(&data, report_type)
+            .expect("report type should generate a PDF");
+        assert!(bytes.starts_with(b"%PDF"));
+        assert!(bytes.len() > 100);
+    }
+
+    assert!(PdfReportType::try_from("unsupported").is_err());
 }

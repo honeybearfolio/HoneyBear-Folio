@@ -159,6 +159,7 @@ describe("ExportModal", () => {
         return Promise.resolve({
           date_range_start: "2024-01-01",
           date_range_end: "2024-12-31",
+          labels: { title: "Financial Report" },
           summary: {},
         });
       }
@@ -318,6 +319,17 @@ describe("ExportModal", () => {
     expect(pdfButton).toHaveClass("format-button-active");
   });
 
+  it("hides the date range for snapshot reports", () => {
+    render(<ExportModal {...defaultProps} />);
+    fireEvent.click(screen.getByText("PDF Report"));
+    fireEvent.change(screen.getByTestId("custom-select-overview"), {
+      target: { value: "accounts" },
+    });
+
+    expect(screen.getByTestId("custom-select-accounts")).toBeInTheDocument();
+    expect(screen.queryByTestId("custom-select-ytd")).not.toBeInTheDocument();
+  });
+
   it("opens save dialog with PDF filter for PDF format", async () => {
     render(<ExportModal {...defaultProps} />);
 
@@ -358,9 +370,69 @@ describe("ExportModal", () => {
       const generatePayload = generateCall?.[1] as {
         filePath: string;
         data: { date_range_start: string };
+        reportType: string;
       };
       expect(generatePayload.filePath).toBe("/path/to/export.pdf");
       expect(typeof generatePayload.data.date_range_start).toBe("string");
+      expect(generatePayload.reportType).toBe("overview");
+    });
+  });
+
+  it("generates the selected focused PDF report", async () => {
+    mockSave.mockResolvedValue("/path/to/accounts.pdf");
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("PDF Report"));
+    fireEvent.change(screen.getByTestId("custom-select-overview"), {
+      target: { value: "accounts" },
+    });
+    fireEvent.click(screen.getByText("Select Location & Export"));
+
+    await waitFor(() => {
+      const generateCall = mockInvoke.mock.calls.find(
+        (call) => call[0] === "generate_pdf_report",
+      );
+      expect(generateCall?.[1]).toEqual(
+        expect.objectContaining({ reportType: "accounts" }),
+      );
+    });
+  });
+
+  it("includes tracked assets and liabilities in a net worth report", async () => {
+    mockSave.mockResolvedValue("/path/to/net-worth.pdf");
+    render(<ExportModal {...defaultProps} />);
+
+    fireEvent.click(screen.getByText("PDF Report"));
+    fireEvent.change(screen.getByTestId("custom-select-overview"), {
+      target: { value: "net_worth" },
+    });
+    fireEvent.click(screen.getByText("Select Location & Export"));
+
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("get_assets", {
+        targetCurrency: "USD",
+      });
+      expect(mockInvoke).toHaveBeenCalledWith("get_liabilities", {
+        targetCurrency: "USD",
+      });
+
+      const generateCall = mockInvoke.mock.calls.find(
+        (call) => call[0] === "generate_pdf_report",
+      );
+      const payload = generateCall?.[1] as {
+        data: { assets: Array<{ name: string; value: number | null }> };
+        reportType: string;
+      };
+      expect(payload.reportType).toBe("net_worth");
+      expect(payload.data.assets).toEqual([
+        {
+          name: "House",
+          category: "real_estate",
+          currency: "USD",
+          value: 350000,
+          valuation_date: "2024-06-01",
+        },
+      ]);
     });
   });
 
