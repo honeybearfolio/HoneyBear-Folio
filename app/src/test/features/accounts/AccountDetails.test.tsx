@@ -131,9 +131,13 @@ describe("AccountDetails", () => {
     expect(screen.getByText("Test Account")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("get_transactions", {
-        accountId: "acc1",
-      });
+      expect(mockInvoke).toHaveBeenCalledWith(
+        "get_transactions",
+        expect.objectContaining({
+          accountId: "acc1",
+          limit: 100,
+        }),
+      );
     });
 
     expect(await screen.findByText("Grocery Store")).toBeInTheDocument();

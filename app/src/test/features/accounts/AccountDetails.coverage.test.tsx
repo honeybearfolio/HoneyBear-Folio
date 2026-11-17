@@ -498,7 +498,10 @@ describe("AccountDetails coverage", () => {
     expect(screen.getByText("Test Account")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("get_all_transactions");
+      expect(mockInvoke).toHaveBeenCalledWith(
+        "get_all_transactions",
+        expect.objectContaining({ limit: 100 }),
+      );
       expect(mockInvoke).toHaveBeenCalledWith("get_pending_occurrences", {
         accountId: null,
       });

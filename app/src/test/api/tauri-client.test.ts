@@ -269,8 +269,42 @@ describe("tauri-client", () => {
       await rust.get_transactions({ accountId: 1 });
       expect(invoke).toHaveBeenCalledWith("get_transactions", { accountId: 1 });
 
+      await rust.get_transactions({
+        accountId: 1,
+        limit: 50,
+        cursorDate: "2024-01-01",
+        cursorId: 4,
+        search: "rent",
+        category: "Housing",
+        sortKey: "amount",
+        sortDir: "ascending",
+      });
+      expect(invoke).toHaveBeenCalledWith("get_transactions", {
+        accountId: 1,
+        limit: 50,
+        cursorDate: "2024-01-01",
+        cursorId: 4,
+        search: "rent",
+        category: "Housing",
+        sortKey: "amount",
+        sortDir: "ascending",
+      });
+
       await rust.get_all_transactions();
       expect(invoke).toHaveBeenCalledWith("get_all_transactions");
+
+      await rust.get_all_transactions({
+        limit: 50,
+        accountId: 2,
+        search: "rent",
+        category: "Housing",
+      });
+      expect(invoke).toHaveBeenCalledWith("get_all_transactions", {
+        limit: 50,
+        accountId: 2,
+        search: "rent",
+        category: "Housing",
+      });
 
       await rust.get_account_holdings();
       expect(invoke).toHaveBeenCalledWith("get_account_holdings");

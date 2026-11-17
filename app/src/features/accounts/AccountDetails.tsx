@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import type { TransactionListArgs } from "../../api/tauri-client";
 import "react-datepicker/dist/react-datepicker.css";
 import "../../styles/datepicker.css";
 import { rust } from "../../api/tauri-client";
@@ -28,6 +29,81 @@ import TransactionList from "./TransactionList";
 import { useFormRules } from "./useFormRules";
 import { handleAsyncError, logError } from "../../utils/errors";
 
+const TRANSACTION_PAGE_SIZE = 100;
+const SEARCH_DEBOUNCE_MS = 200;
+
+const NUMERIC_SORT_KEYS = new Set<SortableTransactionKey>([
+  "amount",
+  "shares",
+  "price_per_share",
+  "fee",
+]);
+
+interface PageCursor {
+  cursorDate: string;
+  cursorId: number;
+  cursorSort: string | null;
+}
+
+function transactionCursor(
+  tx: Transaction,
+  sortKey: SortableTransactionKey | null,
+): PageCursor | null {
+  const cursorId = typeof tx.id === "number" ? tx.id : Number(tx.id);
+  if (!Number.isFinite(cursorId)) return null;
+  if (!sortKey || sortKey === "date") {
+    return { cursorDate: tx.date, cursorId, cursorSort: null };
+  }
+  return {
+    cursorDate: tx.date,
+    cursorId,
+    cursorSort: sortCursorValue(tx, sortKey),
+  };
+}
+
+function sortCursorValue(tx: Transaction, key: SortableTransactionKey): string {
+  if (NUMERIC_SORT_KEYS.has(key)) {
+    const raw = tx[key];
+    const value = typeof raw === "number" ? raw : Number(raw ?? 0);
+    return Number.isFinite(value) ? String(value) : "0";
+  }
+  if (key === "account_name") return tx.account_name ?? "";
+  const raw = tx[key];
+  return raw == null ? "" : String(raw);
+}
+
+function withAccountNames(
+  rows: Transaction[],
+  names: Map<string, string>,
+): Transaction[] {
+  return rows.map((tx) => ({
+    ...tx,
+    account_name: names.get(String(tx.account_id)) ?? String(tx.account_id),
+  }));
+}
+
+function pageArgs(
+  search: string,
+  sortKey: SortableTransactionKey | null,
+  sortDir: string | null,
+  cursor: PageCursor | null,
+): TransactionListArgs {
+  return {
+    limit: TRANSACTION_PAGE_SIZE,
+    ...(cursor
+      ? {
+          cursorDate: cursor.cursorDate,
+          cursorId: cursor.cursorId,
+          ...(cursor.cursorSort != null
+            ? { cursorSort: cursor.cursorSort }
+            : {}),
+        }
+      : {}),
+    ...(search ? { search } : {}),
+    ...(sortKey ? { sortKey, sortDir } : {}),
+  };
+}
+
 export default function AccountDetails({
   account,
   onUpdate,
@@ -50,6 +126,8 @@ export default function AccountDetails({
   } = useNumberFormat();
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [hasMore, setHasMore] = useState(false);
   const [payeeSuggestions, setPayeeSuggestions] = useState<
     AutocompleteSuggestion[]
   >([]);
@@ -136,11 +214,51 @@ export default function AccountDetails({
   // Removed cashAccountId/Name/Suggestions as we are unified now
   const [isBuy, setIsBuy] = useState(true);
 
-  // Sorting State
+  // Sorting State. Null keeps the register order: date descending, id descending.
   const [sortConfig, setSortConfig] = useState<{
     key: SortableTransactionKey | null;
     direction: string | null;
   }>({ key: null, direction: null });
+
+  const listGeneration = useRef(0);
+  const pagingRef = useRef(false);
+  const transactionsRef = useRef<Transaction[]>([]);
+  const hasMoreRef = useRef(false);
+  const accountNamesRef = useRef<Map<string, string>>(new Map());
+  const queryRef = useRef({
+    accountId: account.id,
+    search: "",
+    sortKey: null as SortableTransactionKey | null,
+    sortDir: null as string | null,
+  });
+  const loadedAccountId = useRef(account.id);
+
+  useLayoutEffect(() => {
+    transactionsRef.current = transactions;
+    hasMoreRef.current = hasMore;
+    queryRef.current = {
+      accountId: account.id,
+      search: debouncedSearch,
+      sortKey: sortConfig.key,
+      sortDir: sortConfig.direction,
+    };
+  }, [
+    transactions,
+    hasMore,
+    account.id,
+    debouncedSearch,
+    sortConfig.key,
+    sortConfig.direction,
+  ]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      window.clearTimeout(handle);
+    };
+  }, [searchQuery]);
 
   useFormRules(rules, {
     payee: { value: payee, set: setPayee },
@@ -235,29 +353,45 @@ export default function AccountDetails({
     }
   }
 
-  async function fetchTransactions() {
+  async function fetchPage(
+    cursor: PageCursor | null,
+    mode: "replace" | "append",
+    generation = listGeneration.current,
+  ) {
+    if (mode === "replace") pagingRef.current = false;
+    const query = queryRef.current;
+    const args = pageArgs(query.search, query.sortKey, query.sortDir, cursor);
     try {
-      let txs: Transaction[];
-      if (account.id === "all") {
-        const [transactionsList, accounts] = await Promise.all([
-          rust.get_all_transactions(),
-          rust.get_accounts(),
-        ]);
-        // Attach account_name for display in the consolidated view
-        txs = transactionsList.map((tx: Transaction) => {
-          const acc = accounts.find((a) => a.id === tx.account_id);
-          return {
-            ...tx,
-            account_name: acc ? acc.name : String(tx.account_id),
-          };
-        });
+      let rows: Transaction[];
+      if (query.accountId === "all") {
+        const names = accountNamesRef.current;
+        if (mode === "replace" || names.size === 0) {
+          const [transactionsList, accounts] = await Promise.all([
+            rust.get_all_transactions(args),
+            rust.get_accounts(),
+          ]);
+          accountNamesRef.current = new Map(
+            accounts.map((item) => [String(item.id), item.name || ""]),
+          );
+          rows = withAccountNames(transactionsList, accountNamesRef.current);
+        } else {
+          rows = withAccountNames(await rust.get_all_transactions(args), names);
+        }
       } else {
-        txs = await rust.get_transactions({
-          accountId: account.id,
+        rows = await rust.get_transactions({
+          ...args,
+          accountId: query.accountId,
         });
       }
-      setTransactions(txs);
+      if (generation !== listGeneration.current) return;
+      const more = rows.length === TRANSACTION_PAGE_SIZE;
+      hasMoreRef.current = more;
+      setHasMore(more);
+      setTransactions((prev) =>
+        mode === "append" ? [...prev, ...rows] : rows,
+      );
     } catch (e) {
+      if (generation !== listGeneration.current) return;
       handleAsyncError({
         context: "Failed to fetch transactions",
         error: e,
@@ -267,6 +401,23 @@ export default function AccountDetails({
         },
       });
     }
+  }
+
+  function fetchTransactions() {
+    const generation = ++listGeneration.current;
+    return fetchPage(null, "replace", generation);
+  }
+
+  function loadMoreTransactions() {
+    if (pagingRef.current || !hasMoreRef.current) return;
+    const last = transactionsRef.current[transactionsRef.current.length - 1];
+    if (!last) return;
+    const cursor = transactionCursor(last, queryRef.current.sortKey);
+    if (!cursor) return;
+    pagingRef.current = true;
+    void fetchPage(cursor, "append").finally(() => {
+      pagingRef.current = false;
+    });
   }
 
   async function fetchPendingOccurrences() {
@@ -327,12 +478,27 @@ export default function AccountDetails({
 
   useEffect(() => {
     queueMicrotask(() => {
-      void fetchTransactions();
       void fetchSuggestions();
       void fetchPendingOccurrences();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account.id]);
+
+  useEffect(() => {
+    if (loadedAccountId.current !== account.id) {
+      loadedAccountId.current = account.id;
+      transactionsRef.current = [];
+      hasMoreRef.current = false;
+      setTransactions([]);
+      setHasMore(false);
+    }
+    // Invalidate an in-flight page before the next fetch starts.
+    const generation = ++listGeneration.current;
+    queueMicrotask(() => {
+      void fetchPage(null, "replace", generation);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account.id, debouncedSearch, sortConfig.key, sortConfig.direction]);
 
   // Close menu when clicking outside, and close on scroll/resize so portal positioning doesn't get stale
   useEffect(() => {
@@ -683,54 +849,43 @@ export default function AccountDetails({
     });
   };
 
-  const filteredTransactions = useMemo(() => {
-    const data = transactions.filter((tx: Transaction) => {
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        tx.date.toLowerCase().includes(query) ||
-        tx.payee.toLowerCase().includes(query) ||
-        (tx.category && tx.category.toLowerCase().includes(query)) ||
-        (tx.notes && tx.notes.toLowerCase().includes(query)) ||
-        tx.amount.toString().includes(query)
-      );
-    });
+  const listKey = `${String(account.id)}|${debouncedSearch}|${sortConfig.key ?? ""}|${sortConfig.direction ?? ""}`;
 
-    if (sortConfig.key !== null) {
-      const sortKey = sortConfig.key;
-      data.sort((a: Transaction, b: Transaction) => {
-        let aValue: string | number = a[sortKey] as string | number;
-        let bValue: string | number = b[sortKey] as string | number;
+  const [accountHasTicker, setAccountHasTicker] = useState(false);
 
-        // Handle numeric values
-        if (["amount", "shares", "price_per_share", "fee"].includes(sortKey)) {
-          aValue = parseFloat(String(aValue) || "0");
-          bValue = parseFloat(String(bValue) || "0");
-        } else if (sortConfig.key === "date") {
-          aValue = new Date(aValue).getTime();
-          bValue = new Date(bValue).getTime();
-        } else {
-          aValue = (aValue || "").toString().toLowerCase();
-          bValue = (bValue || "").toString().toLowerCase();
+  useEffect(() => {
+    let cancelled = false;
+    const args = {
+      limit: 1,
+      sortKey: "ticker",
+      sortDir: "descending",
+    };
+    const request =
+      account.id === "all"
+        ? rust.get_all_transactions(args)
+        : rust.get_transactions({ ...args, accountId: account.id });
+    void request
+      .then((rows) => {
+        if (!cancelled) {
+          setAccountHasTicker(rows.some((tx) => Boolean(tx.ticker)));
         }
-
-        if (aValue < bValue) {
-          return sortConfig.direction === "ascending" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === "ascending" ? 1 : -1;
-        }
-        return 0;
+      })
+      .catch(() => {
+        if (!cancelled) setAccountHasTicker(false);
       });
-    }
-    return data;
-  }, [transactions, searchQuery, sortConfig]);
+    return () => {
+      cancelled = true;
+    };
+  }, [account.id]);
 
   const hasInvestment = useMemo(() => {
-    return transactions.some(
-      (tx: Transaction) => tx.ticker || (tx.shares && tx.shares !== 0),
+    return (
+      accountHasTicker ||
+      transactions.some(
+        (tx: Transaction) => tx.ticker || (tx.shares && tx.shares !== 0),
+      )
     );
-  }, [transactions]);
+  }, [accountHasTicker, transactions]);
 
   return (
     <div className="page-container account-details-scaled-container">
@@ -809,7 +964,10 @@ export default function AccountDetails({
         sortConfig={sortConfig}
         onSort={handleSort}
         pendingOccurrences={pendingOccurrences}
-        filteredTransactions={filteredTransactions}
+        filteredTransactions={transactions}
+        listKey={listKey}
+        hasMore={hasMore}
+        onLoadMore={loadMoreTransactions}
         searchQuery={searchQuery}
         menuOpenId={menuOpenId}
         setMenuOpenId={setMenuOpenId}
