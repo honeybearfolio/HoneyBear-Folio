@@ -2,10 +2,18 @@ use rusqlite::Connection;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
+use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use tauri::{AppHandle, Manager};
+
+/// Idle connections kept open. Each one reserves a file handle, so the cap stays
+/// small: the app uses one database, and tests create many temporary files.
+const IDLE_CONNECTION_CAP: usize = 4;
+const CACHE_SIZE_KIB: i64 = -64_000;
+const MMAP_SIZE_BYTES: i64 = 268_435_456;
+const BUSY_TIMEOUT_MS: i64 = 5_000;
 
 use crate::models::AppSettings;
 
@@ -83,6 +91,197 @@ where
 {
     let _lock = acquire_db_lock(db_path)?;
     operation()
+}
+
+struct DbSlot {
+    idle: Option<Connection>,
+    checked_out: usize,
+    last_used: u64,
+}
+
+enum Release {
+    Return,
+    Remove,
+    Keep,
+}
+
+struct DbPool {
+    slots: HashMap<PathBuf, DbSlot>,
+    clock: u64,
+    idle_count: usize,
+}
+
+static DB_POOL: OnceLock<Mutex<DbPool>> = OnceLock::new();
+
+fn db_pool() -> &'static Mutex<DbPool> {
+    DB_POOL.get_or_init(|| {
+        Mutex::new(DbPool {
+            slots: HashMap::new(),
+            clock: 0,
+            idle_count: 0,
+        })
+    })
+}
+
+fn apply_connection_pragmas(conn: &Connection) -> Result<(), String> {
+    let sql = format!(
+        "PRAGMA journal_mode = WAL;
+         PRAGMA synchronous = NORMAL;
+         PRAGMA cache_size = {CACHE_SIZE_KIB};
+         PRAGMA temp_store = MEMORY;
+         PRAGMA foreign_keys = ON;
+         PRAGMA mmap_size = {MMAP_SIZE_BYTES};
+         PRAGMA busy_timeout = {BUSY_TIMEOUT_MS};"
+    );
+    conn.execute_batch(&sql).map_err(|e| e.to_string())
+}
+
+fn evict_idle_connections(pool: &mut DbPool) {
+    while pool.idle_count > IDLE_CONNECTION_CAP {
+        let oldest = pool
+            .slots
+            .iter()
+            .filter(|(_, slot)| slot.idle.is_some())
+            .min_by_key(|(_, slot)| slot.last_used)
+            .map(|(path, _)| path.clone());
+        let Some(path) = oldest else {
+            break;
+        };
+        let remove_slot = if let Some(slot) = pool.slots.get_mut(&path) {
+            slot.idle = None;
+            pool.idle_count = pool.idle_count.saturating_sub(1);
+            slot.checked_out == 0
+        } else {
+            false
+        };
+        if remove_slot {
+            pool.slots.remove(&path);
+        }
+    }
+}
+
+/// A connection checked out from the per-path pool.
+///
+/// The first checkout for a path is returned to the pool on drop so the page cache
+/// stays warm. If that connection is already checked out (a nested call on the same
+/// thread), this holds a temporary connection that is closed on drop instead.
+pub struct PooledConnection {
+    path: PathBuf,
+    conn: Option<Connection>,
+    reusable: bool,
+}
+
+impl Drop for PooledConnection {
+    fn drop(&mut self) {
+        let Some(conn) = self.conn.take() else {
+            return;
+        };
+        let Ok(mut pool) = db_pool().lock() else {
+            return;
+        };
+        let last_used = pool.clock;
+        pool.clock = pool.clock.wrapping_add(1);
+        let release = {
+            let Some(slot) = pool.slots.get_mut(&self.path) else {
+                return;
+            };
+            slot.checked_out = slot.checked_out.saturating_sub(1);
+            if self.reusable {
+                slot.last_used = last_used;
+                slot.idle = Some(conn);
+                Release::Return
+            } else if slot.checked_out == 0 && slot.idle.is_none() {
+                Release::Remove
+            } else {
+                Release::Keep
+            }
+        };
+        match release {
+            Release::Return => {
+                pool.idle_count += 1;
+                evict_idle_connections(&mut pool);
+            }
+            Release::Remove => {
+                pool.slots.remove(&self.path);
+            }
+            Release::Keep => {}
+        }
+    }
+}
+
+impl Deref for PooledConnection {
+    type Target = Connection;
+
+    fn deref(&self) -> &Self::Target {
+        self.conn
+            .as_ref()
+            .expect("pooled connection used after drop")
+    }
+}
+
+impl DerefMut for PooledConnection {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.conn
+            .as_mut()
+            .expect("pooled connection used after drop")
+    }
+}
+
+/// Opens `db_path`, applying the performance pragmas, and reuses the idle connection
+/// for that path when one is available.
+pub fn open_db(db_path: &Path) -> Result<PooledConnection, String> {
+    let path = db_path.to_path_buf();
+    let reusable = {
+        let mut pool = db_pool()
+            .lock()
+            .map_err(|_| "Failed to lock database connection pool".to_string())?;
+        let slot = pool.slots.entry(path.clone()).or_insert(DbSlot {
+            idle: None,
+            checked_out: 0,
+            last_used: 0,
+        });
+        slot.checked_out += 1;
+        if let Some(conn) = slot.idle.take() {
+            pool.idle_count = pool.idle_count.saturating_sub(1);
+            return Ok(PooledConnection {
+                path,
+                conn: Some(conn),
+                reusable: true,
+            });
+        }
+        slot.checked_out == 1
+    };
+
+    match Connection::open(&path) {
+        Ok(conn) => {
+            if let Err(error) = apply_connection_pragmas(&conn) {
+                release_failed_checkout(&path);
+                return Err(error);
+            }
+            Ok(PooledConnection {
+                path,
+                conn: Some(conn),
+                reusable,
+            })
+        }
+        Err(error) => {
+            release_failed_checkout(&path);
+            Err(error.to_string())
+        }
+    }
+}
+
+fn release_failed_checkout(path: &Path) {
+    let Ok(mut pool) = db_pool().lock() else {
+        return;
+    };
+    let Some(slot) = pool.slots.get_mut(path) else {
+        return;
+    };
+    slot.checked_out = slot.checked_out.saturating_sub(1);
+    if slot.checked_out == 0 && slot.idle.is_none() {
+        pool.slots.remove(path);
+    }
 }
 
 /// Acquires a per-path database lock and evaluates `body` while the lock is held.
@@ -165,17 +364,7 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
 
     let db_ref = db_path;
     crate::db_locked!(db_ref, {
-        let conn = Connection::open(db_ref).map_err(|e| e.to_string())?;
-
-        // SQLite performance pragmas
-        conn.execute_batch(
-            "PRAGMA journal_mode = WAL;
-             PRAGMA synchronous = NORMAL;
-             PRAGMA cache_size = -64000;
-             PRAGMA temp_store = MEMORY;
-             PRAGMA foreign_keys = ON;",
-        )
-        .map_err(|e| e.to_string())?;
+        let conn = open_db(db_ref)?;
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS accounts (
@@ -502,6 +691,8 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
         conn.execute_batch(
             "CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
              CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
+             CREATE INDEX IF NOT EXISTS idx_transactions_account_date ON transactions(account_id, date DESC, id DESC);
+             CREATE INDEX IF NOT EXISTS idx_transactions_linked_tx_id ON transactions(linked_tx_id);
              CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
              CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_id ON chat_messages(conversation_id);
              CREATE INDEX IF NOT EXISTS idx_scheduled_transactions_account_id ON scheduled_transactions(account_id);

@@ -166,3 +166,81 @@ fn test_init_db_at_path_is_idempotent() {
         .unwrap();
     assert!(count >= 10);
 }
+
+#[test]
+fn test_init_db_creates_transaction_list_indexes() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("indexes.db");
+    init_db_at_path(&db_path).unwrap();
+
+    let conn = Connection::open(&db_path).unwrap();
+    for index in [
+        "idx_transactions_account_date",
+        "idx_transactions_linked_tx_id",
+    ] {
+        let exists: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
+                rusqlite::params![index],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(exists, 1, "missing index {index}");
+    }
+}
+
+#[test]
+fn test_open_db_applies_pragmas_and_reuses_the_connection() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("pool.db");
+    init_db_at_path(&db_path).unwrap();
+
+    {
+        let conn = crate::db_init::open_db(&db_path).unwrap();
+        let cache_size: i64 = conn
+            .query_row("PRAGMA cache_size", [], |row| row.get(0))
+            .unwrap();
+        let foreign_keys: i64 = conn
+            .query_row("PRAGMA foreign_keys", [], |row| row.get(0))
+            .unwrap();
+        let temp_store: i64 = conn
+            .query_row("PRAGMA temp_store", [], |row| row.get(0))
+            .unwrap();
+        let mmap_size: i64 = conn
+            .query_row("PRAGMA mmap_size", [], |row| row.get(0))
+            .unwrap();
+        let busy_timeout: i64 = conn
+            .query_row("PRAGMA busy_timeout", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(cache_size, -64_000);
+        assert_eq!(foreign_keys, 1);
+        assert_eq!(temp_store, 2);
+        assert_eq!(mmap_size, 268_435_456);
+        assert_eq!(busy_timeout, 5_000);
+        conn.pragma_update(None, "query_only", 1).unwrap();
+    }
+
+    let conn = crate::db_init::open_db(&db_path).unwrap();
+    let query_only: i64 = conn
+        .query_row("PRAGMA query_only", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(query_only, 1, "idle connection was not reused");
+    conn.pragma_update(None, "query_only", 0).unwrap();
+}
+
+#[test]
+fn test_open_db_nested_checkout_does_not_deadlock() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("nested.db");
+    init_db_at_path(&db_path).unwrap();
+
+    let outer = crate::db_init::open_db(&db_path).unwrap();
+    let inner = crate::db_init::open_db(&db_path).unwrap();
+    let outer_count: i64 = outer
+        .query_row("SELECT COUNT(*) FROM accounts", [], |row| row.get(0))
+        .unwrap();
+    let inner_count: i64 = inner
+        .query_row("SELECT COUNT(*) FROM accounts", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(outer_count, inner_count);
+}

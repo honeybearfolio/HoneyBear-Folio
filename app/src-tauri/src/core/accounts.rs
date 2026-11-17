@@ -1,5 +1,5 @@
 use crate::models::{Account, AccountsSummary};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, OptionalExtension};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use tauri::AppHandle;
@@ -22,7 +22,7 @@ pub fn create_account_db(
     initial_transaction: Option<InitialTransactionDetails>,
 ) -> Result<Account, String> {
     crate::db_locked!(db_path, {
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         // Trim name and validate non-empty
         let name_trimmed = name.trim().to_string();
@@ -104,7 +104,7 @@ pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result
             return Err("Account name cannot be empty or whitespace-only".to_string());
         }
 
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         // Check for duplicate name (case-insensitive) excluding this account id
         {
@@ -162,7 +162,7 @@ pub fn update_account_db(
             return Err("Account name cannot be empty or whitespace-only".to_string());
         }
 
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         // Check for duplicate name (case-insensitive) excluding this account id
         {
@@ -210,7 +210,7 @@ pub fn update_account_db(
 /// Deletes an account and all of its associated transactions.
 pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
     crate::db_locked!(db_path, {
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -224,6 +224,14 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
         // Drop goal funding links that pointed at this account.
         tx.execute("DELETE FROM goal_links WHERE account_id = ?1", params![id])
             .map_err(|e| e.to_string())?;
+
+        // Scheduled rows reference the account without ON DELETE CASCADE.
+        // Foreign keys are enforced on this connection, so they must go first.
+        tx.execute(
+            "DELETE FROM scheduled_transactions WHERE account_id = ?1",
+            params![id],
+        )
+        .map_err(|e| e.to_string())?;
 
         // Delete the account
         tx.execute("DELETE FROM accounts WHERE id = ?1", params![id])
@@ -246,7 +254,7 @@ pub fn get_accounts_with_archived_db(
     include_archived: bool,
 ) -> Result<Vec<Account>, String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         let mut stmt = conn
             .prepare("SELECT id, name, balance, currency, archived FROM accounts WHERE archived = 0 OR ?1")
@@ -276,7 +284,7 @@ pub fn get_accounts_with_archived_db(
 /// Archives or unarchives an account. Its transactions are kept untouched.
 pub fn set_account_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Result<(), String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
         let rows = conn
             .execute(
                 "UPDATE accounts SET archived = ?1 WHERE id = ?2",
@@ -303,7 +311,7 @@ pub fn get_accounts_summary_with_archived_db(
 ) -> Result<AccountsSummary, String> {
     crate::db_locked!(db_path, {
         let accounts = get_accounts_with_archived_db(db_path, include_archived)?;
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         // Group transaction amounts by account and currency
         let mut stmt = conn
