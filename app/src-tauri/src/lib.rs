@@ -15,8 +15,8 @@
 
 mod core;
 pub use crate::core::{
-    accounts, assets, calculations, dashboard, db_init, goals, io, liabilities, llm, llm_chat, markets,
-    models, pdf, rules, scheduled, session, transactions, utils,
+    accounts, assets, calculations, dashboard, db_init, goals, io, liabilities, llm, llm_chat,
+    markets, models, pdf, rules, scheduled, session, transactions, utils,
 };
 
 pub use crate::models::{
