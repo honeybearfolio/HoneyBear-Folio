@@ -1,5 +1,5 @@
 use crate::models::Transaction;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{params, types::ToSql, OptionalExtension};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
@@ -138,71 +138,314 @@ pub fn create_transaction_db(
     })
 }
 
+/// One keyset page of the register, or the full match when `limit` is omitted.
+///
+/// The cursor is the last row's `(date, id)`. When the sort column is not
+/// `date`, `cursor_sort` carries that column's value so the next page can
+/// continue `ORDER BY <column>, id` without rereading earlier rows.
+#[derive(Debug, Clone, Default)]
+pub struct TransactionListQuery {
+    pub account_id: Option<i32>,
+    /// Skip transactions on archived accounts (`get_all_transactions`).
+    pub exclude_archived: bool,
+    pub search: Option<String>,
+    /// Exact category match. The search text still matches category as a substring.
+    pub category: Option<String>,
+    pub limit: Option<i64>,
+    pub cursor_date: Option<String>,
+    pub cursor_id: Option<i32>,
+    pub cursor_sort: Option<String>,
+    pub sort_key: Option<String>,
+    pub sort_dir: Option<String>,
+}
+
 /// Retrieves all transactions for a specific account, ordered by date descending.
 pub fn get_transactions_db(db_path: &Path, account_id: i32) -> Result<Vec<Transaction>, String> {
-    crate::db_locked!(db_path, {
-        let conn = crate::db_init::open_db(db_path)?;
-
-        let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions WHERE account_id = ?1 ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
-        let transaction_iter = stmt
-            .query_map(params![account_id], |row| {
-                Ok(Transaction {
-                    id: row.get(0)?,
-                    account_id: row.get(1)?,
-                    date: row.get(2)?,
-                    payee: row.get(3)?,
-                    notes: row.get(4)?,
-                    category: row.get(5)?,
-                    amount: row.get(6)?,
-                    ticker: row.get(7)?,
-                    shares: row.get(8)?,
-                    price_per_share: row.get(9)?,
-                    fee: row.get(10)?,
-                    currency: row.get(11)?,
-                })
-            })
-            .map_err(|e| e.to_string())?;
-
-        let mut transactions = Vec::new();
-        for transaction in transaction_iter {
-            transactions.push(transaction.map_err(|e| e.to_string())?);
-        }
-
-        Ok(transactions)
-    })
+    query_transactions_db(
+        db_path,
+        &TransactionListQuery {
+            account_id: Some(account_id),
+            ..TransactionListQuery::default()
+        },
+    )
 }
 
 /// Returns transactions of all active accounts, ordered by date descending; transactions of archived accounts are skipped.
 pub fn get_all_transactions_db(db_path: &Path) -> Result<Vec<Transaction>, String> {
+    query_transactions_db(
+        db_path,
+        &TransactionListQuery {
+            exclude_archived: true,
+            ..TransactionListQuery::default()
+        },
+    )
+}
+
+pub fn query_transactions_db(
+    db_path: &Path,
+    query: &TransactionListQuery,
+) -> Result<Vec<Transaction>, String> {
+    let built = build_transaction_list_sql(query)?;
     crate::db_locked!(db_path, {
         let conn = crate::db_init::open_db(db_path)?;
-
-        let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions WHERE account_id NOT IN (SELECT id FROM accounts WHERE archived = 1) ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
+        let mut stmt = conn.prepare(&built.sql).map_err(|e| e.to_string())?;
+        let refs: Vec<&dyn ToSql> = built.params.iter().map(|p| p as &dyn ToSql).collect();
         let transaction_iter = stmt
-            .query_map([], |row| {
-                Ok(Transaction {
-                    id: row.get(0)?,
-                    account_id: row.get(1)?,
-                    date: row.get(2)?,
-                    payee: row.get(3)?,
-                    notes: row.get(4)?,
-                    category: row.get(5)?,
-                    amount: row.get(6)?,
-                    ticker: row.get(7)?,
-                    shares: row.get(8)?,
-                    price_per_share: row.get(9)?,
-                    fee: row.get(10)?,
-                    currency: row.get(11)?,
-                })
-            })
+            .query_map(rusqlite::params_from_iter(refs), read_transaction)
             .map_err(|e| e.to_string())?;
 
         let mut transactions = Vec::new();
         for transaction in transaction_iter {
             transactions.push(transaction.map_err(|e| e.to_string())?);
         }
-
         Ok(transactions)
+    })
+}
+
+struct TransactionListSql {
+    sql: String,
+    params: Vec<SqlParam>,
+}
+
+enum SqlParam {
+    Int(i32),
+    Big(i64),
+    Real(f64),
+    Text(String),
+}
+
+impl ToSql for SqlParam {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        match self {
+            Self::Int(value) => value.to_sql(),
+            Self::Big(value) => value.to_sql(),
+            Self::Real(value) => value.to_sql(),
+            Self::Text(value) => value.to_sql(),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum SortColumn {
+    Date,
+    Payee,
+    Category,
+    Notes,
+    Amount,
+    Shares,
+    PricePerShare,
+    Fee,
+    Ticker,
+    AccountName,
+}
+
+#[derive(Clone, Copy)]
+enum SortDirection {
+    Asc,
+    Desc,
+}
+
+impl SortColumn {
+    fn parse(key: Option<&str>) -> Result<Self, String> {
+        match nonempty(key) {
+            None | Some("date") => Ok(Self::Date),
+            Some("payee") => Ok(Self::Payee),
+            Some("category") => Ok(Self::Category),
+            Some("notes") => Ok(Self::Notes),
+            Some("amount") => Ok(Self::Amount),
+            Some("shares") => Ok(Self::Shares),
+            Some("price_per_share") => Ok(Self::PricePerShare),
+            Some("fee") => Ok(Self::Fee),
+            Some("ticker") => Ok(Self::Ticker),
+            Some("account_name") => Ok(Self::AccountName),
+            Some(other) => Err(format!("unsupported transaction sort column: {other}")),
+        }
+    }
+
+    /// Expression placed in `ORDER BY` and on the left side of the keyset comparison.
+    fn order_expr(self) -> &'static str {
+        match self {
+            Self::Date => "t.date",
+            Self::Payee => "LOWER(t.payee)",
+            Self::Category => "LOWER(IFNULL(t.category, ''))",
+            Self::Notes => "LOWER(IFNULL(t.notes, ''))",
+            Self::Amount => "IFNULL(t.amount, 0)",
+            Self::Shares => "IFNULL(t.shares, 0)",
+            Self::PricePerShare => "IFNULL(t.price_per_share, 0)",
+            Self::Fee => "IFNULL(t.fee, 0)",
+            Self::Ticker => "LOWER(IFNULL(t.ticker, ''))",
+            Self::AccountName => "LOWER(IFNULL(a.name, ''))",
+        }
+    }
+
+    /// How the bound cursor value is written. Text is lowercased so it matches `order_expr`.
+    fn cursor_expr(self) -> &'static str {
+        match self {
+            Self::Payee | Self::Category | Self::Notes | Self::Ticker | Self::AccountName => {
+                "LOWER(?)"
+            }
+            _ => "?",
+        }
+    }
+
+    fn numeric(self) -> bool {
+        matches!(
+            self,
+            Self::Amount | Self::Shares | Self::PricePerShare | Self::Fee
+        )
+    }
+
+    fn needs_account(self) -> bool {
+        matches!(self, Self::AccountName)
+    }
+}
+
+fn nonempty(value: Option<&str>) -> Option<&str> {
+    value.map(str::trim).filter(|text| !text.is_empty())
+}
+
+fn parse_sort(query: &TransactionListQuery) -> Result<(SortColumn, SortDirection), String> {
+    let column = SortColumn::parse(query.sort_key.as_deref())?;
+    let direction = match nonempty(query.sort_dir.as_deref()) {
+        None => {
+            if nonempty(query.sort_key.as_deref()).is_none() {
+                // Register default: newest row first, highest id on a shared date.
+                SortDirection::Desc
+            } else {
+                SortDirection::Asc
+            }
+        }
+        Some("ascending" | "asc") => SortDirection::Asc,
+        Some("descending" | "desc") => SortDirection::Desc,
+        Some(other) => {
+            return Err(format!("unsupported transaction sort direction: {other}"));
+        }
+    };
+    Ok((column, direction))
+}
+
+fn build_transaction_list_sql(query: &TransactionListQuery) -> Result<TransactionListSql, String> {
+    let (column, direction) = parse_sort(query)?;
+    let mut params: Vec<SqlParam> = Vec::new();
+    let mut clauses: Vec<String> = Vec::new();
+
+    if query.exclude_archived {
+        clauses
+            .push("t.account_id NOT IN (SELECT id FROM accounts WHERE archived = 1)".to_string());
+    }
+    if let Some(account_id) = query.account_id {
+        clauses.push("t.account_id = ?".to_string());
+        params.push(SqlParam::Int(account_id));
+    }
+    if let Some(category) = nonempty(query.category.as_deref()) {
+        clauses.push("t.category = ?".to_string());
+        params.push(SqlParam::Text(category.to_string()));
+    }
+    if let Some(search) = nonempty(query.search.as_deref()) {
+        // Same fields the register searched in memory: date, payee, category, notes, amount.
+        clauses.push(
+            "(INSTR(LOWER(t.date), LOWER(?)) > 0 \
+              OR INSTR(LOWER(t.payee), LOWER(?)) > 0 \
+              OR INSTR(LOWER(IFNULL(t.category, '')), LOWER(?)) > 0 \
+              OR INSTR(LOWER(IFNULL(t.notes, '')), LOWER(?)) > 0 \
+              OR INSTR(CASE WHEN t.amount = CAST(t.amount AS INTEGER) \
+                            THEN CAST(CAST(t.amount AS INTEGER) AS TEXT) \
+                            ELSE CAST(t.amount AS TEXT) END, ?) > 0)"
+                .to_string(),
+        );
+        for _ in 0..5 {
+            params.push(SqlParam::Text(search.to_string()));
+        }
+    }
+    if query.cursor_date.is_some() || query.cursor_id.is_some() || query.cursor_sort.is_some() {
+        let cursor_date = nonempty(query.cursor_date.as_deref())
+            .ok_or_else(|| "transaction page cursor requires date and id".to_string())?;
+        let cursor_id = query
+            .cursor_id
+            .ok_or_else(|| "transaction page cursor requires date and id".to_string())?;
+        let cmp = match direction {
+            SortDirection::Asc => ">",
+            SortDirection::Desc => "<",
+        };
+        let order_expr = column.order_expr();
+        let cursor_expr = column.cursor_expr();
+        clauses.push(format!(
+            "({order_expr} {cmp} {cursor_expr} OR ({order_expr} = {cursor_expr} AND t.id {cmp} ?))"
+        ));
+        match column {
+            SortColumn::Date => {
+                params.push(SqlParam::Text(cursor_date.to_string()));
+                params.push(SqlParam::Text(cursor_date.to_string()));
+            }
+            _ if column.numeric() => {
+                let raw = query
+                    .cursor_sort
+                    .as_deref()
+                    .ok_or_else(|| "transaction page cursor requires the sort value".to_string())?;
+                let value = raw
+                    .parse::<f64>()
+                    .map_err(|_| format!("invalid numeric transaction cursor: {raw}"))?;
+                params.push(SqlParam::Real(value));
+                params.push(SqlParam::Real(value));
+            }
+            _ => {
+                let raw = query
+                    .cursor_sort
+                    .as_deref()
+                    .ok_or_else(|| "transaction page cursor requires the sort value".to_string())?;
+                params.push(SqlParam::Text(raw.to_string()));
+                params.push(SqlParam::Text(raw.to_string()));
+            }
+        }
+        params.push(SqlParam::Int(cursor_id));
+    }
+
+    let mut limit_sql = String::new();
+    if let Some(limit) = query.limit {
+        if limit <= 0 {
+            return Err("transaction page limit must be positive".to_string());
+        }
+        limit_sql = " LIMIT ?".to_string();
+        params.push(SqlParam::Big(limit));
+    }
+
+    let join = if column.needs_account() {
+        " LEFT JOIN accounts a ON a.id = t.account_id"
+    } else {
+        ""
+    };
+    let where_sql = if clauses.is_empty() {
+        String::new()
+    } else {
+        format!(" WHERE {}", clauses.join(" AND "))
+    };
+    let dir = match direction {
+        SortDirection::Asc => "ASC",
+        SortDirection::Desc => "DESC",
+    };
+    let expr = column.order_expr();
+    let sql = format!(
+        "SELECT t.id, t.account_id, t.date, t.payee, t.notes, t.category, t.amount, \
+         t.ticker, t.shares, t.price_per_share, t.fee, t.currency \
+         FROM transactions t{join}{where_sql} ORDER BY {expr} {dir}, t.id {dir}{limit_sql}"
+    );
+    Ok(TransactionListSql { sql, params })
+}
+
+fn read_transaction(row: &rusqlite::Row<'_>) -> rusqlite::Result<Transaction> {
+    Ok(Transaction {
+        id: row.get(0)?,
+        account_id: row.get(1)?,
+        date: row.get(2)?,
+        payee: row.get(3)?,
+        notes: row.get(4)?,
+        category: row.get(5)?,
+        amount: row.get(6)?,
+        ticker: row.get(7)?,
+        shares: row.get(8)?,
+        price_per_share: row.get(9)?,
+        fee: row.get(10)?,
+        currency: row.get(11)?,
     })
 }
 
@@ -824,21 +1067,76 @@ pub fn create_transaction(
     create_transaction_db(&db_path, args)
 }
 
-/// Tauri command: retrieves transactions for a specific account.
+/// Tauri command: one page of transactions for a specific account.
+#[allow(clippy::too_many_arguments)]
+///
+/// `limit` and the `(cursor_date, cursor_id)` cursor are optional. Omitting
+/// `limit` still returns every row for that account.
 #[tauri::command]
 pub fn get_transactions(
     app_handle: AppHandle,
     account_id: i32,
+    limit: Option<i64>,
+    cursor_date: Option<String>,
+    cursor_id: Option<i32>,
+    cursor_sort: Option<String>,
+    search: Option<String>,
+    category: Option<String>,
+    sort_key: Option<String>,
+    sort_dir: Option<String>,
 ) -> Result<Vec<Transaction>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    get_transactions_db(&db_path, account_id)
+    query_transactions_db(
+        &db_path,
+        &TransactionListQuery {
+            account_id: Some(account_id),
+            exclude_archived: false,
+            search,
+            category,
+            limit,
+            cursor_date,
+            cursor_id,
+            cursor_sort,
+            sort_key,
+            sort_dir,
+        },
+    )
 }
 
-/// Tauri command: retrieves all transactions across all accounts.
+/// Tauri command: one page of transactions across active accounts.
+#[allow(clippy::too_many_arguments)]
+///
+/// `account_id` narrows the page to one account. Omitting `limit` still
+/// returns every matching row.
 #[tauri::command]
-pub fn get_all_transactions(app_handle: AppHandle) -> Result<Vec<Transaction>, String> {
+pub fn get_all_transactions(
+    app_handle: AppHandle,
+    account_id: Option<i32>,
+    limit: Option<i64>,
+    cursor_date: Option<String>,
+    cursor_id: Option<i32>,
+    cursor_sort: Option<String>,
+    search: Option<String>,
+    category: Option<String>,
+    sort_key: Option<String>,
+    sort_dir: Option<String>,
+) -> Result<Vec<Transaction>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
-    get_all_transactions_db(&db_path)
+    query_transactions_db(
+        &db_path,
+        &TransactionListQuery {
+            account_id,
+            exclude_archived: true,
+            search,
+            category,
+            limit,
+            cursor_date,
+            cursor_id,
+            cursor_sort,
+            sort_key,
+            sort_dir,
+        },
+    )
 }
 
 /// Tauri command: returns net shares grouped by account and ticker.

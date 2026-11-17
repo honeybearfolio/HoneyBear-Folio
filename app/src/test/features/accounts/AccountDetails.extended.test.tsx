@@ -238,9 +238,21 @@ describe("AccountDetails extended integration", () => {
       isLoading: false,
     });
 
-    mockInvoke.mockImplementation((cmd: string, _args?: unknown) => {
+    mockInvoke.mockImplementation((cmd: string, args?: unknown) => {
       if (cmd === "get_transactions") {
-        return Promise.resolve(cashTransactions);
+        const search =
+          args && typeof args === "object" && "search" in args
+            ? ((args as { search?: string | null }).search ?? "")
+            : "";
+        const rows = search
+          ? cashTransactions.filter((tx) =>
+              [tx.payee, tx.category, tx.notes, tx.date, String(tx.amount)]
+                .join(" ")
+                .toLowerCase()
+                .includes(search.toLowerCase()),
+            )
+          : cashTransactions;
+        return Promise.resolve(rows);
       }
       if (cmd === "get_pending_occurrences") {
         return Promise.resolve([pendingOccurrence]);
@@ -333,8 +345,10 @@ describe("AccountDetails extended integration", () => {
     const searchInput = screen.getByPlaceholderText("Search transactions...");
     await user.type(searchInput, "Salary");
 
-    expect(screen.getByText("Salary")).toBeInTheDocument();
-    expect(screen.queryByText("Grocery Store")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Salary")).toBeInTheDocument();
+      expect(screen.queryByText("Grocery Store")).not.toBeInTheDocument();
+    });
   });
 
   it("shows empty search message when filter matches nothing", async () => {
@@ -348,7 +362,9 @@ describe("AccountDetails extended integration", () => {
       "nonexistent-payee",
     );
 
-    expect(screen.getByText("No transactions found")).toBeInTheDocument();
+    expect(
+      await screen.findByText("No transactions found"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Try adjusting your search terms."),
     ).toBeInTheDocument();

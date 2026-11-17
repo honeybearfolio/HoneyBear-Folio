@@ -39,6 +39,23 @@ import type {
 
 type RustArgs = Record<string, unknown>;
 
+/** Keyset page shared by `get_transactions` and `get_all_transactions`. */
+export interface TransactionListArgs {
+  limit?: number | null;
+  /** Last row's date. Together with `cursorId` this is the page cursor. */
+  cursorDate?: string | null;
+  cursorId?: number | null;
+  /** Sort-column value when the order is not date. `id` remains the tie-break. */
+  cursorSort?: string | null;
+  search?: string | null;
+  /** Exact category. Search text still matches category as a substring. */
+  category?: string | null;
+  /** Limits `get_all_transactions` to one account. */
+  accountId?: string | number | null;
+  sortKey?: string | null;
+  sortDir?: string | null;
+}
+
 export function callRust<T = unknown>(
   command: string,
   args?: RustArgs,
@@ -224,12 +241,14 @@ export const rust = {
     args: Record<string, unknown>;
   }): Promise<void> => callRust("create_investment_transaction", args),
 
-  get_transactions: (args: {
-    accountId: string | number;
-  }): Promise<Transaction[]> => callRust("get_transactions", args),
+  get_transactions: (
+    args: TransactionListArgs & { accountId: string | number },
+  ): Promise<Transaction[]> => callRust("get_transactions", args),
 
-  get_all_transactions: (): Promise<Transaction[]> =>
-    callRust("get_all_transactions"),
+  get_all_transactions: (args?: TransactionListArgs): Promise<Transaction[]> =>
+    args === undefined
+      ? callRust("get_all_transactions")
+      : callRust("get_all_transactions", args),
 
   get_account_holdings: (): Promise<Record<string, Record<string, number>>> =>
     callRust("get_account_holdings"),
