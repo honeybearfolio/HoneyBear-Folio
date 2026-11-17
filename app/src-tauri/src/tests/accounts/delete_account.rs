@@ -62,11 +62,9 @@ fn test_delete_account_removes_scheduled_transactions() {
 
     let conn = rusqlite::Connection::open(&db_path).unwrap();
     let remaining: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM scheduled_transactions",
-            [],
-            |row| row.get(0),
-        )
+        .query_row("SELECT COUNT(*) FROM scheduled_transactions", [], |row| {
+            row.get(0)
+        })
         .unwrap();
     assert_eq!(remaining, 0);
 }
