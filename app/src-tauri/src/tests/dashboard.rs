@@ -344,6 +344,23 @@ fn buy(
     shares: f64,
     price: f64,
     currency: Option<&str>,
+) {
+    trade(db, account_id, date, ticker, shares, price, currency, true);
+}
+
+fn sell(db: &std::path::Path, account_id: i32, date: &str, ticker: &str, shares: f64, price: f64) {
+    trade(db, account_id, date, ticker, shares, price, None, false);
+}
+
+#[allow(clippy::too_many_arguments)]
+fn trade(
+    db: &std::path::Path,
+    account_id: i32,
+    date: &str,
+    ticker: &str,
+    shares: f64,
+    price: f64,
+    currency: Option<&str>,
     is_buy: bool,
 ) {
     create_investment_transaction_db(
@@ -439,7 +456,6 @@ fn chart_series_carries_prices_and_converts_ticker_currency() {
         2.0,
         10.0,
         Some("USD"),
-        true,
     );
     buy(
         &db_path,
@@ -449,18 +465,8 @@ fn chart_series_carries_prices_and_converts_ticker_currency() {
         1.0,
         5.0,
         Some("USD"),
-        true,
     );
-    buy(
-        &db_path,
-        broker.id,
-        "2024-12-01",
-        "FLAT",
-        1.0,
-        5.0,
-        Some("USD"),
-        false,
-    );
+    sell(&db_path, broker.id, "2024-12-01", "FLAT", 1.0, 5.0);
     buy(
         &db_path,
         broker.id,
@@ -469,10 +475,9 @@ fn chart_series_carries_prices_and_converts_ticker_currency() {
         1.0,
         1.0,
         Some("USD"),
-        true,
     );
     crate::create_transaction_db(
-        &db_path.to_path_buf(),
+        &db_path,
         crate::CreateTransactionArgs {
             account_id: broker.id,
             date: "2024-12-01".to_string(),
@@ -489,7 +494,7 @@ fn chart_series_carries_prices_and_converts_ticker_currency() {
     )
     .unwrap();
     crate::create_transaction_db(
-        &db_path.to_path_buf(),
+        &db_path,
         crate::CreateTransactionArgs {
             account_id: broker.id,
             date: "2024-12-04".to_string(),
@@ -523,16 +528,7 @@ fn chart_series_carries_prices_and_converts_ticker_currency() {
 
     let fx = crate::create_account_db(&db_path, "Fx".to_string(), 0.0, Some("USD".into()), None)
         .unwrap();
-    buy(
-        &db_path,
-        fx.id,
-        "2024-06-01",
-        "SAP",
-        1.0,
-        10.0,
-        Some("EUR"),
-        true,
-    );
+    buy(&db_path, fx.id, "2024-06-01", "SAP", 1.0, 10.0, Some("EUR"));
     insert_price(&db_path, "SAP", "2024-06-01", 10.0);
     insert_price(&db_path, "EURUSD=X", "2024-06-01", 2.0);
     let converted = dashboard_chart_series_db(
@@ -590,7 +586,7 @@ fn chart_series_sorts_categories_across_the_year_boundary() {
     );
     cash(&db_path, account.id, "2025-02-01", -9.0, "Late", "Later");
     crate::create_transaction_db(
-        &db_path.to_path_buf(),
+        &db_path,
         crate::CreateTransactionArgs {
             account_id: account.id,
             date: "2024-12-26".to_string(),
@@ -676,7 +672,7 @@ fn widget_filters_cover_text_numeric_and_date_operators() {
     )
     .unwrap();
     crate::create_transaction_db(
-        &db_path.to_path_buf(),
+        &db_path,
         crate::CreateTransactionArgs {
             account_id: checking.id,
             date: "2024-01-02".to_string(),
@@ -693,7 +689,7 @@ fn widget_filters_cover_text_numeric_and_date_operators() {
     )
     .unwrap();
     crate::create_transaction_db(
-        &db_path.to_path_buf(),
+        &db_path,
         crate::CreateTransactionArgs {
             account_id: savings.id,
             date: "2024-03-02".to_string(),
@@ -710,7 +706,7 @@ fn widget_filters_cover_text_numeric_and_date_operators() {
     )
     .unwrap();
     crate::create_transaction_db(
-        &db_path.to_path_buf(),
+        &db_path,
         crate::CreateTransactionArgs {
             account_id: checking.id,
             date: "2024-04-01".to_string(),
@@ -735,7 +731,7 @@ fn widget_filters_cover_text_numeric_and_date_operators() {
         "Bonus",
     );
     crate::create_transaction_db(
-        &db_path.to_path_buf(),
+        &db_path,
         crate::CreateTransactionArgs {
             account_id: checking.id,
             date: "2024-06-01".to_string(),
