@@ -40,7 +40,7 @@ import type {
 type RustArgs = Record<string, unknown>;
 
 /** Keyset page shared by `get_transactions` and `get_all_transactions`. */
-export interface TransactionListArgs {
+export type TransactionListArgs = {
   limit?: number | null;
   /** Last row's date. Together with `cursorId` this is the page cursor. */
   cursorDate?: string | null;
@@ -54,7 +54,7 @@ export interface TransactionListArgs {
   accountId?: string | number | null;
   sortKey?: string | null;
   sortDir?: string | null;
-}
+};
 
 export function callRust<T = unknown>(
   command: string,
