@@ -113,6 +113,65 @@ fn test_get_all_transactions() {
     // There should be at least one transaction with date 2023-01-02
     assert!(all.iter().any(|t| t.date == "2023-01-02"));
 }
+
+fn trade(db_path: &std::path::PathBuf, account_id: i32, ticker: &str, shares: f64, is_buy: bool) {
+    crate::create_investment_transaction_db(
+        db_path,
+        crate::CreateInvestmentTransactionArgs {
+            account_id,
+            date: "2023-01-03".to_string(),
+            ticker: ticker.to_string(),
+            shares,
+            price_per_share: 10.0,
+            fee: 0.0,
+            is_buy,
+            currency: None,
+            payee: None,
+            notes: None,
+            category: None,
+        },
+    )
+    .unwrap();
+}
+
+#[test]
+fn test_get_account_holdings_sums_shares_by_account_and_ticker() {
+    let (_dir, db_path) = setup_db();
+    let active =
+        crate::create_account_db(&db_path, "Brokerage".to_string(), 10_000.0, None, None).unwrap();
+    let old = crate::create_account_db(&db_path, "Old Brokerage".to_string(), 10_000.0, None, None)
+        .unwrap();
+
+    trade(&db_path, active.id, "AAPL", 10.0, true);
+    trade(&db_path, active.id, "AAPL", 3.0, false);
+    trade(&db_path, active.id, "GOOG", 2.0, true);
+    trade(&db_path, old.id, "MSFT", 4.0, true);
+    crate::create_transaction_db(
+        &db_path,
+        crate::CreateTransactionArgs {
+            account_id: active.id,
+            date: "2023-01-04".to_string(),
+            payee: "Groceries".to_string(),
+            notes: None,
+            category: Some("Food".to_string()),
+            amount: -25.0,
+            ticker: None,
+            shares: None,
+            price_per_share: None,
+            fee: None,
+            currency: None,
+        },
+    )
+    .unwrap();
+    crate::set_account_archived_db(&db_path, old.id, true).unwrap();
+
+    let holdings = crate::get_account_holdings_db(&db_path).unwrap();
+    let active_holdings = holdings.get(&active.id.to_string()).unwrap();
+    assert_eq!(active_holdings.get("AAPL"), Some(&7.0));
+    assert_eq!(active_holdings.get("GOOG"), Some(&2.0));
+    assert_eq!(active_holdings.len(), 2);
+    assert!(!holdings.contains_key(&old.id.to_string()));
+}
 #[test]
 fn test_create_transaction_transfer_details() {
     let (_dir, db_path) = setup_db();

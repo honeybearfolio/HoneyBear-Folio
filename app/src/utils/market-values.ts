@@ -1,9 +1,6 @@
 import { rust } from "../api/tauri-client";
 import type { Account, StockQuote } from "../api/types";
-import {
-  buildAccountHoldingsFromTransactions,
-  type AccountHoldingsMap,
-} from "./account-holdings";
+import type { AccountHoldingsMap } from "./account-holdings";
 
 type MarketValueAccount = Pick<Account, "id" | "currency">;
 
@@ -131,9 +128,13 @@ async function loadQuoteContext(
   currentAccounts: MarketValueAccount[],
   appCurrency: string,
 ): Promise<ComputeMarketValuesParams | null> {
-  const transactions = await rust.get_all_transactions();
-  const { accountHoldings, allTickers } =
-    buildAccountHoldingsFromTransactions(transactions);
+  const accountHoldings = await rust.get_account_holdings();
+  const allTickers = new Set<string>();
+  for (const holdings of Object.values(accountHoldings)) {
+    for (const ticker of Object.keys(holdings)) {
+      allTickers.add(ticker);
+    }
+  }
   if (allTickers.size === 0) return null;
 
   const accountCcyMap: CurrencyMap = {};

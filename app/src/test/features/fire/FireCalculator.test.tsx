@@ -137,6 +137,7 @@ describe("FireCalculator", () => {
           },
         ]);
       if (cmd === "get_stock_quotes") return Promise.resolve([]);
+      if (cmd === "get_account_holdings") return Promise.resolve({});
       if (cmd === "get_all_transactions") return Promise.resolve([]);
       if (cmd === "get_total_assets_value") return Promise.resolve(20000);
       if (cmd === "get_total_liabilities_value") return Promise.resolve(5000);

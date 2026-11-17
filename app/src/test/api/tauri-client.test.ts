@@ -272,6 +272,9 @@ describe("tauri-client", () => {
       await rust.get_all_transactions();
       expect(invoke).toHaveBeenCalledWith("get_all_transactions");
 
+      await rust.get_account_holdings();
+      expect(invoke).toHaveBeenCalledWith("get_account_holdings");
+
       await rust.update_transaction(txArgs);
       expect(invoke).toHaveBeenCalledWith("update_transaction", txArgs);
 

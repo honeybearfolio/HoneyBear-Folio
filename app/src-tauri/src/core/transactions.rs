@@ -1,5 +1,6 @@
 use crate::models::Transaction;
 use rusqlite::{params, OptionalExtension};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 
@@ -202,6 +203,48 @@ pub fn get_all_transactions_db(db_path: &Path) -> Result<Vec<Transaction>, Strin
         }
 
         Ok(transactions)
+    })
+}
+
+/// Net shares per account and ticker.
+///
+/// Rows without a ticker are ignored. Transactions on archived accounts are
+/// omitted, matching `get_all_transactions_db`, so sidebar and goal market
+/// values stay limited to active accounts.
+pub fn get_account_holdings_db(
+    db_path: &Path,
+) -> Result<HashMap<String, HashMap<String, f64>>, String> {
+    crate::db_locked!(db_path, {
+        let conn = crate::db_init::open_db(db_path)?;
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT account_id, ticker, SUM(shares) FROM transactions WHERE ticker IS NOT NULL AND account_id NOT IN (SELECT id FROM accounts WHERE archived = 1) GROUP BY account_id, ticker",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, i32>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<f64>>(2)?,
+                ))
+            })
+            .map_err(|e| e.to_string())?;
+
+        let mut holdings: HashMap<String, HashMap<String, f64>> = HashMap::new();
+        for row in rows {
+            let (account_id, ticker, shares) = row.map_err(|e| e.to_string())?;
+            let Some(shares) = shares else {
+                continue;
+            };
+            holdings
+                .entry(account_id.to_string())
+                .or_default()
+                .insert(ticker, shares);
+        }
+
+        Ok(holdings)
     })
 }
 
@@ -796,6 +839,15 @@ pub fn get_transactions(
 pub fn get_all_transactions(app_handle: AppHandle) -> Result<Vec<Transaction>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     get_all_transactions_db(&db_path)
+}
+
+/// Tauri command: returns net shares grouped by account and ticker.
+#[tauri::command]
+pub fn get_account_holdings(
+    app_handle: AppHandle,
+) -> Result<HashMap<String, HashMap<String, f64>>, String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    get_account_holdings_db(&db_path)
 }
 
 /// Tauri command: creates a new investment transaction.
