@@ -1,7 +1,7 @@
 use crate::models::{Account, AccountsSummary};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, OptionalExtension};
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::Path;
 use tauri::AppHandle;
 
 #[derive(serde::Deserialize)]
@@ -15,14 +15,14 @@ pub struct InitialTransactionDetails {
 /// Creates a new account in the database with the given name, balance, and currency.
 /// If the balance is non-zero, an opening transaction is also inserted.
 pub fn create_account_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     name: String,
     balance: f64,
     currency: Option<String>,
     initial_transaction: Option<InitialTransactionDetails>,
 ) -> Result<Account, String> {
     crate::db_locked!(db_path, {
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         // Trim name and validate non-empty
         let name_trimmed = name.trim().to_string();
@@ -97,14 +97,14 @@ pub fn create_account_db(
 }
 
 /// Renames an account by ID. Enforces case-insensitive name uniqueness.
-pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result<Account, String> {
+pub fn rename_account_db(db_path: &Path, id: i32, new_name: String) -> Result<Account, String> {
     crate::db_locked!(db_path, {
         let new_trim = new_name.trim().to_string();
         if new_trim.is_empty() {
             return Err("Account name cannot be empty or whitespace-only".to_string());
         }
 
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         // Check for duplicate name (case-insensitive) excluding this account id
         {
@@ -151,7 +151,7 @@ pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result
 
 /// Updates an account's name and currency. Enforces case-insensitive name uniqueness.
 pub fn update_account_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     id: i32,
     name: String,
     currency: Option<String>,
@@ -162,7 +162,7 @@ pub fn update_account_db(
             return Err("Account name cannot be empty or whitespace-only".to_string());
         }
 
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         // Check for duplicate name (case-insensitive) excluding this account id
         {
@@ -208,9 +208,9 @@ pub fn update_account_db(
 }
 
 /// Deletes an account and all of its associated transactions.
-pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
+pub fn delete_account_db(db_path: &Path, id: i32) -> Result<(), String> {
     crate::db_locked!(db_path, {
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -225,6 +225,14 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
         tx.execute("DELETE FROM goal_links WHERE account_id = ?1", params![id])
             .map_err(|e| e.to_string())?;
 
+        // Scheduled rows reference the account without ON DELETE CASCADE.
+        // Foreign keys are enforced on this connection, so they must go first.
+        tx.execute(
+            "DELETE FROM scheduled_transactions WHERE account_id = ?1",
+            params![id],
+        )
+        .map_err(|e| e.to_string())?;
+
         // Delete the account
         tx.execute("DELETE FROM accounts WHERE id = ?1", params![id])
             .map_err(|e| e.to_string())?;
@@ -236,17 +244,17 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
 }
 
 /// Retrieves all active (non-archived) accounts from the database.
-pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
+pub fn get_accounts_db(db_path: &Path) -> Result<Vec<Account>, String> {
     get_accounts_with_archived_db(db_path, false)
 }
 
 /// Retrieves accounts, optionally including archived ones.
 pub fn get_accounts_with_archived_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     include_archived: bool,
 ) -> Result<Vec<Account>, String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         let mut stmt = conn
             .prepare("SELECT id, name, balance, currency, archived FROM accounts WHERE archived = 0 OR ?1")
@@ -274,9 +282,9 @@ pub fn get_accounts_with_archived_db(
 }
 
 /// Archives or unarchives an account. Its transactions are kept untouched.
-pub fn set_account_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Result<(), String> {
+pub fn set_account_archived_db(db_path: &Path, id: i32, archived: bool) -> Result<(), String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
         let rows = conn
             .execute(
                 "UPDATE accounts SET archived = ?1 WHERE id = ?2",
@@ -291,19 +299,19 @@ pub fn set_account_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Re
 }
 
 /// Fetches active accounts together with transaction amounts grouped by account and currency.
-pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<AccountsSummary, String> {
+pub fn get_accounts_summary_db(db_path: &Path, target: &str) -> Result<AccountsSummary, String> {
     get_accounts_summary_with_archived_db(db_path, target, false)
 }
 
 /// Like [`get_accounts_summary_db`], optionally including archived accounts.
 pub fn get_accounts_summary_with_archived_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     target: &str,
     include_archived: bool,
 ) -> Result<AccountsSummary, String> {
     crate::db_locked!(db_path, {
         let accounts = get_accounts_with_archived_db(db_path, include_archived)?;
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         // Group transaction amounts by account and currency
         let mut stmt = conn

@@ -1,6 +1,6 @@
 use crate::models::Transaction;
-use rusqlite::{params, Connection, OptionalExtension};
-use std::path::PathBuf;
+use rusqlite::{params, OptionalExtension};
+use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 
 #[derive(serde::Deserialize)]
@@ -26,7 +26,7 @@ pub fn create_transaction_db(
     args: CreateTransactionArgs,
 ) -> Result<Transaction, String> {
     crate::db_locked!(db_path, {
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         // Apply rules before starting transaction
         let rules = crate::rules::get_rules_db(db_path).unwrap_or_default();
@@ -138,9 +138,9 @@ pub fn create_transaction_db(
 }
 
 /// Retrieves all transactions for a specific account, ordered by date descending.
-pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Transaction>, String> {
+pub fn get_transactions_db(db_path: &Path, account_id: i32) -> Result<Vec<Transaction>, String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions WHERE account_id = ?1 ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
         let transaction_iter = stmt
@@ -172,9 +172,9 @@ pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Tra
 }
 
 /// Returns transactions of all active accounts, ordered by date descending; transactions of archived accounts are skipped.
-pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, String> {
+pub fn get_all_transactions_db(db_path: &Path) -> Result<Vec<Transaction>, String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         let mut stmt = conn.prepare("SELECT id, account_id, date, payee, notes, category, amount, ticker, shares, price_per_share, fee, currency FROM transactions WHERE account_id NOT IN (SELECT id FROM accounts WHERE archived = 1) ORDER BY date DESC, id DESC").map_err(|e| e.to_string())?;
         let transaction_iter = stmt
@@ -207,9 +207,9 @@ pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, St
 
 // Payees and categories helpers moved from `lib.rs` here
 /// Returns a sorted list of distinct payee names from all transactions.
-pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
+pub fn get_payees_db(db_path: &Path) -> Result<Vec<String>, String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         let mut stmt = conn
             .prepare("SELECT DISTINCT payee FROM transactions ORDER BY payee")
@@ -228,9 +228,9 @@ pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
 }
 
 /// Returns a sorted list of distinct category names, excluding "Transfer".
-pub fn get_categories_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
+pub fn get_categories_db(db_path: &Path) -> Result<Vec<String>, String> {
     crate::db_locked!(db_path, {
-        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let conn = crate::db_init::open_db(db_path)?;
 
         let mut stmt = conn.prepare("SELECT DISTINCT category FROM transactions WHERE category IS NOT NULL AND category != 'Transfer' ORDER BY category").map_err(|e| e.to_string())?;
         let cat_iter = stmt
@@ -282,7 +282,7 @@ pub fn create_investment_transaction_db(
             category,
         } = args;
 
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         // Apply rules
         let rules = crate::rules::get_rules_db(db_path).unwrap_or_default();
@@ -395,7 +395,7 @@ pub struct UpdateTransactionArgs {
 /// Updates an existing transaction and adjusts account balances accordingly.
 /// Also syncs any linked transfer counter-transaction.
 pub fn update_transaction_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     args: UpdateTransactionArgs,
 ) -> Result<Transaction, String> {
     crate::db_locked!(db_path, {
@@ -410,7 +410,7 @@ pub fn update_transaction_db(
             currency,
         } = args;
 
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -567,7 +567,7 @@ pub struct UpdateInvestmentTransactionArgs {
 
 /// Updates an investment transaction and adjusts account balances accordingly.
 pub fn update_investment_transaction_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     args: UpdateInvestmentTransactionArgs,
 ) -> Result<Transaction, String> {
     crate::db_locked!(db_path, {
@@ -584,7 +584,7 @@ pub fn update_investment_transaction_db(
             currency,
         } = args;
 
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -698,9 +698,9 @@ pub fn update_investment_transaction_db(
 }
 
 /// Deletes a transaction, reverts its account balance, and removes any linked transfer counterpart.
-pub fn delete_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
+pub fn delete_transaction_db(db_path: &Path, id: i32) -> Result<(), String> {
     crate::db_locked!(db_path, {
-        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let mut conn = crate::db_init::open_db(db_path)?;
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
