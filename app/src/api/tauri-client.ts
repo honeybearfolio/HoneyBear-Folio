@@ -231,6 +231,9 @@ export const rust = {
   get_all_transactions: (): Promise<Transaction[]> =>
     callRust("get_all_transactions"),
 
+  get_account_holdings: (): Promise<Record<string, Record<string, number>>> =>
+    callRust("get_account_holdings"),
+
   update_transaction: (args: {
     args: Record<string, unknown>;
   }): Promise<void> => callRust("update_transaction", args),

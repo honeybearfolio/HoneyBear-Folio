@@ -10,9 +10,9 @@ describe("fetchMarketValuesForAccounts", () => {
     vi.clearAllMocks();
   });
 
-  it("returns empty object when there are no transactions", async () => {
+  it("returns empty object when there are no holdings", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_all_transactions") return Promise.resolve([]);
+      if (cmd === "get_account_holdings") return Promise.resolve({});
       return Promise.resolve([]);
     });
 
@@ -20,12 +20,9 @@ describe("fetchMarketValuesForAccounts", () => {
     expect(result).toEqual({});
   });
 
-  it("returns empty object when transactions have no tickers", async () => {
+  it("returns empty object when the holdings map is empty", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([
-          { account_id: 1, amount: -500, category: "Food" },
-        ]);
+      if (cmd === "get_account_holdings") return Promise.resolve({});
       return Promise.resolve([]);
     });
 
@@ -38,8 +35,8 @@ describe("fetchMarketValuesForAccounts", () => {
 
   it("computes market value for a single holding", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string, args?: unknown) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([{ account_id: 1, ticker: "AAPL", shares: 10 }]);
+      if (cmd === "get_account_holdings")
+        return Promise.resolve({ "1": { AAPL: 10 } });
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
         // Exchange-rate pairs have "=X" suffix; return empty for them
@@ -62,8 +59,8 @@ describe("fetchMarketValuesForAccounts", () => {
 
   it("applies exchange-rate conversion when quote currency differs from account currency", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string, args?: unknown) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([{ account_id: 1, ticker: "SAP", shares: 5 }]);
+      if (cmd === "get_account_holdings")
+        return Promise.resolve({ "1": { SAP: 5 } });
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
         if (a.tickers.some((t: string) => t.endsWith("=X")))
@@ -88,11 +85,8 @@ describe("fetchMarketValuesForAccounts", () => {
 
   it("ignores holdings with negligible share count", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([
-          // shares below the 0.0001 threshold should be skipped
-          { account_id: 1, ticker: "AAPL", shares: 0.00005 },
-        ]);
+      if (cmd === "get_account_holdings")
+        return Promise.resolve({ "1": { AAPL: 0.00005 } });
       if (cmd === "get_stock_quotes")
         return Promise.resolve([
           { symbol: "AAPL", regularMarketPrice: 200, currency: "USD" },
@@ -109,8 +103,8 @@ describe("fetchMarketValuesForAccounts", () => {
 
   it("uses appCurrency for accounts without an explicit currency", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string, args?: unknown) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([{ account_id: 99, ticker: "MSFT", shares: 2 }]);
+      if (cmd === "get_account_holdings")
+        return Promise.resolve({ "99": { MSFT: 2 } });
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
         if (a.tickers.some((t: string) => t.endsWith("=X")))
@@ -130,11 +124,8 @@ describe("fetchMarketValuesForAccounts", () => {
 
   it("aggregates multiple tickers in the same account", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string, args?: unknown) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([
-          { account_id: 1, ticker: "AAPL", shares: 10 },
-          { account_id: 1, ticker: "GOOG", shares: 2 },
-        ]);
+      if (cmd === "get_account_holdings")
+        return Promise.resolve({ "1": { AAPL: 10, GOOG: 2 } });
       if (cmd === "get_stock_quotes") {
         const a = args as { tickers: string[] };
         if (a.tickers.some((t: string) => t.endsWith("=X")))
@@ -163,7 +154,7 @@ describe("fetchHoldingValuesForAccounts", () => {
 
   it("returns an empty map when nothing is held", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_all_transactions") return Promise.resolve([]);
+      if (cmd === "get_account_holdings") return Promise.resolve({});
       return Promise.resolve([]);
     });
 
@@ -172,8 +163,8 @@ describe("fetchHoldingValuesForAccounts", () => {
 
   it("returns each ticker value instead of an account total", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string, args?: unknown) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([{ account_id: 1, ticker: "AAPL", shares: 10 }]);
+      if (cmd === "get_account_holdings")
+        return Promise.resolve({ "1": { AAPL: 10 } });
       if (cmd === "get_stock_quotes") {
         const quoted = args as { tickers: string[] };
         if (quoted.tickers.some((ticker) => ticker.endsWith("=X")))

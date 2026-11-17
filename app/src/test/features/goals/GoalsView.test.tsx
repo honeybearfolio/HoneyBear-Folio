@@ -105,6 +105,7 @@ describe("GoalsView", () => {
     mockedInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_goals") return Promise.resolve(GOALS);
       if (cmd === "get_accounts") return Promise.resolve(ACCOUNTS);
+      if (cmd === "get_account_holdings") return Promise.resolve({});
       if (cmd === "get_all_transactions") return Promise.resolve([]);
       return Promise.resolve([]);
     });
@@ -196,7 +197,7 @@ describe("GoalsView", () => {
     mockedInvoke.mockImplementation((cmd: string) => {
       if (cmd === "get_goals") return Promise.resolve(GOALS);
       if (cmd === "get_accounts") return Promise.resolve(ACCOUNTS);
-      if (cmd === "get_all_transactions")
+      if (cmd === "get_account_holdings")
         return Promise.reject(new Error("quotes"));
       return Promise.resolve([]);
     });

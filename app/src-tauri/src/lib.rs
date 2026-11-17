@@ -38,6 +38,7 @@ pub use crate::transactions::{
     // re-export module helpers for tests
     create_transaction_db,
     delete_transaction_db,
+    get_account_holdings_db,
     get_all_transactions_db,
     get_transactions_db,
     update_investment_transaction_db,
@@ -157,6 +158,7 @@ pub fn run() {
             transactions::create_transaction,
             transactions::get_transactions,
             transactions::get_all_transactions,
+            transactions::get_account_holdings,
             transactions::create_investment_transaction,
             transactions::update_transaction,
             io::read_xlsx,
