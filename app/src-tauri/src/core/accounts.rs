@@ -1,7 +1,7 @@
 use crate::models::{Account, AccountsSummary};
 use rusqlite::{params, OptionalExtension};
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::Path;
 use tauri::AppHandle;
 
 #[derive(serde::Deserialize)]
@@ -15,7 +15,7 @@ pub struct InitialTransactionDetails {
 /// Creates a new account in the database with the given name, balance, and currency.
 /// If the balance is non-zero, an opening transaction is also inserted.
 pub fn create_account_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     name: String,
     balance: f64,
     currency: Option<String>,
@@ -97,7 +97,7 @@ pub fn create_account_db(
 }
 
 /// Renames an account by ID. Enforces case-insensitive name uniqueness.
-pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result<Account, String> {
+pub fn rename_account_db(db_path: &Path, id: i32, new_name: String) -> Result<Account, String> {
     crate::db_locked!(db_path, {
         let new_trim = new_name.trim().to_string();
         if new_trim.is_empty() {
@@ -151,7 +151,7 @@ pub fn rename_account_db(db_path: &PathBuf, id: i32, new_name: String) -> Result
 
 /// Updates an account's name and currency. Enforces case-insensitive name uniqueness.
 pub fn update_account_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     id: i32,
     name: String,
     currency: Option<String>,
@@ -208,7 +208,7 @@ pub fn update_account_db(
 }
 
 /// Deletes an account and all of its associated transactions.
-pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
+pub fn delete_account_db(db_path: &Path, id: i32) -> Result<(), String> {
     crate::db_locked!(db_path, {
         let mut conn = crate::db_init::open_db(db_path)?;
 
@@ -244,13 +244,13 @@ pub fn delete_account_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
 }
 
 /// Retrieves all active (non-archived) accounts from the database.
-pub fn get_accounts_db(db_path: &PathBuf) -> Result<Vec<Account>, String> {
+pub fn get_accounts_db(db_path: &Path) -> Result<Vec<Account>, String> {
     get_accounts_with_archived_db(db_path, false)
 }
 
 /// Retrieves accounts, optionally including archived ones.
 pub fn get_accounts_with_archived_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     include_archived: bool,
 ) -> Result<Vec<Account>, String> {
     crate::db_locked!(db_path, {
@@ -282,7 +282,7 @@ pub fn get_accounts_with_archived_db(
 }
 
 /// Archives or unarchives an account. Its transactions are kept untouched.
-pub fn set_account_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Result<(), String> {
+pub fn set_account_archived_db(db_path: &Path, id: i32, archived: bool) -> Result<(), String> {
     crate::db_locked!(db_path, {
         let conn = crate::db_init::open_db(db_path)?;
         let rows = conn
@@ -299,13 +299,13 @@ pub fn set_account_archived_db(db_path: &PathBuf, id: i32, archived: bool) -> Re
 }
 
 /// Fetches active accounts together with transaction amounts grouped by account and currency.
-pub fn get_accounts_summary_db(db_path: &PathBuf, target: &str) -> Result<AccountsSummary, String> {
+pub fn get_accounts_summary_db(db_path: &Path, target: &str) -> Result<AccountsSummary, String> {
     get_accounts_summary_with_archived_db(db_path, target, false)
 }
 
 /// Like [`get_accounts_summary_db`], optionally including archived accounts.
 pub fn get_accounts_summary_with_archived_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     target: &str,
     include_archived: bool,
 ) -> Result<AccountsSummary, String> {

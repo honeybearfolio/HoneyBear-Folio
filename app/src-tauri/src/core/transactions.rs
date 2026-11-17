@@ -1,6 +1,6 @@
 use crate::models::Transaction;
 use rusqlite::{params, OptionalExtension};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::AppHandle;
 
 #[derive(serde::Deserialize)]
@@ -138,7 +138,7 @@ pub fn create_transaction_db(
 }
 
 /// Retrieves all transactions for a specific account, ordered by date descending.
-pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Transaction>, String> {
+pub fn get_transactions_db(db_path: &Path, account_id: i32) -> Result<Vec<Transaction>, String> {
     crate::db_locked!(db_path, {
         let conn = crate::db_init::open_db(db_path)?;
 
@@ -172,7 +172,7 @@ pub fn get_transactions_db(db_path: &PathBuf, account_id: i32) -> Result<Vec<Tra
 }
 
 /// Returns transactions of all active accounts, ordered by date descending; transactions of archived accounts are skipped.
-pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, String> {
+pub fn get_all_transactions_db(db_path: &Path) -> Result<Vec<Transaction>, String> {
     crate::db_locked!(db_path, {
         let conn = crate::db_init::open_db(db_path)?;
 
@@ -207,7 +207,7 @@ pub fn get_all_transactions_db(db_path: &PathBuf) -> Result<Vec<Transaction>, St
 
 // Payees and categories helpers moved from `lib.rs` here
 /// Returns a sorted list of distinct payee names from all transactions.
-pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
+pub fn get_payees_db(db_path: &Path) -> Result<Vec<String>, String> {
     crate::db_locked!(db_path, {
         let conn = crate::db_init::open_db(db_path)?;
 
@@ -228,7 +228,7 @@ pub fn get_payees_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
 }
 
 /// Returns a sorted list of distinct category names, excluding "Transfer".
-pub fn get_categories_db(db_path: &PathBuf) -> Result<Vec<String>, String> {
+pub fn get_categories_db(db_path: &Path) -> Result<Vec<String>, String> {
     crate::db_locked!(db_path, {
         let conn = crate::db_init::open_db(db_path)?;
 
@@ -395,7 +395,7 @@ pub struct UpdateTransactionArgs {
 /// Updates an existing transaction and adjusts account balances accordingly.
 /// Also syncs any linked transfer counter-transaction.
 pub fn update_transaction_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     args: UpdateTransactionArgs,
 ) -> Result<Transaction, String> {
     crate::db_locked!(db_path, {
@@ -567,7 +567,7 @@ pub struct UpdateInvestmentTransactionArgs {
 
 /// Updates an investment transaction and adjusts account balances accordingly.
 pub fn update_investment_transaction_db(
-    db_path: &PathBuf,
+    db_path: &Path,
     args: UpdateInvestmentTransactionArgs,
 ) -> Result<Transaction, String> {
     crate::db_locked!(db_path, {
@@ -698,7 +698,7 @@ pub fn update_investment_transaction_db(
 }
 
 /// Deletes a transaction, reverts its account balance, and removes any linked transfer counterpart.
-pub fn delete_transaction_db(db_path: &PathBuf, id: i32) -> Result<(), String> {
+pub fn delete_transaction_db(db_path: &Path, id: i32) -> Result<(), String> {
     crate::db_locked!(db_path, {
         let mut conn = crate::db_init::open_db(db_path)?;
 
