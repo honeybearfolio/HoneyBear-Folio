@@ -10,25 +10,17 @@ import {
   createExpensesDoughnutChartOptions,
   createLineChartOptions,
 } from "./dashboard-chart-config";
-import { buildExpensesByCategoryData } from "./dashboard-expenses-chart";
-import { buildIncomeVsExpensesData } from "./dashboard-income-expenses-chart";
-import { buildNetWorthChartData } from "./dashboard-networth-chart";
-import type { DashboardTimeRange } from "./dashboard-constants";
-import type { GetPriceFn } from "./dashboard-prices";
-import type { Transaction } from "./dashboard-types";
+import { buildExpensesByCategoryFromSeries } from "./dashboard-expenses-chart";
+import { buildIncomeVsExpensesFromSeries } from "./dashboard-income-expenses-chart";
+import { buildNetWorthChartFromSeries } from "./dashboard-networth-chart";
+import type { DashboardChartSeries } from "./dashboard-series";
 
 interface UseDashboardChartsArgs {
+  series: DashboardChartSeries | null;
   filteredAccounts: Account[];
-  filteredTransactions: Transaction[];
-  accountMap: Record<string | number, Account>;
-  timeRange: DashboardTimeRange;
-  customStartDate: Date;
-  customEndDate: Date;
   formatDate: (date: string) => string;
   formatNumber: ChartFormatNumber;
   locale: string;
-  appCurrency: string;
-  getPrice: GetPriceFn;
   isDark: boolean;
   chartColors: ChartColors;
   currentNetWorth: number;
@@ -38,17 +30,11 @@ interface UseDashboardChartsArgs {
 }
 
 export function useDashboardCharts({
+  series,
   filteredAccounts,
-  filteredTransactions,
-  accountMap,
-  timeRange,
-  customStartDate,
-  customEndDate,
   formatDate,
   formatNumber,
   locale,
-  appCurrency,
-  getPrice,
   isDark,
   chartColors,
   currentNetWorth,
@@ -58,15 +44,10 @@ export function useDashboardCharts({
 }: UseDashboardChartsArgs) {
   const chartData = useMemo(
     () =>
-      buildNetWorthChartData({
+      buildNetWorthChartFromSeries({
+        series,
         filteredAccounts,
-        filteredTransactions,
-        timeRange,
-        customStartDate,
-        customEndDate,
         formatDate,
-        appCurrency,
-        getPrice,
         chartColors,
         currentNetWorth,
         totalAssetsValue,
@@ -74,14 +55,9 @@ export function useDashboardCharts({
         t,
       }),
     [
+      series,
       filteredAccounts,
-      filteredTransactions,
-      timeRange,
-      customStartDate,
-      customEndDate,
       formatDate,
-      appCurrency,
-      getPrice,
       chartColors,
       currentNetWorth,
       totalAssetsValue,
@@ -92,60 +68,25 @@ export function useDashboardCharts({
 
   const expensesByCategoryData = useMemo(
     () =>
-      buildExpensesByCategoryData({
-        filteredTransactions,
-        timeRange,
-        customStartDate,
-        customEndDate,
-        accountMap,
-        appCurrency,
-        getPrice,
+      buildExpensesByCategoryFromSeries({
+        series,
         isDark,
         chartColors,
         t,
       }),
-    [
-      filteredTransactions,
-      timeRange,
-      customStartDate,
-      customEndDate,
-      isDark,
-      accountMap,
-      getPrice,
-      appCurrency,
-      chartColors,
-      t,
-    ],
+    [series, isDark, chartColors, t],
   );
 
   const incomeVsExpensesData = useMemo(
     () =>
-      buildIncomeVsExpensesData({
-        filteredTransactions,
-        timeRange,
-        customStartDate,
-        customEndDate,
+      buildIncomeVsExpensesFromSeries({
+        series,
         formatDate,
         locale,
-        accountMap,
-        appCurrency,
-        getPrice,
         chartColors,
         t,
       }),
-    [
-      filteredTransactions,
-      timeRange,
-      customStartDate,
-      customEndDate,
-      formatDate,
-      locale,
-      accountMap,
-      getPrice,
-      appCurrency,
-      chartColors,
-      t,
-    ],
+    [series, formatDate, locale, chartColors, t],
   );
 
   const doughnutOptions = useMemo<ChartOptions<"doughnut">>(

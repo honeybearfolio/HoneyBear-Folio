@@ -15,7 +15,7 @@
 
 mod core;
 pub use crate::core::{
-    accounts, assets, calculations, db_init, goals, io, liabilities, llm, llm_chat, markets,
+    accounts, assets, calculations, dashboard, db_init, goals, io, liabilities, llm, llm_chat, markets,
     models, pdf, rules, scheduled, session, transactions, utils,
 };
 
@@ -193,6 +193,8 @@ pub fn run() {
             scheduled::apply_scheduled_occurrence,
             scheduled::skip_scheduled_occurrence,
             calculations::compute_net_worth,
+            dashboard::get_dashboard_chart_series,
+            dashboard::query_dashboard_transactions,
             calculations::build_holdings_from_transactions,
             calculations::merge_holdings_with_quotes,
             calculations::compute_portfolio_totals,

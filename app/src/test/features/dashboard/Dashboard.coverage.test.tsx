@@ -41,12 +41,33 @@ const sampleTransactions = [
   },
 ];
 
+const sampleSeries = {
+  dates: ["2024-06-01"],
+  totals: [6000],
+  accounts: [
+    {
+      accountId: 1,
+      currency: "USD",
+      native: [1000],
+      converted: [1000],
+    },
+  ],
+  incomeExpense: [{ key: "2024-06", income: 2000, expenses: 50 }],
+  categories: [{ category: "Food", amount: 50 }],
+  tickers: [] as string[],
+  bucket: "month",
+};
+
 function mockDashboardInvoke(
   handler: (cmd: string) => Promise<unknown> | undefined,
 ) {
   return vi.mocked(invoke).mockImplementation((cmd: string) => {
     const result = handler(cmd);
     if (result !== undefined) return result;
+    if (cmd === "get_dashboard_chart_series")
+      return Promise.resolve(sampleSeries);
+    if (cmd === "query_dashboard_transactions")
+      return Promise.resolve(sampleTransactions);
     if (cmd === "build_holdings_from_transactions")
       return Promise.resolve(emptyHoldings);
     if (cmd === "compute_net_worth") return Promise.resolve(12500);
@@ -207,13 +228,15 @@ describe("Dashboard coverage", () => {
   it("shows error state and retries fetch on button click", async () => {
     let callCount = 0;
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_all_transactions") {
+      if (cmd === "get_dashboard_chart_series") {
         callCount += 1;
         if (callCount === 1) {
           return Promise.reject(new Error("Network down"));
         }
-        return Promise.resolve(sampleTransactions);
+        return Promise.resolve(sampleSeries);
       }
+      if (cmd === "query_dashboard_transactions")
+        return Promise.resolve(sampleTransactions);
       if (cmd === "build_holdings_from_transactions")
         return Promise.resolve(emptyHoldings);
       if (cmd === "compute_net_worth") return Promise.resolve(6000);
@@ -276,7 +299,9 @@ describe("Dashboard coverage", () => {
     };
 
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_all_transactions")
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve({ ...sampleSeries, tickers: ["AAPL"] });
+      if (cmd === "query_dashboard_transactions")
         return Promise.resolve([investmentTx]);
       if (cmd === "build_holdings_from_transactions") {
         return Promise.resolve({
@@ -326,7 +351,9 @@ describe("Dashboard coverage", () => {
     ];
 
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "get_all_transactions")
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve(sampleSeries);
+      if (cmd === "query_dashboard_transactions")
         return Promise.resolve(sampleTransactions);
       if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
       if (cmd === "get_daily_stock_prices") return Promise.resolve([]);

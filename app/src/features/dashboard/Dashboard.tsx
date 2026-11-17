@@ -48,9 +48,10 @@ export default function Dashboard({
 
   const {
     accounts,
-    transactions,
     loading,
     error,
+    chartSeries,
+    chartQuery,
     quotes,
     dailyPrices,
     getPrice,
@@ -70,17 +71,16 @@ export default function Dashboard({
     toggleAccountVisibility,
     setAllAccountsVisibility,
     filteredAccounts,
-    filteredTransactions,
     filteredMarketValues,
   } = useDashboardFilters({
     accounts,
-    transactions,
+    transactions: [],
     marketValues,
   });
 
   const { currentNetWorth } = useDashboardSummaries({
     filteredAccounts,
-    filteredTransactions,
+    filteredTransactions: [],
     filteredMarketValues,
     totalAssetsValue,
     totalLiabilitiesValue,
@@ -98,17 +98,11 @@ export default function Dashboard({
     barOptions,
     lineOptions,
   } = useDashboardCharts({
+    series: chartSeries,
     filteredAccounts,
-    filteredTransactions,
-    accountMap,
-    timeRange,
-    customStartDate,
-    customEndDate,
     formatDate,
     formatNumber,
     locale,
-    appCurrency,
-    getPrice,
     isDark,
     chartColors,
     currentNetWorth,
@@ -120,7 +114,9 @@ export default function Dashboard({
   const sharedData = useMemo(
     () => ({
       accounts,
-      transactions,
+      transactions: [],
+      chartSeries,
+      chartQuery,
       marketValues,
       totalAssetsValue,
       totalLiabilitiesValue,
@@ -141,7 +137,8 @@ export default function Dashboard({
     }),
     [
       accounts,
-      transactions,
+      chartSeries,
+      chartQuery,
       marketValues,
       totalAssetsValue,
       totalLiabilitiesValue,

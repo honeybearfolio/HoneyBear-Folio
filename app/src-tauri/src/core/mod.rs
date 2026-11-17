@@ -1,6 +1,7 @@
 pub mod accounts;
 pub mod assets;
 pub mod calculations;
+pub mod dashboard;
 pub mod db_init;
 pub mod goals;
 pub mod io;
