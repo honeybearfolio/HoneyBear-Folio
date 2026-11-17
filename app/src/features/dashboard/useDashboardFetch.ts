@@ -1,21 +1,36 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { TFunction } from "i18next";
 import { rust } from "../../api/tauri-client";
 import type { Account } from "../../api/types";
-import { buildHoldingsFromTransactions } from "../../utils/investments";
 import { handleAsyncError, logError } from "../../utils/errors";
-import { collectDailyPriceTickers, createGetPrice } from "./dashboard-prices";
-import type {
-  DailyPriceEntry,
-  DailyPriceData,
-  Quote,
-  Transaction,
-} from "./dashboard-types";
+import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
+import { parseIsoDate } from "./dashboard-layout";
+import { createGetPrice } from "./dashboard-prices";
+import {
+  accountIdsOf,
+  normalizeDashboardChartSeries,
+  type DashboardChartQuery,
+  type DashboardChartSeries,
+} from "./dashboard-series";
+import { dashboardChartQuery } from "./dashboard-time-range";
+import type { DailyPriceEntry, DailyPriceData, Quote } from "./dashboard-types";
 
 interface UseDashboardFetchArgs {
   propAccounts: Account[];
   appCurrency: string;
   t: TFunction;
+}
+
+function fxTickers(
+  accounts: readonly Account[],
+  appCurrency: string,
+): string[] {
+  const tickers = new Set<string>();
+  for (const account of accounts) {
+    const currency = account.currency || appCurrency;
+    if (currency !== appCurrency) tickers.add(`${currency}${appCurrency}=X`);
+  }
+  return [...tickers];
 }
 
 export function useDashboardFetch({
@@ -24,13 +39,44 @@ export function useDashboardFetch({
   t,
 }: UseDashboardFetchArgs) {
   const [accounts, setAccounts] = useState<Account[]>(propAccounts);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accountsReady, setAccountsReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartSeries, setChartSeries] = useState<DashboardChartSeries | null>(
+    null,
+  );
+  const [chartQuery, setChartQuery] = useState<DashboardChartQuery | null>(
+    null,
+  );
   const [dailyPrices, setDailyPrices] = useState<
     Record<string, DailyPriceData>
   >({});
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [reloadToken, setReloadToken] = useState(0);
+  const requestRef = useRef(0);
+  const pricedKey = useRef("");
+  const propAccountsRef = useRef(propAccounts);
+
+  useEffect(() => {
+    propAccountsRef.current = propAccounts;
+  }, [propAccounts]);
+
+  const hiddenAccountIds = useDashboardPreferencesStore(
+    (state) => state.view.hiddenAccountIds,
+  );
+  const timeRange = useDashboardPreferencesStore(
+    (state) => state.view.timeRange,
+  );
+  const customStartDate = useDashboardPreferencesStore(
+    (state) => state.view.customStartDate,
+  );
+  const customEndDate = useDashboardPreferencesStore(
+    (state) => state.view.customEndDate,
+  );
+  const hiddenKey = hiddenAccountIds.join("|");
+  const providedKey = propAccounts
+    .map((account) => String(account.id))
+    .join(",");
 
   const accountMap = useMemo(() => {
     const map: Record<string | number, Account> = {};
@@ -40,33 +86,64 @@ export function useDashboardFetch({
     return map;
   }, [accounts]);
 
-  const loadCoreData = useCallback(async () => {
-    const txs = await rust.get_all_transactions();
-    setTransactions(txs);
-
-    if (propAccounts.length > 0) {
-      setAccounts(propAccounts);
-    } else {
-      const accs = await rust.get_accounts();
-      setAccounts(accs);
-    }
-    setError(null);
-  }, [propAccounts]);
+  const loadSeries = useCallback(
+    async (source: readonly Account[]) => {
+      const request = ++requestRef.current;
+      const view = useDashboardPreferencesStore.getState().view;
+      const hidden = new Set(view.hiddenAccountIds);
+      const visible = source.filter(
+        (account) => !hidden.has(String(account.id)),
+      );
+      const query = dashboardChartQuery(
+        view.timeRange,
+        parseIsoDate(view.customStartDate) ?? new Date(),
+        parseIsoDate(view.customEndDate) ?? new Date(),
+        accountIdsOf(visible),
+        appCurrency,
+      );
+      const result = await rust.get_dashboard_chart_series({ query });
+      if (request !== requestRef.current) return;
+      setChartQuery(query);
+      setChartSeries(normalizeDashboardChartSeries(result));
+    },
+    [appCurrency],
+  );
 
   useEffect(() => {
+    const request = { cancelled: false };
+    const provided = propAccountsRef.current;
     void (async () => {
       try {
-        const txs = await rust.get_all_transactions();
-        setTransactions(txs);
-
-        if (propAccounts.length > 0) {
-          setAccounts(propAccounts);
-        } else {
-          const accs = await rust.get_accounts();
-          setAccounts(accs);
-        }
+        const accs = provided.length > 0 ? provided : await rust.get_accounts();
+        if (request.cancelled) return;
+        setAccounts(accs);
         setError(null);
+        setAccountsReady(true);
       } catch (e: unknown) {
+        if (request.cancelled) return;
+        handleAsyncError({
+          context: "Failed to fetch dashboard data",
+          error: e,
+          setError,
+          detailFallback: t("error.failed_to_load"),
+        });
+        setLoading(false);
+      }
+    })();
+    return () => {
+      request.cancelled = true;
+    };
+  }, [providedKey, reloadToken, t]);
+
+  useEffect(() => {
+    if (!accountsReady) return;
+    const request = { cancelled: false };
+    void (async () => {
+      try {
+        await loadSeries(accounts);
+        if (!request.cancelled) setError(null);
+      } catch (e: unknown) {
+        if (request.cancelled) return;
         handleAsyncError({
           context: "Failed to fetch dashboard data",
           error: e,
@@ -74,101 +151,83 @@ export function useDashboardFetch({
           detailFallback: t("error.failed_to_load"),
         });
       } finally {
-        setLoading(false);
+        if (!request.cancelled) setLoading(false);
       }
     })();
-  }, [propAccounts, t]);
-
-  useEffect(() => {
-    const fetchQuotes = async () => {
-      if (transactions.length === 0) return;
-      const { currentHoldings } =
-        await buildHoldingsFromTransactions(transactions);
-      if (currentHoldings.length === 0) {
-        setQuotes([]);
-        return;
-      }
-      const tickers = currentHoldings.map((h) => h.ticker);
-      const uniqueTickers = [...new Set(tickers)];
-      try {
-        const qs = await rust.get_stock_quotes({
-          tickers: uniqueTickers,
-        });
-        setQuotes(qs);
-      } catch (e) {
-        logError("Failed to fetch quotes", e);
-      }
+    return () => {
+      request.cancelled = true;
     };
-    void fetchQuotes();
-  }, [transactions]);
+  }, [
+    accountsReady,
+    accounts,
+    hiddenKey,
+    timeRange,
+    customStartDate,
+    customEndDate,
+    appCurrency,
+    loadSeries,
+    reloadToken,
+    t,
+  ]);
+
+  const priceTickers = useMemo(() => {
+    const stocks = chartSeries?.tickers ?? [];
+    return [
+      ...new Set([...stocks, ...fxTickers(accounts, appCurrency)]),
+    ].sort();
+  }, [chartSeries, accounts, appCurrency]);
+  const priceKey = priceTickers.join("|");
 
   useEffect(() => {
-    const fetchDailyPrices = async () => {
-      const tickers = collectDailyPriceTickers(
-        transactions,
-        accounts,
-        appCurrency,
-      );
-
-      if (tickers.size === 0) return;
-
+    if (priceTickers.length === 0 || pricedKey.current === priceKey) return;
+    pricedKey.current = priceKey;
+    const tickers = priceTickers;
+    void (async () => {
       try {
-        await rust.update_daily_stock_prices({
-          tickers: Array.from(tickers),
-        });
-
+        await rust.update_daily_stock_prices({ tickers });
         const pricesMap: Record<string, DailyPriceData> = {};
         for (const ticker of tickers) {
-          const prices = await rust.get_daily_stock_prices({
-            ticker,
-          });
-          prices.sort((a: DailyPriceEntry, b: DailyPriceEntry) =>
+          const prices = await rust.get_daily_stock_prices({ ticker });
+          const list = Array.isArray(prices) ? prices : [];
+          list.sort((a: DailyPriceEntry, b: DailyPriceEntry) =>
             a.date > b.date ? 1 : -1,
           );
-
           const priceByDate: Record<string, number> = {};
-          prices.forEach((p: DailyPriceEntry) => {
-            priceByDate[p.date] = p.price;
+          list.forEach((entry: DailyPriceEntry) => {
+            priceByDate[entry.date] = entry.price;
           });
-          pricesMap[ticker] = { list: prices, map: priceByDate };
+          pricesMap[ticker] = { list, map: priceByDate };
         }
         setDailyPrices(pricesMap);
+        const stocks = tickers.filter((ticker) => !ticker.endsWith("=X"));
+        if (stocks.length > 0) {
+          const nextQuotes = await rust.get_stock_quotes({ tickers: stocks });
+          setQuotes(Array.isArray(nextQuotes) ? nextQuotes : []);
+        } else {
+          setQuotes([]);
+        }
+        await loadSeries(accounts);
       } catch (e) {
         logError("Failed to fetch daily prices", e);
       }
-    };
-
-    if (transactions.length > 0) {
-      void fetchDailyPrices();
-    }
-  }, [transactions, accounts, appCurrency]);
+    })();
+  }, [priceKey, priceTickers, loadSeries, accounts]);
 
   const getPrice = useMemo(() => createGetPrice(dailyPrices), [dailyPrices]);
 
   const retryFetch = useCallback(() => {
     setError(null);
     setLoading(true);
-    void (async () => {
-      try {
-        await loadCoreData();
-      } catch (e: unknown) {
-        handleAsyncError({
-          context: "Failed to fetch dashboard data",
-          error: e,
-          setError,
-          detailFallback: t("error.failed_to_load"),
-        });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [loadCoreData, t]);
+    pricedKey.current = "";
+    setReloadToken((token) => token + 1);
+  }, []);
 
   return {
     accounts,
-    transactions,
     loading,
     error,
+    chartSeries,
+    chartQuery,
     dailyPrices,
     quotes,
     getPrice,

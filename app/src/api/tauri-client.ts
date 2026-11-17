@@ -250,6 +250,35 @@ export const rust = {
       ? callRust("get_all_transactions")
       : callRust("get_all_transactions", args),
 
+  get_dashboard_chart_series: (args: {
+    query: {
+      accountIds: Array<string | number>;
+      startDate: string;
+      endDate: string;
+      appCurrency: string;
+      bucket: "day" | "month";
+      clampStart: boolean;
+    };
+  }): Promise<{
+    dates: string[];
+    totals: number[];
+    accounts: Array<{
+      accountId: number;
+      currency: string;
+      native: number[];
+      converted: number[];
+    }>;
+    incomeExpense: Array<{ key: string; income: number; expenses: number }>;
+    categories: Array<{ category: string; amount: number }>;
+    tickers: string[];
+    bucket: string;
+  }> => callRust("get_dashboard_chart_series", args),
+
+  query_dashboard_transactions: (args: {
+    accountIds: Array<string | number>;
+    filters: Array<{ field: string; operator: string; value: string }>;
+  }): Promise<Transaction[]> => callRust("query_dashboard_transactions", args),
+
   get_account_holdings: (): Promise<Record<string, Record<string, number>>> =>
     callRust("get_account_holdings"),
 

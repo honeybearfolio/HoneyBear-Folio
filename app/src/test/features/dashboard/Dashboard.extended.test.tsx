@@ -47,12 +47,49 @@ function getTransactionCount() {
   return card?.querySelector(".summary-card-value")?.textContent;
 }
 
+const sampleSeries = {
+  dates: ["2024-06-01"],
+  totals: [6000],
+  accounts: [
+    {
+      accountId: 1,
+      currency: "USD",
+      native: [1000],
+      converted: [1000],
+    },
+    {
+      accountId: 2,
+      currency: "USD",
+      native: [5000],
+      converted: [5000],
+    },
+  ],
+  incomeExpense: [{ key: "2024-06", income: 2000, expenses: 50 }],
+  categories: [{ category: "Food", amount: 50 }],
+  tickers: [] as string[],
+  bucket: "month",
+};
+
+const emptySeries = {
+  dates: [],
+  totals: [],
+  accounts: [],
+  incomeExpense: [],
+  categories: [],
+  tickers: [],
+  bucket: "month",
+};
+
 function mockDashboardInvoke(
   handler: (cmd: string) => Promise<unknown> | undefined,
 ) {
   return vi.mocked(invoke).mockImplementation((cmd: string) => {
     const result = handler(cmd);
     if (result !== undefined) return result;
+    if (cmd === "get_dashboard_chart_series")
+      return Promise.resolve(sampleSeries);
+    if (cmd === "query_dashboard_transactions")
+      return Promise.resolve(sampleTransactions);
     if (cmd === "build_holdings_from_transactions")
       return Promise.resolve(emptyHoldings);
     if (cmd === "compute_net_worth") return Promise.resolve(6000);
@@ -135,7 +172,9 @@ describe("Dashboard extended", () => {
 
   it("shows empty state when there are no transactions", async () => {
     mockDashboardInvoke((cmd) => {
-      if (cmd === "get_all_transactions") return Promise.resolve([]);
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve(emptySeries);
+      if (cmd === "query_dashboard_transactions") return Promise.resolve([]);
       if (cmd === "get_accounts") return Promise.resolve(sampleAccounts);
     });
 

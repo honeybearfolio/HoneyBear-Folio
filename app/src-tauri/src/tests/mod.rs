@@ -19,6 +19,8 @@ pub mod transactions;
 
 pub mod calculations;
 
+pub mod dashboard;
+
 pub mod session;
 
 pub mod db_init;

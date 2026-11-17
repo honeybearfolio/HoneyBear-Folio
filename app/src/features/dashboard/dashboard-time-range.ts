@@ -1,5 +1,6 @@
 import type { DashboardTimeRange } from "./dashboard-constants";
 import { formatIsoDate, parseIsoDate } from "./dashboard-layout";
+import type { DashboardChartQuery } from "./dashboard-series";
 import type { Transaction } from "./dashboard-types";
 
 function dateFromCalendar(value: string): Date {
@@ -124,6 +125,54 @@ export function computeExpenseDateRange(
   return {
     startStr: formatIsoDate(startDate),
     endStr: formatIsoDate(endDate),
+  };
+}
+
+export function dashboardChartQuery(
+  timeRange: DashboardTimeRange,
+  customStartDate: Date,
+  customEndDate: Date,
+  accountIds: number[],
+  appCurrency: string,
+  now: Date = new Date(),
+): DashboardChartQuery {
+  const end = new Date(now);
+  end.setHours(0, 0, 0, 0);
+  if (timeRange === "ALL") {
+    return {
+      accountIds,
+      startDate: "",
+      endDate: formatIsoDate(end),
+      appCurrency,
+      bucket: "month",
+      clampStart: true,
+    };
+  }
+
+  let start = new Date(end);
+  let clampStart = true;
+  if (timeRange === "1M") start.setMonth(end.getMonth() - 1);
+  else if (timeRange === "3M") start.setMonth(end.getMonth() - 3);
+  else if (timeRange === "6M") start.setMonth(end.getMonth() - 6);
+  else if (timeRange === "YTD") start = new Date(end.getFullYear(), 0, 1);
+  else if (timeRange === "1Y") start.setFullYear(end.getFullYear() - 1);
+  else {
+    start = new Date(customStartDate);
+    end.setTime(customEndDate.getTime());
+    clampStart = false;
+  }
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  return {
+    accountIds,
+    startDate: formatIsoDate(start),
+    endDate: formatIsoDate(end),
+    appCurrency,
+    bucket: isDayBucketRange(timeRange, customStartDate, customEndDate)
+      ? "day"
+      : "month",
+    clampStart,
   };
 }
 

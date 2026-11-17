@@ -6,24 +6,45 @@ import type { ChartColors } from "../../hooks/useChartColors";
 import type { ChartFormatNumber } from "../../utils/chartTooltip";
 import { logError } from "../../utils/errors";
 import { computeNetWorth } from "../../utils/networth";
+import { rust } from "../../api/tauri-client";
 import { buildDoughnutChartData } from "./dashboard-doughnut";
-import { buildExpensesByCategoryData } from "./dashboard-expenses-chart";
-import { buildIncomeVsExpensesData } from "./dashboard-income-expenses-chart";
-import { buildNetWorthChartData } from "./dashboard-networth-chart";
+import {
+  buildExpensesByCategoryData,
+  buildExpensesByCategoryFromSeries,
+} from "./dashboard-expenses-chart";
+import {
+  buildIncomeVsExpensesData,
+  buildIncomeVsExpensesFromSeries,
+} from "./dashboard-income-expenses-chart";
+import {
+  buildNetWorthChartData,
+  buildNetWorthChartFromSeries,
+} from "./dashboard-networth-chart";
 import type { GetPriceFn } from "./dashboard-prices";
 import type { DailyPriceData, Quote, Transaction } from "./dashboard-types";
 import type { DoughnutChartData } from "./dashboard-doughnut";
 import type { DashboardWidgetInstance } from "./dashboard-layout";
 import {
+  accountIdsOf,
+  dashboardChartQueryKey,
+  normalizeDashboardChartSeries,
+  type DashboardChartQuery,
+  type DashboardChartSeries,
+} from "./dashboard-series";
+import { dashboardChartQuery } from "./dashboard-time-range";
+import {
   filterWidgetTransactions,
   resolveWidgetAccounts,
   resolveWidgetRange,
+  widgetDetailFilters,
 } from "./dashboard-widget-filters";
 import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
 
 export interface DashboardSharedData {
   accounts: Account[];
   transactions: Transaction[];
+  chartSeries: DashboardChartSeries | null;
+  chartQuery: DashboardChartQuery | null;
   marketValues: Record<string, number>;
   totalAssetsValue: number;
   totalLiabilitiesValue: number;
@@ -44,6 +65,27 @@ export interface DashboardSharedData {
 }
 
 const DashboardDataContext = createContext<DashboardSharedData | null>(null);
+
+const inflightRows = new Map<string, Promise<Transaction[]>>();
+
+function loadWidgetRows(
+  accountIds: number[],
+  filters: ReadonlyArray<{ field: string; operator: string; value: string }>,
+): Promise<Transaction[]> {
+  const key = `${accountIds.join(",")}|${filters
+    .map((filter) => `${filter.field}:${filter.operator}:${filter.value}`)
+    .join("|")}`;
+  const existing = inflightRows.get(key);
+  if (existing) return existing;
+  const pending = rust
+    .query_dashboard_transactions({ accountIds, filters: [...filters] })
+    .then((result) => (Array.isArray(result) ? result : []))
+    .finally(() => {
+      if (inflightRows.get(key) === pending) inflightRows.delete(key);
+    });
+  inflightRows.set(key, pending);
+  return pending;
+}
 
 export const DashboardDataProvider = DashboardDataContext.Provider;
 
@@ -69,15 +111,116 @@ export function useWidgetData(widget: DashboardWidgetInstance) {
       ),
     [data.accounts, view.hiddenAccountIds, widget.filters],
   );
+  const detailFilters = useMemo(
+    () => widgetDetailFilters(widget.filters),
+    [widget.filters],
+  );
+  const needsRows =
+    detailFilters.length > 0 ||
+    widget.type === "cashFlow" ||
+    widget.type === "assetAllocation" ||
+    widget.type === "summaryTransactions";
+  const usesAggregate =
+    detailFilters.length === 0 &&
+    (widget.type === "netWorth" ||
+      widget.type === "incomeVsExpenses" ||
+      widget.type === "expensesByCategory");
+  const accountKey = selectedAccounts
+    .map((account) => String(account.id))
+    .join(",");
+  const rangeKey = `${range.timeRange}|${range.customStartDate.toDateString()}|${range.customEndDate.toDateString()}`;
+  const widgetQuery = useMemo(
+    () =>
+      dashboardChartQuery(
+        range.timeRange,
+        range.customStartDate,
+        range.customEndDate,
+        accountIdsOf(selectedAccounts),
+        data.appCurrency,
+      ),
+    // Dates from resolveWidgetRange are new objects every render. rangeKey is the value.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [range.timeRange, rangeKey, accountKey, data.appCurrency],
+  );
+  const widgetKey = dashboardChartQueryKey(widgetQuery);
+  const sharedKey = data.chartQuery
+    ? dashboardChartQueryKey(data.chartQuery)
+    : "";
+  const [localSeries, setLocalSeries] = useState<DashboardChartSeries | null>(
+    null,
+  );
+  const [rowState, setRowState] = useState<{
+    key: string;
+    rows: Transaction[];
+  }>({ key: "", rows: [] });
+  const filterKey = detailFilters
+    .map((filter) => `${filter.field}:${filter.operator}:${filter.value}`)
+    .join("|");
+  const rowKey = `${widgetQuery.accountIds.join(",")}|${filterKey}`;
+  const rows = useMemo(
+    () => (needsRows && rowState.key === rowKey ? rowState.rows : []),
+    [needsRows, rowState, rowKey],
+  );
+
+  useEffect(() => {
+    if (!needsRows || widgetQuery.accountIds.length === 0) return;
+    const request = { cancelled: false };
+    const key = rowKey;
+    loadWidgetRows(
+      widgetQuery.accountIds,
+      detailFilters.map((filter) => ({
+        field: filter.field,
+        operator: filter.operator,
+        value: filter.value,
+      })),
+    )
+      .then((result) => {
+        if (!request.cancelled) setRowState({ key, rows: result });
+      })
+      .catch((error: unknown) => {
+        logError("Failed to query dashboard transactions", error);
+        if (!request.cancelled) setRowState({ key, rows: [] });
+      });
+    return () => {
+      request.cancelled = true;
+    };
+    // rowKey already covers the account ids and filters. widgetQuery is a fresh object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsRows, rowKey]);
+
+  useEffect(() => {
+    if (!usesAggregate || widgetKey === sharedKey) return;
+    let cancelled = false;
+    rust
+      .get_dashboard_chart_series({ query: widgetQuery })
+      .then((result) => {
+        if (!cancelled) setLocalSeries(normalizeDashboardChartSeries(result));
+      })
+      .catch((error: unknown) => {
+        logError("Failed to load dashboard chart series", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usesAggregate, widgetKey, sharedKey]);
+
+  const series = !usesAggregate
+    ? null
+    : widgetKey === sharedKey
+      ? data.chartSeries
+      : localSeries;
   const transactions = useMemo(
     () =>
-      filterWidgetTransactions(
-        data.transactions,
-        data.accounts,
-        selectedAccounts,
-        widget.filters,
-      ),
-    [data.transactions, data.accounts, selectedAccounts, widget.filters],
+      needsRows
+        ? filterWidgetTransactions(
+            rows,
+            data.accounts,
+            selectedAccounts,
+            widget.filters,
+          )
+        : [],
+    [needsRows, rows, data.accounts, selectedAccounts, widget.filters],
   );
   const marketValues = useMemo(() => {
     const selected = new Set(
@@ -150,107 +293,134 @@ export function useWidgetData(widget: DashboardWidgetInstance) {
     t,
   ]);
 
-  const netWorthChart = useMemo(
-    () =>
-      widget.type === "netWorth"
-        ? buildNetWorthChartData({
-            filteredAccounts: selectedAccounts,
-            filteredTransactions: transactions,
-            timeRange: range.timeRange,
-            customStartDate: range.customStartDate,
-            customEndDate: range.customEndDate,
-            formatDate: data.formatDate,
-            appCurrency: data.appCurrency,
-            getPrice: data.getPrice,
-            chartColors: data.chartColors,
-            currentNetWorth: netWorth,
-            totalAssetsValue: assets,
-            totalLiabilitiesValue: liabilities,
-            t,
-          })
-        : null,
-    [
-      widget.type,
-      selectedAccounts,
-      transactions,
-      range.timeRange,
-      range.customStartDate,
-      range.customEndDate,
-      data.formatDate,
-      data.appCurrency,
-      data.getPrice,
-      data.chartColors,
-      netWorth,
-      assets,
-      liabilities,
+  const netWorthChart = useMemo(() => {
+    if (widget.type !== "netWorth") return null;
+    if (detailFilters.length > 0) {
+      return buildNetWorthChartData({
+        filteredAccounts: selectedAccounts,
+        filteredTransactions: transactions,
+        timeRange: range.timeRange,
+        customStartDate: range.customStartDate,
+        customEndDate: range.customEndDate,
+        formatDate: data.formatDate,
+        appCurrency: data.appCurrency,
+        getPrice: data.getPrice,
+        chartColors: data.chartColors,
+        currentNetWorth: netWorth,
+        totalAssetsValue: assets,
+        totalLiabilitiesValue: liabilities,
+        t,
+      });
+    }
+    return buildNetWorthChartFromSeries({
+      series,
+      filteredAccounts: selectedAccounts,
+      formatDate: data.formatDate,
+      chartColors: data.chartColors,
+      currentNetWorth: netWorth,
+      totalAssetsValue: assets,
+      totalLiabilitiesValue: liabilities,
       t,
-    ],
-  );
+    });
+  }, [
+    widget.type,
+    detailFilters.length,
+    selectedAccounts,
+    transactions,
+    series,
+    range.timeRange,
+    range.customStartDate,
+    range.customEndDate,
+    data.formatDate,
+    data.appCurrency,
+    data.getPrice,
+    data.chartColors,
+    netWorth,
+    assets,
+    liabilities,
+    t,
+  ]);
 
-  const incomeChart = useMemo(
-    () =>
-      widget.type === "incomeVsExpenses"
-        ? buildIncomeVsExpensesData({
-            filteredTransactions: transactions,
-            timeRange: range.timeRange,
-            customStartDate: range.customStartDate,
-            customEndDate: range.customEndDate,
-            formatDate: data.formatDate,
-            locale: data.locale,
-            accountMap: data.accountMap,
-            appCurrency: data.appCurrency,
-            getPrice: data.getPrice,
-            chartColors: data.chartColors,
-            t,
-          })
-        : null,
-    [
-      widget.type,
-      transactions,
-      range.timeRange,
-      range.customStartDate,
-      range.customEndDate,
-      data.formatDate,
-      data.locale,
-      data.accountMap,
-      data.appCurrency,
-      data.getPrice,
-      data.chartColors,
+  const incomeChart = useMemo(() => {
+    if (widget.type !== "incomeVsExpenses") return null;
+    if (detailFilters.length > 0) {
+      return buildIncomeVsExpensesData({
+        filteredTransactions: transactions,
+        timeRange: range.timeRange,
+        customStartDate: range.customStartDate,
+        customEndDate: range.customEndDate,
+        formatDate: data.formatDate,
+        locale: data.locale,
+        accountMap: data.accountMap,
+        appCurrency: data.appCurrency,
+        getPrice: data.getPrice,
+        chartColors: data.chartColors,
+        t,
+      });
+    }
+    return buildIncomeVsExpensesFromSeries({
+      series,
+      formatDate: data.formatDate,
+      locale: data.locale,
+      chartColors: data.chartColors,
       t,
-    ],
-  );
+    });
+  }, [
+    widget.type,
+    detailFilters.length,
+    transactions,
+    series,
+    range.timeRange,
+    range.customStartDate,
+    range.customEndDate,
+    data.formatDate,
+    data.locale,
+    data.accountMap,
+    data.appCurrency,
+    data.getPrice,
+    data.chartColors,
+    t,
+  ]);
 
-  const expensesChart = useMemo(
-    () =>
-      widget.type === "expensesByCategory"
-        ? buildExpensesByCategoryData({
-            filteredTransactions: transactions,
-            timeRange: range.timeRange,
-            customStartDate: range.customStartDate,
-            customEndDate: range.customEndDate,
-            accountMap: data.accountMap,
-            appCurrency: data.appCurrency,
-            getPrice: data.getPrice,
-            isDark: data.isDark,
-            chartColors: data.chartColors,
-            t,
-          })
-        : null,
-    [
-      widget.type,
-      transactions,
-      range.timeRange,
-      range.customStartDate,
-      range.customEndDate,
-      data.accountMap,
-      data.appCurrency,
-      data.getPrice,
-      data.isDark,
-      data.chartColors,
+  const expensesChart = useMemo(() => {
+    if (widget.type !== "expensesByCategory") return null;
+    if (detailFilters.length > 0) {
+      return buildExpensesByCategoryData({
+        filteredTransactions: transactions,
+        timeRange: range.timeRange,
+        customStartDate: range.customStartDate,
+        customEndDate: range.customEndDate,
+        accountMap: data.accountMap,
+        appCurrency: data.appCurrency,
+        getPrice: data.getPrice,
+        isDark: data.isDark,
+        chartColors: data.chartColors,
+        t,
+      });
+    }
+    return buildExpensesByCategoryFromSeries({
+      series,
+      isDark: data.isDark,
+      chartColors: data.chartColors,
       t,
-    ],
-  );
+    });
+  }, [
+    widget.type,
+    detailFilters.length,
+    transactions,
+    series,
+    range.timeRange,
+    range.customStartDate,
+    range.customEndDate,
+    data.accountMap,
+    data.appCurrency,
+    data.getPrice,
+    data.isDark,
+    data.chartColors,
+    t,
+  ]);
 
+  const hasSeries = (series?.dates.length ?? 0) > 0;
   return {
     selectedAccounts,
     transactions,
@@ -260,6 +430,6 @@ export function useWidgetData(widget: DashboardWidgetInstance) {
     netWorthChart,
     incomeChart,
     expensesChart,
-    hasTransactions: transactions.length > 0,
+    hasTransactions: needsRows ? transactions.length > 0 : hasSeries,
   };
 }

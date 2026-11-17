@@ -119,6 +119,18 @@ function matchesFilter(
   );
 }
 
+export function widgetDetailFilters(
+  filters: readonly WidgetFilter[],
+): WidgetFilter[] {
+  return filters.filter(
+    (filter) =>
+      !(
+        filter.field === "account" &&
+        (filter.operator === "equals" || filter.operator === "not_equals")
+      ),
+  );
+}
+
 export function filterWidgetTransactions(
   transactions: readonly Transaction[],
   accounts: readonly Account[],
@@ -128,13 +140,7 @@ export function filterWidgetTransactions(
   const selectedIds = new Set(
     selectedAccounts.map((account) => String(account.id)),
   );
-  const detailFilters = filters.filter(
-    (filter) =>
-      !(
-        filter.field === "account" &&
-        (filter.operator === "equals" || filter.operator === "not_equals")
-      ),
-  );
+  const detailFilters = widgetDetailFilters(filters);
 
   return transactions.filter((transaction) => {
     if (!selectedIds.has(String(transaction.account_id))) return false;

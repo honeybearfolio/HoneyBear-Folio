@@ -293,6 +293,36 @@ describe("tauri-client", () => {
       await rust.get_all_transactions();
       expect(invoke).toHaveBeenCalledWith("get_all_transactions");
 
+      await rust.get_dashboard_chart_series({
+        query: {
+          accountIds: [1],
+          startDate: "2024-01-01",
+          endDate: "2024-01-31",
+          appCurrency: "USD",
+          bucket: "day",
+          clampStart: true,
+        },
+      });
+      expect(invoke).toHaveBeenCalledWith("get_dashboard_chart_series", {
+        query: {
+          accountIds: [1],
+          startDate: "2024-01-01",
+          endDate: "2024-01-31",
+          appCurrency: "USD",
+          bucket: "day",
+          clampStart: true,
+        },
+      });
+
+      await rust.query_dashboard_transactions({
+        accountIds: [1],
+        filters: [{ field: "category", operator: "contains", value: "food" }],
+      });
+      expect(invoke).toHaveBeenCalledWith("query_dashboard_transactions", {
+        accountIds: [1],
+        filters: [{ field: "category", operator: "contains", value: "food" }],
+      });
+
       await rust.get_all_transactions({
         limit: 50,
         accountId: 2,

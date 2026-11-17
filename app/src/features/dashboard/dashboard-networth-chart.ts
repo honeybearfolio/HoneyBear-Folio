@@ -6,6 +6,7 @@ import {
   type DashboardTimeRange,
 } from "./dashboard-constants";
 import type { GetPriceFn } from "./dashboard-prices";
+import type { DashboardChartSeries } from "./dashboard-series";
 import { computeNetWorthDateRange } from "./dashboard-time-range";
 import type { Transaction } from "./dashboard-types";
 
@@ -243,6 +244,101 @@ export function buildNetWorthChartData({
 
   return {
     labels: sortedDates.map((d) => formatDate(d)),
+    datasets,
+  };
+}
+
+interface BuildNetWorthChartFromSeriesArgs {
+  series: DashboardChartSeries | null;
+  filteredAccounts: Account[];
+  formatDate: (date: string) => string;
+  chartColors: ChartColors;
+  currentNetWorth: number;
+  totalAssetsValue: number;
+  totalLiabilitiesValue: number;
+  t: TFunction;
+}
+
+export function buildNetWorthChartFromSeries({
+  series,
+  filteredAccounts,
+  formatDate,
+  chartColors,
+  currentNetWorth,
+  totalAssetsValue,
+  totalLiabilitiesValue,
+  t,
+}: BuildNetWorthChartFromSeriesArgs): NetWorthChartData | null {
+  if (!series || series.dates.length === 0 || filteredAccounts.length === 0) {
+    return null;
+  }
+
+  const colors =
+    chartColors.palette.length > 0
+      ? chartColors.palette
+      : DEFAULT_LINE_CHART_PALETTE;
+  const byAccount = new Map(
+    series.accounts.map((account) => [String(account.accountId), account]),
+  );
+  const offset = totalAssetsValue - totalLiabilitiesValue;
+  const totalData = series.dates.map(
+    (_, index) => (series.totals[index] ?? 0) + offset,
+  );
+  if (totalData.length > 0) {
+    totalData[totalData.length - 1] = currentNetWorth;
+  }
+
+  const datasets: NetWorthChartDataset[] = [
+    {
+      label: t("dashboard.datasets.total_net_worth"),
+      data: totalData,
+      assetsLiabilitiesOffset: offset,
+      borderColor: chartColors.line,
+      backgroundColor: (context: {
+        chart: { ctx: CanvasRenderingContext2D };
+      }) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, chartColors.line + "33");
+        gradient.addColorStop(1, chartColors.line + "00");
+        return gradient;
+      },
+      borderWidth: 3,
+      tension: 0.4,
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+      pointHoverBackgroundColor: chartColors.line,
+      pointHoverBorderColor: "#fff",
+      pointHoverBorderWidth: 2,
+    },
+  ];
+
+  filteredAccounts.forEach((account, index) => {
+    const points = byAccount.get(String(account.id));
+    const color = colors[index % colors.length]!;
+    const accountCurrency = account.currency || points?.currency || "";
+    datasets.push({
+      label: account.name,
+      data: series.dates.map((_, point) => points?.converted[point] ?? 0),
+      originalData: series.dates.map((_, point) => points?.native[point] ?? 0),
+      accountCurrency,
+      borderColor: color,
+      backgroundColor: "transparent",
+      borderWidth: 2,
+      tension: 0.4,
+      fill: false,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      borderDash: [5, 5],
+      hidden: false,
+      accountId: account.id,
+      _color: color,
+    });
+  });
+
+  return {
+    labels: series.dates.map((date) => formatDate(date)),
     datasets,
   };
 }

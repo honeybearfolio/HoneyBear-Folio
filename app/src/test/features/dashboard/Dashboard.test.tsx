@@ -7,12 +7,32 @@ import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferen
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
+const sampleSeries = {
+  dates: ["2023-01-01"],
+  totals: [1000],
+  accounts: [
+    {
+      accountId: 1,
+      currency: "USD",
+      native: [1000],
+      converted: [1000],
+    },
+  ],
+  incomeExpense: [{ key: "2023-01", income: 100, expenses: 0 }],
+  categories: [] as Array<{ category: string; amount: number }>,
+  tickers: [] as string[],
+  bucket: "month",
+};
+
 function mockDashboardInvoke(
   handler: (cmd: string) => Promise<unknown> | undefined,
 ) {
   return vi.mocked(invoke).mockImplementation((cmd: string) => {
     const result = handler(cmd);
     if (result !== undefined) return result;
+    if (cmd === "get_dashboard_chart_series")
+      return Promise.resolve(sampleSeries);
+    if (cmd === "query_dashboard_transactions") return Promise.resolve([]);
     if (cmd === "build_holdings_from_transactions")
       return Promise.resolve(emptyHoldings);
     if (cmd === "compute_net_worth") return Promise.resolve(0);
@@ -86,18 +106,6 @@ describe("Dashboard", () => {
   it("fetches data and renders charts", async () => {
     // Mock data
     mockDashboardInvoke((cmd) => {
-      if (cmd === "get_all_transactions")
-        return Promise.resolve([
-          {
-            id: 1,
-            date: "2023-01-01",
-            amount: 100.0,
-            payee: "Shop",
-            category: "Food",
-            account_id: 1,
-            currency: "USD",
-          },
-        ]);
       if (cmd === "get_accounts")
         return Promise.resolve([
           { id: 1, name: "Checking", balance: 1000, currency: "USD" },
@@ -107,7 +115,15 @@ describe("Dashboard", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith("get_all_transactions");
+      expect(invoke).toHaveBeenCalledWith(
+        "get_dashboard_chart_series",
+        expect.objectContaining({
+          query: expect.objectContaining({ accountIds: [1] }) as {
+            accountIds: number[];
+          },
+        }),
+      );
+      expect(invoke).not.toHaveBeenCalledWith("get_all_transactions");
       expect(invoke).toHaveBeenCalledWith("get_accounts");
       expect(screen.getByTestId("line-chart")).toBeInTheDocument();
     });
@@ -115,15 +131,20 @@ describe("Dashboard", () => {
 
   it("uses provided accounts prop if available", async () => {
     const propAccounts = [{ id: 99, name: "Prop Account", balance: 500 }];
-    mockDashboardInvoke((cmd) => {
-      if (cmd === "get_all_transactions") return Promise.resolve([]);
-    });
+    mockDashboardInvoke(() => undefined);
 
     render(<Dashboard accounts={propAccounts} />);
 
-    // Should fetch transactions but NOT accounts
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith("get_all_transactions");
+      expect(invoke).toHaveBeenCalledWith(
+        "get_dashboard_chart_series",
+        expect.objectContaining({
+          query: expect.objectContaining({ accountIds: [99] }) as {
+            accountIds: number[];
+          },
+        }),
+      );
+      expect(invoke).not.toHaveBeenCalledWith("get_all_transactions");
       expect(invoke).not.toHaveBeenCalledWith("get_accounts");
     });
   });

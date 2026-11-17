@@ -6,6 +6,7 @@ import {
   type DashboardTimeRange,
 } from "./dashboard-constants";
 import type { GetPriceFn } from "./dashboard-prices";
+import type { DashboardChartSeries } from "./dashboard-series";
 import { computeExpenseDateRange } from "./dashboard-time-range";
 import type { Transaction } from "./dashboard-types";
 
@@ -95,6 +96,50 @@ export function buildExpensesByCategoryData({
         data: sortedCategories.map(([, amount]) => amount),
         backgroundColor: sortedCategories.map(
           (_, i) => colors[i % colors.length]!,
+        ),
+        borderColor: isDark ? "#474240" : "#ffffff",
+        borderWidth: 4,
+        hoverOffset: 4,
+      },
+    ],
+  };
+}
+
+interface BuildExpensesFromSeriesArgs {
+  series: DashboardChartSeries | null;
+  isDark: boolean;
+  chartColors: ChartColors;
+  t: TFunction;
+}
+
+export function buildExpensesByCategoryFromSeries({
+  series,
+  isDark,
+  chartColors,
+  t,
+}: BuildExpensesFromSeriesArgs): ExpensesByCategoryChartData | null {
+  if (!series || series.dates.length === 0) return null;
+  if (series.categories.length === 0) {
+    return { empty: true, labels: [], datasets: [] };
+  }
+
+  const colors =
+    chartColors.palette.length > 0
+      ? chartColors.palette
+      : DEFAULT_EXPENSE_CHART_PALETTE;
+  const categories = [...series.categories].sort(
+    (left, right) => right.amount - left.amount,
+  );
+
+  return {
+    labels: categories.map((category) =>
+      category.category ? category.category : t("general.uncategorized"),
+    ),
+    datasets: [
+      {
+        data: categories.map((category) => category.amount),
+        backgroundColor: categories.map(
+          (_, index) => colors[index % colors.length]!,
         ),
         borderColor: isDark ? "#474240" : "#ffffff",
         borderWidth: 4,
