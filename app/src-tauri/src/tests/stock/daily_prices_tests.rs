@@ -132,6 +132,13 @@ async fn test_update_daily_skips_when_already_current() {
     .unwrap();
 
     let server = MockServer::start();
+    let foo = server.mock(|when, then| {
+        when.method(GET).path("/v8/finance/chart/FOO");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(r#"{"chart":{"result":[{"meta":{"symbol":"FOO"},"timestamp":[1609459200],"indicators":{"quote":[{"close":[50.0]}]}}]}}"#);
+    });
+
     let client = reqwest::Client::builder().build().unwrap();
     crate::update_daily_stock_prices_with_client_and_base(
         &db_path,
@@ -142,14 +149,75 @@ async fn test_update_daily_skips_when_already_current() {
     .await
     .unwrap();
 
-    let count: i64 = conn
+    assert_eq!(foo.calls(), 0);
+    let price: f64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM daily_stock_prices WHERE ticker = 'FOO'",
+            "SELECT price FROM daily_stock_prices WHERE ticker = 'FOO'",
             [],
             |r| r.get(0),
         )
         .unwrap();
-    assert_eq!(count, 1);
+    assert!((price - 100.0).abs() < 1e-6);
+}
+
+#[tokio::test]
+async fn test_update_daily_fetches_stale_tickers_together() {
+    let (_dir, db_path) = setup_db();
+    crate::init_db_at_path(&db_path).unwrap();
+
+    let today = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let conn = Connection::open(&db_path).unwrap();
+    conn.execute(
+        "INSERT INTO daily_stock_prices (ticker, date, price) VALUES (?1, ?2, ?3)",
+        rusqlite::params!["FRESH", today, 100.0],
+    )
+    .unwrap();
+
+    let server = MockServer::start();
+    let fresh = server.mock(|when, then| {
+        when.method(GET).path("/v8/finance/chart/FRESH");
+        then.status(500);
+    });
+    server.mock(|when, then| {
+        when.method(GET).path("/v8/finance/chart/FOO");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(r#"{"chart":{"result":[{"meta":{"symbol":"FOO"},"timestamp":[1609459200],"indicators":{"quote":[{"close":[12.0]}]}}]}}"#);
+    });
+    server.mock(|when, then| {
+        when.method(GET).path("/v8/finance/chart/BAR");
+        then.status(200)
+            .header("content-type", "application/json")
+            .body(r#"{"chart":{"result":[{"meta":{"symbol":"BAR"},"timestamp":[1609545600],"indicators":{"quote":[{"close":[9.0]}]}}]}}"#);
+    });
+
+    let client = reqwest::Client::builder().build().unwrap();
+    crate::update_daily_stock_prices_with_client_and_base(
+        &db_path,
+        &client,
+        &server.base_url(),
+        vec!["FRESH".to_string(), "FOO".to_string(), "BAR".to_string()],
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(fresh.calls(), 0);
+    let foo: f64 = conn
+        .query_row(
+            "SELECT price FROM daily_stock_prices WHERE ticker = 'FOO'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    let bar: f64 = conn
+        .query_row(
+            "SELECT price FROM daily_stock_prices WHERE ticker = 'BAR'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert!((foo - 12.0).abs() < 1e-6);
+    assert!((bar - 9.0).abs() < 1e-6);
 }
 
 #[tokio::test]

@@ -1,6 +1,8 @@
 use crate::models::{DailyPrice, YahooChartResponse, YahooQuote, YahooSearchQuote};
 use chrono::{NaiveDate, TimeZone, Utc};
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection};
+use std::collections::{HashMap, HashSet};
+use std::path::Path;
 
 /// Searches Yahoo Finance for ticker symbols matching the given query.
 pub async fn search_ticker_with_client(
@@ -241,113 +243,254 @@ pub async fn get_stock_quotes_with_client_and_db(
     Ok(quotes)
 }
 
+struct DailyPriceRow {
+    ticker: String,
+    date: String,
+    price: f64,
+}
+
+struct DailyHistoryRequest {
+    ticker: String,
+    start_timestamp: i64,
+}
+
+fn unique_tickers(tickers: &[String]) -> Vec<String> {
+    let mut seen = HashSet::new();
+    let mut unique = Vec::new();
+    for ticker in tickers {
+        if seen.insert(ticker.clone()) {
+            unique.push(ticker.clone());
+        }
+    }
+    unique
+}
+
+fn last_daily_price_dates(
+    db_path: &Path,
+    tickers: &[String],
+) -> Result<HashMap<String, String>, String> {
+    let mut dates = HashMap::new();
+    if tickers.is_empty() {
+        return Ok(dates);
+    }
+    crate::db_locked!(db_path, {
+        let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        for chunk in tickers.chunks(200) {
+            let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+            let sql = format!(
+                "SELECT ticker, MAX(date) FROM daily_stock_prices WHERE ticker IN ({placeholders}) GROUP BY ticker"
+            );
+            let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+            let rows = stmt
+                .query_map(rusqlite::params_from_iter(chunk.iter()), |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })
+                .map_err(|e| e.to_string())?;
+            for row in rows {
+                let (ticker, date) = row.map_err(|e| e.to_string())?;
+                dates.insert(ticker, date);
+            }
+        }
+        Ok::<(), String>(())
+    })?;
+    Ok(dates)
+}
+
+/// `None` when stored history already covers today, or the next bar would start in the future.
+fn history_start(
+    last_date: Option<&str>,
+    today: &str,
+    end_timestamp: i64,
+) -> Result<Option<i64>, String> {
+    let Some(date_str) = last_date else {
+        return Ok(Some(end_timestamp - 10 * 365 * 24 * 60 * 60));
+    };
+    if date_str >= today {
+        return Ok(None);
+    }
+    let date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d").map_err(|e| e.to_string())?;
+    let next_day = date.succ_opt().ok_or_else(|| "Invalid date".to_string())?;
+    let start = next_day
+        .and_hms_opt(0, 0, 0)
+        .ok_or_else(|| "Invalid date".to_string())?
+        .and_utc()
+        .timestamp();
+    if start >= end_timestamp {
+        return Ok(None);
+    }
+    Ok(Some(start))
+}
+
+fn pending_history_requests(
+    tickers: &[String],
+    last_dates: &HashMap<String, String>,
+    today: &str,
+    end_timestamp: i64,
+) -> Result<Vec<DailyHistoryRequest>, String> {
+    let mut pending = Vec::new();
+    for ticker in tickers {
+        let start_timestamp = history_start(
+            last_dates.get(ticker).map(String::as_str),
+            today,
+            end_timestamp,
+        )?;
+        let Some(start_timestamp) = start_timestamp else {
+            continue;
+        };
+        pending.push(DailyHistoryRequest {
+            ticker: ticker.clone(),
+            start_timestamp,
+        });
+    }
+    Ok(pending)
+}
+
+fn rows_from_chart(ticker: &str, json: &YahooChartResponse) -> Vec<DailyPriceRow> {
+    let mut rows = Vec::new();
+    let Some(result) = json.chart.result.as_ref() else {
+        return rows;
+    };
+    let Some(chart) = result.first() else {
+        return rows;
+    };
+    let (Some(timestamps), Some(indicators)) = (&chart.timestamp, &chart.indicators) else {
+        return rows;
+    };
+    let Some(quotes) = indicators.quote.as_ref() else {
+        return rows;
+    };
+    let Some(quote) = quotes.first() else {
+        return rows;
+    };
+    let Some(closes) = quote.close.as_ref() else {
+        return rows;
+    };
+    for (index, timestamp) in timestamps.iter().enumerate() {
+        let Some(price) = closes.get(index).copied().flatten() else {
+            continue;
+        };
+        let Some(date) = Utc.timestamp_opt(*timestamp, 0).single() else {
+            continue;
+        };
+        rows.push(DailyPriceRow {
+            ticker: ticker.to_string(),
+            date: date.format("%Y-%m-%d").to_string(),
+            price,
+        });
+    }
+    rows
+}
+
+async fn fetch_daily_rows(
+    client: reqwest::Client,
+    base_url: String,
+    ticker: String,
+    start_timestamp: i64,
+    end_timestamp: i64,
+) -> Result<Vec<DailyPriceRow>, String> {
+    let url = format!(
+        "{base_url}/v8/finance/chart/{ticker}?period1={start_timestamp}&period2={end_timestamp}&interval=1d"
+    );
+    let response = client
+        .get(&url)
+        .header("User-Agent", "Mozilla/5.0")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !response.status().is_success() {
+        log::warn!(
+            "Failed to fetch history for {ticker}: {}",
+            response.status()
+        );
+        return Ok(Vec::new());
+    }
+    let text = response.text().await.map_err(|e| e.to_string())?;
+    let json: YahooChartResponse = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    Ok(rows_from_chart(&ticker, &json))
+}
+
+fn insert_daily_prices(db_path: &Path, rows: &[DailyPriceRow]) -> Result<(), String> {
+    if rows.is_empty() {
+        return Ok(());
+    }
+    crate::db_locked!(db_path, {
+        let mut conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
+        {
+            let mut stmt = tx
+                .prepare(
+                    "INSERT OR REPLACE INTO daily_stock_prices (ticker, date, price) VALUES (?1, ?2, ?3)",
+                )
+                .map_err(|e| e.to_string())?;
+            for row in rows {
+                stmt.execute(params![row.ticker, row.date, row.price])
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok::<(), String>(())
+    })?;
+    Ok(())
+}
+
 /// Updates daily stock price history in the database from Yahoo Finance data.
+///
+/// Tickers whose newest stored bar is already today are left untouched. The rest are
+/// downloaded together, then written in one transaction.
 pub async fn update_daily_stock_prices_with_client_and_base(
     db_path: &std::path::Path,
     client: &reqwest::Client,
     base_url: &str,
     tickers: Vec<String>,
 ) -> Result<(), String> {
+    let tickers = unique_tickers(&tickers);
     if tickers.is_empty() {
         return Ok(());
     }
 
-    for ticker in tickers {
-        // 1. Get last date from DB
-        let ticker_for_query = ticker.clone();
-        let last_date_str: Option<String> = crate::db_locked!(db_path, {
-            let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-            let result = conn
-                .query_row(
-                    "SELECT MAX(date) FROM daily_stock_prices WHERE ticker = ?1",
-                    params![ticker_for_query],
-                    |row| row.get(0),
-                )
-                .optional()
-                .map_err(|e| e.to_string())?
-                .flatten();
-            Ok::<Option<String>, String>(result)
-        })?;
+    let today = Utc::now().format("%Y-%m-%d").to_string();
+    let end_timestamp = Utc::now().timestamp();
+    let last_dates = last_daily_price_dates(db_path, &tickers)?;
+    let pending = pending_history_requests(&tickers, &last_dates, &today, end_timestamp)?;
+    if pending.is_empty() {
+        return Ok(());
+    }
 
-        let start_timestamp = if let Some(date_str) = last_date_str {
-            // Parse date and add 1 day
-            let date =
-                NaiveDate::parse_from_str(&date_str, "%Y-%m-%d").map_err(|e| e.to_string())?;
-            let next_day = date.succ_opt().ok_or("Invalid date")?;
-            let datetime = next_day.and_hms_opt(0, 0, 0).unwrap();
-            datetime.and_utc().timestamp()
-        } else {
-            // Default to 10 years ago
-            Utc::now().timestamp() - 10 * 365 * 24 * 60 * 60
-        };
-
-        let end_timestamp = Utc::now().timestamp();
-
-        if start_timestamp >= end_timestamp {
-            continue;
-        }
-
-        // 2. Fetch from Yahoo
-        let url = format!(
-            "{base_url}/v8/finance/chart/{ticker}?period1={start_timestamp}&period2={end_timestamp}&interval=1d"
-        );
-
-        let res = client
-            .get(&url)
-            .header("User-Agent", "Mozilla/5.0")
-            .send()
+    let mut tasks = Vec::with_capacity(pending.len());
+    for request in pending {
+        let client = client.clone();
+        let base_url = base_url.to_string();
+        tasks.push(tokio::spawn(async move {
+            fetch_daily_rows(
+                client,
+                base_url,
+                request.ticker,
+                request.start_timestamp,
+                end_timestamp,
+            )
             .await
-            .map_err(|e| e.to_string())?;
+        }));
+    }
 
-        if !res.status().is_success() {
-            log::warn!("Failed to fetch history for {}: {}", ticker, res.status());
-            continue;
-        }
-
-        let text = res.text().await.map_err(|e| e.to_string())?;
-        let json: crate::models::YahooChartResponse =
-            serde_json::from_str(&text).map_err(|e| e.to_string())?;
-
-        // 3. Insert into DB
-        if let Some(result) = json.chart.result {
-            if let Some(data) = result.first() {
-                if let (Some(timestamps), Some(indicators)) = (&data.timestamp, &data.indicators) {
-                    if let Some(quotes) = &indicators.quote {
-                        if let Some(quote) = quotes.first() {
-                            if let Some(closes) = &quote.close {
-                                crate::db_locked!(db_path, {
-                                    let mut conn =
-                                        Connection::open(db_path).map_err(|e| e.to_string())?;
-                                    let tx = conn.transaction().map_err(|e| e.to_string())?;
-                                    {
-                                        let mut stmt = tx.prepare(
-                                            "INSERT OR REPLACE INTO daily_stock_prices (ticker, date, price) VALUES (?1, ?2, ?3)"
-                                        )
-                                        .map_err(|e: rusqlite::Error| e.to_string())?;
-
-                                        for (i, ts) in timestamps.iter().enumerate() {
-                                            if let Some(price) = closes.get(i).and_then(|p| *p) {
-                                                let date_str = Utc
-                                                    .timestamp_opt(*ts, 0)
-                                                    .unwrap()
-                                                    .format("%Y-%m-%d")
-                                                    .to_string();
-                                                stmt.execute(params![ticker, date_str, price])
-                                                    .map_err(|e| e.to_string())?;
-                                            }
-                                        }
-                                    }
-                                    tx.commit().map_err(|e: rusqlite::Error| e.to_string())?;
-                                    Ok::<(), String>(())
-                                })?;
-                            }
-                        }
-                    }
+    let mut rows = Vec::new();
+    let mut error = None;
+    for task in tasks {
+        match task.await {
+            Ok(Ok(fetched)) => rows.extend(fetched),
+            Ok(Err(message)) => {
+                if error.is_none() {
+                    error = Some(message);
                 }
+            }
+            Err(join_error) => {
+                log::warn!("Daily price task failed: {join_error}");
             }
         }
     }
-
+    insert_daily_prices(db_path, &rows)?;
+    if let Some(message) = error {
+        return Err(message);
+    }
     Ok(())
 }
 
