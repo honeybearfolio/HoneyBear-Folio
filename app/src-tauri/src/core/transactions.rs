@@ -1,5 +1,5 @@
 use crate::models::Transaction;
-use rusqlite::{params, types::ToSql, OptionalExtension};
+use rusqlite::{params, types::ToSql, Connection, OptionalExtension};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::AppHandle;
@@ -18,6 +18,47 @@ pub struct CreateTransactionArgs {
     pub price_per_share: Option<f64>,
     pub fee: Option<f64>,
     pub currency: Option<String>,
+}
+
+/// Adds `delta` to the per-currency total for `account_id`.
+///
+/// Runs on the caller's connection so it commits with the ledger write. `None`
+/// is the bucket for a NULL transaction currency, stored as `''`.
+pub(crate) fn adjust_account_currency_total(
+    conn: &Connection,
+    account_id: i32,
+    currency: Option<&str>,
+    delta: f64,
+) -> Result<(), String> {
+    let key = currency.unwrap_or("");
+    conn.execute(
+        "INSERT INTO account_currency_totals (account_id, currency, total)
+         VALUES (?1, ?2, ?3)
+         ON CONFLICT(account_id, currency) DO UPDATE SET total = total + excluded.total",
+        params![account_id, key, delta],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Moves a ledger amount between account/currency buckets.
+fn apply_account_currency_total_change(
+    conn: &Connection,
+    old_account_id: i32,
+    old_currency: Option<&str>,
+    old_amount: f64,
+    new_account_id: i32,
+    new_currency: Option<&str>,
+    new_amount: f64,
+) -> Result<(), String> {
+    let same_bucket = old_account_id == new_account_id
+        && old_currency.unwrap_or("") == new_currency.unwrap_or("");
+    if same_bucket {
+        adjust_account_currency_total(conn, new_account_id, new_currency, new_amount - old_amount)
+    } else {
+        adjust_account_currency_total(conn, old_account_id, old_currency, -old_amount)?;
+        adjust_account_currency_total(conn, new_account_id, new_currency, new_amount)
+    }
 }
 
 /// Creates a transaction, applying rules and auto-detecting transfers between accounts.
@@ -82,6 +123,8 @@ pub fn create_transaction_db(
         )
         .map_err(|e| e.to_string())?;
 
+        adjust_account_currency_total(&tx, args.account_id, args.currency.as_deref(), args.amount)?;
+
         if let Some(target_id) = target_account_info {
             // Get source account name for the target transaction's payee
             let source_name: String = tx
@@ -117,6 +160,9 @@ pub fn create_transaction_db(
                 params![-args.amount, target_id],
             )
             .map_err(|e| e.to_string())?;
+
+            // The counterpart row omits currency, so it stays in the NULL bucket.
+            adjust_account_currency_total(&tx, target_id, None, -args.amount)?;
         }
 
         tx.commit().map_err(|e| e.to_string())?;
@@ -646,6 +692,8 @@ pub fn create_investment_transaction_db(
         )
         .map_err(|e| e.to_string())?;
 
+        adjust_account_currency_total(&tx, account_id, currency.as_deref(), amount)?;
+
         tx.commit().map_err(|e| e.to_string())?;
 
         Ok(Transaction {
@@ -700,12 +748,12 @@ pub fn update_transaction_db(
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-        // Get old amount and account
-        let (old_amount, old_account_id): (f64, i32) = tx
+        // Get old amount, account, and currency before the row changes.
+        let (old_amount, old_account_id, old_currency): (f64, i32, Option<String>) = tx
             .query_row(
-                "SELECT amount, account_id FROM transactions WHERE id = ?1",
+                "SELECT amount, account_id, currency FROM transactions WHERE id = ?1",
                 params![id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .map_err(|e| e.to_string())?;
 
@@ -738,6 +786,16 @@ pub fn update_transaction_db(
             )
             .map_err(|e| e.to_string())?;
         }
+
+        apply_account_currency_total_change(
+            &tx,
+            old_account_id,
+            old_currency.as_deref(),
+            old_amount,
+            account_id,
+            currency.as_deref(),
+            amount,
+        )?;
 
         // Try to find and update corresponding transfer transaction if any
         let mut counterpart_id_opt: Option<i32> = tx
@@ -779,12 +837,18 @@ pub fn update_transaction_db(
         }
 
         if let Some(counterpart_id) = counterpart_id_opt {
-            // Get old amount and account for counterpart
-            if let Some((old_ctr_amount, ctr_account_id)) = tx
+            // Get old amount, account, and currency for counterpart
+            if let Some((old_ctr_amount, ctr_account_id, old_ctr_currency)) = tx
                 .query_row(
-                    "SELECT amount, account_id FROM transactions WHERE id = ?1",
+                    "SELECT amount, account_id, currency FROM transactions WHERE id = ?1",
                     params![counterpart_id],
-                    |row| Ok((row.get::<_, f64>(0)?, row.get::<_, i32>(1)?)),
+                    |row| {
+                        Ok((
+                            row.get::<_, f64>(0)?,
+                            row.get::<_, i32>(1)?,
+                            row.get::<_, Option<String>>(2)?,
+                        ))
+                    },
                 )
                 .optional()
                 .map_err(|e| e.to_string())?
@@ -814,6 +878,16 @@ pub fn update_transaction_db(
                     )
                     .map_err(|e| e.to_string())?;
                 }
+
+                apply_account_currency_total_change(
+                    &tx,
+                    ctr_account_id,
+                    old_ctr_currency.as_deref(),
+                    old_ctr_amount,
+                    ctr_account_id,
+                    currency.as_deref(),
+                    new_ctr_amount,
+                )?;
             }
         }
 
@@ -874,12 +948,12 @@ pub fn update_investment_transaction_db(
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-        // Get old amount and account
-        let (old_amount, old_account_id): (f64, i32) = tx
+        // Get old amount, account, and currency before the row changes.
+        let (old_amount, old_account_id, old_currency): (f64, i32, Option<String>) = tx
             .query_row(
-                "SELECT amount, account_id FROM transactions WHERE id = ?1",
+                "SELECT amount, account_id, currency FROM transactions WHERE id = ?1",
                 params![id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
             )
             .map_err(|e| e.to_string())?;
 
@@ -960,6 +1034,16 @@ pub fn update_investment_transaction_db(
             .map_err(|e| e.to_string())?;
         }
 
+        apply_account_currency_total_change(
+            &tx,
+            old_account_id,
+            old_currency.as_deref(),
+            old_amount,
+            account_id,
+            currency.as_deref(),
+            amount,
+        )?;
+
         tx.commit().map_err(|e| e.to_string())?;
 
         Ok(Transaction {
@@ -990,12 +1074,18 @@ pub fn delete_transaction_db(db_path: &Path, id: i32) -> Result<(), String> {
 
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-        // Get amount, account_id, notes and linked_tx_id (if any)
-        let (amount, account_id, notes, linked): (f64, i32, Option<String>, Option<i32>) = tx
+        // Get amount, account, currency, notes and linked_tx_id (if any)
+        let (amount, account_id, currency, notes, linked): (
+            f64,
+            i32,
+            Option<String>,
+            Option<String>,
+            Option<i32>,
+        ) = tx
             .query_row(
-                "SELECT amount, account_id, notes, linked_tx_id FROM transactions WHERE id = ?1",
+                "SELECT amount, account_id, currency, notes, linked_tx_id FROM transactions WHERE id = ?1",
                 params![id],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
             )
             .map_err(|e| e.to_string())?;
 
@@ -1009,13 +1099,21 @@ pub fn delete_transaction_db(db_path: &Path, id: i32) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        adjust_account_currency_total(&tx, account_id, currency.as_deref(), -amount)?;
+
         // If there's a linked counterpart, delete it and update its account balance
         if let Some(linked_id) = linked {
-            if let Some((ctr_amount, ctr_account_id)) = tx
+            if let Some((ctr_amount, ctr_account_id, ctr_currency)) = tx
                 .query_row(
-                    "SELECT amount, account_id FROM transactions WHERE id = ?1",
+                    "SELECT amount, account_id, currency FROM transactions WHERE id = ?1",
                     params![linked_id],
-                    |row| Ok((row.get::<_, f64>(0)?, row.get::<_, i32>(1)?)),
+                    |row| {
+                        Ok((
+                            row.get::<_, f64>(0)?,
+                            row.get::<_, i32>(1)?,
+                            row.get::<_, Option<String>>(2)?,
+                        ))
+                    },
                 )
                 .optional()
                 .map_err(|e| e.to_string())?
@@ -1028,14 +1126,21 @@ pub fn delete_transaction_db(db_path: &Path, id: i32) -> Result<(), String> {
                     params![ctr_amount, ctr_account_id],
                 )
                 .map_err(|e| e.to_string())?;
+
+                adjust_account_currency_total(
+                    &tx,
+                    ctr_account_id,
+                    ctr_currency.as_deref(),
+                    -ctr_amount,
+                )?;
             }
         } else if let Some(ref n) = notes {
             // fallback: try to find counterpart by notes
-            if let Some((found_id, ctr_amount, ctr_account_id)) = tx
+            if let Some((found_id, ctr_amount, ctr_account_id, ctr_currency)) = tx
             .query_row(
-                "SELECT id, amount, account_id FROM transactions WHERE notes = ?1 AND category = 'Transfer' LIMIT 1",
+                "SELECT id, amount, account_id, currency FROM transactions WHERE notes = ?1 AND category = 'Transfer' LIMIT 1",
                 params![n],
-                |row| Ok((row.get::<_, i32>(0)?, row.get::<_, f64>(1)?, row.get::<_, i32>(2)?)),
+                |row| Ok((row.get::<_, i32>(0)?, row.get::<_, f64>(1)?, row.get::<_, i32>(2)?, row.get::<_, Option<String>>(3)?)),
             )
             .optional()
             .map_err(|e| e.to_string())?
@@ -1048,6 +1153,8 @@ pub fn delete_transaction_db(db_path: &Path, id: i32) -> Result<(), String> {
                 params![ctr_amount, ctr_account_id],
             )
             .map_err(|e| e.to_string())?;
+
+            adjust_account_currency_total(&tx, ctr_account_id, ctr_currency.as_deref(), -ctr_amount)?;
         }
         }
 

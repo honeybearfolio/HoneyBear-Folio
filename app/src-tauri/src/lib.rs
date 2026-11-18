@@ -52,8 +52,8 @@ pub use crate::transactions::{
 // Re-export accounts helpers used by tests
 pub use crate::accounts::{
     create_account_db, delete_account_db, get_accounts_db, get_accounts_summary_db,
-    get_accounts_summary_with_archived_db, get_accounts_with_archived_db, rename_account_db,
-    set_account_archived_db, update_account_db,
+    get_accounts_summary_with_archived_db, get_accounts_with_archived_db,
+    reconcile_account_balances_db, rename_account_db, set_account_archived_db, update_account_db,
 };
 
 // Re-export rules helpers used by tests
@@ -155,6 +155,7 @@ pub fn run() {
             accounts::delete_account,
             accounts::set_account_archived,
             accounts::get_accounts,
+            accounts::reconcile_account_balances,
             transactions::create_transaction,
             transactions::get_transactions,
             transactions::get_all_transactions,

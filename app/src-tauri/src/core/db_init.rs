@@ -364,7 +364,7 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
 
     let db_ref = db_path;
     crate::db_locked!(db_ref, {
-        let conn = open_db(db_ref)?;
+        let mut conn = open_db(db_ref)?;
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS accounts (
@@ -705,8 +705,61 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        ensure_account_currency_totals(&mut conn)?;
+
         Ok(())
     })
+}
+
+/// Creates `account_currency_totals` and, the first time only, fills it from the ledger.
+///
+/// A later init leaves the table alone. [`rebuild_account_currency_totals`] is the
+/// explicit rescan.
+fn ensure_account_currency_totals(conn: &mut Connection) -> Result<(), String> {
+    let exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'account_currency_totals'",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    if exists != 0 {
+        return Ok(());
+    }
+
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute(
+        "CREATE TABLE account_currency_totals (
+            account_id INTEGER NOT NULL,
+            currency TEXT NOT NULL,
+            total REAL NOT NULL,
+            PRIMARY KEY (account_id, currency)
+        )",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+    rebuild_account_currency_totals(&tx)?;
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Replaces per-account, per-currency totals with `SUM(amount)` over the ledger.
+///
+/// Blank `currency` is the bucket for a NULL transaction currency. Rows whose
+/// account has been removed are left out.
+pub(crate) fn rebuild_account_currency_totals(conn: &Connection) -> Result<(), String> {
+    conn.execute("DELETE FROM account_currency_totals", [])
+        .map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO account_currency_totals (account_id, currency, total)
+         SELECT account_id, COALESCE(currency, ''), SUM(amount)
+         FROM transactions
+         WHERE account_id IN (SELECT id FROM accounts)
+         GROUP BY account_id, COALESCE(currency, '')",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 /// Adds the `archived` flag to `table` if it is missing (`table` must be a trusted literal).
