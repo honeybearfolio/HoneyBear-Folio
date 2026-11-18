@@ -114,6 +114,52 @@ fn test_get_all_transactions() {
     assert!(all.iter().any(|t| t.date == "2023-01-02"));
 }
 
+fn add_dated(db_path: &std::path::PathBuf, account_id: i32, date: &str) {
+    crate::create_transaction_db(
+        db_path,
+        crate::CreateTransactionArgs {
+            account_id,
+            date: date.to_string(),
+            payee: "P".to_string(),
+            notes: None,
+            category: None,
+            amount: -1.0,
+            ticker: None,
+            shares: None,
+            price_per_share: None,
+            fee: None,
+            currency: None,
+        },
+    )
+    .unwrap();
+}
+
+#[test]
+fn test_transaction_date_bounds_span_active_accounts() {
+    let (_dir, db_path) = setup_db();
+    let empty = crate::get_transaction_date_bounds_db(&db_path).unwrap();
+    assert_eq!(empty.min_date, None);
+    assert_eq!(empty.max_date, None);
+
+    let active = crate::create_account_db(&db_path, "Active".to_string(), 0.0, None, None).unwrap();
+    let archived =
+        crate::create_account_db(&db_path, "Archived".to_string(), 0.0, None, None).unwrap();
+
+    add_dated(&db_path, active.id, "2021-02-02");
+    add_dated(&db_path, active.id, "2020-05-01");
+    add_dated(&db_path, archived.id, "2019-01-01");
+    add_dated(&db_path, archived.id, "2024-12-31");
+
+    let open = crate::get_transaction_date_bounds_db(&db_path).unwrap();
+    assert_eq!(open.min_date.as_deref(), Some("2019-01-01"));
+    assert_eq!(open.max_date.as_deref(), Some("2024-12-31"));
+
+    crate::set_account_archived_db(&db_path, archived.id, true).unwrap();
+    let active_only = crate::get_transaction_date_bounds_db(&db_path).unwrap();
+    assert_eq!(active_only.min_date.as_deref(), Some("2020-05-01"));
+    assert_eq!(active_only.max_date.as_deref(), Some("2021-02-02"));
+}
+
 fn trade(db_path: &std::path::PathBuf, account_id: i32, ticker: &str, shares: f64, is_buy: bool) {
     crate::create_investment_transaction_db(
         db_path,

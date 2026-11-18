@@ -2,6 +2,7 @@ import { screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import FireCalculator from "../../../features/fire/FireCalculator";
 import { invoke } from "@tauri-apps/api/core";
+import { dropLedgerRead } from "../../../api/tauri-client";
 import { mockTauri, renderWithStores } from "../../helpers/render";
 
 // Mock dependencies
@@ -122,6 +123,7 @@ describe("FireCalculator", () => {
   };
 
   beforeEach(() => {
+    dropLedgerRead();
     vi.clearAllMocks();
     sessionStorage.clear();
 

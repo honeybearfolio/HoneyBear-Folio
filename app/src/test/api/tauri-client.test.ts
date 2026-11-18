@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { callRust, rust } from "../../api/tauri-client";
+import {
+  callRust,
+  dropLedgerRead,
+  loadAllTransactions,
+  rust,
+} from "../../api/tauri-client";
 import type {
   HoldingWithQuote,
   ReportComputeInput,
@@ -11,6 +16,7 @@ import type {
 
 describe("tauri-client", () => {
   beforeEach(() => {
+    dropLedgerRead();
     vi.mocked(invoke).mockResolvedValue(null);
   });
 
@@ -695,6 +701,109 @@ describe("tauri-client", () => {
 
       await rust.delete_goal({ id: 1 });
       expect(invoke).toHaveBeenCalledWith("delete_goal", { id: 1 });
+    });
+  });
+
+  describe("shared ledger read", () => {
+    it("shares one in-flight full-ledger read", async () => {
+      let resolveRead: (rows: { id: number }[]) => void = () => {};
+      vi.mocked(invoke).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveRead = resolve;
+          }),
+      );
+
+      const first = loadAllTransactions();
+      const second = rust.get_all_transactions();
+      expect(first).toBe(second);
+      expect(invoke).toHaveBeenCalledTimes(1);
+      expect(invoke).toHaveBeenCalledWith("get_all_transactions");
+
+      resolveRead([{ id: 1 }]);
+      await expect(first).resolves.toEqual([{ id: 1 }]);
+      await expect(second).resolves.toEqual([{ id: 1 }]);
+    });
+
+    it("does not share a filtered page with the full ledger", async () => {
+      vi.mocked(invoke).mockResolvedValue([{ id: 1 }]);
+      await loadAllTransactions();
+      vi.mocked(invoke).mockClear();
+
+      await rust.get_all_transactions({ accountId: 2, limit: 50 });
+      expect(invoke).toHaveBeenCalledWith("get_all_transactions", {
+        accountId: 2,
+        limit: 50,
+      });
+
+      vi.mocked(invoke).mockClear();
+      await loadAllTransactions();
+      expect(invoke).not.toHaveBeenCalled();
+    });
+
+    it("retries the full ledger after a failed read", async () => {
+      vi.mocked(invoke).mockRejectedValueOnce(new Error("locked"));
+      await expect(loadAllTransactions()).rejects.toThrow("locked");
+
+      vi.mocked(invoke).mockResolvedValueOnce([{ id: 4 }]);
+      await expect(loadAllTransactions()).resolves.toEqual([{ id: 4 }]);
+      expect(invoke).toHaveBeenCalledTimes(2);
+    });
+
+    it("drops the shared read after a transaction write succeeds", async () => {
+      vi.mocked(invoke).mockResolvedValue([{ id: 1 }]);
+      await loadAllTransactions();
+      await rust.create_transaction({ args: { accountId: 1 } });
+
+      vi.mocked(invoke).mockClear();
+      await loadAllTransactions();
+      expect(invoke).toHaveBeenCalledTimes(1);
+      expect(invoke).toHaveBeenCalledWith("get_all_transactions");
+    });
+
+    it("keeps the shared read when a write fails", async () => {
+      vi.mocked(invoke).mockResolvedValueOnce([{ id: 1 }]);
+      await loadAllTransactions();
+      vi.mocked(invoke).mockRejectedValueOnce(new Error("no"));
+      await expect(rust.delete_transaction({ id: 1 })).rejects.toThrow("no");
+
+      vi.mocked(invoke).mockClear();
+      await loadAllTransactions();
+      expect(invoke).not.toHaveBeenCalled();
+    });
+
+    it("drops the shared read after account, asset, liability, and session writes", async () => {
+      vi.mocked(invoke).mockResolvedValue([]);
+      const writes = [
+        () => rust.create_account({ name: "Checking" }),
+        () => rust.create_asset({ name: "House", category: "real_estate" }),
+        () => rust.create_liability({ name: "Loan", category: "loan" }),
+        () => rust.open_session({ path: "/tmp/book.sqlite" }),
+        () => rust.set_db_path({ path: "/tmp/other.sqlite" }),
+      ];
+
+      for (const write of writes) {
+        await loadAllTransactions();
+        await write();
+        vi.mocked(invoke).mockClear();
+        await loadAllTransactions();
+        expect(invoke).toHaveBeenCalledWith("get_all_transactions");
+        vi.mocked(invoke).mockClear();
+      }
+    });
+
+    it("keeps the shared read across a goal write", async () => {
+      vi.mocked(invoke).mockResolvedValue([]);
+      await loadAllTransactions();
+      await rust.create_goal({
+        name: "House",
+        targetAmount: 1000,
+        links: [],
+      });
+
+      vi.mocked(invoke).mockClear();
+      await loadAllTransactions();
+      expect(invoke).not.toHaveBeenCalled();
     });
   });
 });

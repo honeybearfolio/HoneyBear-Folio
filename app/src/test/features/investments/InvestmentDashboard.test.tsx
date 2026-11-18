@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import InvestmentDashboard from "../../../features/investments/InvestmentDashboard";
 import { invoke } from "@tauri-apps/api/core";
+import { dropLedgerRead } from "../../../api/tauri-client";
 
 // Mock dependencies
 vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
@@ -59,6 +60,7 @@ vi.mock("chart.js", () => ({
 
 describe("InvestmentDashboard", () => {
   beforeEach(() => {
+    dropLedgerRead();
     vi.clearAllMocks();
   });
 

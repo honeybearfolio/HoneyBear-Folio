@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { rust } from "../../api/tauri-client";
+import { loadAllTransactions, rust } from "../../api/tauri-client";
 import { RefreshCw } from "lucide-react";
 import { useFormatNumber } from "../../utils/format";
 import { createDoughnutSliceTooltipLabel } from "../../utils/chartTooltip";
@@ -68,7 +68,7 @@ export default function InvestmentDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const transactions = await rust.get_all_transactions();
+      const transactions = await loadAllTransactions();
       const { currentHoldings } =
         await buildHoldingsFromTransactions(transactions);
 
