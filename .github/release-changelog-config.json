@@ -2,6 +2,7 @@
   "categories": [
     { "title": "## 🚀 Features", "labels": ["feature"] },
     { "title": "## ✨ Enhancements", "labels": ["enhancement"] },
+    { "title": "## ⚡ Performance Improvements", "labels": ["performance"] },
     { "title": "## 🐛 Fixes", "labels": ["fix", "bug"] },
     { "title": "## 📚 Docs", "labels": ["docs", "documentation"] },
     { "title": "## 🧰 Maintenance", "labels": ["chore", "ci", "refactor", "infra", "deployment", "maintainability"] },
@@ -14,6 +15,7 @@
   "label_extractor": [
     { "pattern": "\\[(feat|feature)\\]", "target": "feature", "on_property": "title", "flags": "iu" },
     { "pattern": "\\[(fix)\\]", "target": "fix", "on_property": "title", "flags": "iu" },
+    { "pattern": "\\[(performance)\\]", "target": "performance", "on_property": "title", "flags": "iu" },
     { "pattern": "\\[(docs)\\]", "target": "docs", "on_property": "title", "flags": "iu" },
     { "pattern": "\\[(chore)\\]", "target": "chore", "on_property": "title", "flags": "iu" },
     { "pattern": "\\[(security)\\]", "target": "security", "on_property": "title", "flags": "iu" }
