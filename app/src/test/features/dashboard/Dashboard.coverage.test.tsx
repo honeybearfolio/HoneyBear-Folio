@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Dashboard from "../../../features/dashboard/Dashboard";
@@ -185,10 +185,12 @@ describe("Dashboard coverage", () => {
       );
     });
 
-    const netWorthCard = screen
-      .getByText("Current Net Worth")
-      .closest(".summary-card");
-    expect(netWorthCard?.textContent).toContain("fmt-12500");
+    await waitFor(() => {
+      const netWorthCard = screen
+        .getByText("Current Net Worth")
+        .closest(".summary-card");
+      expect(netWorthCard?.textContent).toContain("fmt-12500");
+    });
   });
 
   it("selects YTD time range", async () => {
@@ -372,5 +374,150 @@ describe("Dashboard coverage", () => {
       const pricesArgs = pricesCall![1] as { tickers?: string[] };
       expect(pricesArgs.tickers).toContain("EURUSD=X");
     });
+  });
+
+  it("paints cash charts and account totals before daily prices return", async () => {
+    const user = userEvent.setup();
+    let releasePrices: (value: unknown) => void = () => {};
+    const prices = new Promise((resolve) => {
+      releasePrices = resolve;
+    });
+    const eurAccounts = [
+      { id: 1, name: "EUR Checking", balance: 1000, currency: "EUR" },
+    ];
+
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve(sampleSeries);
+      if (cmd === "get_daily_stock_prices") return prices;
+      if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
+      if (cmd === "compute_net_worth") return Promise.resolve(1000);
+      return Promise.resolve(null);
+    });
+
+    render(<Dashboard accounts={eurAccounts} />);
+
+    expect(await screen.findByTestId("line-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("bar-chart")).toBeInTheDocument();
+    expect(screen.getByText("Total Accounts")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Accounts" }));
+    expect(screen.getByText("EUR Checking")).toBeInTheDocument();
+    expect(invoke).not.toHaveBeenCalledWith(
+      "update_daily_stock_prices",
+      expect.anything(),
+    );
+
+    releasePrices([]);
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith(
+        "update_daily_stock_prices",
+        expect.objectContaining({ tickers: ["EURUSD=X"] }),
+      );
+    });
+  });
+
+  it("reads every ticker's stored history at the same time", async () => {
+    let releaseReads = false;
+    const pending: Array<(value: unknown) => void> = [];
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve({
+          ...sampleSeries,
+          tickers: ["AAPL", "MSFT"],
+        });
+      if (cmd === "get_daily_stock_prices") {
+        if (releaseReads) return Promise.resolve([]);
+        return new Promise((resolve) => {
+          pending.push(resolve);
+        });
+      }
+      if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
+      if (cmd === "get_stock_quotes") return Promise.resolve([]);
+      if (cmd === "compute_net_worth") return Promise.resolve(1000);
+      return Promise.resolve(null);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => {
+      const reads = vi
+        .mocked(invoke)
+        .mock.calls.filter(([cmd]) => cmd === "get_daily_stock_prices");
+      expect(
+        reads.map(([, args]) => (args as { ticker: string }).ticker),
+      ).toEqual(expect.arrayContaining(["AAPL", "MSFT"]));
+    });
+    expect(pending.length).toBeGreaterThanOrEqual(2);
+
+    releaseReads = true;
+    for (const resolve of pending) resolve([]);
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith(
+        "update_daily_stock_prices",
+        expect.objectContaining({ tickers: ["AAPL", "MSFT"] }),
+      );
+    });
+  });
+
+  it("skips the daily price update when stored history is already from today", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    vi.mocked(invoke).mockImplementation((cmd: string, args?: unknown) => {
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve({ ...sampleSeries, tickers: ["AAPL", "MSFT"] });
+      if (cmd === "get_daily_stock_prices") {
+        const ticker = (args as { ticker?: string } | undefined)?.ticker;
+        if (ticker === "AAPL")
+          return Promise.resolve([{ date: today, price: 10 }]);
+        return Promise.resolve([]);
+      }
+      if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
+      if (cmd === "get_stock_quotes") return Promise.resolve([]);
+      if (cmd === "compute_net_worth") return Promise.resolve(1000);
+      return Promise.resolve(null);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("update_daily_stock_prices", {
+        tickers: ["MSFT"],
+      });
+    });
+    expect(invoke).not.toHaveBeenCalledWith("update_daily_stock_prices", {
+      tickers: ["AAPL", "MSFT"],
+    });
+  });
+
+  it("does not update daily prices when every ticker is already fresh", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve({ ...sampleSeries, tickers: ["AAPL"] });
+      if (cmd === "get_daily_stock_prices")
+        return Promise.resolve([{ date: today, price: 10 }]);
+      if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
+      if (cmd === "get_stock_quotes") return Promise.resolve([]);
+      if (cmd === "compute_net_worth") return Promise.resolve(1000);
+      return Promise.resolve(null);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    await screen.findByTestId("line-chart");
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith(
+        "get_daily_stock_prices",
+        expect.objectContaining({ ticker: "AAPL" }),
+      );
+    });
+    await act(async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+    });
+    expect(invoke).not.toHaveBeenCalledWith(
+      "update_daily_stock_prices",
+      expect.anything(),
+    );
   });
 });
