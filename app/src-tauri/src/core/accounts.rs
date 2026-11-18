@@ -81,6 +81,13 @@ pub fn create_account_db(
             ],
         )
         .map_err(|e| e.to_string())?;
+
+            crate::transactions::adjust_account_currency_total(
+                &tx,
+                id,
+                currency.as_deref(),
+                balance_to_set,
+            )?;
         }
 
         tx.commit().map_err(|e| e.to_string())?;
@@ -221,6 +228,12 @@ pub fn delete_account_db(db_path: &Path, id: i32) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        tx.execute(
+            "DELETE FROM account_currency_totals WHERE account_id = ?1",
+            params![id],
+        )
+        .map_err(|e| e.to_string())?;
+
         // Drop goal funding links that pointed at this account.
         tx.execute("DELETE FROM goal_links WHERE account_id = ?1", params![id])
             .map_err(|e| e.to_string())?;
@@ -304,6 +317,10 @@ pub fn get_accounts_summary_db(db_path: &Path, target: &str) -> Result<AccountsS
 }
 
 /// Like [`get_accounts_summary_db`], optionally including archived accounts.
+///
+/// `raw_data` is the per-currency total kept next to each ledger write. A blank
+/// stored currency is reported as `target`, matching a NULL transaction currency.
+/// [`reconcile_account_balances_db`] is the full `SUM(amount)` scan.
 pub fn get_accounts_summary_with_archived_db(
     db_path: &Path,
     target: &str,
@@ -313,17 +330,16 @@ pub fn get_accounts_summary_with_archived_db(
         let accounts = get_accounts_with_archived_db(db_path, include_archived)?;
         let conn = crate::db_init::open_db(db_path)?;
 
-        // Group transaction amounts by account and currency
         let mut stmt = conn
-        .prepare("SELECT account_id, currency, SUM(amount) FROM transactions WHERE ?1 OR account_id NOT IN (SELECT id FROM accounts WHERE archived = 1) GROUP BY account_id, currency")
+        .prepare("SELECT account_id, currency, total FROM account_currency_totals WHERE ?1 OR account_id NOT IN (SELECT id FROM accounts WHERE archived = 1)")
         .map_err(|e| e.to_string())?;
 
         let rows = stmt
             .query_map(params![include_archived], |row| {
                 Ok((
                     row.get::<_, i32>(0)?,
-                    row.get::<_, Option<String>>(1)?,
-                    row.get::<_, Option<f64>>(2)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, f64>(2)?,
                 ))
             })
             .map_err(|e| e.to_string())?;
@@ -331,13 +347,27 @@ pub fn get_accounts_summary_with_archived_db(
         let mut raw_data = Vec::new();
 
         for r in rows {
-            let (acc_id, curr_opt, amt_opt) = r.map_err(|e| e.to_string())?;
-            let amt = amt_opt.unwrap_or(0.0);
-            let curr = curr_opt.unwrap_or_else(|| target.to_string());
-            raw_data.push((acc_id, curr.clone(), amt));
+            let (acc_id, stored_currency, amt) = r.map_err(|e| e.to_string())?;
+            let curr = if stored_currency.is_empty() {
+                target.to_string()
+            } else {
+                stored_currency
+            };
+            raw_data.push((acc_id, curr, amt));
         }
 
         Ok(AccountsSummary { accounts, raw_data })
+    })
+}
+
+/// Rebuilds per-currency totals from `SUM(amount) GROUP BY account_id, currency`.
+pub fn reconcile_account_balances_db(db_path: &Path) -> Result<(), String> {
+    crate::db_locked!(db_path, {
+        let mut conn = crate::db_init::open_db(db_path)?;
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
+        crate::db_init::rebuild_account_currency_totals(&tx)?;
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(())
     })
 }
 
@@ -385,6 +415,13 @@ pub fn delete_account(app_handle: AppHandle, id: i32) -> Result<(), String> {
 pub fn set_account_archived(app_handle: AppHandle, id: i32, archived: bool) -> Result<(), String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     set_account_archived_db(&db_path, id, archived)
+}
+
+/// Tauri command: rebuilds per-currency account totals from the ledger.
+#[tauri::command]
+pub fn reconcile_account_balances(app_handle: AppHandle) -> Result<(), String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    reconcile_account_balances_db(&db_path)
 }
 
 /// Tauri command: fetches accounts (active only unless `include_archived`) with balances converted using exchange rates and market data.

@@ -6,7 +6,6 @@ use crate::core::llm::{
 };
 use crate::tests::common::setup_db;
 use crate::{calculate_account_balances, Account, CreateTransactionArgs};
-use rusqlite::Connection;
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -84,10 +83,21 @@ fn test_get_accounts_summary_uses_target_for_null_transaction_currency() {
     )
     .unwrap();
 
-    let conn = Connection::open(&db_path).unwrap();
-    conn.execute(
-        "INSERT INTO transactions (account_id, date, payee, amount) VALUES (?1, '2024-01-01', 'Gift', 50.0)",
-        rusqlite::params![account.id],
+    crate::create_transaction_db(
+        &db_path,
+        CreateTransactionArgs {
+            account_id: account.id,
+            date: "2024-01-01".to_string(),
+            payee: "Gift".to_string(),
+            notes: None,
+            category: None,
+            amount: 50.0,
+            ticker: None,
+            shares: None,
+            price_per_share: None,
+            fee: None,
+            currency: None,
+        },
     )
     .unwrap();
 

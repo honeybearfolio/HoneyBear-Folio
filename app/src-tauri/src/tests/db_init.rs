@@ -25,6 +25,7 @@ fn test_init_db_at_path_creates_all_tables() {
         "custom_exchange_rates",
         "stock_prices",
         "daily_stock_prices",
+        "account_currency_totals",
     ] {
         let exists: i64 = conn
             .query_row(
@@ -165,6 +166,75 @@ fn test_init_db_at_path_is_idempotent() {
         )
         .unwrap();
     assert!(count >= 10);
+}
+
+fn currency_amount(summary: &crate::models::AccountsSummary, currency: &str) -> f64 {
+    summary
+        .raw_data
+        .iter()
+        .filter(|(_, code, _)| code == currency)
+        .map(|(_, _, amount)| *amount)
+        .sum()
+}
+
+#[test]
+fn test_init_rebuilds_currency_totals_once_from_the_ledger() {
+    let dir = tempdir().unwrap();
+    let db_path = dir.path().join("legacy-totals.db");
+    init_db_at_path(&db_path).unwrap();
+
+    {
+        let conn = Connection::open(&db_path).unwrap();
+        conn.execute("DROP TABLE account_currency_totals", [])
+            .unwrap();
+        conn.execute(
+            "INSERT INTO accounts (name, balance, currency) VALUES ('Cash', 35.0, 'USD')",
+            [],
+        )
+        .unwrap();
+        let account_id = conn.last_insert_rowid();
+        conn.execute(
+            "INSERT INTO transactions (account_id, date, payee, amount, currency) VALUES (?1, '2024-01-01', 'Pay', 100.0, 'USD')",
+            [account_id],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO transactions (account_id, date, payee, amount, currency) VALUES (?1, '2024-01-02', 'Shop', -70.0, 'EUR')",
+            [account_id],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO transactions (account_id, date, payee, amount) VALUES (?1, '2024-01-03', 'Cash', 5.0)",
+            [account_id],
+        )
+        .unwrap();
+    }
+
+    init_db_at_path(&db_path).unwrap();
+
+    let summary = get_accounts_summary_db(&db_path, "GBP").unwrap();
+    assert_eq!(currency_amount(&summary, "USD"), 100.0);
+    assert_eq!(currency_amount(&summary, "EUR"), -70.0);
+    assert_eq!(currency_amount(&summary, "GBP"), 5.0);
+
+    {
+        let conn = Connection::open(&db_path).unwrap();
+        conn.execute(
+            "UPDATE account_currency_totals SET total = 1.0 WHERE currency = 'USD'",
+            [],
+        )
+        .unwrap();
+    }
+
+    init_db_at_path(&db_path).unwrap();
+    let drifted = get_accounts_summary_db(&db_path, "GBP").unwrap();
+    assert_eq!(currency_amount(&drifted, "USD"), 1.0);
+
+    crate::reconcile_account_balances_db(&db_path).unwrap();
+    let rebuilt = get_accounts_summary_db(&db_path, "GBP").unwrap();
+    assert_eq!(currency_amount(&rebuilt, "USD"), 100.0);
+    assert_eq!(currency_amount(&rebuilt, "EUR"), -70.0);
+    assert_eq!(currency_amount(&rebuilt, "GBP"), 5.0);
 }
 
 #[test]

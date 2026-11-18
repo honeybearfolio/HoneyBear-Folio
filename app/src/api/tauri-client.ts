@@ -188,6 +188,9 @@ export const rust = {
     includeArchived?: boolean;
   }): Promise<Account[]> => callRust("get_accounts", args),
 
+  reconcile_account_balances: (): Promise<void> =>
+    callRust("reconcile_account_balances"),
+
   set_account_archived: (args: {
     id: string | number;
     archived: boolean;
