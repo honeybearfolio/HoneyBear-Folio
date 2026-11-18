@@ -227,6 +227,34 @@ pub fn get_all_transactions_db(db_path: &Path) -> Result<Vec<Transaction>, Strin
     )
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct TransactionDateBounds {
+    pub min_date: Option<String>,
+    pub max_date: Option<String>,
+}
+
+/// Earliest and latest transaction dates on active accounts.
+///
+/// Archived accounts are skipped, matching [`get_all_transactions_db`]. Both
+/// fields are `None` when no active-account rows exist.
+pub fn get_transaction_date_bounds_db(db_path: &Path) -> Result<TransactionDateBounds, String> {
+    crate::db_locked!(db_path, {
+        let conn = crate::db_init::open_db(db_path)?;
+        conn.query_row(
+            "SELECT MIN(date), MAX(date) FROM transactions \
+             WHERE account_id NOT IN (SELECT id FROM accounts WHERE archived = 1)",
+            [],
+            |row| {
+                Ok(TransactionDateBounds {
+                    min_date: row.get(0)?,
+                    max_date: row.get(1)?,
+                })
+            },
+        )
+        .map_err(|e| e.to_string())
+    })
+}
+
 pub fn query_transactions_db(
     db_path: &Path,
     query: &TransactionListQuery,
@@ -1208,6 +1236,13 @@ pub fn get_transactions(
             sort_dir,
         },
     )
+}
+
+/// Tauri command: earliest and latest dates on active accounts.
+#[tauri::command]
+pub fn get_transaction_date_bounds(app_handle: AppHandle) -> Result<TransactionDateBounds, String> {
+    let db_path = crate::db_init::get_db_path(&app_handle)?;
+    get_transaction_date_bounds_db(&db_path)
 }
 
 /// Tauri command: one page of transactions across active accounts.

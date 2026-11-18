@@ -1,6 +1,6 @@
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
-import { rust } from "../api/tauri-client";
+import { loadAllTransactions, rust } from "../api/tauri-client";
 import type {
   Account,
   PdfReportType,
@@ -186,7 +186,7 @@ export async function buildAndWriteExport({
   appCurrency,
 }: BuildExportPayloadOptions): Promise<string | null> {
   const accounts = await rust.get_accounts();
-  const transactions = await rust.get_all_transactions();
+  const transactions = await loadAllTransactions();
   const assets = await fetchAssetsForExport(rust);
   const liabilities = await fetchLiabilitiesForExport(rust);
 

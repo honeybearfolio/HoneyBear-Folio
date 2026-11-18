@@ -38,6 +38,12 @@ export interface Transaction {
   tags?: string;
 }
 
+/** Earliest and latest dates on active accounts. Null when the ledger is empty. */
+export interface TransactionDateBounds {
+  min_date: string | null;
+  max_date: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Sessions
 // ---------------------------------------------------------------------------

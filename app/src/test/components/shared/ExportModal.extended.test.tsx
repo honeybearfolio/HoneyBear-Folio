@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ExportModal from "../../../components/shared/ExportModal";
+import { dropLedgerRead } from "../../../api/tauri-client";
 import { useNumberFormatStore } from "../../../stores/number-format";
 
 const { mockGetDatePickerFormat, mockDatePicker } = vi.hoisted(() => ({
@@ -94,6 +95,7 @@ describe("ExportModal extended", () => {
   const defaultProps = { onClose: vi.fn() };
 
   beforeEach(() => {
+    dropLedgerRead();
     vi.clearAllMocks();
     useNumberFormatStore.setState({
       dateFormat: "DD/MM/YYYY",

@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import InvestmentDashboard from "../../../features/investments/InvestmentDashboard";
 import { invoke } from "@tauri-apps/api/core";
+import { dropLedgerRead } from "../../../api/tauri-client";
 
 vi.mock("../../../hooks/useIsDark", () => ({ default: () => false }));
 
@@ -83,6 +84,7 @@ vi.mock("chart.js", () => ({
 
 describe("InvestmentDashboard extended", () => {
   beforeEach(() => {
+    dropLedgerRead();
     vi.clearAllMocks();
   });
 

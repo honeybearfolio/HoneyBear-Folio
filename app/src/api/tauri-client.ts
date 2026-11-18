@@ -33,6 +33,7 @@ import type {
   StockQuote,
   TickerSuggestion,
   Transaction,
+  TransactionDateBounds,
   XlsxReadResult,
   XlsxSheet,
 } from "./types";
@@ -66,6 +67,38 @@ export function callRust<T = unknown>(
   return invoke<T>(command, args);
 }
 
+/**
+ * One full-ledger read, shared until a write drops it.
+ * Kept after it settles so navigating back does not refetch. A rejected read
+ * is dropped so the next caller can retry. Startup does not call this.
+ */
+let ledgerRead: Promise<Transaction[]> | null = null;
+
+export function dropLedgerRead(): void {
+  ledgerRead = null;
+}
+
+function dropLedgerAfter<T>(request: Promise<T>): Promise<T> {
+  return request.then((value) => {
+    dropLedgerRead();
+    return value;
+  });
+}
+
+export function loadAllTransactions(): Promise<Transaction[]> {
+  if (ledgerRead) return ledgerRead;
+  const slot: { current: Promise<Transaction[]> | null } = { current: null };
+  const pending = callRust<Transaction[]>("get_all_transactions").catch(
+    (error: unknown) => {
+      if (ledgerRead === slot.current) dropLedgerRead();
+      throw error;
+    },
+  );
+  slot.current = pending;
+  ledgerRead = pending;
+  return pending;
+}
+
 export const rust = {
   // ---------------------------------------------------------------------------
   // Scheduled occurrences
@@ -74,7 +107,8 @@ export const rust = {
   apply_scheduled_occurrence: (args: {
     scheduledTxId: string | number;
     applyDate: string;
-  }): Promise<void> => callRust("apply_scheduled_occurrence", args),
+  }): Promise<void> =>
+    dropLedgerAfter(callRust("apply_scheduled_occurrence", args)),
 
   skip_scheduled_occurrence: (args: {
     scheduledTxId: string | number;
@@ -181,7 +215,7 @@ export const rust = {
       notes: string;
       category: string;
     };
-  }): Promise<Account> => callRust("create_account", args),
+  }): Promise<Account> => dropLedgerAfter(callRust("create_account", args)),
 
   get_accounts: (args?: {
     targetCurrency?: string;
@@ -189,36 +223,36 @@ export const rust = {
   }): Promise<Account[]> => callRust("get_accounts", args),
 
   reconcile_account_balances: (): Promise<void> =>
-    callRust("reconcile_account_balances"),
+    dropLedgerAfter(callRust("reconcile_account_balances")),
 
   set_account_archived: (args: {
     id: string | number;
     archived: boolean;
-  }): Promise<void> => callRust("set_account_archived", args),
+  }): Promise<void> => dropLedgerAfter(callRust("set_account_archived", args)),
 
   rename_account: (args: {
     id: string | number;
     newName: string;
-  }): Promise<void> => callRust("rename_account", args),
+  }): Promise<void> => dropLedgerAfter(callRust("rename_account", args)),
 
   update_account: (args: {
     id: string | number;
     name: string;
     currency?: string | null;
-  }): Promise<void> => callRust("update_account", args),
+  }): Promise<void> => dropLedgerAfter(callRust("update_account", args)),
 
   delete_account: (args: { id: string | number }): Promise<void> =>
-    callRust("delete_account", args),
+    dropLedgerAfter(callRust("delete_account", args)),
 
   // ---------------------------------------------------------------------------
   // Sessions
   // ---------------------------------------------------------------------------
 
   create_session: (args: { path: string }): Promise<Session> =>
-    callRust("create_session", args),
+    dropLedgerAfter(callRust("create_session", args)),
 
   open_session: (args: { path: string }): Promise<Session> =>
-    callRust("open_session", args),
+    dropLedgerAfter(callRust("open_session", args)),
 
   get_active_session: (): Promise<Session | null> =>
     callRust("get_active_session"),
@@ -238,11 +272,12 @@ export const rust = {
 
   create_transaction: (args: {
     args: Record<string, unknown>;
-  }): Promise<void> => callRust("create_transaction", args),
+  }): Promise<void> => dropLedgerAfter(callRust("create_transaction", args)),
 
   create_investment_transaction: (args: {
     args: Record<string, unknown>;
-  }): Promise<void> => callRust("create_investment_transaction", args),
+  }): Promise<void> =>
+    dropLedgerAfter(callRust("create_investment_transaction", args)),
 
   get_transactions: (
     args: TransactionListArgs & { accountId: string | number },
@@ -250,8 +285,11 @@ export const rust = {
 
   get_all_transactions: (args?: TransactionListArgs): Promise<Transaction[]> =>
     args === undefined
-      ? callRust("get_all_transactions")
+      ? loadAllTransactions()
       : callRust("get_all_transactions", args),
+
+  get_transaction_date_bounds: (): Promise<TransactionDateBounds> =>
+    callRust("get_transaction_date_bounds"),
 
   get_dashboard_chart_series: (args: {
     query: {
@@ -287,14 +325,15 @@ export const rust = {
 
   update_transaction: (args: {
     args: Record<string, unknown>;
-  }): Promise<void> => callRust("update_transaction", args),
+  }): Promise<void> => dropLedgerAfter(callRust("update_transaction", args)),
 
   update_investment_transaction: (args: {
     args: Record<string, unknown>;
-  }): Promise<void> => callRust("update_investment_transaction", args),
+  }): Promise<void> =>
+    dropLedgerAfter(callRust("update_investment_transaction", args)),
 
   delete_transaction: (args: { id: string | number }): Promise<void> =>
-    callRust("delete_transaction", args),
+    dropLedgerAfter(callRust("delete_transaction", args)),
 
   // ---------------------------------------------------------------------------
   // Rules
@@ -365,9 +404,10 @@ export const rust = {
   get_db_path_command: (): Promise<string> => callRust("get_db_path_command"),
 
   set_db_path: (args: { path: string }): Promise<void> =>
-    callRust("set_db_path", args),
+    dropLedgerAfter(callRust("set_db_path", args)),
 
-  reset_db_path: (): Promise<void> => callRust("reset_db_path"),
+  reset_db_path: (): Promise<void> =>
+    dropLedgerAfter(callRust("reset_db_path")),
 
   // ---------------------------------------------------------------------------
   // XLSX import/export
@@ -437,7 +477,7 @@ export const rust = {
     category: string;
     currency?: string;
     notes?: string;
-  }): Promise<Asset> => callRust("create_asset", args),
+  }): Promise<Asset> => dropLedgerAfter(callRust("create_asset", args)),
 
   get_assets: (args?: {
     targetCurrency?: string;
@@ -447,7 +487,7 @@ export const rust = {
   set_asset_archived: (args: {
     id: number;
     archived: boolean;
-  }): Promise<void> => callRust("set_asset_archived", args),
+  }): Promise<void> => dropLedgerAfter(callRust("set_asset_archived", args)),
 
   update_asset: (args: {
     id: number;
@@ -455,16 +495,17 @@ export const rust = {
     category: string;
     currency?: string;
     notes?: string;
-  }): Promise<void> => callRust("update_asset", args),
+  }): Promise<void> => dropLedgerAfter(callRust("update_asset", args)),
 
   delete_asset: (args: { id: number }): Promise<void> =>
-    callRust("delete_asset", args),
+    dropLedgerAfter(callRust("delete_asset", args)),
 
   create_valuation: (args: {
     assetId: number;
     date: string;
     value: number;
-  }): Promise<AssetValuation> => callRust("create_valuation", args),
+  }): Promise<AssetValuation> =>
+    dropLedgerAfter(callRust("create_valuation", args)),
 
   get_valuations: (args: { assetId: number }): Promise<AssetValuation[]> =>
     callRust("get_valuations", args),
@@ -473,10 +514,10 @@ export const rust = {
     id: number;
     date: string;
     value: number;
-  }): Promise<void> => callRust("update_valuation", args),
+  }): Promise<void> => dropLedgerAfter(callRust("update_valuation", args)),
 
   delete_valuation: (args: { id: number }): Promise<void> =>
-    callRust("delete_valuation", args),
+    dropLedgerAfter(callRust("delete_valuation", args)),
 
   get_total_assets_value: (args?: {
     targetCurrency?: string;
@@ -507,7 +548,7 @@ export const rust = {
     category: string;
     currency?: string;
     notes?: string;
-  }): Promise<Liability> => callRust("create_liability", args),
+  }): Promise<Liability> => dropLedgerAfter(callRust("create_liability", args)),
 
   get_liabilities: (args?: {
     targetCurrency?: string;
@@ -517,7 +558,8 @@ export const rust = {
   set_liability_archived: (args: {
     id: number;
     archived: boolean;
-  }): Promise<void> => callRust("set_liability_archived", args),
+  }): Promise<void> =>
+    dropLedgerAfter(callRust("set_liability_archived", args)),
 
   update_liability: (args: {
     id: number;
@@ -525,17 +567,17 @@ export const rust = {
     category: string;
     currency?: string;
     notes?: string;
-  }): Promise<void> => callRust("update_liability", args),
+  }): Promise<void> => dropLedgerAfter(callRust("update_liability", args)),
 
   delete_liability: (args: { id: number }): Promise<void> =>
-    callRust("delete_liability", args),
+    dropLedgerAfter(callRust("delete_liability", args)),
 
   create_liability_valuation: (args: {
     liabilityId: number;
     date: string;
     value: number;
   }): Promise<LiabilityValuation> =>
-    callRust("create_liability_valuation", args),
+    dropLedgerAfter(callRust("create_liability_valuation", args)),
 
   get_liability_valuations: (args: {
     liabilityId: number;
@@ -546,10 +588,11 @@ export const rust = {
     id: number;
     date: string;
     value: number;
-  }): Promise<void> => callRust("update_liability_valuation", args),
+  }): Promise<void> =>
+    dropLedgerAfter(callRust("update_liability_valuation", args)),
 
   delete_liability_valuation: (args: { id: number }): Promise<void> =>
-    callRust("delete_liability_valuation", args),
+    dropLedgerAfter(callRust("delete_liability_valuation", args)),
 
   get_total_liabilities_value: (args?: {
     targetCurrency?: string;

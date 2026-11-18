@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { rust } from "../../api/tauri-client";
+import { loadAllTransactions, rust } from "../../api/tauri-client";
 import {
   runMonteCarloSimulation,
   calculateDeterministicProjection,
@@ -232,7 +232,7 @@ export default function FireCalculator() {
     setLoading(true);
     try {
       const accounts = await rust.get_accounts({ targetCurrency: currency });
-      const transactions = await rust.get_all_transactions();
+      const transactions = await loadAllTransactions();
 
       // Build holdings and first trade date
       const { currentHoldings, firstTradeDate } =
