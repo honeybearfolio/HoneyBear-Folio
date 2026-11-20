@@ -53,6 +53,7 @@ vi.mock("lucide-react", () => ({
   Gem: () => <span>Gem</span>,
   Scale: () => <span>Scale</span>,
   Target: () => <span>Target</span>,
+  Receipt: () => <span>Receipt</span>,
 }));
 
 vi.mock("../../../features/accounts/AccountModal", () => ({

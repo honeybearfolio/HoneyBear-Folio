@@ -20,6 +20,7 @@ interface CategoryFieldProps {
   variant?: FieldVariant;
   className?: string;
   placeholder?: string;
+  required?: boolean;
 }
 
 export default function CategoryField({
@@ -31,6 +32,7 @@ export default function CategoryField({
   variant = "form",
   className,
   placeholder,
+  required = false,
 }: CategoryFieldProps) {
   const { t } = useTranslation();
   const isTransfer = isTransferPayee(payee, availableAccounts);
@@ -50,6 +52,7 @@ export default function CategoryField({
       value={value}
       onChange={onChange}
       disabled={isTransfer}
+      required={required}
     />
   );
 

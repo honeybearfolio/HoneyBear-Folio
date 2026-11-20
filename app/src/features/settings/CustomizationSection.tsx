@@ -201,6 +201,10 @@ export default function CustomizationSection({
             label: t("settings.sidebar.goals"),
           },
           {
+            key: "budget",
+            label: t("settings.sidebar.budget"),
+          },
+          {
             key: "chat",
             label: t("settings.sidebar.ai_assistant"),
           },

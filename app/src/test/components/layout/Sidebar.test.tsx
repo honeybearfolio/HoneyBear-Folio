@@ -51,6 +51,7 @@ vi.mock("lucide-react", () => ({
   Gem: () => <span>Gem</span>,
   Scale: () => <span>Scale</span>,
   Target: () => <span>Target</span>,
+  Receipt: () => <span>Receipt</span>,
   Archive: () => <span>Archive</span>,
 }));
 
@@ -204,6 +205,23 @@ describe("Sidebar", () => {
 
     fireEvent.click(screen.getByText("Dashboard"));
     expect(mockOnSelectAccount).toHaveBeenCalledWith("dashboard");
+  });
+
+  it("navigates to the budget tab", () => {
+    renderWithStores(
+      <Sidebar
+        accounts={[]}
+        onSelectAccount={mockOnSelectAccount}
+        selectedId="dashboard"
+        sidebarVisibility={defaultVisibility}
+        marketValues={{}}
+        onUpdate={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Budget"));
+    expect(mockOnSelectAccount).toHaveBeenCalledWith("budget");
   });
 
   it("highlights active link", () => {
