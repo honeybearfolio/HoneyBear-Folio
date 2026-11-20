@@ -1,7 +1,6 @@
 use crate::calculations::{
-    build_holdings_from_transactions_logic, collect_tickers, compute_net_worth_logic,
-    compute_net_worth_market_values_logic, compute_portfolio_totals_logic,
-    merge_holdings_with_quotes_logic,
+    compute_account_holdings_market_values_logic, compute_net_worth_logic,
+    compute_portfolio_totals_logic, merge_holdings_with_quotes_logic,
 };
 use crate::markets;
 use crate::models::YahooQuote;
@@ -167,8 +166,8 @@ pub fn compute_net_worth_snapshot_with_quotes(
     let fx_rates: HashMap<String, f64> =
         quotes.iter().map(|q| (q.symbol.clone(), q.price)).collect();
     let accounts = accounts_with_converted_balances(db_path, target_currency, &fx_rates)?;
-    let transactions = crate::transactions::get_all_transactions_db(db_path)?;
-    let market_values_f64 = compute_net_worth_market_values_logic(&transactions, quotes);
+    let holdings = crate::transactions::get_account_holdings_db(db_path)?;
+    let market_values_f64 = compute_account_holdings_market_values_logic(&holdings, quotes);
     let market_values_map = market_values_to_json_map(market_values_f64);
 
     let accounts_total = compute_net_worth_logic(&accounts, &market_values_map, None, None);
@@ -215,8 +214,7 @@ pub async fn tool_get_net_worth(
     arguments: &Value,
 ) -> Result<Value, String> {
     let target = parse_target_currency(arguments);
-    let transactions = crate::transactions::get_all_transactions_db(db_path)?;
-    let tickers = collect_tickers(&transactions);
+    let tickers = crate::transactions::get_transaction_tickers_db(db_path)?;
     let quotes = fetch_investment_quotes(client, db_path, tickers).await?;
     compute_net_worth_snapshot_with_quotes(db_path, &target, &quotes)
 }
@@ -227,8 +225,7 @@ pub async fn tool_get_portfolio_holdings(
     arguments: &Value,
 ) -> Result<Value, String> {
     let target = parse_target_currency(arguments);
-    let transactions = crate::transactions::get_all_transactions_db(db_path)?;
-    let holdings_result = build_holdings_from_transactions_logic(&transactions);
+    let holdings_result = crate::transactions::get_portfolio_holdings_db(db_path)?;
     let tickers: Vec<String> = holdings_result
         .current_holdings
         .iter()
@@ -277,7 +274,6 @@ pub async fn execute_tool(
             serde_json::to_value(&accounts).map_err(|e| e.to_string())
         }
         "get_transactions" => {
-            let all = crate::transactions::get_all_transactions_db(db_path)?;
             let account_id = arguments
                 .get("account_id")
                 .and_then(serde_json::Value::as_i64);
@@ -294,43 +290,17 @@ pub async fn execute_tool(
             let limit = arguments
                 .get("limit")
                 .and_then(serde_json::Value::as_u64)
-                .unwrap_or(100) as usize;
-
-            let filtered: Vec<_> = all
-                .into_iter()
-                .filter(|t| {
-                    if let Some(aid) = account_id {
-                        if i64::from(t.account_id) != aid {
-                            return false;
-                        }
-                    }
-                    if let Some(ref cat) = category {
-                        if t.category
-                            .as_deref()
-                            .is_none_or(|c| c.to_lowercase() != *cat)
-                        {
-                            return false;
-                        }
-                    }
-                    if let Some(ref p) = payee {
-                        if !t.payee.to_lowercase().contains(p.as_str()) {
-                            return false;
-                        }
-                    }
-                    if let Some(sd) = start_date {
-                        if t.date.as_str() < sd {
-                            return false;
-                        }
-                    }
-                    if let Some(ed) = end_date {
-                        if t.date.as_str() > ed {
-                            return false;
-                        }
-                    }
-                    true
-                })
-                .take(limit)
-                .collect();
+                .unwrap_or(100);
+            let limit = i64::try_from(limit).unwrap_or(i64::MAX);
+            let filtered = crate::transactions::query_chat_transactions_db(
+                db_path,
+                account_id,
+                category.as_deref(),
+                payee.as_deref(),
+                start_date,
+                end_date,
+                limit,
+            )?;
 
             serde_json::to_value(&filtered).map_err(|e| e.to_string())
         }

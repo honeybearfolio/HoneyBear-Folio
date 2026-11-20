@@ -285,7 +285,7 @@ pub fn compute_net_worth_market_values_logic(
     transactions: &[Transaction],
     quotes: &[YahooQuote],
 ) -> HashMap<String, f64> {
-    let mut account_holdings: HashMap<i32, HashMap<String, f64>> = HashMap::new();
+    let mut account_holdings: HashMap<String, HashMap<String, f64>> = HashMap::new();
     for tx in transactions {
         let ticker = match &tx.ticker {
             Some(t) if !t.is_empty() => t.clone(),
@@ -296,10 +296,21 @@ pub fn compute_net_worth_market_values_logic(
             _ => continue,
         };
 
-        let by_account = account_holdings.entry(tx.account_id).or_default();
+        let by_account = account_holdings
+            .entry(tx.account_id.to_string())
+            .or_default();
         *by_account.entry(ticker).or_insert(0.0) += shares;
     }
 
+    compute_account_holdings_market_values_logic(&account_holdings, quotes)
+}
+
+/// Values grouped account holdings using the same quote matching as net worth.
+#[must_use]
+pub fn compute_account_holdings_market_values_logic(
+    account_holdings: &HashMap<String, HashMap<String, f64>>,
+    quotes: &[YahooQuote],
+) -> HashMap<String, f64> {
     let quote_map = quotes
         .iter()
         .map(|q| (q.symbol.to_uppercase(), q.price))
@@ -309,7 +320,7 @@ pub fn compute_net_worth_market_values_logic(
     for (account_id, holdings) in account_holdings {
         let mut total = 0.0;
         for (ticker, shares) in holdings {
-            if shares > 0.0001 {
+            if !ticker.is_empty() && *shares > 0.0001 {
                 let price = quote_map
                     .get(&ticker.to_uppercase())
                     .copied()
@@ -317,7 +328,7 @@ pub fn compute_net_worth_market_values_logic(
                 total += shares * price;
             }
         }
-        result.insert(account_id.to_string(), total);
+        result.insert(account_id.clone(), total);
     }
 
     result
