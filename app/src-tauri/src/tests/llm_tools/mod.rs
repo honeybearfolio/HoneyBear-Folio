@@ -345,6 +345,135 @@ async fn test_execute_tool_get_accounts_and_transactions() {
 }
 
 #[tokio::test]
+async fn test_chat_transaction_filters_preserve_order_and_unicode() {
+    let (_dir, db_path) = setup_db();
+    let conn = Connection::open(&db_path).unwrap();
+    conn.execute(
+        "INSERT INTO accounts (name, balance, archived) VALUES ('Active', 0, 0)",
+        [],
+    )
+    .unwrap();
+    let account = conn.last_insert_rowid();
+    conn.execute(
+        "INSERT INTO accounts (name, balance, archived) VALUES ('Archived', 0, 1)",
+        [],
+    )
+    .unwrap();
+    let archived = conn.last_insert_rowid();
+    for (id, date, payee, category) in [
+        (account, "2024-01-01", "CAFÉ 100%_shop", Some("ÉPICERIE")),
+        (account, "2024-02-01", "CAFÉ 100%_shop", Some("ÉPICERIE")),
+        (account, "2024-02-01", "CAFÉ 100%_shop", Some("ÉPICERIE")),
+        (account, "2024-03-01", "Other", None),
+        (archived, "2024-04-01", "CAFÉ 100%_shop", Some("ÉPICERIE")),
+    ] {
+        conn.execute(
+            "INSERT INTO transactions (account_id, date, payee, category, amount) VALUES (?1, ?2, ?3, ?4, 0)",
+            rusqlite::params![id, date, payee, category],
+        ).unwrap();
+    }
+    let client = reqwest::Client::new();
+    let query = |args| {
+        let client = &client;
+        let db_path = &db_path;
+        async move {
+            crate::core::llm_tools::execute_tool(client, db_path, "get_transactions", &args)
+                .await
+                .unwrap()
+        }
+    };
+    let result = query(json!({
+        "account_id": account, "category": "épicerie", "payee": "café 100%_",
+        "start_date": "2024-01-01", "end_date": "2024-02-01", "limit": 1
+    }))
+    .await;
+    assert_eq!(result.as_array().unwrap().len(), 1);
+    assert_eq!(result[0]["id"], 3);
+    assert_eq!(query(json!({"limit": 0})).await, json!([]));
+    assert_eq!(query(json!({"category": ""})).await, json!([]));
+    assert_eq!(query(json!({"account_id": i64::MAX})).await, json!([]));
+    assert_eq!(
+        query(json!({"payee": ""})).await.as_array().unwrap().len(),
+        4
+    );
+
+    conn.execute(
+        "INSERT INTO transactions (account_id, date, payee, category, amount)
+         VALUES (?1, '2024-01-15', 'CAFÉ 100%_shop', 'ÉPICERIE', 'invalid')",
+        [account],
+    )
+    .unwrap();
+    assert_eq!(
+        query(json!({"category": "épicerie", "limit": 1})).await[0]["id"],
+        3
+    );
+    assert_eq!(query(json!({"category": "unmatched"})).await, json!([]));
+}
+
+#[test]
+fn test_grouped_portfolio_matches_chronological_cost_basis() {
+    use crate::core::calculations::build_holdings_from_transactions_logic;
+    use crate::core::transactions::{get_all_transactions_db, get_portfolio_holdings_db};
+
+    let (_dir, db_path) = setup_db();
+    let conn = Connection::open(&db_path).unwrap();
+    conn.execute(
+        "INSERT INTO accounts (name, balance, archived) VALUES ('One', 0, 0), ('Two', 0, 0), ('Old', 0, 1)",
+        [],
+    )
+    .unwrap();
+    for (account, date, ticker, shares, price, fee) in [
+        (1, "2023-01-01", "CLOSED", Some(2.0), Some(5.0), Some(0.0)),
+        (1, "2023-01-02", "CLOSED", Some(-2.0), None, None),
+        (1, "2024-01-01", "AAPL", Some(10.0), Some(10.0), Some(2.0)),
+        (2, "2024-01-02", "AAPL", Some(4.0), Some(20.0), Some(1.0)),
+        (1, "2024-01-02", "AAPL", Some(-3.0), None, None),
+        (2, "2024-01-03", "AAPL", Some(2.0), Some(30.0), None),
+        (1, "2024-01-03", "EMPTY", None, None, None),
+        (3, "2020-01-01", "AAPL", Some(50.0), Some(1.0), None),
+    ] {
+        conn.execute(
+            "INSERT INTO transactions (account_id, date, payee, amount, ticker, shares, price_per_share, fee)
+             VALUES (?1, ?2, 'Trade', 0, ?3, ?4, ?5, ?6)",
+            rusqlite::params![account, date, ticker, shares, price, fee],
+        ).unwrap();
+    }
+    let expected =
+        build_holdings_from_transactions_logic(&get_all_transactions_db(&db_path).unwrap());
+    let actual = get_portfolio_holdings_db(&db_path).unwrap();
+    assert_eq!(actual.first_trade_date, expected.first_trade_date);
+    assert_eq!(actual.current_holdings.len(), 1);
+    assert_eq!(
+        actual.current_holdings[0].ticker,
+        expected.current_holdings[0].ticker
+    );
+    assert!(
+        (actual.current_holdings[0].shares - expected.current_holdings[0].shares).abs() < 1e-10
+    );
+    assert!(
+        (actual.current_holdings[0].cost_basis - expected.current_holdings[0].cost_basis).abs()
+            < 1e-10
+    );
+
+    let quotes = vec![YahooQuote {
+        symbol: "aapl".into(),
+        price: 25.0,
+        change_percent: 0.0,
+        currency: None,
+        quote_type: None,
+    }];
+    let expected = crate::calculations::compute_net_worth_market_values_logic(
+        &get_all_transactions_db(&db_path).unwrap(),
+        &quotes,
+    );
+    let actual = crate::calculations::compute_account_holdings_market_values_logic(
+        &crate::transactions::get_account_holdings_db(&db_path).unwrap(),
+        &quotes,
+    );
+    assert_eq!(actual, expected);
+}
+
+#[tokio::test]
 async fn test_execute_tool_unknown_name_errors() {
     let (_dir, db_path) = setup_db();
     let client = reqwest::Client::new();

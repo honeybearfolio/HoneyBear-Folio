@@ -227,6 +227,129 @@ pub fn get_all_transactions_db(db_path: &Path) -> Result<Vec<Transaction>, Strin
     )
 }
 
+/// Queries active-account transactions for the chat tool.
+pub fn query_chat_transactions_db(
+    db_path: &Path,
+    account_id: Option<i64>,
+    category: Option<&str>,
+    payee: Option<&str>,
+    start_date: Option<&str>,
+    end_date: Option<&str>,
+    limit: i64,
+) -> Result<Vec<Transaction>, String> {
+    crate::db_locked!(db_path, {
+        let conn = crate::db_init::open_db(db_path)?;
+        conn.create_scalar_function(
+            "rust_lower",
+            1,
+            rusqlite::functions::FunctionFlags::SQLITE_DETERMINISTIC,
+            |ctx| Ok(ctx.get::<Option<String>>(0)?.map(|s| s.to_lowercase())),
+        )
+        .map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT t.id, t.account_id, t.date, t.payee, t.notes, t.category, t.amount,
+                        t.ticker, t.shares, t.price_per_share, t.fee, t.currency
+                 FROM transactions t
+                 WHERE t.account_id NOT IN (SELECT id FROM accounts WHERE archived = 1)
+                   AND (?1 IS NULL OR t.account_id = ?1)
+                   AND (?2 IS NULL OR rust_lower(t.category) = ?2)
+                   AND (?3 IS NULL OR INSTR(rust_lower(t.payee), ?3) > 0)
+                   AND (?4 IS NULL OR t.date >= ?4)
+                   AND (?5 IS NULL OR t.date <= ?5)
+                 ORDER BY t.date DESC, t.id DESC LIMIT ?6",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map(
+                params![account_id, category, payee, start_date, end_date, limit],
+                read_transaction,
+            )
+            .map_err(|e| e.to_string())?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())
+    })
+}
+
+/// Computes per-ticker portfolio holdings using the same chronological average-cost
+/// accounting as the transaction-based calculation.
+pub fn get_portfolio_holdings_db(
+    db_path: &Path,
+) -> Result<crate::calculations::HoldingsResult, String> {
+    crate::db_locked!(db_path, {
+        let conn = crate::db_init::open_db(db_path)?;
+        let mut stmt = conn.prepare(
+            "WITH RECURSIVE trades AS (
+                SELECT ticker, date, shares, COALESCE(price_per_share, 0) AS price,
+                       COALESCE(fee, 0) AS fee,
+                       ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date ASC, id DESC) AS seq
+                FROM transactions
+                WHERE ticker IS NOT NULL AND ticker != '' AND shares IS NOT NULL AND shares != 0
+                  AND account_id NOT IN (SELECT id FROM accounts WHERE archived = 1)
+             ), balances(ticker, date, seq, shares, cost) AS (
+                SELECT ticker, date, seq, shares,
+                       CASE WHEN shares > 0 THEN price * shares + fee ELSE 0 END
+                FROM trades WHERE seq = 1
+                UNION ALL
+                SELECT t.ticker, b.date, t.seq, b.shares + t.shares,
+                       CASE WHEN t.shares > 0 THEN b.cost + t.price * t.shares + t.fee
+                            WHEN b.shares > 0 THEN b.cost - ABS(t.shares) * (b.cost / b.shares)
+                            ELSE b.cost END
+                FROM balances b JOIN trades t ON t.ticker = b.ticker AND t.seq = b.seq + 1
+             )
+             SELECT b.ticker, b.shares, b.cost, b.date
+             FROM balances b
+             WHERE NOT EXISTS (SELECT 1 FROM trades t WHERE t.ticker = b.ticker AND t.seq = b.seq + 1)"
+        ).map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((
+                    crate::calculations::Holding {
+                        ticker: row.get(0)?,
+                        shares: row.get(1)?,
+                        cost_basis: row.get(2)?,
+                    },
+                    row.get::<_, String>(3)?,
+                ))
+            })
+            .map_err(|e| e.to_string())?;
+        let mut current_holdings = Vec::new();
+        let mut first_trade_date: Option<String> = None;
+        for row in rows {
+            let (holding, date) = row.map_err(|e| e.to_string())?;
+            if first_trade_date.as_ref().is_none_or(|first| date < *first) {
+                first_trade_date = Some(date);
+            }
+            if holding.shares > 0.0001 {
+                current_holdings.push(holding);
+            }
+        }
+        Ok(crate::calculations::HoldingsResult {
+            current_holdings,
+            first_trade_date,
+        })
+    })
+}
+
+/// Returns all distinct nonempty ticker symbols on active accounts.
+pub fn get_transaction_tickers_db(db_path: &Path) -> Result<Vec<String>, String> {
+    crate::db_locked!(db_path, {
+        let conn = crate::db_init::open_db(db_path)?;
+        let mut stmt = conn
+            .prepare(
+                "SELECT DISTINCT ticker FROM transactions
+             WHERE ticker IS NOT NULL AND ticker != ''
+               AND account_id NOT IN (SELECT id FROM accounts WHERE archived = 1)",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |row| row.get(0))
+            .map_err(|e| e.to_string())?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(|e| e.to_string())
+    })
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct TransactionDateBounds {
     pub min_date: Option<String>,
