@@ -173,6 +173,7 @@ describe("SettingsView", () => {
         assets: true,
         liabilities: true,
         goals: true,
+        budget: true,
       });
       expect(invoke).toHaveBeenCalledWith("reset_db_path");
       expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();

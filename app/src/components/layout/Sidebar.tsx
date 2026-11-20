@@ -30,6 +30,7 @@ import {
   Gem,
   Scale,
   Target,
+  Receipt,
   Archive,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -53,6 +54,7 @@ interface SidebarVisibility {
   rules?: boolean;
   scheduled?: boolean;
   all?: boolean;
+  budget?: boolean;
   [key: string]: boolean | undefined;
 }
 
@@ -524,6 +526,24 @@ export default function Sidebar({
                       className={`sidebar-nav-icon ${selectedId === "goals" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
                     />
                     <span className="font-medium">{t("nav.goals")}</span>
+                  </button>
+                )}
+
+                {sidebarVisibility.budget !== false && (
+                  <button
+                    onClick={() => {
+                      handleSelect("budget");
+                    }}
+                    className={`sidebar-nav-item group ${
+                      selectedId === "budget"
+                        ? "sidebar-nav-item-active"
+                        : "sidebar-nav-item-inactive"
+                    }`}
+                  >
+                    <Receipt
+                      className={`sidebar-nav-icon ${selectedId === "budget" ? "sidebar-nav-icon-active" : "sidebar-nav-icon-inactive"}`}
+                    />
+                    <span className="font-medium">{t("nav.budget")}</span>
                   </button>
                 )}
 

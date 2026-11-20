@@ -18,6 +18,7 @@ export const STORAGE_KEYS = {
   TAG_COLORS: "hb_tag_colors",
   DASHBOARD_LAYOUT: "hb_dashboard_layout",
   DASHBOARD_VIEW: "hb_dashboard_view",
+  BUDGET_LIMITS: "hb_budget_limits",
 } as const;
 
 export const FIRE_DEFAULTS = {
@@ -59,6 +60,7 @@ export interface SidebarVisibility {
   assets: boolean;
   liabilities: boolean;
   goals: boolean;
+  budget: boolean;
 }
 
 export const DEFAULT_SIDEBAR_VISIBILITY: SidebarVisibility = {
@@ -72,6 +74,7 @@ export const DEFAULT_SIDEBAR_VISIBILITY: SidebarVisibility = {
   assets: true,
   liabilities: true,
   goals: true,
+  budget: true,
 };
 
 export const RESETTABLE_STORAGE_KEYS: string[] = [
