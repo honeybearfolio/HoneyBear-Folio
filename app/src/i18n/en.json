@@ -217,6 +217,7 @@
   "budget.add_budget": "Add budget",
   "budget.category_budgets": "Category budgets",
   "budget.category_budgets_description": "Set a monthly spending limit for each category.",
+  "budget.currency": "Budget currency: {currency}. Existing limits remain in this currency when the reporting currency changes.",
   "budget.empty_description": "Add a category and monthly limit to start tracking your spending.",
   "budget.empty_title": "No category budgets yet",
   "budget.error.duplicate": "A budget for this category already exists.",

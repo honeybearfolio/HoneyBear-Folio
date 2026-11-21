@@ -1,11 +1,17 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useNumberFormatStore } from "../../stores/number-format";
 import { STORAGE_KEYS } from "../../constants/app";
+import { usePortfolioPreferences } from "../../stores/portfolio-preferences";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("useNumberFormatStore", () => {
   let setItemSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    usePortfolioPreferences.setState({ path: "/test.db", values: {} });
     useNumberFormatStore.setState({
       locale: "en-US",
       currency: "USD",
@@ -37,7 +43,10 @@ describe("useNumberFormatStore", () => {
   it("setCurrency updates currency and persists", () => {
     useNumberFormatStore.getState().setCurrency("EUR");
     expect(useNumberFormatStore.getState().currency).toBe("EUR");
-    expect(setItemSpy).toHaveBeenCalledWith(STORAGE_KEYS.CURRENCY, "EUR");
+    expect(
+      usePortfolioPreferences.getState().values[STORAGE_KEYS.CURRENCY],
+    ).toBe("EUR");
+    expect(setItemSpy).not.toHaveBeenCalledWith(STORAGE_KEYS.CURRENCY, "EUR");
   });
 
   it("setDateFormat updates dateFormat and persists", () => {

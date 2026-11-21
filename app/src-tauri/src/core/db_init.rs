@@ -367,6 +367,15 @@ pub fn init_db_at_path(db_path: &Path) -> Result<(), String> {
         let mut conn = open_db(db_ref)?;
 
         conn.execute(
+            "CREATE TABLE IF NOT EXISTS portfolio_preferences (
+                key TEXT PRIMARY KEY NOT NULL,
+                value TEXT NOT NULL
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
+        conn.execute(
             "CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,

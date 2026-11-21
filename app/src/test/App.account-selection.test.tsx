@@ -3,7 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "../App";
 
 vi.mock("../api/tauri-client", () => ({
+  dropLedgerRead: vi.fn(),
   rust: {
+    get_portfolio_preferences: vi.fn().mockResolvedValue({}),
     get_active_session: vi.fn().mockResolvedValue({
       path: "/test/session.hbf",
       name: "Test Session",

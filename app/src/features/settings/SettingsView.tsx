@@ -133,8 +133,9 @@ export default function SettingsView({
       });
       if (path) {
         await rust.set_db_path({ path });
-        const p = await rust.get_db_path_command();
-        setDbPath(p);
+        window.dispatchEvent(
+          new CustomEvent("portfolio-path-changed", { detail: path }),
+        );
       }
     } catch (e: unknown) {
       handleAsyncError({
@@ -181,8 +182,10 @@ export default function SettingsView({
 
       try {
         await rust.reset_db_path();
-        const p = await rust.get_db_path_command();
-        setDbPath(p);
+        const path = await rust.get_db_path_command();
+        window.dispatchEvent(
+          new CustomEvent("portfolio-path-changed", { detail: path }),
+        );
       } catch (e: unknown) {
         logError("Failed to reset DB path", e);
       }

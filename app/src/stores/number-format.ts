@@ -3,6 +3,10 @@ import { useEffect } from "react";
 import i18n from "../i18n/i18n";
 import { APP_DEFAULTS, STORAGE_KEYS } from "../constants/app";
 import { logError } from "../utils/errors";
+import {
+  usePortfolioPreferences,
+  writePortfolioPreference,
+} from "./portfolio-preferences";
 
 export interface NumberFormatState {
   locale: string;
@@ -52,9 +56,9 @@ export const useNumberFormatStore = create<NumberFormatState>((set) => ({
     writeLS(STORAGE_KEYS.NUMBER_FORMAT, v);
     set({ locale: v });
   },
-  currency: readLS(STORAGE_KEYS.CURRENCY, APP_DEFAULTS.CURRENCY),
+  currency: APP_DEFAULTS.CURRENCY,
   setCurrency: (v: string) => {
-    writeLS(STORAGE_KEYS.CURRENCY, v);
+    writePortfolioPreference(STORAGE_KEYS.CURRENCY, v);
     set({ currency: v });
   },
   dateFormat: readLS(STORAGE_KEYS.DATE_FORMAT, APP_DEFAULTS.DATE_FORMAT),
@@ -76,6 +80,18 @@ export const useNumberFormatStore = create<NumberFormatState>((set) => ({
     set({ uiLanguage: v });
   },
 }));
+
+usePortfolioPreferences.subscribe((state, previous) => {
+  if (
+    state.path !== previous.path ||
+    state.values[STORAGE_KEYS.CURRENCY] !==
+      previous.values[STORAGE_KEYS.CURRENCY]
+  ) {
+    useNumberFormatStore.setState({
+      currency: state.values[STORAGE_KEYS.CURRENCY] || APP_DEFAULTS.CURRENCY,
+    });
+  }
+});
 
 export function useNumberFormat(): NumberFormatState {
   return useNumberFormatStore();

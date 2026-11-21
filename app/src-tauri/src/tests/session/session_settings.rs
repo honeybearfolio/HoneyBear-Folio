@@ -116,3 +116,37 @@ fn test_multiple_sessions_share_no_data() {
     assert_eq!(accounts_a.len(), 1);
     assert_eq!(accounts_a[0].name, "Session A Account");
 }
+
+#[test]
+fn test_portfolio_preferences_are_isolated_and_persisted() {
+    let dir = tempdir().unwrap();
+    let a = dir.path().join("a.db");
+    let b = dir.path().join("b.db");
+    crate::init_db_at_path(&a).unwrap();
+    crate::init_db_at_path(&b).unwrap();
+    let a = a.to_string_lossy().to_string();
+    let b = b.to_string_lossy().to_string();
+    crate::preferences::set_portfolio_preference(a.clone(), "budget".into(), "EUR".into()).unwrap();
+    assert_eq!(
+        crate::preferences::get_portfolio_preferences(a.clone())
+            .unwrap()
+            .get("budget")
+            .unwrap(),
+        "EUR"
+    );
+    assert!(crate::preferences::get_portfolio_preferences(b)
+        .unwrap()
+        .is_empty());
+    crate::preferences::set_portfolio_preference(a.clone(), "budget".into(), "USD".into()).unwrap();
+    assert_eq!(
+        crate::preferences::get_portfolio_preferences(a)
+            .unwrap()
+            .get("budget")
+            .unwrap(),
+        "USD"
+    );
+    assert!(crate::preferences::get_portfolio_preferences(
+        dir.path().join("missing.db").to_string_lossy().to_string()
+    )
+    .is_err());
+}

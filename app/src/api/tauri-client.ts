@@ -100,6 +100,17 @@ export function loadAllTransactions(): Promise<Transaction[]> {
 }
 
 export const rust = {
+  get_portfolio_preferences: (args: {
+    path: string;
+  }): Promise<Record<string, string>> =>
+    callRust("get_portfolio_preferences", args),
+
+  set_portfolio_preference: (args: {
+    path: string;
+    key: string;
+    value: string;
+  }): Promise<void> => callRust("set_portfolio_preference", args),
+
   // ---------------------------------------------------------------------------
   // Scheduled occurrences
   // ---------------------------------------------------------------------------

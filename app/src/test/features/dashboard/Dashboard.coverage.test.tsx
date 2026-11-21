@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
 import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
 import { dropLedgerRead } from "../../../api/tauri-client";
+import { usePortfolioPreferences } from "../../../stores/portfolio-preferences";
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
@@ -215,7 +216,14 @@ describe("Dashboard coverage", () => {
   });
 
   it("shows budget health, goal progress, and scheduled items", async () => {
-    localStorage.setItem("hb_budget_limits", JSON.stringify({ Food: 25 }));
+    usePortfolioPreferences.setState({
+      values: {
+        hb_budget_limits: JSON.stringify({
+          currency: "USD",
+          limits: { Food: 25 },
+        }),
+      },
+    });
     vi.mocked(invoke).mockImplementation((cmd: string) => {
       if (cmd === "get_dashboard_chart_series")
         return Promise.resolve(sampleSeries);

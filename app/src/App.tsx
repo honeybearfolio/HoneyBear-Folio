@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-import { rust } from "./api/tauri-client";
+import { dropLedgerRead, rust } from "./api/tauri-client";
 import Sidebar from "./components/layout/Sidebar";
 import { computeNetWorth } from "./utils/networth";
 import { sameId } from "./utils/ids";
@@ -24,7 +24,18 @@ import { useToast } from "./stores/toast";
 import { handleAsyncError } from "./utils/errors";
 import { ConfirmDialogContainer } from "./components/ui/ConfirmDialog";
 import ErrorBoundary from "./components/layout/ErrorBoundary";
-import { NumberFormatEffects, useNumberFormat } from "./stores/number-format";
+import {
+  NumberFormatEffects,
+  useNumberFormat,
+  useNumberFormatStore,
+} from "./stores/number-format";
+import { hydrateDashboardPreferences } from "./stores/dashboard-preferences";
+import {
+  loadPortfolioPreferences,
+  readPortfolioPreference,
+} from "./stores/portfolio-preferences";
+import { ErrorState } from "./components/ui/Skeleton";
+import i18n from "./i18n/i18n";
 import { ThemeEffects } from "./stores/theme";
 import ChartNumberFormatSync from "./components/shared/ChartNumberFormatSync";
 import UpdateNotification from "./components/shared/UpdateNotification";
@@ -40,6 +51,7 @@ import type { Account } from "./api/types";
 import type { AccountDetailsAccount } from "./features/accounts/account-details-types";
 
 function App() {
+  const { t } = useTranslation();
   // Session management — "picking" shows the session picker, "active" shows the main app
   const [sessionState, setSessionState] = useState<
     "loading" | "picking" | "active"
@@ -47,6 +59,32 @@ function App() {
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(
     null,
   );
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  const prepareSession = useCallback(async (session: ActiveSession) => {
+    setActiveSession(session);
+    setSessionError(null);
+    setSessionState("loading");
+    try {
+      if (!session.path) throw new Error("Portfolio path is missing");
+      await loadPortfolioPreferences(session.path);
+      dropLedgerRead();
+      useNumberFormatStore.setState({
+        currency:
+          readPortfolioPreference(STORAGE_KEYS.CURRENCY) ||
+          APP_DEFAULTS.CURRENCY,
+      });
+      hydrateDashboardPreferences();
+      setSessionState("active");
+    } catch (error) {
+      handleAsyncError({
+        context: "Failed to load portfolio preferences",
+        error,
+        setError: setSessionError,
+        detailFallback: i18n.t("error.failed_to_load"),
+      });
+    }
+  }, []);
 
   useEffect(() => {
     rust
@@ -54,8 +92,7 @@ function App() {
       .then((_session) => {
         const session = _session as ActiveSession | null;
         if (session && session.file_exists) {
-          setActiveSession(session);
-          setSessionState("active");
+          void prepareSession(session);
         } else {
           setSessionState("picking");
         }
@@ -63,15 +100,45 @@ function App() {
       .catch(() => {
         setSessionState("picking");
       });
-  }, []);
+  }, [prepareSession]);
 
   function handleSessionReady(session: ActiveSession) {
-    setActiveSession(session);
-    setSessionState("active");
+    void prepareSession(session);
   }
 
   function handleSwitchSession() {
+    setSessionError(null);
     setSessionState("picking");
+  }
+
+  useEffect(() => {
+    const handlePathChanged = (event: Event) => {
+      if (event instanceof CustomEvent && typeof event.detail === "string") {
+        void prepareSession({ path: event.detail, file_exists: true });
+      }
+    };
+    window.addEventListener("portfolio-path-changed", handlePathChanged);
+    return () => {
+      window.removeEventListener("portfolio-path-changed", handlePathChanged);
+    };
+  }, [prepareSession]);
+
+  if (sessionError) {
+    return (
+      <div className="p-8">
+        <ErrorState
+          title={t("error.failed_to_load")}
+          message={sessionError}
+          onRetry={() => {
+            if (activeSession) void prepareSession(activeSession);
+          }}
+          retryLabel={t("error.retry")}
+        />
+        <button type="button" onClick={handleSwitchSession}>
+          {t("session.switch_session")}
+        </button>
+      </div>
+    );
   }
 
   if (sessionState === "loading") {

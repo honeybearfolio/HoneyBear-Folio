@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import CustomizationSection from "../../../features/settings/CustomizationSection";
 import { rust } from "../../../api/tauri-client";
+import { usePortfolioPreferences } from "../../../stores/portfolio-preferences";
 
 const mockSetTheme = vi.fn();
 
@@ -14,6 +15,7 @@ vi.mock("../../../stores/theme", () => ({
 vi.mock("../../../api/tauri-client", () => ({
   rust: {
     get_categories: vi.fn(),
+    set_portfolio_preference: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -77,6 +79,7 @@ describe("CustomizationSection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    usePortfolioPreferences.setState({ path: "/test.db", values: {} });
     vi.mocked(rust.get_categories).mockResolvedValue(["Food", "Rent"]);
   });
 
@@ -121,7 +124,9 @@ describe("CustomizationSection", () => {
     const redButtons = screen.getAllByRole("button", { name: "red" });
     await user.click(redButtons[0]!);
 
-    expect(JSON.parse(localStorage.getItem("hb_tag_colors")!)).toEqual({
+    expect(
+      JSON.parse(usePortfolioPreferences.getState().values.hb_tag_colors!),
+    ).toEqual({
       Food: "red",
     });
   });

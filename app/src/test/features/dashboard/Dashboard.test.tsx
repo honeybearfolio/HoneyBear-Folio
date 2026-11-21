@@ -4,6 +4,7 @@ import Dashboard from "../../../features/dashboard/Dashboard";
 import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
 import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
+import { usePortfolioPreferences } from "../../../stores/portfolio-preferences";
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
@@ -41,7 +42,7 @@ function mockDashboardInvoke(
 }
 
 // Mock dependencies
-vi.mock("../../../i18n/i18n", () => ({ t: (k: string) => k }));
+vi.mock("../../../i18n/i18n", () => ({ default: { t: (k: string) => k } }));
 vi.mock("../../../hooks/useIsDark", () => ({ default: () => false }));
 
 // Mock Chart.js components to avoid canvas errors
@@ -100,6 +101,7 @@ describe("Dashboard", () => {
       locale: "en-US",
     });
     localStorage.clear();
+    usePortfolioPreferences.setState({ path: "/test.db", values: {} });
     useDashboardPreferencesStore.getState().resetAll();
   });
 

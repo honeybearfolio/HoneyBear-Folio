@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEYS } from "../../constants/app";
 import {
   DASHBOARD_WIDGET_IDS,
@@ -9,14 +9,22 @@ import {
   readDashboardView,
   useDashboardPreferencesStore,
 } from "../../stores/dashboard-preferences";
+import {
+  usePortfolioPreferences,
+  readPortfolioPreference,
+} from "../../stores/portfolio-preferences";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe("useDashboardPreferencesStore", () => {
   beforeEach(() => {
-    localStorage.clear();
+    usePortfolioPreferences.setState({ path: "/test.db", values: {} });
     useDashboardPreferencesStore.getState().resetAll();
   });
 
-  it("round-trips layout and view through localStorage", () => {
+  it("round-trips layout and view through portfolio preferences", () => {
     const store = useDashboardPreferencesStore.getState();
     const card = store.layout.find(
       (widget) => widget.type === "assetAllocation",
@@ -56,8 +64,12 @@ describe("useDashboardPreferencesStore", () => {
   });
 
   it("falls back when stored JSON is corrupt", () => {
-    localStorage.setItem(STORAGE_KEYS.DASHBOARD_LAYOUT, "{");
-    localStorage.setItem(STORAGE_KEYS.DASHBOARD_VIEW, "nope");
+    usePortfolioPreferences.setState({
+      values: {
+        [STORAGE_KEYS.DASHBOARD_LAYOUT]: "{",
+        [STORAGE_KEYS.DASHBOARD_VIEW]: "nope",
+      },
+    });
 
     expect(readDashboardLayout().map((widget) => widget.type)).toEqual([
       ...DASHBOARD_WIDGET_IDS,
@@ -71,8 +83,8 @@ describe("useDashboardPreferencesStore", () => {
     store.setTimeRange("6M");
     store.addWidget("netWorth");
 
-    expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeTruthy();
-    expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeTruthy();
+    expect(readPortfolioPreference(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeTruthy();
+    expect(readPortfolioPreference(STORAGE_KEYS.DASHBOARD_VIEW)).toBeTruthy();
 
     store.resetAll();
 
@@ -82,8 +94,8 @@ describe("useDashboardPreferencesStore", () => {
     expect(next.layout.map((widget) => widget.type)).toEqual([
       ...DASHBOARD_WIDGET_IDS,
     ]);
-    expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
-    expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeNull();
+    expect(readPortfolioPreference(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBe("");
+    expect(readPortfolioPreference(STORAGE_KEYS.DASHBOARD_VIEW)).toBe("");
   });
 
   it("resetLayout keeps the saved view", () => {
@@ -98,8 +110,8 @@ describe("useDashboardPreferencesStore", () => {
     const next = useDashboardPreferencesStore.getState();
     expect(next.view.timeRange).toBe("YTD");
     expect(next.layout.some((widget) => widget.type === "netWorth")).toBe(true);
-    expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
-    expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeTruthy();
+    expect(readPortfolioPreference(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBe("");
+    expect(readPortfolioPreference(STORAGE_KEYS.DASHBOARD_VIEW)).toBeTruthy();
   });
 
   it("rejects an invalid custom date", () => {

@@ -8,7 +8,7 @@ import {
   type HoldingValueMap,
 } from "../../utils/market-values";
 import { logError } from "../../utils/errors";
-import { getMonthlySpending, readBudgetLimits } from "../budget/budget-data";
+import { getMonthlySpending, readBudgetSettings } from "../budget/budget-data";
 import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
 
 interface BudgetCategoryStatus {
@@ -21,6 +21,7 @@ export interface DashboardInsights {
   budget: {
     loading: boolean;
     error: boolean;
+    currency: string;
     totalBudget: number;
     totalSpent: number;
     overBudget: BudgetCategoryStatus[];
@@ -61,6 +62,7 @@ function dateAfterDays(days: number): string {
 const EMPTY_BUDGET = {
   loading: false,
   error: false,
+  currency: "USD",
   totalBudget: 0,
   totalSpent: 0,
   overBudget: [] as BudgetCategoryStatus[],
@@ -109,7 +111,7 @@ export function useDashboardInsights(
   const [scheduledState, setScheduledState] = useState<LoadState<
     typeof EMPTY_SCHEDULED
   > | null>(null);
-  const budgetKey = `${currentMonth()}|${accountKey}`;
+  const budgetKey = `${currentMonth()}|${appCurrency}|${accountKey}`;
   const goalsKey = `${appCurrency}|${accountKey}`;
   const scheduledKey = "30";
   const budget =
@@ -129,16 +131,26 @@ export function useDashboardInsights(
     if (!ready || !needsBudget) return;
     void (async () => {
       try {
-        const limits = readBudgetLimits();
-        const transactions = await loadAllTransactions();
+        const { limits, currency } = readBudgetSettings(appCurrency);
+        const [transactions, budgetAccounts] = await Promise.all([
+          loadAllTransactions(),
+          currency === appCurrency
+            ? Promise.resolve(accounts)
+            : rust.get_accounts({ targetCurrency: currency }),
+        ]);
+        const visibleIds = new Set(
+          accounts.map((account) => String(account.id)),
+        );
         const spending = getMonthlySpending({
           transactions,
           month: currentMonth(),
           exchangeRates: Object.fromEntries(
-            accounts.map((account) => [
-              String(account.id),
-              account.exchange_rate || 1,
-            ]),
+            budgetAccounts
+              .filter((account) => visibleIds.has(String(account.id)))
+              .map((account) => [
+                String(account.id),
+                account.exchange_rate || 1,
+              ]),
           ),
           uncategorizedLabel: t("general.uncategorized"),
         });
@@ -150,6 +162,7 @@ export function useDashboardInsights(
           value: {
             loading: false,
             error: false,
+            currency,
             totalBudget: Object.values(limits).reduce(
               (total, amount) => total + amount,
               0,
@@ -176,7 +189,7 @@ export function useDashboardInsights(
         });
       }
     })();
-  }, [accounts, budgetKey, needsBudget, ready, t]);
+  }, [accounts, appCurrency, budgetKey, needsBudget, ready, t]);
 
   useEffect(() => {
     if (!ready || !needsGoals) return;

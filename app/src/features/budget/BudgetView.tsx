@@ -19,7 +19,8 @@ import { useFormatNumber, useParseNumber } from "../../utils/format";
 import { handleAsyncError, logError } from "../../utils/errors";
 import { ErrorState } from "../../components/ui/Skeleton";
 import { useToast } from "../../stores/toast";
-import { getMonthlySpending, readBudgetLimits } from "./budget-data";
+import { getMonthlySpending, readBudgetSettings } from "./budget-data";
+import { savePortfolioPreference } from "../../stores/portfolio-preferences";
 import type { BudgetLimits } from "./budget-data";
 
 function currentMonth(): string {
@@ -43,7 +44,8 @@ function shiftMonth(month: string, amount: number): string {
 
 export default function BudgetView() {
   const { t } = useTranslation();
-  const { currency, uiLanguage } = useNumberFormat();
+  const { currency: appCurrency, uiLanguage } = useNumberFormat();
+  const [currency, setBudgetCurrency] = useState(appCurrency);
   const formatNumber = useFormatNumber();
   const parseNumber = useParseNumber();
   const { showToast } = useToast();
@@ -62,11 +64,13 @@ export default function BudgetView() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [ledger, accountRows, savedLimits] = await Promise.all([
+      const saved = readBudgetSettings(appCurrency);
+      const [ledger, accountRows] = await Promise.all([
         loadAllTransactions(),
-        rust.get_accounts({ targetCurrency: currency }),
-        Promise.resolve(readBudgetLimits()),
+        rust.get_accounts({ targetCurrency: saved.currency }),
       ]);
+      const savedLimits = saved.limits;
+      setBudgetCurrency(saved.currency);
       setTransactions(ledger);
       setAccounts(accountRows);
       setLimits(savedLimits);
@@ -102,7 +106,7 @@ export default function BudgetView() {
     } finally {
       setLoading(false);
     }
-  }, [currency, t]);
+  }, [appCurrency, t]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -148,11 +152,11 @@ export default function BudgetView() {
   const remaining = totalBudget - totalSpent;
   const progress = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-  function persistLimits(nextLimits: BudgetLimits) {
+  async function persistLimits(nextLimits: BudgetLimits) {
     try {
-      localStorage.setItem(
+      await savePortfolioPreference(
         STORAGE_KEYS.BUDGET_LIMITS,
-        JSON.stringify(nextLimits),
+        JSON.stringify({ currency, limits: nextLimits }),
       );
       setLimits(nextLimits);
       return true;
@@ -169,7 +173,7 @@ export default function BudgetView() {
     }
   }
 
-  function addBudget(event: SubmitEvent<HTMLFormElement>) {
+  async function addBudget(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const category = categoryInput.trim();
     const amount = parseNumber(amountInput);
@@ -183,7 +187,7 @@ export default function BudgetView() {
       return;
     }
 
-    if (persistLimits({ ...limits, [category]: amount })) {
+    if (await persistLimits({ ...limits, [category]: amount })) {
       setCategoryInput("");
       setAmountInput("");
     }
@@ -193,7 +197,7 @@ export default function BudgetView() {
     const nextLimits = Object.fromEntries(
       Object.entries(limits).filter(([item]) => item !== category),
     );
-    persistLimits(nextLimits);
+    void persistLimits(nextLimits);
   }
 
   if (loading) {
@@ -322,10 +326,15 @@ export default function BudgetView() {
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             {t("budget.category_budgets_description")}
           </p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {t("budget.currency", { currency })}
+          </p>
         </div>
 
         <form
-          onSubmit={addBudget}
+          onSubmit={(event) => {
+            void addBudget(event);
+          }}
           className="mb-6 grid gap-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-900/50 sm:grid-cols-[1fr_180px_auto]"
         >
           <CategoryField

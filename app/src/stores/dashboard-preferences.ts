@@ -15,6 +15,11 @@ import {
   type WidgetFilter,
 } from "../features/dashboard/dashboard-layout";
 import type { DashboardTimeRange } from "../features/dashboard/dashboard-constants";
+import {
+  readPortfolioPreference,
+  usePortfolioPreferences,
+  writePortfolioPreference,
+} from "./portfolio-preferences";
 
 export interface DashboardPreferencesState {
   layout: DashboardWidgetInstance[];
@@ -41,7 +46,7 @@ export interface DashboardPreferencesState {
 
 export function readDashboardLayout(): DashboardWidgetInstance[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT);
+    const raw = readPortfolioPreference(STORAGE_KEYS.DASHBOARD_LAYOUT);
     if (!raw) return cloneDefaultDashboardLayout();
     return normalizeDashboardLayout(JSON.parse(raw) as unknown);
   } catch {
@@ -51,7 +56,7 @@ export function readDashboardLayout(): DashboardWidgetInstance[] {
 
 export function readDashboardView(): DashboardViewState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW);
+    const raw = readPortfolioPreference(STORAGE_KEYS.DASHBOARD_VIEW);
     if (!raw) return defaultDashboardView();
     return normalizeDashboardView(JSON.parse(raw) as unknown);
   } catch {
@@ -60,19 +65,18 @@ export function readDashboardView(): DashboardViewState {
 }
 
 function writeLayout(layout: DashboardWidgetInstance[]) {
-  localStorage.setItem(STORAGE_KEYS.DASHBOARD_LAYOUT, JSON.stringify(layout));
+  writePortfolioPreference(
+    STORAGE_KEYS.DASHBOARD_LAYOUT,
+    JSON.stringify(layout),
+  );
 }
 
 function writeView(view: DashboardViewState) {
-  localStorage.setItem(STORAGE_KEYS.DASHBOARD_VIEW, JSON.stringify(view));
+  writePortfolioPreference(STORAGE_KEYS.DASHBOARD_VIEW, JSON.stringify(view));
 }
 
 function removeKey(key: string) {
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    /* ignore */
-  }
+  writePortfolioPreference(key, "");
 }
 
 function replaceWidget(
@@ -122,6 +126,7 @@ export const useDashboardPreferencesStore = create<DashboardPreferencesState>(
       const layout = get().layout.filter(
         (widget) => widget.instanceId !== instanceId,
       );
+
       if (layout.length === get().layout.length) return;
       writeLayout(layout);
       set({ layout });
@@ -193,3 +198,22 @@ export const useDashboardPreferencesStore = create<DashboardPreferencesState>(
     },
   }),
 );
+
+export function hydrateDashboardPreferences(): void {
+  useDashboardPreferencesStore.setState({
+    layout: readDashboardLayout(),
+    view: readDashboardView(),
+  });
+}
+
+usePortfolioPreferences.subscribe((state, previous) => {
+  if (
+    state.path !== previous.path ||
+    state.values[STORAGE_KEYS.DASHBOARD_LAYOUT] !==
+      previous.values[STORAGE_KEYS.DASHBOARD_LAYOUT] ||
+    state.values[STORAGE_KEYS.DASHBOARD_VIEW] !==
+      previous.values[STORAGE_KEYS.DASHBOARD_VIEW]
+  ) {
+    hydrateDashboardPreferences();
+  }
+});

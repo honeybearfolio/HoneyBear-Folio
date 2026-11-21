@@ -1,5 +1,6 @@
 import type { Transaction } from "../../api/types";
 import { STORAGE_KEYS } from "../../constants/app";
+import { readPortfolioPreference } from "../../stores/portfolio-preferences";
 
 export type BudgetLimits = Record<string, number>;
 
@@ -8,24 +9,43 @@ export interface BudgetCategorySpending {
   amount: number;
 }
 
-export function readBudgetLimits(): BudgetLimits {
-  const stored = localStorage.getItem(STORAGE_KEYS.BUDGET_LIMITS);
-  if (!stored) return {};
+export interface BudgetSettings {
+  currency: string;
+  limits: BudgetLimits;
+}
+
+export function readBudgetSettings(fallbackCurrency: string): BudgetSettings {
+  const stored = readPortfolioPreference(STORAGE_KEYS.BUDGET_LIMITS);
+  if (!stored) return { currency: fallbackCurrency, limits: {} };
 
   const parsed: unknown = JSON.parse(stored);
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+  if (
+    !parsed ||
+    typeof parsed !== "object" ||
+    Array.isArray(parsed) ||
+    !("currency" in parsed) ||
+    typeof parsed.currency !== "string" ||
+    !parsed.currency ||
+    !("limits" in parsed) ||
+    !parsed.limits ||
+    typeof parsed.limits !== "object" ||
+    Array.isArray(parsed.limits)
+  ) {
     throw new Error("Saved budget limits are not valid.");
   }
 
-  return Object.fromEntries(
-    Object.entries(parsed).filter(
-      ([category, amount]) =>
-        category.trim().length > 0 &&
-        typeof amount === "number" &&
-        Number.isFinite(amount) &&
-        amount > 0,
+  return {
+    currency: parsed.currency,
+    limits: Object.fromEntries(
+      Object.entries(parsed.limits).filter(
+        ([category, amount]) =>
+          category.trim().length > 0 &&
+          typeof amount === "number" &&
+          Number.isFinite(amount) &&
+          amount > 0,
+      ),
     ),
-  );
+  };
 }
 
 interface MonthlySpendingArgs {

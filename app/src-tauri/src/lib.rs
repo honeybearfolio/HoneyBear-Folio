@@ -16,7 +16,7 @@
 mod core;
 pub use crate::core::{
     accounts, assets, calculations, dashboard, db_init, goals, io, liabilities, llm, llm_chat,
-    markets, models, pdf, rules, scheduled, session, transactions, utils,
+    markets, models, pdf, preferences, rules, scheduled, session, transactions, utils,
 };
 
 pub use crate::models::{
@@ -212,6 +212,8 @@ pub fn run() {
             session::open_session,
             session::remove_recent_session,
             session::rename_session,
+            preferences::get_portfolio_preferences,
+            preferences::set_portfolio_preference,
             llm::get_llm_settings,
             llm::set_llm_settings,
             llm::list_ollama_models,
