@@ -175,14 +175,20 @@ pub fn compute_net_worth_logic(
 /// Transactions are processed chronologically; sells reduce shares using average cost basis.
 #[must_use]
 pub fn build_holdings_from_transactions_logic(transactions: &[Transaction]) -> HoldingsResult {
-    let mut txs = transactions.to_vec();
+    let mut txs = transactions
+        .iter()
+        .filter(|tx| {
+            tx.ticker.as_ref().is_some_and(|ticker| !ticker.is_empty())
+                && tx.shares.is_some_and(|shares| shares != 0.0)
+        })
+        .collect::<Vec<_>>();
     txs.sort_by(|a, b| a.date.cmp(&b.date));
 
     let mut first_trade_date: Option<String> = None;
     let mut holding_map: HashMap<String, Holding> = HashMap::new();
 
     for tx in txs {
-        let ticker = match tx.ticker {
+        let ticker = match &tx.ticker {
             Some(t) if !t.is_empty() => t,
             _ => continue,
         };
@@ -195,11 +201,13 @@ pub fn build_holdings_from_transactions_logic(transactions: &[Transaction]) -> H
             first_trade_date = Some(tx.date.clone());
         }
 
-        let entry = holding_map.entry(ticker.clone()).or_insert(Holding {
-            ticker,
-            shares: 0.0,
-            cost_basis: 0.0,
-        });
+        let entry = holding_map
+            .entry(ticker.clone())
+            .or_insert_with(|| Holding {
+                ticker: ticker.clone(),
+                shares: 0.0,
+                cost_basis: 0.0,
+            });
 
         if shares > 0.0 {
             entry.shares += shares;
@@ -234,12 +242,16 @@ pub fn merge_holdings_with_quotes_logic(
     holdings: &[Holding],
     quotes: &[YahooQuote],
 ) -> Vec<HoldingWithQuote> {
+    let mut quote_map = HashMap::new();
+    for quote in quotes {
+        quote_map
+            .entry(quote.symbol.to_ascii_lowercase())
+            .or_insert(quote);
+    }
     let mut merged = holdings
         .iter()
         .map(|h| {
-            let quote = quotes
-                .iter()
-                .find(|q| q.symbol.eq_ignore_ascii_case(&h.ticker));
+            let quote = quote_map.get(&h.ticker.to_ascii_lowercase()).copied();
             let price = quote.map_or(0.0, |q| q.price);
             let current_value = h.shares * price;
             let roi = if h.cost_basis > 0.0 {
@@ -382,17 +394,24 @@ pub fn run_monte_carlo_simulation_logic(input: &MonteCarloInput) -> MonteCarloOu
     let total_years = years_to_retirement + input.retirement_duration;
     let real_return = input.expected_return - input.inflation;
 
-    let mut all_balances: Vec<Vec<f64>> = Vec::new();
+    let year_count = (total_years as usize) + 1;
+    let mut balances_by_year = (0..year_count)
+        .map(|_| Vec::with_capacity(input.simulation_count.max(0) as usize))
+        .collect::<Vec<_>>();
     let mut success_count = 0;
 
     for _ in 0..input.simulation_count {
-        let mut balances = vec![input.current_net_worth];
         let mut balance = input.current_net_worth;
+        balances_by_year[0].push(balance);
+        let mut year = 1;
 
         for _ in 1..=years_to_retirement {
             let year_return = random_normal(real_return, input.volatility) / 100.0;
             balance = balance * (1.0 + year_return) + input.annual_savings;
-            balances.push(balance);
+            if let Some(values) = balances_by_year.get_mut(year) {
+                values.push(balance);
+            }
+            year += 1;
         }
 
         let mut retirement_expenses = input.annual_expenses;
@@ -402,7 +421,10 @@ pub fn run_monte_carlo_simulation_logic(input: &MonteCarloInput) -> MonteCarloOu
             let year_return = random_normal(real_return, input.volatility) / 100.0;
             balance = balance * (1.0 + year_return) - retirement_expenses;
             retirement_expenses *= 1.0 + input.inflation / 100.0;
-            balances.push(balance);
+            if let Some(values) = balances_by_year.get_mut(year) {
+                values.push(balance);
+            }
+            year += 1;
 
             if balance <= 0.0 {
                 success = false;
@@ -412,41 +434,26 @@ pub fn run_monte_carlo_simulation_logic(input: &MonteCarloInput) -> MonteCarloOu
 
         if success {
             success_count += 1;
-            while balances.len() < (total_years + 1) as usize {
-                balances.push(balance.max(0.0));
-            }
-        } else {
-            while balances.len() < (total_years + 1) as usize {
-                balances.push(0.0);
-            }
         }
-
-        all_balances.push(balances);
+        let padding = if success { balance.max(0.0) } else { 0.0 };
+        for values in balances_by_year.iter_mut().skip(year) {
+            values.push(padding);
+        }
     }
 
-    let mut p10 = Vec::new();
-    let mut p25 = Vec::new();
-    let mut p50 = Vec::new();
-    let mut p75 = Vec::new();
-    let mut p90 = Vec::new();
+    let mut p10 = Vec::with_capacity(year_count);
+    let mut p25 = Vec::with_capacity(year_count);
+    let mut p50 = Vec::with_capacity(year_count);
+    let mut p75 = Vec::with_capacity(year_count);
+    let mut p90 = Vec::with_capacity(year_count);
 
-    for year in 0..=total_years as usize {
-        let mut values = all_balances
-            .iter()
-            .map(|row| *row.get(year).unwrap_or(&0.0))
-            .collect::<Vec<_>>();
-        values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
-
-        let percentile = |arr: &[f64], p: f64| -> f64 {
-            let idx = ((p / 100.0) * arr.len() as f64).floor() as usize;
-            arr[idx.min(arr.len().saturating_sub(1))]
-        };
-
-        p10.push(percentile(&values, 10.0));
-        p25.push(percentile(&values, 25.0));
-        p50.push(percentile(&values, 50.0));
-        p75.push(percentile(&values, 75.0));
-        p90.push(percentile(&values, 90.0));
+    for values in &mut balances_by_year {
+        let [v10, v25, v50, v75, v90] = select_percentiles(values);
+        p10.push(v10);
+        p25.push(v25);
+        p50.push(v50);
+        p75.push(v75);
+        p90.push(v90);
     }
 
     MonteCarloOutput {
@@ -464,36 +471,75 @@ pub fn run_monte_carlo_simulation_logic(input: &MonteCarloInput) -> MonteCarloOu
     }
 }
 
-fn get_rate(exchange_rates: &HashMap<String, ExchangeRateSeries>, pair: &str, date: &str) -> f64 {
-    if let Some(data) = exchange_rates.get(pair) {
-        if let Some(rate) = data.map.get(date) {
+fn select_percentiles(values: &mut [f64]) -> [f64; 5] {
+    let indexes = [10.0, 25.0, 50.0, 75.0, 90.0].map(|p| {
+        (((p / 100.0) * values.len() as f64).floor() as usize).min(values.len().saturating_sub(1))
+    });
+    if values
+        .iter()
+        .any(|v| v.is_nan() || (*v == 0.0 && v.is_sign_negative()))
+    {
+        values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+        return indexes.map(|index| values[index]);
+    }
+    indexes.map(|index| {
+        let (_, value, _) = values
+            .select_nth_unstable_by(index, |a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+        *value
+    })
+}
+
+struct RateIndex<'a> {
+    series: &'a ExchangeRateSeries,
+    dates: Vec<(&'a str, usize)>,
+}
+
+impl<'a> RateIndex<'a> {
+    fn new(series: &'a ExchangeRateSeries) -> Self {
+        let mut dates = series
+            .list
+            .iter()
+            .enumerate()
+            .map(|(index, point)| (point.date.as_str(), index))
+            .collect::<Vec<_>>();
+        dates.sort_unstable_by(|a, b| a.0.cmp(b.0));
+        // The original fallback picks the last matching list entry, even if unsorted.
+        let mut latest_index = 0;
+        for (_, index) in &mut dates {
+            latest_index = latest_index.max(*index);
+            *index = latest_index;
+        }
+        Self { series, dates }
+    }
+
+    fn get(&self, date: &str) -> f64 {
+        if let Some(rate) = self.series.map.get(date) {
             return *rate;
         }
-        let mut best = None;
-        for p in &data.list {
-            if p.date.as_str() <= date {
-                best = Some(p.price);
-            }
-        }
-        return best.unwrap_or(1.0);
+        let end = self
+            .dates
+            .partition_point(|(point_date, _)| *point_date <= date);
+        end.checked_sub(1)
+            .map_or(1.0, |index| self.series.list[self.dates[index].1].price)
     }
-    1.0
 }
 
 /// Aggregates all financial data into a comprehensive report with income, expenses,
 /// savings rate, portfolio summary, category breakdowns, and monthly trends.
 #[must_use]
 pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
-    let mut account_map = HashMap::new();
+    let mut account_pairs = HashMap::new();
     for a in &input.accounts {
-        account_map.insert(a.id, a.clone());
+        let currency = a.currency.as_deref().unwrap_or(&input.app_currency);
+        let pair = (currency != input.app_currency)
+            .then(|| format!("{}{}=X", currency, input.app_currency));
+        account_pairs.insert(a.id, pair);
     }
 
     let filtered = input
         .transactions
         .iter()
         .filter(|t| t.date >= input.start_date && t.date <= input.end_date)
-        .cloned()
         .collect::<Vec<_>>();
 
     let market_values = compute_net_worth_market_values_logic(&input.transactions, &input.quotes);
@@ -507,30 +553,82 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         None,
     );
 
-    let to_app_currency = |amount: f64, account_id: i32, date: &str| -> f64 {
-        let acc_currency = account_map
-            .get(&account_id)
-            .and_then(|a| a.currency.clone())
-            .unwrap_or_else(|| input.app_currency.clone());
-        if acc_currency == input.app_currency {
-            amount
-        } else {
-            let pair = format!("{}{}=X", acc_currency, input.app_currency);
-            amount * get_rate(&input.exchange_rates, &pair, date)
-        }
-    };
-
+    let mut rate_indexes = HashMap::new();
+    let mut grouped_transactions: HashMap<i32, Vec<&Transaction>> = HashMap::new();
     let mut total_income = 0.0;
     let mut total_expenses = 0.0;
+    let mut monthly_map: HashMap<String, (f64, f64)> = HashMap::new();
+    let mut category_totals_expense: HashMap<String, f64> = HashMap::new();
+    let mut category_totals_income: HashMap<String, f64> = HashMap::new();
+    let mut investment_categories: HashMap<String, f64> = HashMap::new();
+    let mut expense_non_investment: HashMap<String, f64> = HashMap::new();
+    let mut total_expense_abs = 0.0;
+    let mut total_investments = 0.0;
+
     for t in &filtered {
-        if t.category.as_deref() == Some("Transfer") || t.ticker.is_some() {
+        grouped_transactions
+            .entry(t.account_id)
+            .or_default()
+            .push(t);
+        if t.category.as_deref() == Some("Transfer") {
             continue;
         }
-        let converted = to_app_currency(t.amount, t.account_id, &t.date);
-        if converted > 0.0 {
-            total_income += converted;
-        } else {
-            total_expenses += converted.abs();
+        let converted = match account_pairs.get(&t.account_id).and_then(Option::as_ref) {
+            Some(pair) => {
+                let rate = input.exchange_rates.get(pair).map_or(1.0, |series| {
+                    if let Some(rate) = series.map.get(&t.date) {
+                        return *rate;
+                    }
+                    rate_indexes
+                        .entry(pair)
+                        .or_insert_with(|| RateIndex::new(series))
+                        .get(&t.date)
+                });
+                t.amount * rate
+            }
+            None => t.amount,
+        };
+        if t.ticker.is_none() {
+            let key = t.date.chars().take(7).collect::<String>();
+            let monthly = monthly_map.entry(key).or_insert((0.0, 0.0));
+            if converted > 0.0 {
+                total_income += converted;
+                monthly.0 += converted;
+                let cat = t
+                    .category
+                    .clone()
+                    .unwrap_or_else(|| "Uncategorized".to_string());
+                *category_totals_income.entry(cat).or_insert(0.0) += converted;
+            } else {
+                total_expenses += converted.abs();
+                monthly.1 += converted.abs();
+                if converted < 0.0 {
+                    let cat = t
+                        .category
+                        .clone()
+                        .unwrap_or_else(|| "Uncategorized".to_string());
+                    *category_totals_expense.entry(cat).or_insert(0.0) += converted.abs();
+                }
+            }
+        }
+        if converted < 0.0 || converted.is_nan() {
+            let cat = t
+                .category
+                .clone()
+                .unwrap_or_else(|| "Uncategorized".to_string());
+            let abs = converted.abs();
+            total_expense_abs += abs;
+            let lc = cat.to_lowercase();
+            let is_invest = lc.contains("invest")
+                || lc.contains("savings")
+                || lc.contains("brokerage")
+                || lc.contains("deposit");
+            if is_invest {
+                *investment_categories.entry(cat).or_insert(0.0) += abs;
+                total_investments += abs;
+            } else {
+                *expense_non_investment.entry(cat).or_insert(0.0) += abs;
+            }
         }
     }
 
@@ -609,15 +707,10 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
 
     let mut accounts_transactions = Vec::new();
     for acc in &input.accounts {
-        let mut txs = filtered
-            .iter()
-            .filter(|t| t.account_id == acc.id)
-            .cloned()
-            .collect::<Vec<_>>();
-        txs.sort_by(|a, b| a.date.cmp(&b.date));
-        if txs.is_empty() {
+        let Some(txs) = grouped_transactions.get_mut(&acc.id) else {
             continue;
-        }
+        };
+        txs.sort_by(|a, b| a.date.cmp(&b.date));
 
         let acc_currency = acc
             .currency
@@ -642,21 +735,6 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         }));
     }
 
-    let mut monthly_map: HashMap<String, (f64, f64)> = HashMap::new();
-    for t in &filtered {
-        if t.category.as_deref() == Some("Transfer") || t.ticker.is_some() {
-            continue;
-        }
-        let converted = to_app_currency(t.amount, t.account_id, &t.date);
-        let key = t.date.chars().take(7).collect::<String>();
-        let entry = monthly_map.entry(key).or_insert((0.0, 0.0));
-        if converted > 0.0 {
-            entry.0 += converted;
-        } else {
-            entry.1 += converted.abs();
-        }
-    }
-
     let mut monthly_income_expenses = monthly_map
         .into_iter()
         .map(|(k, (income, expenses))| json!({"label": k, "income": income, "expenses": expenses}))
@@ -666,24 +744,6 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             .and_then(|x| x.as_str())
             .cmp(&b.get("label").and_then(|x| x.as_str()))
     });
-
-    let mut category_totals_expense: HashMap<String, f64> = HashMap::new();
-    let mut category_totals_income: HashMap<String, f64> = HashMap::new();
-    for t in &filtered {
-        if t.category.as_deref() == Some("Transfer") || t.ticker.is_some() {
-            continue;
-        }
-        let converted = to_app_currency(t.amount, t.account_id, &t.date);
-        let cat = t
-            .category
-            .clone()
-            .unwrap_or_else(|| "Uncategorized".to_string());
-        if converted < 0.0 {
-            *category_totals_expense.entry(cat).or_insert(0.0) += converted.abs();
-        } else if converted > 0.0 {
-            *category_totals_income.entry(cat).or_insert(0.0) += converted;
-        }
-    }
 
     let expense_total: f64 = category_totals_expense.values().sum();
     let income_total: f64 = category_totals_income.values().sum();
@@ -736,38 +796,6 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         json!({"label": input.start_date, "value": net_worth}),
         json!({"label": input.end_date, "value": net_worth}),
     ];
-
-    let mut investment_categories: HashMap<String, f64> = HashMap::new();
-    let mut expense_non_investment: HashMap<String, f64> = HashMap::new();
-    let mut total_expense_abs = 0.0;
-    let mut total_investments = 0.0;
-
-    for t in &filtered {
-        if t.category.as_deref() == Some("Transfer") {
-            continue;
-        }
-        let converted = to_app_currency(t.amount, t.account_id, &t.date);
-        if converted >= 0.0 {
-            continue;
-        }
-        let cat = t
-            .category
-            .clone()
-            .unwrap_or_else(|| "Uncategorized".to_string());
-        let abs = converted.abs();
-        total_expense_abs += abs;
-        let lc = cat.to_lowercase();
-        let is_invest = lc.contains("invest")
-            || lc.contains("savings")
-            || lc.contains("brokerage")
-            || lc.contains("deposit");
-        if is_invest {
-            *investment_categories.entry(cat).or_insert(0.0) += abs;
-            total_investments += abs;
-        } else {
-            *expense_non_investment.entry(cat).or_insert(0.0) += abs;
-        }
-    }
 
     let expense_categories_cf = expense_non_investment
         .into_iter()
@@ -895,4 +923,57 @@ pub fn collect_tickers(transactions: &[Transaction]) -> Vec<String> {
         }
     }
     set.into_iter().collect()
+}
+
+#[cfg(test)]
+#[allow(clippy::float_cmp)]
+mod performance_regression_tests {
+    use super::{select_percentiles, ExchangeRatePoint, ExchangeRateSeries, RateIndex};
+    use std::collections::HashMap;
+
+    #[test]
+    fn percentile_selection_matches_full_sort() {
+        for size in [1, 2, 5, 10, 101, 1000] {
+            let values = (0..size)
+                .map(|i| f64::from((i * 37) % 23) - 10.0)
+                .collect::<Vec<_>>();
+            let mut sorted = values.clone();
+            sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let expected = [10.0, 25.0, 50.0, 75.0, 90.0].map(|p| {
+                let index = ((p / 100.0) * sorted.len() as f64).floor() as usize;
+                sorted[index.min(sorted.len() - 1)]
+            });
+            assert_eq!(select_percentiles(&mut values.clone()), expected);
+        }
+    }
+
+    #[test]
+    fn rate_index_preserves_exact_and_unsorted_fallback_behavior() {
+        let series = ExchangeRateSeries {
+            map: HashMap::from([("2025-01-03".into(), 9.0)]),
+            list: vec![
+                ExchangeRatePoint {
+                    date: "2025-01-04".into(),
+                    price: 4.0,
+                },
+                ExchangeRatePoint {
+                    date: "2025-01-01".into(),
+                    price: 1.0,
+                },
+                ExchangeRatePoint {
+                    date: "2025-01-02".into(),
+                    price: 2.0,
+                },
+                ExchangeRatePoint {
+                    date: "2025-01-01".into(),
+                    price: 3.0,
+                },
+            ],
+        };
+        let index = RateIndex::new(&series);
+        assert_eq!(index.get("2024-12-31"), 1.0);
+        assert_eq!(index.get("2025-01-01"), 3.0);
+        assert_eq!(index.get("2025-01-03"), 9.0);
+        assert_eq!(index.get("2025-01-05"), 3.0);
+    }
 }
