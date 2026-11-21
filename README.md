@@ -25,7 +25,7 @@
 
 ## Features
 
-**Dashboard.** Net worth over a range you choose, income against expenses, spending by category, how assets are split, and a cash-flow diagram. You can hide individual accounts when you want a narrower view.
+**Dashboard.** Net worth over a range you choose, income against expenses, spending by category, asset allocation, and cash flow, plus budget health, goal progress, and scheduled transactions due in the next 30 days. You can hide individual accounts when you want a narrower view.
 
 **Investments.** Holdings, cost basis, and gain or loss. Quotes and daily prices come from Yahoo Finance and feed the allocation chart and the performance heatmap.
 
@@ -37,7 +37,7 @@
 
 **FIRE calculator.** Starts from your balances, spending, and savings, then projects a target with a single path and a Monte Carlo range.
 
-**Import and export.** Bring in CSV, Excel, or JSON. Map the columns, preview the rows, and let the importer create accounts it has not seen before. Send data back out as JSON, CSV, Excel, or a PDF report for a period you choose.
+**Import and export.** Bring in CSV, Excel, or JSON. Map the columns, preview the rows, and let the importer create accounts it has not seen before. Send data back out as JSON, CSV, Excel, or a PDF report that identifies its account scope and as-of date, with prior-period comparisons in income and expense reports.
 
 **Day to day.**
 

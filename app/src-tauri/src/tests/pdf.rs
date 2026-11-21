@@ -1,7 +1,7 @@
 use crate::core::models::{
     ReportAccountBalance, ReportAccountTransactions, ReportCashFlow, ReportCategoryAmount,
-    ReportData, ReportDataPoint, ReportHolding, ReportLabels, ReportMonthlyData, ReportPortfolio,
-    ReportSummary, ReportTransaction,
+    ReportComparison, ReportData, ReportDataPoint, ReportHolding, ReportLabels, ReportMonthlyData,
+    ReportPortfolio, ReportSummary, ReportTransaction,
 };
 use crate::core::pdf::{
     generate_pdf_report, generate_report, generate_report_for_type, PdfReportType,
@@ -72,6 +72,9 @@ fn make_empty_report() -> ReportData {
             target_date: String::new(),
             monthly_contribution: String::new(),
             status: String::new(),
+            previous_period: String::new(),
+            account_scope: String::new(),
+            as_of: String::new(),
         },
         summary: ReportSummary {
             net_worth: 0.0,
@@ -81,6 +84,8 @@ fn make_empty_report() -> ReportData {
             savings_rate: 0.0,
             account_count: 0,
         },
+        previous_period: None,
+        account_scope: Vec::new(),
         account_balances: Vec::new(),
         assets: Vec::new(),
         liabilities: Vec::new(),
@@ -143,6 +148,15 @@ fn test_generate_report_with_full_data() {
         savings_rate: 50.6,
         account_count: 2,
     };
+    data.previous_period = Some(ReportComparison {
+        start_date: "2023-01-01".into(),
+        end_date: "2023-12-31".into(),
+        total_income: 80000.0,
+        total_expenses: 40000.0,
+        net_savings: 40000.0,
+        savings_rate: 50.0,
+    });
+    data.account_scope = vec!["Checking".into(), "Brokerage".into()];
     data.account_balances = vec![ReportAccountBalance {
         account_id: 1,
         name: "Brokerage".into(),

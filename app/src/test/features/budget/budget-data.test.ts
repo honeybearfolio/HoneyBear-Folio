@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { Transaction } from "../../../api/types";
-import { getMonthlySpending } from "../../../features/budget/budget-data";
+import {
+  getMonthlySpending,
+  readBudgetLimits,
+} from "../../../features/budget/budget-data";
 
 const transactions: Transaction[] = [
   {
@@ -75,6 +78,33 @@ describe("getMonthlySpending", () => {
       { category: "Food", amount: 10 },
       { category: "Uncategorized", amount: 7.5 },
     ]);
+  });
+
+  describe("readBudgetLimits", () => {
+    afterEach(() => {
+      localStorage.removeItem("hb_budget_limits");
+    });
+
+    it("returns valid positive category limits and ignores invalid entries", () => {
+      localStorage.setItem(
+        "hb_budget_limits",
+        JSON.stringify({
+          Groceries: 500,
+          Rent: 0,
+          " ": 200,
+          Food: Number.NaN,
+        }),
+      );
+
+      expect(readBudgetLimits()).toEqual({ Groceries: 500 });
+    });
+
+    it("throws when the saved budget data is not an object", () => {
+      localStorage.setItem("hb_budget_limits", JSON.stringify([]));
+      expect(() => readBudgetLimits()).toThrow(
+        "Saved budget limits are not valid.",
+      );
+    });
   });
 
   it("returns no spending when the selected month has no expenses", () => {

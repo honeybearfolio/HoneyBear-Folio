@@ -21,7 +21,7 @@ const MARGIN_RIGHT: f32 = 22.0;
 const MARGIN_TOP: f32 = 22.0;
 const MARGIN_BOTTOM: f32 = 20.0;
 const CONTENT_W: f32 = PAGE_W - MARGIN_LEFT - MARGIN_RIGHT;
-const HEADER_HEIGHT: f32 = 14.0;
+const HEADER_HEIGHT: f32 = 21.0;
 const FOOTER_HEIGHT: f32 = 10.0;
 const ACCENT_STRIPE_H: f32 = 2.0;
 
@@ -430,7 +430,7 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
 
     // Date range on the right
     let right_text = if data.snapshot_report {
-        format!("{} · {}", data.generation_date, data.currency_symbol)
+        data.currency_symbol.clone()
     } else {
         format!(
             "{} — {} · {}",
@@ -444,6 +444,36 @@ fn draw_header_footer(ops: &mut Vec<Op>, fonts: &PdfFonts, page_num: usize, data
         PAGE_W - MARGIN_RIGHT,
         ACCENT_STRIPE_H + 8.0,
         7.5,
+        Weight::Regular,
+        text_secondary(),
+    );
+    write_text(
+        ops,
+        fonts,
+        &format!(
+            "{}: {}",
+            labels.account_scope,
+            truncate(
+                &if data.account_scope.is_empty() {
+                    labels.no_data.clone()
+                } else {
+                    data.account_scope.join(", ")
+                },
+                72,
+            )
+        ),
+        MARGIN_LEFT + 10.0,
+        ACCENT_STRIPE_H + 15.5,
+        6.0,
+        false,
+    );
+    write_text_right_weight(
+        ops,
+        fonts,
+        &format!("{}: {}", labels.as_of, data.generation_date),
+        PAGE_W - MARGIN_RIGHT,
+        ACCENT_STRIPE_H + 15.5,
+        6.0,
         Weight::Regular,
         text_secondary(),
     );
@@ -677,6 +707,69 @@ fn start_page(fonts: &PdfFonts, page_num: usize, data: &ReportData) -> Vec<Op> {
 
 fn finish_page(doc: &mut PdfDocument, ops: Vec<Op>) {
     doc.pages.push(PdfPage::new(Mm(PAGE_W), Mm(PAGE_H), ops));
+}
+
+fn draw_period_comparison(ops: &mut Vec<Op>, fonts: &PdfFonts, data: &ReportData, top: f32) -> f32 {
+    let Some(previous) = &data.previous_period else {
+        return top;
+    };
+    let labels = &data.labels;
+    let comparison_title = format!(
+        "{} ({} — {})",
+        labels.previous_period, previous.start_date, previous.end_date
+    );
+    let mut top = draw_section_title(ops, fonts, &comparison_title, top);
+    let metrics = [
+        (
+            &labels.total_income,
+            format_currency(previous.total_income, &data.currency_symbol),
+            format_currency(data.summary.total_income, &data.currency_symbol),
+        ),
+        (
+            &labels.total_expenses,
+            format_currency(previous.total_expenses, &data.currency_symbol),
+            format_currency(data.summary.total_expenses, &data.currency_symbol),
+        ),
+        (
+            &labels.net_savings,
+            format_currency(previous.net_savings, &data.currency_symbol),
+            format_currency(data.summary.net_savings, &data.currency_symbol),
+        ),
+        (
+            &labels.savings_rate,
+            format_percent(previous.savings_rate),
+            format_percent(data.summary.savings_rate),
+        ),
+    ];
+    let gap = 3.0;
+    let card_w = (CONTENT_W - gap * 3.0) / 4.0;
+    let card_h = 17.0;
+    for (index, (label, prior, current)) in metrics.iter().enumerate() {
+        let x = MARGIN_LEFT + index as f32 * (card_w + gap);
+        draw_rect(ops, x, top, card_w, card_h, color_white());
+        draw_line(ops, x, top, x + card_w, top, 0.2, color_border());
+        draw_line(
+            ops,
+            x,
+            top + card_h,
+            x + card_w,
+            top + card_h,
+            0.2,
+            color_border(),
+        );
+        write_text(ops, fonts, label, x + 2.5, top + 5.5, 6.0, false);
+        write_text(
+            ops,
+            fonts,
+            &format!("{prior} -> {current}"),
+            x + 2.5,
+            top + 12.5,
+            6.2,
+            true,
+        );
+    }
+    top += card_h + 8.0;
+    top
 }
 
 // ── Financial Summary page ──────────────────────────────────────────
@@ -1168,6 +1261,8 @@ fn draw_income_expenses_page(
         Weight::Regular,
         text_secondary(),
     );
+
+    top = draw_period_comparison(&mut ops, fonts, data, top);
 
     let months = &data.monthly_income_expenses;
     if months.is_empty() {

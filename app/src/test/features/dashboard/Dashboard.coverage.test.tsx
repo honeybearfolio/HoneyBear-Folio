@@ -5,6 +5,7 @@ import Dashboard from "../../../features/dashboard/Dashboard";
 import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
 import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
+import { dropLedgerRead } from "../../../api/tauri-client";
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
@@ -18,6 +19,25 @@ function recentDate(daysAgo: number) {
   d.setDate(d.getDate() - daysAgo);
   d.setHours(0, 0, 0, 0);
   return `${String(d.getFullYear())}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function futureDate(daysFromNow: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  d.setHours(0, 0, 0, 0);
+  return `${String(d.getFullYear())}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function defaultDashboardResult(cmd: string) {
+  if (
+    cmd === "get_goals" ||
+    cmd === "get_pending_occurrences" ||
+    cmd === "get_all_transactions"
+  ) {
+    return Promise.resolve([]);
+  }
+  if (cmd === "get_account_holdings") return Promise.resolve({});
+  return Promise.resolve(null);
 }
 
 const sampleTransactions = [
@@ -71,7 +91,7 @@ function mockDashboardInvoke(
     if (cmd === "build_holdings_from_transactions")
       return Promise.resolve(emptyHoldings);
     if (cmd === "compute_net_worth") return Promise.resolve(12500);
-    return Promise.resolve(null);
+    return defaultDashboardResult(cmd);
   });
 }
 
@@ -137,6 +157,7 @@ vi.mock("react-datepicker", () => ({
 describe("Dashboard coverage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    dropLedgerRead();
     useNumberFormatStore.setState({
       dateFormat: "MM/dd/yyyy",
       firstDayOfWeek: 0,
@@ -193,6 +214,63 @@ describe("Dashboard coverage", () => {
     });
   });
 
+  it("shows budget health, goal progress, and scheduled items", async () => {
+    localStorage.setItem("hb_budget_limits", JSON.stringify({ Food: 25 }));
+    vi.mocked(invoke).mockImplementation((cmd: string) => {
+      if (cmd === "get_dashboard_chart_series")
+        return Promise.resolve(sampleSeries);
+      if (cmd === "get_all_transactions")
+        return Promise.resolve(sampleTransactions);
+      if (cmd === "get_goals") {
+        return Promise.resolve([
+          {
+            id: 7,
+            name: "Emergency Fund",
+            target_amount: 2000,
+            target_date: null,
+            monthly_contribution: null,
+            created_at: recentDate(100),
+            archived: false,
+            exchange_rate: 1,
+            links: [
+              {
+                id: 1,
+                goal_id: 7,
+                source_type: "account",
+                account_id: 1,
+                allocation_percent: 100,
+              },
+            ],
+          },
+        ]);
+      }
+      if (cmd === "get_account_holdings") return Promise.resolve({});
+      if (cmd === "get_pending_occurrences") {
+        return Promise.resolve([
+          {
+            scheduled_tx_id: 11,
+            date: futureDate(3),
+            payee: "Rent",
+            amount: -800,
+            account_name: "Checking",
+            status: "upcoming",
+          },
+        ]);
+      }
+      if (cmd === "compute_net_worth") return Promise.resolve(6000);
+      return defaultDashboardResult(cmd);
+    });
+
+    render(<Dashboard accounts={sampleAccounts} />);
+
+    expect(
+      await screen.findByText("fmt-50 spent of fmt-25"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Emergency Fund")).toBeInTheDocument();
+    expect(screen.getByText("Rent")).toBeInTheDocument();
+    expect(screen.getByText("Food: over by fmt-25")).toBeInTheDocument();
+  });
+
   it("selects YTD time range", async () => {
     const user = userEvent.setup();
     mockDashboardInvoke((cmd) => {
@@ -242,7 +320,7 @@ describe("Dashboard coverage", () => {
       if (cmd === "build_holdings_from_transactions")
         return Promise.resolve(emptyHoldings);
       if (cmd === "compute_net_worth") return Promise.resolve(6000);
-      return Promise.resolve(null);
+      return defaultDashboardResult(cmd);
     });
 
     const user = userEvent.setup();
@@ -317,7 +395,7 @@ describe("Dashboard coverage", () => {
         ]);
       }
       if (cmd === "compute_net_worth") return Promise.resolve(7000);
-      return Promise.resolve(null);
+      return defaultDashboardResult(cmd);
     });
 
     render(<Dashboard accounts={sampleAccounts} />);
@@ -362,7 +440,7 @@ describe("Dashboard coverage", () => {
       if (cmd === "build_holdings_from_transactions")
         return Promise.resolve(emptyHoldings);
       if (cmd === "compute_net_worth") return Promise.resolve(1000);
-      return Promise.resolve(null);
+      return defaultDashboardResult(cmd);
     });
 
     render(<Dashboard accounts={eurAccounts} />);
@@ -392,7 +470,7 @@ describe("Dashboard coverage", () => {
       if (cmd === "get_daily_stock_prices") return prices;
       if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
       if (cmd === "compute_net_worth") return Promise.resolve(1000);
-      return Promise.resolve(null);
+      return defaultDashboardResult(cmd);
     });
 
     render(<Dashboard accounts={eurAccounts} />);
@@ -434,7 +512,7 @@ describe("Dashboard coverage", () => {
       if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
       if (cmd === "get_stock_quotes") return Promise.resolve([]);
       if (cmd === "compute_net_worth") return Promise.resolve(1000);
-      return Promise.resolve(null);
+      return defaultDashboardResult(cmd);
     });
 
     render(<Dashboard accounts={sampleAccounts} />);
@@ -473,7 +551,7 @@ describe("Dashboard coverage", () => {
       if (cmd === "update_daily_stock_prices") return Promise.resolve(null);
       if (cmd === "get_stock_quotes") return Promise.resolve([]);
       if (cmd === "compute_net_worth") return Promise.resolve(1000);
-      return Promise.resolve(null);
+      return defaultDashboardResult(cmd);
     });
 
     render(<Dashboard accounts={sampleAccounts} />);

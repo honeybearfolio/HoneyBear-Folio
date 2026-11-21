@@ -20,6 +20,7 @@ import { useDashboardFetch } from "./useDashboardFetch";
 import { useDashboardFilters } from "./useDashboardFilters";
 import { useDashboardSummaries } from "./useDashboardSummaries";
 import { useDashboardCharts } from "./useDashboardCharts";
+import { useDashboardInsights } from "./useDashboardInsights";
 
 registerDashboardCharts();
 
@@ -58,6 +59,11 @@ export default function Dashboard({
     accountMap,
     retryFetch,
   } = useDashboardFetch({ propAccounts, appCurrency, t });
+  const insights = useDashboardInsights(
+    accounts,
+    appCurrency,
+    !loading && !error,
+  );
 
   const {
     timeRange,
@@ -134,6 +140,7 @@ export default function Dashboard({
       barOptions,
       doughnutOptions,
       expensesOptions,
+      insights,
     }),
     [
       accounts,
@@ -156,6 +163,7 @@ export default function Dashboard({
       barOptions,
       doughnutOptions,
       expensesOptions,
+      insights,
     ],
   );
 

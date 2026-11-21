@@ -74,6 +74,39 @@ fn tx(account_id: i32, date: &str, amount: f64, category: Option<&str>) -> Trans
     }
 }
 
+#[test]
+fn report_includes_equal_length_previous_period_comparison() {
+    let report = compute_report_data_logic(&ReportComputeInput {
+        accounts: vec![Account {
+            id: 1,
+            name: "Checking".into(),
+            balance: 0.0,
+            currency: Some("USD".into()),
+            exchange_rate: 1.0,
+            archived: false,
+        }],
+        transactions: vec![
+            tx(1, "2024-12-10", 800.0, Some("Salary")),
+            tx(1, "2024-12-11", -200.0, Some("Food")),
+            tx(1, "2025-01-10", 1000.0, Some("Salary")),
+            tx(1, "2025-01-11", -300.0, Some("Food")),
+        ],
+        start_date: "2025-01-01".into(),
+        end_date: "2025-01-31".into(),
+        app_currency: "USD".into(),
+        exchange_rates: HashMap::new(),
+        quotes: vec![],
+        labels: json!({}),
+    });
+
+    let comparison = &report["previous_period"];
+    assert_eq!(comparison["start_date"], "2024-12-01");
+    assert_eq!(comparison["end_date"], "2024-12-31");
+    assert_eq!(comparison["total_income"], 800.0);
+    assert_eq!(comparison["total_expenses"], 200.0);
+    assert_eq!(comparison["net_savings"], 600.0);
+}
+
 // ── scheduled ────────────────────────────────────────────────────────
 
 #[test]
