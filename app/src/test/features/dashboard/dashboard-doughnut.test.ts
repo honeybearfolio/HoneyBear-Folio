@@ -13,7 +13,7 @@ vi.mock("../../../utils/investments", () => ({
 }));
 
 const t = i18n.t.bind(i18n);
-const chartColors = { palette: ["rgb(59, 130, 246)", "rgb(16, 185, 129)"] };
+const chartColors = { piePalette: ["rgb(59, 130, 246)", "rgb(16, 185, 129)"] };
 
 const baseArgs = {
   filteredTransactions: [] as Transaction[],
@@ -108,6 +108,9 @@ describe("buildDoughnutChartData", () => {
     const cashIdx = result!.labels.indexOf(t("dashboard.assets.cash"));
     expect(result!.datasets[0]!.data[stockIdx]).toBe(1500);
     expect(result!.datasets[0]!.data[cashIdx]).toBe(1000);
+    expect(result!.datasets[0]!.backgroundColor).toEqual(
+      chartColors.piePalette,
+    );
   });
 
   it("maps quote types to translated asset labels", async () => {

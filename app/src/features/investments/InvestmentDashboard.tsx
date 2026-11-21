@@ -114,7 +114,7 @@ export default function InvestmentDashboard() {
     const rawData = holdings.map((h) => h.currentValue);
     const data = rawData.map((v) => Math.abs(v));
 
-    const colors = chartColors.palette;
+    const colors = chartColors.piePalette;
 
     return {
       labels: holdings.map((h) => h.ticker),
