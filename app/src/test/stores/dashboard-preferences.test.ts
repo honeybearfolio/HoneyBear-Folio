@@ -22,7 +22,7 @@ describe("useDashboardPreferencesStore", () => {
       (widget) => widget.type === "assetAllocation",
     );
     expect(card).toBeDefined();
-    store.resizeWidget(card!.instanceId, 6, 10);
+    store.resizeWidget(card!.instanceId, 6, 7);
     store.removeWidget(
       store.layout.find((widget) => widget.type === "summaryAccounts")!
         .instanceId,
@@ -45,7 +45,7 @@ describe("useDashboardPreferencesStore", () => {
     const saved = next.layout.find(
       (widget) => widget.instanceId === card!.instanceId,
     );
-    expect(saved).toMatchObject({ w: 6, h: 10, timeRange: "ALL", filters });
+    expect(saved).toMatchObject({ w: 6, h: 7, timeRange: "ALL", filters });
     expect(
       next.layout.some((widget) => widget.type === "summaryAccounts"),
     ).toBe(false);

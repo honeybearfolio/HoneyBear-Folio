@@ -179,7 +179,7 @@ describe("SettingsView", () => {
       expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_LAYOUT)).toBeNull();
       expect(localStorage.getItem(STORAGE_KEYS.DASHBOARD_VIEW)).toBeNull();
       expect(useDashboardPreferencesStore.getState().view.timeRange).toBe("1Y");
-      expect(useDashboardPreferencesStore.getState().layout).toHaveLength(8);
+      expect(useDashboardPreferencesStore.getState().layout).toHaveLength(11);
     });
   });
 

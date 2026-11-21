@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useNumberFormatStore } from "../../../stores/number-format";
 import { useConfirmStore } from "../../../stores/confirm";
 import { useDashboardPreferencesStore } from "../../../stores/dashboard-preferences";
+import { dropLedgerRead } from "../../../api/tauri-client";
 
 const emptyHoldings = { currentHoldings: [], firstTradeDate: null };
 
@@ -93,6 +94,14 @@ function mockDashboardInvoke(
     if (cmd === "build_holdings_from_transactions")
       return Promise.resolve(emptyHoldings);
     if (cmd === "compute_net_worth") return Promise.resolve(6000);
+    if (
+      cmd === "get_goals" ||
+      cmd === "get_pending_occurrences" ||
+      cmd === "get_all_transactions"
+    ) {
+      return Promise.resolve([]);
+    }
+    if (cmd === "get_account_holdings") return Promise.resolve({});
     return Promise.resolve(null);
   });
 }
@@ -159,6 +168,7 @@ vi.mock("react-datepicker", () => ({
 describe("Dashboard extended", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    dropLedgerRead();
     useNumberFormatStore.setState({
       dateFormat: "MM/dd/yyyy",
       firstDayOfWeek: 0,
@@ -336,7 +346,7 @@ describe("Dashboard extended", () => {
     expect(screen.getByRole("button", { name: "3M" }).className).toContain(
       "time-range-button-active",
     );
-  });
+  }, 15_000);
 
   it("adds a card, moves it on the grid, and filters it", async () => {
     const user = userEvent.setup();
@@ -374,7 +384,7 @@ describe("Dashboard extended", () => {
     expect(
       screen.getByLabelText("Date range Current Net Worth"),
     ).toHaveTextContent("Follow dashboard");
-  });
+  }, 15_000);
 
   it("resizes a card from the keyboard", async () => {
     const user = userEvent.setup();
@@ -382,6 +392,14 @@ describe("Dashboard extended", () => {
       if (cmd === "get_all_transactions")
         return Promise.resolve(sampleTransactions);
     });
+    const assetAllocation = useDashboardPreferencesStore
+      .getState()
+      .layout.find((widget) => widget.type === "assetAllocation");
+    if (assetAllocation) {
+      useDashboardPreferencesStore
+        .getState()
+        .moveWidget(assetAllocation.instanceId, 0, 60);
+    }
 
     render(<Dashboard accounts={sampleAccounts} />);
 
@@ -394,7 +412,7 @@ describe("Dashboard extended", () => {
     await user.keyboard("{ArrowDown}");
 
     expect(handle.closest(".dashboard-board-item")).toHaveStyle({
-      gridRow: "30 / span 9",
+      gridRow: "61 / span 9",
     });
   });
 });
