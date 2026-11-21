@@ -8,7 +8,7 @@ vi.mock("../../../hooks/useIsDark", () => ({ default: () => false }));
 
 vi.mock("../../../hooks/useChartColors", () => ({
   default: () => ({
-    palette: ["#111", "#222", "#333"],
+    piePalette: ["#111", "#222", "#333"],
     text: "#333",
     tooltipBg: "#fff",
     tooltipText: "#000",

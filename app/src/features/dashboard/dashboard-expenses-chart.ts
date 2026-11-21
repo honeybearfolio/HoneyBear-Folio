@@ -85,8 +85,8 @@ export function buildExpensesByCategoryData({
   );
 
   const colors =
-    chartColors.palette.length > 0
-      ? chartColors.palette
+    chartColors.piePalette.length > 0
+      ? chartColors.piePalette
       : DEFAULT_EXPENSE_CHART_PALETTE;
 
   return {
@@ -124,8 +124,8 @@ export function buildExpensesByCategoryFromSeries({
   }
 
   const colors =
-    chartColors.palette.length > 0
-      ? chartColors.palette
+    chartColors.piePalette.length > 0
+      ? chartColors.piePalette
       : DEFAULT_EXPENSE_CHART_PALETTE;
   const categories = [...series.categories].sort(
     (left, right) => right.amount - left.amount,

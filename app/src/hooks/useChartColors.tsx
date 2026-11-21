@@ -1,6 +1,50 @@
 import { useMemo } from "react";
 import useIsDark from "./useIsDark";
 import useIsHighContrast from "./useIsHighContrast";
+import useDocumentClass from "./useDocumentClass";
+
+const PIE_PALETTES = {
+  light: [
+    "#b74506",
+    "#42576d",
+    "#a05d00",
+    "#00735c",
+    "#7c3d99",
+    "#a2375c",
+    "#006a80",
+    "#70502c",
+  ],
+  dark: [
+    "#ffab20",
+    "#a8c8ed",
+    "#ffcc70",
+    "#62d5b0",
+    "#d3adf5",
+    "#ff9fb5",
+    "#70d4e5",
+    "#e8bd92",
+  ],
+  inkLight: [
+    "#202020",
+    "#303030",
+    "#404040",
+    "#505050",
+    "#606060",
+    "#707070",
+    "#808080",
+    "#909090",
+  ],
+  inkDark: [
+    "#ffffff",
+    "#eeeeee",
+    "#dddddd",
+    "#cccccc",
+    "#bbbbbb",
+    "#aaaaaa",
+    "#999999",
+    "#888888",
+  ],
+};
 
 export interface ChartColors {
   primary: string;
@@ -15,11 +59,13 @@ export interface ChartColors {
   tooltipBg: string;
   tooltipText: string;
   palette: string[];
+  piePalette: string[];
 }
 
 export default function useChartColors(): ChartColors {
   const isDark = useIsDark();
   const isHighContrast = useIsHighContrast();
+  const isInk = useDocumentClass("ink");
 
   const colors = useMemo<ChartColors>(() => {
     // Read computed styles from the root element to get CSS variables
@@ -77,8 +123,15 @@ export default function useChartColors(): ChartColors {
         brand400,
         slate500,
       ],
+      piePalette: isInk
+        ? isDark
+          ? PIE_PALETTES.inkDark
+          : PIE_PALETTES.inkLight
+        : isDark
+          ? PIE_PALETTES.dark
+          : PIE_PALETTES.light,
     };
-  }, [isDark, isHighContrast]);
+  }, [isDark, isHighContrast, isInk]);
 
   return colors;
 }

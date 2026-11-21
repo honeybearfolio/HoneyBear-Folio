@@ -21,6 +21,7 @@ const chartColors: ChartColors = {
   tooltipBg: "#000",
   tooltipText: "#fff",
   palette: ["rgb(59, 130, 246)"],
+  piePalette: ["rgb(59, 130, 246)"],
 };
 
 const formatNumber = vi.fn((value: unknown) => `$${String(value)}`);

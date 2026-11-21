@@ -22,7 +22,7 @@ interface BuildDoughnutChartDataArgs {
   quotes: Quote[];
   dailyPrices: Record<string, DailyPriceData>;
   isDark: boolean;
-  chartColors: { palette: string[] };
+  chartColors: { piePalette: string[] };
   t: TFunction;
 }
 
@@ -123,8 +123,8 @@ export async function buildDoughnutChartData({
   const data = rawData.map((v) => Math.abs(v));
 
   const colors =
-    chartColors.palette.length > 0
-      ? chartColors.palette
+    chartColors.piePalette.length > 0
+      ? chartColors.piePalette
       : [
           "rgb(59, 130, 246)",
           "rgb(16, 185, 129)",

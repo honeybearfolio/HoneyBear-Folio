@@ -34,6 +34,7 @@ const chartColors = {
   tooltipBg: "#000",
   tooltipText: "#fff",
   palette: ["rgb(59, 130, 246)", "rgb(16, 185, 129)"],
+  piePalette: ["#123456", "#654321"],
 };
 
 const accounts: Account[] = [
@@ -233,6 +234,7 @@ describe("dashboard chart data builders", () => {
     });
     expect(expenses!.labels).toEqual(["Food"]);
     expect(expenses!.datasets[0]!.data).toEqual([40]);
+    expect(expenses!.datasets[0]!.backgroundColor).toEqual(["#123456"]);
 
     const uncategorized = buildExpensesByCategoryFromSeries({
       series: {
@@ -243,7 +245,7 @@ describe("dashboard chart data builders", () => {
         ],
       },
       isDark: true,
-      chartColors: { ...chartColors, palette: [] },
+      chartColors: { ...chartColors, piePalette: [] },
       t,
     });
     expect(uncategorized!.labels[0]).toBe(t("general.uncategorized"));
