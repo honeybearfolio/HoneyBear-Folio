@@ -122,6 +122,48 @@ fn holdings_cost_basis_tracks_buys_and_sells() {
 }
 
 #[test]
+fn holdings_preserve_trade_order_on_equal_dates() {
+    let mut buy = tx(-100.0, "2025-01-02");
+    buy.ticker = Some("ABC".into());
+    buy.shares = Some(2.0);
+    buy.price_per_share = Some(50.0);
+    let mut sell = buy.clone();
+    sell.shares = Some(-1.0);
+    let result = build_holdings_from_transactions_logic(&[tx(1.0, "2025-01-01"), buy, sell]);
+    assert_eq!(result.first_trade_date.as_deref(), Some("2025-01-02"));
+    assert_eq!(result.current_holdings[0].shares, 1.0);
+    assert_eq!(result.current_holdings[0].cost_basis, 50.0);
+}
+
+#[test]
+fn merge_quotes_uses_first_ascii_case_insensitive_match() {
+    let holdings = vec![Holding {
+        ticker: "aBc".into(),
+        shares: 1.0,
+        cost_basis: 10.0,
+    }];
+    let quotes = vec![
+        YahooQuote {
+            symbol: "ABC".into(),
+            price: 20.0,
+            change_percent: 1.0,
+            currency: None,
+            quote_type: None,
+        },
+        YahooQuote {
+            symbol: "abc".into(),
+            price: 30.0,
+            change_percent: 2.0,
+            currency: None,
+            quote_type: None,
+        },
+    ];
+    let result = merge_holdings_with_quotes_logic(&holdings, &quotes);
+    assert_eq!(result[0].price, 20.0);
+    assert_eq!(result[0].change_percent, 1.0);
+}
+
+#[test]
 fn merge_holdings_with_quotes_calculates_value_and_roi() {
     let holdings = vec![
         Holding {
@@ -382,6 +424,78 @@ fn monte_carlo_output_has_expected_shape() {
     assert_eq!(result.years_to_retirement, 25);
     assert_eq!(result.total_years, 55);
     assert_eq!(result.percentiles.p50.len(), 56);
+}
+
+#[test]
+fn monte_carlo_preserves_depletion_year_and_zero_padding() {
+    let result = run_monte_carlo_simulation_logic(&MonteCarloInput {
+        current_net_worth: 100.0,
+        annual_savings: 0.0,
+        annual_expenses: 60.0,
+        expected_return: 0.0,
+        inflation: 0.0,
+        volatility: 0.0,
+        current_age: 60,
+        retirement_age: 60,
+        retirement_duration: 4,
+        simulation_count: 7,
+    });
+    assert_eq!(result.success_rate, 0.0);
+    assert_eq!(result.percentiles.p10, vec![100.0, 40.0, -20.0, 0.0, 0.0]);
+    assert_eq!(result.percentiles.p90, result.percentiles.p10);
+}
+
+#[test]
+fn report_groups_transactions_and_keeps_cash_flow_trade_rules() {
+    let mut second = base_account();
+    second.id = 2;
+    second.name = "Second".into();
+    let mut later = tx(-20.0, "2025-01-03");
+    later.category = Some("Food".into());
+    later.payee = "Later".into();
+    let mut first = tx(100.0, "2025-01-01");
+    first.account_id = 2;
+    let mut trade = tx(-30.0, "2025-01-02");
+    trade.category = Some("Investing".into());
+    trade.ticker = Some("ABC".into());
+    let mut transfer = tx(-50.0, "2025-01-01");
+    transfer.category = Some("Transfer".into());
+    let mut equal_date = tx(-10.0, "2025-01-03");
+    equal_date.payee = "Same date".into();
+    equal_date.category = Some("Food".into());
+
+    let report = compute_report_data_logic(&ReportComputeInput {
+        accounts: vec![base_account(), second],
+        transactions: vec![later, first, trade, transfer, equal_date],
+        start_date: "2025-01-01".into(),
+        end_date: "2025-01-31".into(),
+        app_currency: "USD".into(),
+        exchange_rates: HashMap::new(),
+        quotes: vec![],
+        labels: json!({}),
+    });
+    assert_eq!(report["summary"]["total_income"], json!(100.0));
+    assert_eq!(report["summary"]["total_expenses"], json!(30.0));
+    assert_eq!(report["cash_flow"]["total_investments"], json!(30.0));
+    assert_eq!(report["cash_flow"]["total_expenses"], json!(30.0));
+    assert_eq!(
+        report["monthly_income_expenses"][0]["expenses"],
+        json!(30.0)
+    );
+    let transactions = report["accounts_transactions"][0]["transactions"]
+        .as_array()
+        .unwrap();
+    assert_eq!(transactions.len(), 4);
+    assert_eq!(transactions[0]["category"], "Transfer");
+    assert_eq!(transactions[2]["payee"], "Later");
+    assert_eq!(transactions[3]["payee"], "Same date");
+    assert_eq!(
+        report["accounts_transactions"][1]["transactions"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]
