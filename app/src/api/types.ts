@@ -410,6 +410,15 @@ export interface ReportSummary {
   account_count: number;
 }
 
+export interface ReportComparison {
+  start_date: string;
+  end_date: string;
+  total_income: number;
+  total_expenses: number;
+  net_savings: number;
+  savings_rate: number;
+}
+
 export interface ReportAccountBalance {
   account_id: number;
   name: string;
@@ -562,6 +571,9 @@ export interface ReportLabels {
   goal_status_behind: string;
   goal_status_projected: string;
   goal_status_unscheduled: string;
+  previous_period: string;
+  account_scope: string;
+  as_of: string;
 }
 
 export interface ReportData {
@@ -572,6 +584,8 @@ export interface ReportData {
   snapshot_report: boolean;
   labels: ReportLabels;
   summary: ReportSummary;
+  previous_period: ReportComparison | null;
+  account_scope: string[];
   account_balances: ReportAccountBalance[];
   assets: ReportBalanceItem[];
   liabilities: ReportBalanceItem[];

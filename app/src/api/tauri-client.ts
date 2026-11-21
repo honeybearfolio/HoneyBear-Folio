@@ -117,6 +117,7 @@ export const rust = {
 
   get_pending_occurrences: (args: {
     accountId: string | number | null;
+    lookaheadDays?: number;
   }): Promise<PendingOccurrence[]> => callRust("get_pending_occurrences", args),
 
   // ---------------------------------------------------------------------------

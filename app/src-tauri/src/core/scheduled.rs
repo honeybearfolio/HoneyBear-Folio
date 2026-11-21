@@ -524,17 +524,27 @@ pub fn delete_scheduled_transaction_db(db_path: &PathBuf, id: i32) -> Result<(),
     })
 }
 
-/// Compute pending occurrences (missed + upcoming 5 days) for an optional `account_id`.
-/// If `account_id` is None, returns occurrences across all accounts.
+/// Preserve the existing five-day lookahead for callers that don't request a range.
 pub fn get_pending_occurrences_db(
     db_path: &PathBuf,
     account_id: Option<i32>,
     today_str: &str,
 ) -> Result<Vec<ScheduledOccurrence>, String> {
+    get_pending_occurrences_db_with_lookahead(db_path, account_id, today_str, 5)
+}
+
+/// Compute pending occurrences for up to 90 days for an optional `account_id`.
+/// If `account_id` is None, returns occurrences across all accounts.
+pub fn get_pending_occurrences_db_with_lookahead(
+    db_path: &PathBuf,
+    account_id: Option<i32>,
+    today_str: &str,
+    lookahead_days: u32,
+) -> Result<Vec<ScheduledOccurrence>, String> {
     crate::db_locked!(db_path, {
         let today = NaiveDate::parse_from_str(today_str, "%Y-%m-%d")
             .map_err(|e| format!("Invalid date: {e}"))?;
-        let lookahead = today + Duration::days(5);
+        let lookahead = today + Duration::days(i64::from(lookahead_days.clamp(1, 90)));
 
         let schedules = get_scheduled_transactions_db(db_path)?;
 
@@ -743,10 +753,16 @@ pub fn delete_scheduled_transaction(app_handle: AppHandle, id: i32) -> Result<()
 pub fn get_pending_occurrences(
     app_handle: AppHandle,
     account_id: Option<i32>,
+    lookahead_days: Option<u32>,
 ) -> Result<Vec<ScheduledOccurrence>, String> {
     let db_path = crate::db_init::get_db_path(&app_handle)?;
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
-    get_pending_occurrences_db(&db_path, account_id, &today)
+    get_pending_occurrences_db_with_lookahead(
+        &db_path,
+        account_id,
+        &today,
+        lookahead_days.unwrap_or(5),
+    )
 }
 
 /// Tauri command: applies a scheduled occurrence, creating a real transaction.

@@ -13,6 +13,9 @@ describe("normalizeDashboardLayout", () => {
     expect(normalizeDashboardLayout(null).map((widget) => widget.type)).toEqual(
       [...DASHBOARD_WIDGET_IDS],
     );
+    expect(DASHBOARD_WIDGET_IDS).toContain("budgetHealth");
+    expect(DASHBOARD_WIDGET_IDS).toContain("goalProgress");
+    expect(DASHBOARD_WIDGET_IDS).toContain("upcomingScheduled");
     expect(normalizeDashboardLayout("nope")).toHaveLength(
       DASHBOARD_WIDGET_IDS.length,
     );
@@ -74,7 +77,13 @@ describe("normalizeDashboardLayout", () => {
 });
 
 describe("moveDashboardWidget", () => {
-  const layout = cloneDefaultDashboardLayout();
+  const layout = cloneDefaultDashboardLayout().filter(
+    (widget) =>
+      widget.type === "summaryNetWorth" ||
+      widget.type === "summaryAccounts" ||
+      widget.type === "assetAllocation" ||
+      widget.type === "expensesByCategory",
+  );
 
   it("moves a card by grid units and refuses a cell that is taken", () => {
     const moved = moveDashboardWidget(layout, "default-summaryNetWorth", 0, 40);
@@ -92,7 +101,13 @@ describe("moveDashboardWidget", () => {
 });
 
 describe("resizeDashboardWidget", () => {
-  const layout = cloneDefaultDashboardLayout();
+  const layout = cloneDefaultDashboardLayout().filter(
+    (widget) =>
+      widget.type === "summaryNetWorth" ||
+      widget.type === "summaryAccounts" ||
+      widget.type === "assetAllocation" ||
+      widget.type === "expensesByCategory",
+  );
 
   it("resizes in grid units and keeps the card inside the board", () => {
     const resized = resizeDashboardWidget(

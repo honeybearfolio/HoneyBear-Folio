@@ -1,4 +1,5 @@
 use crate::models::{Account, Transaction, YahooQuote};
+use chrono::{Duration, NaiveDate};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::cmp::Ordering;
@@ -639,6 +640,70 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
         0.0
     };
 
+    let previous_period = (|| {
+        let current_start = NaiveDate::parse_from_str(&input.start_date, "%Y-%m-%d").ok()?;
+        let current_end = NaiveDate::parse_from_str(&input.end_date, "%Y-%m-%d").ok()?;
+        let period_days = current_end.signed_duration_since(current_start).num_days() + 1;
+        if period_days <= 0 {
+            return None;
+        }
+        let previous_end = current_start.pred_opt()?;
+        let previous_start = previous_end - Duration::days(period_days - 1);
+        let previous_start = previous_start.format("%Y-%m-%d").to_string();
+        let previous_end = previous_end.format("%Y-%m-%d").to_string();
+        let mut previous_income = 0.0;
+        let mut previous_expenses = 0.0;
+        let mut previous_rate_indexes = HashMap::new();
+
+        for transaction in &input.transactions {
+            if transaction.date.as_str() < previous_start.as_str()
+                || transaction.date.as_str() > previous_end.as_str()
+            {
+                continue;
+            }
+            if transaction.category.as_deref() == Some("Transfer") || transaction.ticker.is_some() {
+                continue;
+            }
+            let converted = match account_pairs
+                .get(&transaction.account_id)
+                .and_then(Option::as_ref)
+            {
+                Some(pair) => {
+                    let rate = input.exchange_rates.get(pair).map_or(1.0, |series| {
+                        if let Some(rate) = series.map.get(&transaction.date) {
+                            return *rate;
+                        }
+                        previous_rate_indexes
+                            .entry(pair)
+                            .or_insert_with(|| RateIndex::new(series))
+                            .get(&transaction.date)
+                    });
+                    transaction.amount * rate
+                }
+                None => transaction.amount,
+            };
+            if converted > 0.0 {
+                previous_income += converted;
+            } else {
+                previous_expenses += converted.abs();
+            }
+        }
+
+        let previous_savings = previous_income - previous_expenses;
+        Some(json!({
+            "start_date": previous_start,
+            "end_date": previous_end,
+            "total_income": previous_income,
+            "total_expenses": previous_expenses,
+            "net_savings": previous_savings,
+            "savings_rate": if previous_income > 0.0 {
+                (previous_savings / previous_income) * 100.0
+            } else {
+                0.0
+            }
+        }))
+    })();
+
     let holdings = build_holdings_from_transactions_logic(&input.transactions);
     let final_holdings =
         merge_holdings_with_quotes_logic(&holdings.current_holdings, &input.quotes);
@@ -820,6 +885,8 @@ pub fn compute_report_data_logic(input: &ReportComputeInput) -> Value {
             "savings_rate": savings_rate,
             "account_count": input.accounts.len()
         },
+        "previous_period": previous_period,
+        "account_scope": input.accounts.iter().map(|account| account.name.clone()).collect::<Vec<_>>(),
         "account_balances": account_balances,
         "net_worth_points": net_worth_points,
         "monthly_income_expenses": monthly_income_expenses,

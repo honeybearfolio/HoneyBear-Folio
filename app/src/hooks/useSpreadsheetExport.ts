@@ -111,6 +111,9 @@ export function useSpreadsheetExport({
           goal_status_behind: t("goals.status.behind"),
           goal_status_projected: t("goals.status.projected"),
           goal_status_unscheduled: t("goals.status.unscheduled"),
+          previous_period: t("report.previous_period"),
+          account_scope: t("report.account_scope"),
+          as_of: t("report.as_of"),
         };
 
         const filePath = await buildAndWriteExport({

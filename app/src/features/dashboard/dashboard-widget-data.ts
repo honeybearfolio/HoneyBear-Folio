@@ -39,6 +39,7 @@ import {
   widgetDetailFilters,
 } from "./dashboard-widget-filters";
 import { useDashboardPreferencesStore } from "../../stores/dashboard-preferences";
+import type { DashboardInsights } from "./useDashboardInsights";
 
 export interface DashboardSharedData {
   accounts: Account[];
@@ -62,6 +63,7 @@ export interface DashboardSharedData {
   barOptions: ChartOptions<"bar">;
   doughnutOptions: ChartOptions<"doughnut">;
   expensesOptions: ChartOptions<"doughnut">;
+  insights: DashboardInsights;
 }
 
 const DashboardDataContext = createContext<DashboardSharedData | null>(null);

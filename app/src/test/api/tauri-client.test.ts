@@ -56,6 +56,15 @@ describe("tauri-client", () => {
       expect(invoke).toHaveBeenCalledWith("get_pending_occurrences", {
         accountId: "acc1",
       });
+
+      await rust.get_pending_occurrences({
+        accountId: null,
+        lookaheadDays: 30,
+      });
+      expect(invoke).toHaveBeenCalledWith("get_pending_occurrences", {
+        accountId: null,
+        lookaheadDays: 30,
+      });
     });
   });
 

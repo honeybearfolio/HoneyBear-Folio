@@ -164,6 +164,9 @@ export interface ReportLabels {
   goal_status_behind: string;
   goal_status_projected: string;
   goal_status_unscheduled: string;
+  previous_period: string;
+  account_scope: string;
+  as_of: string;
 }
 
 interface BuildExportPayloadOptions {

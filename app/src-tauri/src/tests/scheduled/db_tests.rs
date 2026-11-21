@@ -1,6 +1,7 @@
 use crate::core::scheduled::{
     apply_scheduled_occurrence_db, create_scheduled_transaction_db,
-    delete_scheduled_transaction_db, get_pending_occurrences_db, get_scheduled_transactions_db,
+    delete_scheduled_transaction_db, get_pending_occurrences_db,
+    get_pending_occurrences_db_with_lookahead, get_scheduled_transactions_db,
     skip_scheduled_occurrence_db, update_scheduled_transaction_db, CreateScheduledTransactionArgs,
     UpdateScheduledTransactionArgs,
 };
@@ -102,7 +103,24 @@ fn test_pending_occurrences_apply_and_skip() {
     if let Some(next) = pending2.first() {
         skip_scheduled_occurrence_db(&db_path, scheduled_id, &next.date).unwrap();
     }
-
     let after_skip = get_scheduled_transactions_db(&db_path).unwrap();
     assert_eq!(after_skip[0].id, scheduled_id);
+}
+
+#[test]
+fn test_pending_occurrences_support_extended_lookahead() {
+    let (_dir, db_path) = setup_db();
+    let account = create_account_db(&db_path, "Cash".to_string(), 1000.0, None, None).unwrap();
+    create_scheduled_transaction_db(&db_path, base_args(account.id)).unwrap();
+
+    let default_range = get_pending_occurrences_db(&db_path, None, "2024-02-15").unwrap();
+    let extended_range =
+        get_pending_occurrences_db_with_lookahead(&db_path, None, "2024-02-15", 30).unwrap();
+
+    assert!(default_range
+        .iter()
+        .all(|occurrence| occurrence.date != "2024-03-01"));
+    assert!(extended_range
+        .iter()
+        .any(|occurrence| occurrence.date == "2024-03-01"));
 }

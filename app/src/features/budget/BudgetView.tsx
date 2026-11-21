@@ -19,33 +19,12 @@ import { useFormatNumber, useParseNumber } from "../../utils/format";
 import { handleAsyncError, logError } from "../../utils/errors";
 import { ErrorState } from "../../components/ui/Skeleton";
 import { useToast } from "../../stores/toast";
-import { getMonthlySpending } from "./budget-data";
-
-type BudgetLimits = Record<string, number>;
+import { getMonthlySpending, readBudgetLimits } from "./budget-data";
+import type { BudgetLimits } from "./budget-data";
 
 function currentMonth(): string {
   const now = new Date();
   return `${String(now.getFullYear())}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function readBudgetLimits(): BudgetLimits {
-  const stored = localStorage.getItem(STORAGE_KEYS.BUDGET_LIMITS);
-  if (!stored) return {};
-
-  const parsed: unknown = JSON.parse(stored);
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Saved budget limits are not valid.");
-  }
-
-  return Object.fromEntries(
-    Object.entries(parsed).filter(
-      ([category, amount]) =>
-        category.trim().length > 0 &&
-        typeof amount === "number" &&
-        Number.isFinite(amount) &&
-        amount > 0,
-    ),
-  );
 }
 
 function monthDate(month: string, language: string): string {

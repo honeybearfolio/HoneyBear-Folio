@@ -12,6 +12,9 @@ export const DASHBOARD_WIDGET_IDS = [
   "cashFlow",
   "assetAllocation",
   "expensesByCategory",
+  "budgetHealth",
+  "goalProgress",
+  "upcomingScheduled",
 ] as const;
 
 export type DashboardWidgetId = (typeof DASHBOARD_WIDGET_IDS)[number];
@@ -108,6 +111,9 @@ const DEFAULT_PLACEMENTS: Array<{
   { type: "cashFlow", x: 0, y: 19, w: 12, h: 10 },
   { type: "assetAllocation", x: 0, y: 29, w: 6, h: 8 },
   { type: "expensesByCategory", x: 6, y: 29, w: 6, h: 8 },
+  { type: "budgetHealth", x: 0, y: 37, w: 6, h: 7 },
+  { type: "goalProgress", x: 6, y: 37, w: 6, h: 7 },
+  { type: "upcomingScheduled", x: 0, y: 44, w: 12, h: 8 },
 ];
 
 export const WIDGET_TITLE_KEYS: Record<DashboardWidgetType, string> = {
@@ -119,6 +125,9 @@ export const WIDGET_TITLE_KEYS: Record<DashboardWidgetType, string> = {
   cashFlow: "dashboard.cash_flow",
   assetAllocation: "dashboard.asset_allocation",
   expensesByCategory: "dashboard.expenses_by_category",
+  budgetHealth: "dashboard.budget_health",
+  goalProgress: "dashboard.goal_progress",
+  upcomingScheduled: "dashboard.upcoming_scheduled",
 };
 
 export function isSummaryWidget(type: DashboardWidgetType): boolean {
@@ -140,9 +149,15 @@ export function isWidgetFilterField(
 export function defaultWidgetSize(type: DashboardWidgetType): WidgetSize {
   if (isSummaryWidget(type)) return { w: 4, h: 3 };
   if (type === "cashFlow") return { w: 12, h: 10 };
-  if (type === "assetAllocation" || type === "expensesByCategory") {
+  if (
+    type === "assetAllocation" ||
+    type === "expensesByCategory" ||
+    type === "budgetHealth" ||
+    type === "goalProgress"
+  ) {
     return { w: 6, h: 8 };
   }
+  if (type === "upcomingScheduled") return { w: 12, h: 8 };
   return { w: 12, h: 8 };
 }
 

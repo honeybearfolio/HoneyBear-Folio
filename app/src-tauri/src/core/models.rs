@@ -331,6 +331,16 @@ pub struct ReportSummary {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct ReportComparison {
+    pub start_date: String,
+    pub end_date: String,
+    pub total_income: f64,
+    pub total_expenses: f64,
+    pub net_savings: f64,
+    pub savings_rate: f64,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ReportAccountBalance {
     pub account_id: i32,
     pub name: String,
@@ -491,6 +501,12 @@ pub struct ReportLabels {
     pub target_date: String,
     pub monthly_contribution: String,
     pub status: String,
+    #[serde(default)]
+    pub previous_period: String,
+    #[serde(default)]
+    pub account_scope: String,
+    #[serde(default)]
+    pub as_of: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -503,6 +519,10 @@ pub struct ReportData {
     pub snapshot_report: bool,
     pub labels: ReportLabels,
     pub summary: ReportSummary,
+    #[serde(default)]
+    pub previous_period: Option<ReportComparison>,
+    #[serde(default)]
+    pub account_scope: Vec<String>,
     pub account_balances: Vec<ReportAccountBalance>,
     #[serde(default)]
     pub assets: Vec<ReportBalanceItem>,
