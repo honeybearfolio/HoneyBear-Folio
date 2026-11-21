@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Transaction } from "../../../api/types";
 import {
   getMonthlySpending,
-  readBudgetLimits,
+  readBudgetSettings,
 } from "../../../features/budget/budget-data";
+import { usePortfolioPreferences } from "../../../stores/portfolio-preferences";
 
 const transactions: Transaction[] = [
   {
@@ -80,28 +81,37 @@ describe("getMonthlySpending", () => {
     ]);
   });
 
-  describe("readBudgetLimits", () => {
+  describe("readBudgetSettings", () => {
     afterEach(() => {
-      localStorage.removeItem("hb_budget_limits");
+      usePortfolioPreferences.setState({ path: null, values: {} });
     });
 
     it("returns valid positive category limits and ignores invalid entries", () => {
-      localStorage.setItem(
-        "hb_budget_limits",
-        JSON.stringify({
-          Groceries: 500,
-          Rent: 0,
-          " ": 200,
-          Food: Number.NaN,
-        }),
-      );
+      usePortfolioPreferences.setState({
+        values: {
+          hb_budget_limits: JSON.stringify({
+            currency: "EUR",
+            limits: {
+              Groceries: 500,
+              Rent: 0,
+              " ": 200,
+              Food: Number.NaN,
+            },
+          }),
+        },
+      });
 
-      expect(readBudgetLimits()).toEqual({ Groceries: 500 });
+      expect(readBudgetSettings("USD")).toEqual({
+        currency: "EUR",
+        limits: { Groceries: 500 },
+      });
     });
 
     it("throws when the saved budget data is not an object", () => {
-      localStorage.setItem("hb_budget_limits", JSON.stringify([]));
-      expect(() => readBudgetLimits()).toThrow(
+      usePortfolioPreferences.setState({
+        values: { hb_budget_limits: JSON.stringify([]) },
+      });
+      expect(() => readBudgetSettings("USD")).toThrow(
         "Saved budget limits are not valid.",
       );
     });

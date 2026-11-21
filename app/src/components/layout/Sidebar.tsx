@@ -45,6 +45,10 @@ import { handleAsyncError } from "../../utils/errors";
 import type { Account } from "../../api/types";
 import { STORAGE_KEYS } from "../../constants/app";
 import { sameId } from "../../utils/ids";
+import {
+  usePortfolioPreferences,
+  writePortfolioPreference,
+} from "../../stores/portfolio-preferences";
 
 interface SidebarVisibility {
   dashboard?: boolean;
@@ -114,16 +118,21 @@ export default function Sidebar({
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
 
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [sortConfig, setSortConfig] = useState<SortConfig>(() => {
+  const savedSort = usePortfolioPreferences(
+    (state) => state.values[STORAGE_KEYS.ACCOUNT_SORT_CONFIG],
+  );
+  const savedOrder = usePortfolioPreferences(
+    (state) => state.values[STORAGE_KEYS.ACCOUNT_ORDER],
+  );
+  const sortConfig = useMemo<SortConfig>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.ACCOUNT_SORT_CONFIG);
-      return stored
-        ? (JSON.parse(stored) as SortConfig)
+      return savedSort
+        ? (JSON.parse(savedSort) as SortConfig)
         : { field: "name", direction: "asc" };
     } catch {
       return { field: "name", direction: "asc" };
     }
-  });
+  }, [savedSort]);
   const sortMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -141,14 +150,13 @@ export default function Sidebar({
     };
   }, []);
 
-  const [manualOrder, setManualOrder] = useState<(string | number)[]>(() => {
+  const manualOrder = useMemo<(string | number)[]>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.ACCOUNT_ORDER);
-      return stored ? (JSON.parse(stored) as (string | number)[]) : [];
+      return savedOrder ? (JSON.parse(savedOrder) as (string | number)[]) : [];
     } catch {
       return [];
     }
-  });
+  }, [savedOrder]);
 
   const sortedAccounts = useMemo(() => {
     const list = [...accounts];
@@ -195,9 +203,8 @@ export default function Sidebar({
 
   const handleSort = (field: string, direction: "asc" | "desc") => {
     const newConfig = { field, direction };
-    setSortConfig(newConfig);
     setShowSortMenu(false);
-    localStorage.setItem(
+    writePortfolioPreference(
       STORAGE_KEYS.ACCOUNT_SORT_CONFIG,
       JSON.stringify(newConfig),
     );
@@ -205,8 +212,10 @@ export default function Sidebar({
 
   const handleReorder = (newAccountsList: { id: string | number }[]) => {
     const newOrder = newAccountsList.map((a) => a.id);
-    setManualOrder(newOrder);
-    localStorage.setItem(STORAGE_KEYS.ACCOUNT_ORDER, JSON.stringify(newOrder));
+    writePortfolioPreference(
+      STORAGE_KEYS.ACCOUNT_ORDER,
+      JSON.stringify(newOrder),
+    );
   };
 
   const handleSelect = (id: string | number) => {

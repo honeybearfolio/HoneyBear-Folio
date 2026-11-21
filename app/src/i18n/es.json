@@ -217,6 +217,7 @@
   "budget.add_budget": "Añadir presupuesto",
   "budget.category_budgets": "Presupuestos por categoría",
   "budget.category_budgets_description": "Establece un límite mensual de gasto para cada categoría.",
+  "budget.currency": "Moneda del presupuesto: {currency}. Los límites existentes se mantienen en esta moneda al cambiar la moneda de referencia.",
   "budget.empty_description": "Añade una categoría y un límite mensual para empezar a controlar tus gastos.",
   "budget.empty_title": "Aún no hay presupuestos por categoría",
   "budget.error.duplicate": "Ya existe un presupuesto para esta categoría.",

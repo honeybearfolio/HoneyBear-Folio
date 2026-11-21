@@ -5,6 +5,11 @@ import { NumberFormatEffects } from "../../stores/number-format";
 import { useNumberFormatStore } from "../../stores/number-format";
 import { useNumberFormat } from "../../stores/number-format";
 import i18n from "../../i18n/i18n";
+import { usePortfolioPreferences } from "../../stores/portfolio-preferences";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn().mockResolvedValue(undefined),
+}));
 
 function TestComponent() {
   const {
@@ -48,6 +53,7 @@ function TestComponent() {
 describe("useNumberFormat (Zustand store)", () => {
   beforeEach(async () => {
     localStorage.clear();
+    usePortfolioPreferences.setState({ path: "/test.db", values: {} });
     useNumberFormatStore.setState({
       locale: "en-US",
       currency: "USD",
@@ -123,7 +129,7 @@ describe("useNumberFormat (Zustand store)", () => {
     });
   });
 
-  it("updates state and persists to localStorage", async () => {
+  it("persists locale locally and currency in the portfolio", async () => {
     render(<TestComponent />);
 
     fireEvent.click(screen.getByText("Set Locale DE"));
@@ -137,7 +143,7 @@ describe("useNumberFormat (Zustand store)", () => {
     expect(screen.getByTestId("currency")).toHaveTextContent("EUR");
 
     await waitFor(() => {
-      expect(localStorage.getItem("hb_currency")).toBe("EUR");
+      expect(usePortfolioPreferences.getState().values.hb_currency).toBe("EUR");
     });
   });
 });

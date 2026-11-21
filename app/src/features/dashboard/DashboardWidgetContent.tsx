@@ -151,11 +151,11 @@ export default function DashboardWidgetContent({
                   {t("dashboard.budget_spent", {
                     spent: shared.formatNumber(budget.totalSpent, {
                       style: "currency",
-                      currency: shared.appCurrency,
+                      currency: budget.currency,
                     }),
                     budget: shared.formatNumber(budget.totalBudget, {
                       style: "currency",
-                      currency: shared.appCurrency,
+                      currency: budget.currency,
                     }),
                   })}
                 </p>
@@ -193,7 +193,7 @@ export default function DashboardWidgetContent({
                         budget.totalSpent - budget.totalBudget,
                         {
                           style: "currency",
-                          currency: shared.appCurrency,
+                          currency: budget.currency,
                         },
                       ),
                     })}
@@ -209,7 +209,7 @@ export default function DashboardWidgetContent({
                             category.spent - category.limit,
                             {
                               style: "currency",
-                              currency: shared.appCurrency,
+                              currency: budget.currency,
                             },
                           ),
                         })}

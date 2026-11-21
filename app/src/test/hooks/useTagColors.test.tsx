@@ -1,6 +1,11 @@
 import { renderHook, act } from "@testing-library/react";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import useTagColors from "../../hooks/useTagColors";
+import { usePortfolioPreferences } from "../../stores/portfolio-preferences";
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn().mockResolvedValue(undefined),
+}));
 import {
   getColorClasses,
   getColorDot,
@@ -42,7 +47,7 @@ describe("tag-colors config", () => {
 
 describe("useTagColors", () => {
   beforeEach(() => {
-    localStorage.clear();
+    usePortfolioPreferences.setState({ path: "/test.db", values: {} });
   });
 
   it("starts with empty tag colors", () => {
@@ -72,7 +77,7 @@ describe("useTagColors", () => {
     );
   });
 
-  it("setTagColor assigns a color and persists to localStorage", () => {
+  it("setTagColor assigns a color and persists to the portfolio", () => {
     const { result } = renderHook(() => useTagColors());
 
     act(() => {
@@ -81,7 +86,9 @@ describe("useTagColors", () => {
 
     expect(result.current.tagColors).toEqual({ Food: "red" });
     expect(result.current.getTagClasses("Food")).toBe(getColorClasses("red"));
-    expect(JSON.parse(localStorage.getItem("hb_tag_colors")!)).toEqual({
+    expect(
+      JSON.parse(usePortfolioPreferences.getState().values.hb_tag_colors!),
+    ).toEqual({
       Food: "red",
     });
   });
@@ -116,14 +123,17 @@ describe("useTagColors", () => {
       result.current.resetAll();
     });
     expect(result.current.tagColors).toEqual({});
-    expect(localStorage.getItem("hb_tag_colors")).toBeNull();
+    expect(
+      JSON.parse(usePortfolioPreferences.getState().values.hb_tag_colors!),
+    ).toEqual({});
   });
 
-  it("reads persisted colors from localStorage on mount", () => {
-    localStorage.setItem(
-      "hb_tag_colors",
-      JSON.stringify({ Rent: "green", Transfer: "indigo" }),
-    );
+  it("reads persisted colors from the portfolio on mount", () => {
+    usePortfolioPreferences.setState({
+      values: {
+        hb_tag_colors: JSON.stringify({ Rent: "green", Transfer: "indigo" }),
+      },
+    });
 
     const { result } = renderHook(() => useTagColors());
     expect(result.current.tagColors).toEqual({
@@ -136,8 +146,8 @@ describe("useTagColors", () => {
     );
   });
 
-  it("handles corrupted localStorage gracefully", () => {
-    localStorage.setItem("hb_tag_colors", "not-json");
+  it("handles corrupted saved colors gracefully", () => {
+    usePortfolioPreferences.setState({ values: { hb_tag_colors: "not-json" } });
 
     const { result } = renderHook(() => useTagColors());
     expect(result.current.tagColors).toEqual({});

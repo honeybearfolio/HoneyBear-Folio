@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Sidebar from "../../../components/layout/Sidebar";
 import { usePrivacy } from "../../../stores/privacy";
+import { usePortfolioPreferences } from "../../../stores/portfolio-preferences";
 
 vi.mock("../../../utils/format", () => ({
   useFormatNumber: () => (val: number) => `fmt-${String(val)}`,
@@ -23,6 +24,7 @@ vi.mock("../../../api/tauri-client", () => ({
   rust: {
     rename_account: vi.fn().mockResolvedValue(undefined),
     delete_account: vi.fn().mockResolvedValue(undefined),
+    set_portfolio_preference: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -114,6 +116,7 @@ describe("Sidebar coverage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    usePortfolioPreferences.setState({ path: "/test.db", values: {} });
     vi.mocked(usePrivacy).mockReturnValue({
       isPrivacyMode: false,
       togglePrivacyMode: mockTogglePrivacy,
@@ -187,7 +190,8 @@ describe("Sidebar coverage", () => {
 
     fireEvent.click(screen.getByText("Balance (High to Low)"));
 
-    const stored = localStorage.getItem("hb_account_sort_config");
+    const stored =
+      usePortfolioPreferences.getState().values.hb_account_sort_config;
     expect(stored).toContain('"field":"balance"');
     expect(stored).toContain('"direction":"desc"');
   });

@@ -12,6 +12,7 @@ pub mod llm_tools;
 pub mod markets;
 pub mod models;
 pub mod pdf;
+pub mod preferences;
 pub mod rules;
 pub mod scheduled;
 pub mod session;

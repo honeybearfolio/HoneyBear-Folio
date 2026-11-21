@@ -1,10 +1,14 @@
-import { useState, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   getColorClasses,
   DEFAULT_COLOR,
   TRANSFER_DEFAULT_COLOR,
 } from "../config/tag-colors";
 import { STORAGE_KEYS } from "../constants/app";
+import {
+  usePortfolioPreferences,
+  writePortfolioPreference,
+} from "../stores/portfolio-preferences";
 
 type TagColorMap = Record<string, string>;
 
@@ -16,9 +20,8 @@ function isTagColorMap(value: unknown): value is TagColorMap {
   return Object.values(value).every((entry) => typeof entry === "string");
 }
 
-function readFromStorage(): TagColorMap {
+function readFromStorage(raw: string | undefined): TagColorMap {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.TAG_COLORS);
     if (!raw) {
       return {};
     }
@@ -30,11 +33,7 @@ function readFromStorage(): TagColorMap {
 }
 
 function writeToStorage(map: TagColorMap): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.TAG_COLORS, JSON.stringify(map));
-  } catch {
-    /* ignore */
-  }
+  writePortfolioPreference(STORAGE_KEYS.TAG_COLORS, JSON.stringify(map));
 }
 
 interface UseTagColorsReturn {
@@ -46,31 +45,28 @@ interface UseTagColorsReturn {
 }
 
 export default function useTagColors(): UseTagColorsReturn {
-  const [tagColors, setTagColors] = useState<TagColorMap>(readFromStorage);
+  const raw = usePortfolioPreferences(
+    (state) => state.values[STORAGE_KEYS.TAG_COLORS],
+  );
+  const tagColors = useMemo(() => readFromStorage(raw), [raw]);
 
   const setTagColor = useCallback((categoryName: string, colorKey: string) => {
-    setTagColors((prev) => {
-      const next = { ...prev, [categoryName]: colorKey };
-      writeToStorage(next);
-      return next;
-    });
+    const current = readFromStorage(
+      usePortfolioPreferences.getState().values[STORAGE_KEYS.TAG_COLORS],
+    );
+    writeToStorage({ ...current, [categoryName]: colorKey });
   }, []);
 
   const removeTagColor = useCallback((categoryName: string) => {
-    setTagColors((prev) => {
-      const { [categoryName]: _removed, ...next } = prev;
-      writeToStorage(next);
-      return next;
-    });
+    const current = readFromStorage(
+      usePortfolioPreferences.getState().values[STORAGE_KEYS.TAG_COLORS],
+    );
+    const { [categoryName]: _removed, ...next } = current;
+    writeToStorage(next);
   }, []);
 
   const resetAll = useCallback(() => {
-    setTagColors({});
-    try {
-      localStorage.removeItem(STORAGE_KEYS.TAG_COLORS);
-    } catch {
-      /* ignore */
-    }
+    writeToStorage({});
   }, []);
 
   const getTagClasses = useCallback(
